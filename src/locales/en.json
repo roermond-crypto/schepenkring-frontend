@@ -118,5 +118,16 @@
       "hoursAgo": "h ago",
       "daysAgo": "d ago"
     }
+  },
+  "lockscreen": {
+    "pinPlaceholder": "PIN",
+    "welcomeBack": "Welcome back",
+    "incorrectPin": "Incorrect PIN",
+    "unlock": "Unlock",
+    "logout": "Log out",
+    "fallbackUser": "User",
+    "profileAlt": "Profile",
+    "lockNow": "Lock Now",
+    "screenLocked": "Screen locked"
   }
 }

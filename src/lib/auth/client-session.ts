@@ -33,5 +33,13 @@ export function clearClientSession() {
 }
 
 export function getClientToken() {
-  return Cookies.get(AUTH_TOKEN_COOKIE) ?? null;
+  // Check cookie first, then fall back to localStorage
+  const cookieToken = Cookies.get(AUTH_TOKEN_COOKIE);
+  if (cookieToken) return cookieToken;
+
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("auth_token") ?? null;
+  }
+
+  return null;
 }

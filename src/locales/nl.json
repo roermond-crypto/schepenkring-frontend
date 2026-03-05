@@ -118,5 +118,16 @@
       "hoursAgo": "u geleden",
       "daysAgo": "d geleden"
     }
+  },
+  "lockscreen": {
+    "pinPlaceholder": "Pincode",
+    "welcomeBack": "Welkom terug",
+    "incorrectPin": "Onjuiste pincode",
+    "unlock": "Ontgrendelen",
+    "logout": "Uitloggen",
+    "fallbackUser": "Gebruiker",
+    "profileAlt": "Profiel",
+    "lockNow": "Vergrendelen",
+    "screenLocked": "Scherm vergrendeld"
   }
 }

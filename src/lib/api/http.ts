@@ -32,6 +32,8 @@ httpClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+export { httpClient as api };
+
 export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
   if (!httpClient.defaults.baseURL) {
     throw new ApiError(
@@ -47,9 +49,9 @@ export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
     if (error instanceof AxiosError) {
       const message =
         typeof error.response?.data === "object" &&
-        error.response?.data &&
-        "message" in error.response.data &&
-        typeof error.response.data.message === "string"
+          error.response?.data &&
+          "message" in error.response.data &&
+          typeof error.response.data.message === "string"
           ? error.response.data.message
           : error.message;
 

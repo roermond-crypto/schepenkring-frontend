@@ -116,7 +116,18 @@
       "justNow": "Gerade eben",
       "minutesAgo": " Min.",
       "hoursAgo": " Std.",
-      "daysAgo": " T." 
+      "daysAgo": " T."
     }
+  },
+  "lockscreen": {
+    "pinPlaceholder": "PIN",
+    "welcomeBack": "Willkommen zurück",
+    "incorrectPin": "Falsche PIN",
+    "unlock": "Entsperren",
+    "logout": "Abmelden",
+    "fallbackUser": "Benutzer",
+    "profileAlt": "Profil",
+    "lockNow": "Jetzt sperren",
+    "screenLocked": "Bildschirm gesperrt"
   }
 }
