@@ -1,4 +1,5 @@
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
+import { getClientToken } from "@/lib/auth/client-session";
 
 export class ApiError extends Error {
   status: number;
@@ -10,14 +11,35 @@ export class ApiError extends Error {
   }
 }
 
+const backendBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "";
+
 const httpClient = axios.create({
-  withCredentials: true,
+  baseURL: backendBaseUrl || undefined,
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
   },
 });
 
+httpClient.interceptors.request.use(
+  (config) => {
+    const token = getClientToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
 export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
+  if (!httpClient.defaults.baseURL) {
+    throw new ApiError(
+      "NEXT_PUBLIC_BACKEND_API_URL is not configured. Set it in .env and restart dev server.",
+      500,
+    );
+  }
+
   try {
     const response = await httpClient.request<T>(config);
     return response.data;

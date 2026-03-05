@@ -4,34 +4,27 @@ import { normalizeRole } from "@/lib/auth/roles";
 import { setAuthCookies } from "@/lib/auth/session";
 import { getBackendApiClient } from "@/lib/server/backend-api";
 
-type BackendAuthResponse = {
-  token?: string;
-  user?: {
+type BackendVerifyResponse = {
+  token: string;
+  user: {
     id: string;
     name: string;
     email: string;
     role: string;
   };
-  step_up_required?: boolean;
-  otp_challenge_id?: string;
-  otp_ttl_minutes?: number;
-  device_id?: string;
-  reasons?: string[];
-  message?: string;
 };
 
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
       email?: string;
-      password?: string;
-      remember_terminal?: boolean;
+      code?: string;
+      otp_challenge_id?: string;
+      device_id?: string;
     };
-    const email = body.email?.trim();
-    const password = body.password;
 
-    if (!email || !password) {
-      return NextResponse.json({ message: "Email and password are required" }, { status: 400 });
+    if (!body.email || !body.code || !body.otp_challenge_id) {
+      return NextResponse.json({ message: "Verification payload is incomplete" }, { status: 400 });
     }
 
     const backendApi = getBackendApiClient();
@@ -42,34 +35,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const backendResponse = await backendApi.post<BackendAuthResponse>("/auth/login", {
-      email,
-      password,
-      remember_terminal: Boolean(body.remember_terminal),
-    });
+    const endpoints = ["/auth/login/verify-step-up", "/auth/verify-step-up", "/auth/login/verify-otp"];
+    let payload: BackendVerifyResponse | null = null;
 
-    const payload = backendResponse.data;
-
-    if (payload.step_up_required && payload.otp_challenge_id) {
-      return NextResponse.json(
-        {
-          step_up_required: true,
-          otp_challenge_id: payload.otp_challenge_id,
-          otp_ttl_minutes: payload.otp_ttl_minutes,
-          device_id: payload.device_id,
-          reasons: payload.reasons ?? [],
-          message: payload.message ?? "Verification code sent to your email.",
-        },
-        { status: 200 },
-      );
+    for (const endpoint of endpoints) {
+      try {
+        const response = await backendApi.post<BackendVerifyResponse>(endpoint, body);
+        payload = response.data;
+        break;
+      } catch (error) {
+        if (!(error instanceof AxiosError) || error.response?.status !== 404) {
+          throw error;
+        }
+      }
     }
 
-    if (!payload.token || !payload.user) {
-      return NextResponse.json({ message: "Invalid login response" }, { status: 500 });
+    if (!payload) {
+      return NextResponse.json({ message: "Verification endpoint not available" }, { status: 500 });
     }
 
     const normalizedRole = normalizeRole(payload.user.role);
-
     if (!normalizedRole) {
       return NextResponse.json({ message: "Unsupported user role" }, { status: 403 });
     }
@@ -106,11 +91,11 @@ export async function POST(request: NextRequest) {
         "message" in error.response.data &&
         typeof error.response.data.message === "string"
           ? error.response.data.message
-          : "Invalid credentials";
+          : "Verification failed";
 
       return NextResponse.json({ message }, { status });
     }
 
-    return NextResponse.json({ message: "Unable to process login" }, { status: 500 });
+    return NextResponse.json({ message: "Unable to verify code" }, { status: 500 });
   }
 }

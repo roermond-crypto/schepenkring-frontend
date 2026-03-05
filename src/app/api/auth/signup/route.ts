@@ -4,13 +4,15 @@ import { setAuthCookies } from "@/lib/auth/session";
 import { getBackendApiClient } from "@/lib/server/backend-api";
 
 type BackendSignupResponse = {
-  token: string;
-  user: {
+  token?: string;
+  user?: {
     id: string;
     name: string;
     email: string;
     role: "client";
   };
+  verification_required?: boolean;
+  message?: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -37,10 +39,34 @@ export async function POST(request: NextRequest) {
       name,
       email,
       password,
+      password_confirmation: password,
+      accept_terms: true,
       role: "client",
     });
 
     const payload = backendResponse.data;
+
+    if (payload.verification_required) {
+      return NextResponse.json(
+        {
+          verification_required: true,
+          email,
+          message: payload.message ?? "Verification code sent to your email.",
+        },
+        { status: 200 },
+      );
+    }
+
+    if (!payload.token || !payload.user) {
+      return NextResponse.json({ message: "Invalid signup response" }, { status: 500 });
+    }
+
+    if (payload.user.role !== "client") {
+      return NextResponse.json(
+        { message: "Signup is restricted to client accounts only" },
+        { status: 403 },
+      );
+    }
 
     const response = NextResponse.json(
       {
