@@ -1,0 +1,122 @@
+{
+  "common": {
+    "brand": "Schepenkring CRM",
+    "login": "Inloggen",
+    "signup": "Registreren",
+    "dashboard": "Dashboard",
+    "logout": "Uitloggen",
+    "themeToggle": "Thema wisselen"
+  },
+  "landing": {
+    "nav": {
+      "features": "Functies",
+      "roles": "Rollen",
+      "contact": "Contact"
+    },
+    "hero": {
+      "eyebrow": "Intern operationeel platform",
+      "title": "Controlecentrum voor boten, leads, klanten en AI-workflows.",
+      "description": "Beheer Schepenkring vanuit een meertalige werkplek met rolgebaseerde toegang en een architectuur klaar voor automatisering."
+    },
+    "roles": {
+      "title": "Een dashboard, vier rollen",
+      "description": "Client, employee, location en admin gebruiken hetzelfde dashboard met rolgebaseerde rechten.",
+      "items": {
+        "client": "Client",
+        "employee": "Employee",
+        "location": "Location",
+        "admin": "Admin"
+      }
+    }
+  },
+  "auth": {
+    "heroTitle": "Interne CRM-login voor Schepenkring.",
+    "heroSubtitle": "Operationeel dashboard voor boten, leads en klanten.",
+    "welcomeBack": "Welkom terug",
+    "createAccount": "Account aanmaken",
+    "loginDescription": "Log in op je dashboard-account.",
+    "registerDescription": "Registratie is alleen voor Client. Andere rollen maakt de admin aan.",
+    "loginTitle": "Inloggen",
+    "loginError": "Ongeldige inloggegevens. Probeer opnieuw.",
+    "signupTitle": "Client registratie",
+    "signupError": "Account aanmaken is mislukt. Controleer je gegevens.",
+    "email": "E-mail",
+    "password": "Wachtwoord",
+    "confirmPassword": "Bevestig wachtwoord",
+    "verificationCode": "Verificatiecode",
+    "rememberTerminal": "Onthoud dit apparaat",
+    "verifyEmail": "E-mail verifiëren",
+    "registerCta": "Registreren",
+    "processing": "Bezig...",
+    "validating": "Controleren...",
+    "verifyContinue": "Verifieer & ga verder",
+    "noAccountSignup": "Geen account? Registreer als Client",
+    "alreadyHaveAccount": "Al een account? Inloggen",
+    "clientSignup": "Client registratie",
+    "confirmPasswordRequired": "Bevestig wachtwoord is verplicht.",
+    "passwordsDontMatch": "Wachtwoorden komen niet overeen.",
+    "enterVerificationCode": "Voer je verificatiecode in.",
+    "verificationCodeSent": "Verificatiecode is naar je e-mail gestuurd.",
+    "invalidLoginResponse": "Ongeldige login-respons.",
+    "authFailed": "Authenticatie mislukt.",
+    "name": "Volledige naam",
+    "newClient": "Nieuwe client?",
+    "hasAccount": "Heb je al een account?",
+    "signin": "Inloggen",
+    "signupNotice": "Registratie is alleen beschikbaar voor Client. Employee, Location en Admin accounts worden door de beheerder aangemaakt.",
+    "submitLogin": "Inloggen",
+    "submitSignup": "Registreren als Client"
+  },
+  "dashboard": {
+    "welcome": "Welkom terug",
+    "metrics": {
+      "leads": "Leads",
+      "boats": "Boten Geimporteerd",
+      "ai": "AI Taken",
+      "threads": "Chatgesprekken"
+    },
+    "header": {
+      "brand": "Schepenkring",
+      "title": "CRM Dashboard",
+      "openMenu": "Menu openen",
+      "toggleTheme": "Thema wisselen",
+      "userFallback": "Gebruiker",
+      "logout": "Uitloggen"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "boats": "Boten",
+      "clients": "Klanten",
+      "leads": "Leads",
+      "overview": "Overzicht",
+      "users": "Gebruikers",
+      "schedule": "Planning",
+      "harbor": "Haven",
+      "interaction": "Interactie",
+      "settings": "Instellingen",
+      "terminalSuffix": "Terminal",
+      "online": "Online",
+      "offline": "Offline",
+      "logout": "Uitloggen",
+      "expand": "Sidebar uitklappen",
+      "collapse": "Sidebar inklappen"
+    },
+    "notifications": {
+      "label": "Meldingen",
+      "title": "Meldingen",
+      "viewAll": "Alles bekijken",
+      "loading": "Laden...",
+      "empty": "Nog geen meldingen",
+      "markAllRead": "Alles als gelezen markeren",
+      "defaultSender": "Systeem",
+      "defaultMessage": "Meldingsupdate",
+      "fallbackLead": "Er is een nieuwe lead aan je wachtrij toegevoegd.",
+      "fallbackExport": "Bootexport is succesvol voltooid.",
+      "fallbackProfile": "Contactgegevens van clientprofiel zijn bijgewerkt.",
+      "justNow": "Zojuist",
+      "minutesAgo": "m geleden",
+      "hoursAgo": "u geleden",
+      "daysAgo": "d geleden"
+    }
+  }
+}

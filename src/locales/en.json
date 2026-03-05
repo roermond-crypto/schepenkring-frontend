@@ -1,0 +1,122 @@
+{
+  "common": {
+    "brand": "Schepenkring CRM",
+    "login": "Login",
+    "signup": "Sign up",
+    "dashboard": "Dashboard",
+    "logout": "Logout",
+    "themeToggle": "Toggle theme"
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "roles": "Roles",
+      "contact": "Contact"
+    },
+    "hero": {
+      "eyebrow": "Internal operations platform",
+      "title": "Control center for boats, leads, clients, and AI workflows.",
+      "description": "Run Schepenkring from one multilingual workspace with role-based access and automation-ready architecture."
+    },
+    "roles": {
+      "title": "One dashboard, four roles",
+      "description": "Client, employee, location, and admin access the same dashboard shell with role-aware permissions.",
+      "items": {
+        "client": "Client",
+        "employee": "Employee",
+        "location": "Location",
+        "admin": "Admin"
+      }
+    }
+  },
+  "auth": {
+    "heroTitle": "Internal CRM login for Schepenkring.",
+    "heroSubtitle": "Operations dashboard for boats, leads, and clients.",
+    "welcomeBack": "Welcome back",
+    "createAccount": "Create account",
+    "loginDescription": "Sign in to your dashboard account.",
+    "registerDescription": "Client signup only. Other roles are created by admin.",
+    "loginTitle": "Sign in",
+    "loginError": "Invalid credentials. Please try again.",
+    "signupTitle": "Client signup",
+    "signupError": "Unable to create account. Please verify your details.",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "verificationCode": "Verification code",
+    "rememberTerminal": "Remember terminal",
+    "verifyEmail": "Verify email",
+    "registerCta": "Register",
+    "processing": "Processing...",
+    "validating": "Validating...",
+    "verifyContinue": "Verify & Continue",
+    "noAccountSignup": "No account? Sign up as Client",
+    "alreadyHaveAccount": "Already have an account? Login",
+    "clientSignup": "Client Signup",
+    "confirmPasswordRequired": "Confirm password is required.",
+    "passwordsDontMatch": "Passwords do not match.",
+    "enterVerificationCode": "Enter your verification code.",
+    "verificationCodeSent": "Verification code sent to your email.",
+    "invalidLoginResponse": "Invalid login response.",
+    "authFailed": "Authentication failed.",
+    "name": "Full name",
+    "newClient": "New client?",
+    "hasAccount": "Already have an account?",
+    "signin": "Sign in",
+    "signupNotice": "Signup is available only for Client. Employee, Location, and Admin users are created by the system administrator.",
+    "submitLogin": "Login",
+    "submitSignup": "Sign up as Client"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "metrics": {
+      "leads": "Leads",
+      "boats": "Boats Imported",
+      "ai": "AI Tasks",
+      "threads": "Chat Threads"
+    },
+    "header": {
+      "brand": "Schepenkring",
+      "title": "CRM Dashboard",
+      "openMenu": "Open menu",
+      "toggleTheme": "Toggle theme",
+      "userFallback": "User",
+      "logout": "Logout"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "boats": "Boats",
+      "clients": "Clients",
+      "leads": "Leads",
+      "overview": "Overview",
+      "users": "Users",
+      "schedule": "Schedule",
+      "harbor": "Harbor",
+      "interaction": "Interaction",
+      "settings": "Settings",
+      "terminalSuffix": "Terminal",
+      "online": "Online",
+      "offline": "Offline",
+      "logout": "Logout",
+      "expand": "Expand sidebar",
+      "collapse": "Collapse sidebar"
+    },
+    "notifications": {
+      "label": "Notifications",
+      "title": "Notifications",
+      "viewAll": "View all",
+      "loading": "Loading...",
+      "empty": "No notifications yet",
+      "markAllRead": "Mark all as read",
+      "defaultSender": "System",
+      "defaultMessage": "Notification update",
+      "fallbackLead": "New lead has been assigned to your queue.",
+      "fallbackExport": "Boat export completed successfully.",
+      "fallbackProfile": "Client profile contact details were updated.",
+      "justNow": "Just now",
+      "minutesAgo": "m ago",
+      "hoursAgo": "h ago",
+      "daysAgo": "d ago"
+    }
+  }
+}
