@@ -1,0 +1,63 @@
+{
+  "common": {
+    "brand": "Schepenkring CRM",
+    "login": "Inloggen",
+    "signup": "Registreren",
+    "dashboard": "Dashboard",
+    "logout": "Uitloggen",
+    "themeToggle": "Thema wisselen"
+  },
+  "landing": {
+    "nav": {
+      "features": "Functies",
+      "roles": "Rollen",
+      "contact": "Contact"
+    },
+    "hero": {
+      "eyebrow": "Intern operationeel platform",
+      "title": "Controlecentrum voor boten, leads, klanten en AI-workflows.",
+      "description": "Beheer Schepenkring vanuit een meertalige werkplek met rolgebaseerde toegang en een architectuur klaar voor automatisering."
+    },
+    "roles": {
+      "title": "Een dashboard, vier rollen",
+      "description": "Client, employee, location en admin gebruiken hetzelfde dashboard met rolgebaseerde rechten.",
+      "items": {
+        "client": "Client",
+        "employee": "Employee",
+        "location": "Location",
+        "admin": "Admin"
+      }
+    }
+  },
+  "auth": {
+    "loginTitle": "Inloggen",
+    "loginError": "Ongeldige inloggegevens. Probeer opnieuw.",
+    "signupTitle": "Client registratie",
+    "signupError": "Account aanmaken is mislukt. Controleer je gegevens.",
+    "email": "E-mail",
+    "password": "Wachtwoord",
+    "name": "Volledige naam",
+    "newClient": "Nieuwe client?",
+    "createAccount": "Account aanmaken",
+    "hasAccount": "Heb je al een account?",
+    "signin": "Inloggen",
+    "signupNotice": "Registratie is alleen beschikbaar voor Client. Employee, Location en Admin accounts worden door de beheerder aangemaakt.",
+    "submitLogin": "Inloggen",
+    "submitSignup": "Registreren als Client"
+  },
+  "dashboard": {
+    "welcome": "Welkom terug",
+    "metrics": {
+      "leads": "Leads",
+      "boats": "Boten Geimporteerd",
+      "ai": "AI Taken",
+      "threads": "Chatgesprekken"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "boats": "Boten",
+      "clients": "Klanten",
+      "leads": "Leads"
+    }
+  }
+}

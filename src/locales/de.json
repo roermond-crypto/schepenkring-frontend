@@ -1,0 +1,63 @@
+{
+  "common": {
+    "brand": "Schepenkring CRM",
+    "login": "Anmelden",
+    "signup": "Registrieren",
+    "dashboard": "Dashboard",
+    "logout": "Abmelden",
+    "themeToggle": "Design wechseln"
+  },
+  "landing": {
+    "nav": {
+      "features": "Funktionen",
+      "roles": "Rollen",
+      "contact": "Kontakt"
+    },
+    "hero": {
+      "eyebrow": "Interne Betriebsplattform",
+      "title": "Steuerzentrale fur Boote, Leads, Kunden und KI-Workflows.",
+      "description": "Betreibe Schepenkring in einem mehrsprachigen Workspace mit rollenbasiertem Zugriff und einer Architektur fur Automatisierung."
+    },
+    "roles": {
+      "title": "Ein Dashboard, vier Rollen",
+      "description": "Client, employee, location und admin nutzen dieselbe Dashboard-Struktur mit rollenbasierten Berechtigungen.",
+      "items": {
+        "client": "Client",
+        "employee": "Employee",
+        "location": "Location",
+        "admin": "Admin"
+      }
+    }
+  },
+  "auth": {
+    "loginTitle": "Anmelden",
+    "loginError": "Ungultige Zugangsdaten. Bitte erneut versuchen.",
+    "signupTitle": "Client Registrierung",
+    "signupError": "Konto konnte nicht erstellt werden. Bitte Daten prufen.",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "name": "Vollstandiger Name",
+    "newClient": "Neuer Client?",
+    "createAccount": "Konto erstellen",
+    "hasAccount": "Bereits ein Konto?",
+    "signin": "Anmelden",
+    "signupNotice": "Registrierung ist nur fur Client verfugbar. Employee-, Location- und Admin-Konten werden vom Administrator erstellt.",
+    "submitLogin": "Anmelden",
+    "submitSignup": "Als Client registrieren"
+  },
+  "dashboard": {
+    "welcome": "Willkommen zuruck",
+    "metrics": {
+      "leads": "Leads",
+      "boats": "Importierte Boote",
+      "ai": "KI-Aufgaben",
+      "threads": "Chat-Verlaufe"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "boats": "Boote",
+      "clients": "Kunden",
+      "leads": "Leads"
+    }
+  }
+}
