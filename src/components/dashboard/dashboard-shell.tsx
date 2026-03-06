@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { logout } from "@/lib/api/auth";
-import { clearClientSession } from "@/lib/auth/client-session";
+import { clearClientSession, setClientSession } from "@/lib/auth/client-session";
 import type { UserRole } from "@/lib/auth/roles";
 import type { AppLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { stopImpersonation } from "@/lib/api/account";
+import { Button } from "@/components/ui/button";
 import LockscreenOverlay from "@/components/LockscreenOverlay";
 import { NetworkStatusBar } from "@/components/common/NetworkStatusBar";
 
@@ -24,6 +26,21 @@ export function DashboardShell({ locale, role, userName, userEmail, children }: 
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [impersonatingName, setImpersonatingName] = useState<string | null>(null);
+  const [stoppingImpersonation, setStoppingImpersonation] = useState(false);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("impersonation_session");
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as { impersonated_name?: string };
+      if (parsed.impersonated_name) {
+        setImpersonatingName(parsed.impersonated_name);
+      }
+    } catch {
+      localStorage.removeItem("impersonation_session");
+    }
+  }, []);
 
   async function handleLogout() {
     try {
@@ -34,6 +51,32 @@ export function DashboardShell({ locale, role, userName, userEmail, children }: 
     clearClientSession();
     router.push(`/${locale}/login`);
     router.refresh();
+  }
+
+  const mapTypeToRole = (type: string | undefined): UserRole => {
+    if (type === "ADMIN") return "admin";
+    if (type === "EMPLOYEE") return "employee";
+    return "client";
+  };
+
+  async function handleStopImpersonation() {
+    setStoppingImpersonation(true);
+    try {
+      const response = await stopImpersonation();
+      const nextRole = mapTypeToRole(response?.impersonator?.type);
+      setClientSession(response.token, {
+        id: String(response.impersonator.id),
+        name: response.impersonator.name,
+        email: response.impersonator.email,
+        role: nextRole,
+      });
+      localStorage.removeItem("impersonation_session");
+      setImpersonatingName(null);
+      router.push(`/${locale}/dashboard/${nextRole}`);
+      router.refresh();
+    } finally {
+      setStoppingImpersonation(false);
+    }
   }
 
   return (

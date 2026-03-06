@@ -66,7 +66,10 @@ const mapNotification = (
   },
 ): NotificationItem => ({
   id: String(item.id),
-  sender: item.sender?.name ?? item.notification?.data?.sender_name ?? t.defaultSender,
+  sender:
+    item.sender?.name ??
+    item.notification?.data?.sender_name ??
+    t.defaultSender,
   message: item.notification?.message ?? item.message ?? t.defaultMessage,
   createdAt: humanizeDate(item.notification?.created_at ?? item.created_at, t),
   read: Boolean(item.read ?? item.pivot?.read ?? false),
@@ -100,7 +103,10 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
   const [browserPushEnabled, setBrowserPushEnabled] = useState(true);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  const unreadCount = useMemo(() => notifications.filter((item) => !item.read).length, [notifications]);
+  const unreadCount = useMemo(
+    () => notifications.filter((item) => !item.read).length,
+    [notifications],
+  );
 
   useEffect(() => {
     const notifPref = localStorage.getItem("notifications_enabled");
@@ -117,13 +123,17 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
 
     try {
       setLoading(true);
-      const payload = await apiRequest<{ data?: BackendNotification[] } | BackendNotification[]>({
+      const payload = await apiRequest<
+        { data?: BackendNotification[] } | BackendNotification[]
+      >({
         url: "/notifications",
         method: "GET",
       });
 
-      const list = Array.isArray(payload) ? payload : payload.data ?? [];
-      setNotifications(list.slice(0, 10).map((entry) => mapNotification(entry, t)));
+      const list = Array.isArray(payload) ? payload : (payload.data ?? []);
+      setNotifications(
+        list.slice(0, 10).map((entry) => mapNotification(entry, t)),
+      );
     } catch {
       // Keep UI stable even when endpoint is unavailable.
     } finally {
@@ -139,7 +149,9 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
   const markAsRead = async (id: string) => {
     try {
       await apiRequest({ url: `/notifications/${id}/read`, method: "POST" });
-      setNotifications((prev) => prev.map((item) => (item.id === id ? { ...item, read: true } : item)));
+      setNotifications((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, read: true } : item)),
+      );
     } catch {
       // Ignore endpoint errors to avoid breaking interaction.
     }
@@ -202,7 +214,11 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
         className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-[#d6e1ee] bg-white text-[#0B1F3A] transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
         aria-label={t.label}
       >
-        {notificationsEnabled ? <Bell className="h-5 w-5" /> : <BellOff className="h-5 w-5 opacity-60" />}
+        {notificationsEnabled ? (
+          <Bell className="h-5 w-5" />
+        ) : (
+          <BellOff className="h-5 w-5 opacity-60" />
+        )}
         {notificationsEnabled && unreadCount > 0 ? (
           <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -215,9 +231,13 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
           <div className="border-b border-slate-200 p-4 dark:border-slate-700">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">{text.title}</h3>
+                <h3 className="text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">
+                  {text.title}
+                </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {unreadCount > 0 ? `${unreadCount} unread updates` : "All caught up"}
+                  {unreadCount > 0
+                    ? `${unreadCount} unread updates`
+                    : "All caught up"}
                 </p>
               </div>
 
@@ -245,13 +265,13 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
                     </button>
                   </>
                 ) : null}
-                <Link
+                {/* <Link
                   href={notificationsPath}
                   onClick={() => setOpen(false)}
                   className="text-xs font-medium text-blue-600 hover:text-blue-700"
                 >
                   {text.viewAll}
-                </Link>
+                </Link> */}
               </div>
             </div>
           </div>
@@ -291,22 +311,35 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
                 <p className="text-sm">{text.notificationsOff}</p>
               </div>
             ) : loading ? (
-              <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">{text.loading}</div>
+              <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                {text.loading}
+              </div>
             ) : notifications.length > 0 ? (
               notifications.map((item) => (
-                <div key={item.id} className="border-b border-slate-100 p-4 last:border-b-0 dark:border-slate-800">
+                <div
+                  key={item.id}
+                  className="border-b border-slate-100 p-4 last:border-b-0 dark:border-slate-800"
+                >
                   <div className="flex items-start gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E7F0FF] text-xs font-semibold text-[#0B1F3A] dark:bg-slate-700 dark:text-slate-100">
                       {item.sender.slice(0, 1)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-medium text-gray-900 dark:text-slate-100">{item.sender}</p>
-                        {!item.read ? <span className="h-2 w-2 rounded-full bg-blue-600" /> : null}
+                        <p className="truncate text-sm font-medium text-gray-900 dark:text-slate-100">
+                          {item.sender}
+                        </p>
+                        {!item.read ? (
+                          <span className="h-2 w-2 rounded-full bg-blue-600" />
+                        ) : null}
                       </div>
-                      <p className="line-clamp-2 text-sm text-gray-600 dark:text-slate-300">{item.message}</p>
+                      <p className="line-clamp-2 text-sm text-gray-600 dark:text-slate-300">
+                        {item.message}
+                      </p>
                       <div className="mt-2 flex items-center justify-between">
-                        <p className="text-xs text-gray-400 dark:text-slate-400">{item.createdAt}</p>
+                        <p className="text-xs text-gray-400 dark:text-slate-400">
+                          {item.createdAt}
+                        </p>
                         <div className="flex items-center gap-2">
                           {!item.read ? (
                             <button
@@ -359,7 +392,9 @@ function ToggleRow({
   return (
     <div className="flex items-center justify-between gap-3 py-2">
       <div>
-        <p className="text-sm font-medium text-[#0B1F3A] dark:text-slate-100">{label}</p>
+        <p className="text-sm font-medium text-[#0B1F3A] dark:text-slate-100">
+          {label}
+        </p>
         <p className="text-xs text-slate-500 dark:text-slate-400">{desc}</p>
       </div>
       <button

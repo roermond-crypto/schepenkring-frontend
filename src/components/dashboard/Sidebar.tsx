@@ -4,10 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Anchor,
   BarChart3,
-  Calendar,
   ClipboardList,
+  Bot,
   Gauge,
   ChevronLeft,
   ChevronRight,
@@ -89,6 +88,15 @@ export function Sidebar({
     ];
 
     if (role === "admin") {
+      items.push({ title: t.users, href: `${root}/users`, icon: Users });
+      items.push({ title: t.copilot, href: `${root}/copilot`, icon: Bot });
+      items.push({
+        title: t.harborPerformance,
+        href: `${root}/harbors/performance`,
+        icon: Gauge,
+      });
+      items.push({ title: t.audit, href: `${root}/audit`, icon: ShieldAlert });
+      items.push({ title: t.errors, href: `${root}/errors`, icon: TriangleAlert });
       items.splice(
         4,
         0,
@@ -107,18 +115,18 @@ export function Sidebar({
       );
     }
 
+    items.push({ title: t.settings, href: `${root}/account`, icon: Settings });
+
     return items;
   }, [
     role,
     root,
     t.audit,
+    t.copilot,
     t.boats,
     t.errors,
-    t.harbor,
     t.harborPerformance,
-    t.interaction,
     t.overview,
-    t.schedule,
     t.settings,
     t.socialAutomation,
     t.tasks,

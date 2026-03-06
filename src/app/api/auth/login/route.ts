@@ -6,11 +6,19 @@ import { getBackendApiClient } from "@/lib/server/backend-api";
 
 type BackendAuthResponse = {
   token?: string;
-  user?: {
-    id: string;
+  data?: {
+    id: string | number;
     name: string;
     email: string;
-    role: string;
+    role?: string;
+    type?: string;
+  };
+  user?: {
+    id: string | number;
+    name: string;
+    email: string;
+    role?: string;
+    type?: string;
   };
   step_up_required?: boolean;
   otp_challenge_id?: string;
@@ -26,6 +34,7 @@ export async function POST(request: NextRequest) {
       email?: string;
       password?: string;
       remember_terminal?: boolean;
+      device_name?: string;
     };
     const email = body.email?.trim();
     const password = body.password;
@@ -46,6 +55,7 @@ export async function POST(request: NextRequest) {
       email,
       password,
       remember_terminal: Boolean(body.remember_terminal),
+      device_name: body.device_name ?? "web",
     });
 
     const payload = backendResponse.data;
@@ -64,11 +74,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!payload.token || !payload.user) {
+    const backendUser = payload.data ?? payload.user;
+    if (!payload.token || !backendUser) {
       return NextResponse.json({ message: "Invalid login response" }, { status: 500 });
     }
 
-    const normalizedRole = normalizeRole(payload.user.role);
+    const normalizedRole = normalizeRole(backendUser.role ?? backendUser.type ?? null);
 
     if (!normalizedRole) {
       return NextResponse.json({ message: "Unsupported user role" }, { status: 403 });
@@ -77,11 +88,12 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       {
         user: {
-          id: payload.user.id,
-          name: payload.user.name,
-          email: payload.user.email,
+          id: String(backendUser.id),
+          name: backendUser.name,
+          email: backendUser.email,
           role: normalizedRole,
         },
+        token: payload.token,
       },
       { status: 200 },
     );
@@ -89,9 +101,9 @@ export async function POST(request: NextRequest) {
     setAuthCookies(response, {
       token: payload.token,
       user: {
-        id: payload.user.id,
-        name: payload.user.name,
-        email: payload.user.email,
+        id: String(backendUser.id),
+        name: backendUser.name,
+        email: backendUser.email,
         role: normalizedRole,
       },
     });

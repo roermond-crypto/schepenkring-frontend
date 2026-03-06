@@ -5,7 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  getPublicLocations,
   login,
+  type PublicLocation,
   signup,
   verifyStepUp,
   type StepUpChallengeResponse,
@@ -81,9 +83,14 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   const [stepUpCode, setStepUpCode] = useState("");
   const [stepUpChallenge, setStepUpChallenge] =
     useState<StepUpChallenge | null>(null);
+  const [locations, setLocations] = useState<PublicLocation[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
+    location_id: "",
+    website: "",
     password: "",
     confirmPassword: "",
   });
@@ -92,6 +99,34 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     const modeParam = searchParams.get("mode");
     setMode(modeParam === "register" ? "register" : "login");
   }, [searchParams]);
+
+  useEffect(() => {
+    if (mode !== "register") return;
+    let mounted = true;
+
+    async function loadLocations() {
+      setLoadingLocations(true);
+      try {
+        const next = await getPublicLocations();
+        if (!mounted) return;
+        setLocations(Array.isArray(next) ? next : []);
+        setFormData((prev) => ({
+          ...prev,
+          location_id:
+            prev.location_id || (next.length ? String(next[0].id) : ""),
+        }));
+      } catch {
+        if (mounted) setLocations([]);
+      } finally {
+        if (mounted) setLoadingLocations(false);
+      }
+    }
+
+    void loadLocations();
+    return () => {
+      mounted = false;
+    };
+  }, [mode]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("pending_step_up_challenge");
@@ -107,7 +142,9 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     }
   }, []);
 
-  function onInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function onInputChange(
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
@@ -133,6 +170,11 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     const data = response as Record<string, unknown>;
 
     const token = typeof data.token === "string" ? data.token : null;
+    const nestedData =
+      data.data && typeof data.data === "object"
+        ? (data.data as Record<string, unknown>)
+        : null;
+
     const nestedUser =
       data.user && typeof data.user === "object"
         ? (data.user as Record<string, unknown>)
@@ -140,17 +182,21 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
 
     const role = normalizeRole(
       (nestedUser?.role as string | undefined) ??
+        ((nestedData?.type as string | undefined)?.toLowerCase()) ??
         (data.userType as string | undefined) ??
         (data.role as string | undefined) ??
         null,
     );
     const id =
+      (nestedData?.id as string | number | undefined) ??
       (nestedUser?.id as string | number | undefined) ??
       (data.id as string | number | undefined);
     const name =
+      (nestedData?.name as string | undefined) ??
       (nestedUser?.name as string | undefined) ??
       (data.name as string | undefined);
     const email =
+      (nestedData?.email as string | undefined) ??
       (nestedUser?.email as string | undefined) ??
       (data.email as string | undefined);
 
@@ -230,6 +276,9 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     const response = await signup({
       name: formData.name,
       email: formData.email,
+      phone: formData.phone || undefined,
+      location_id: formData.location_id ? Number(formData.location_id) : undefined,
+      website: formData.website,
       password: formData.password,
     });
 
@@ -360,6 +409,47 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                 className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
               />
             ) : null}
+
+            {mode !== "login" ? (
+              <input
+                name="phone"
+                type="tel"
+                placeholder="Phone"
+                value={formData.phone}
+                onChange={onInputChange}
+                className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
+              />
+            ) : null}
+
+            {mode !== "login" ? (
+              <select
+                name="location_id"
+                value={formData.location_id}
+                onChange={onInputChange}
+                required
+                className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
+              >
+                <option value="" disabled>
+                  {loadingLocations ? "Loading locations..." : "Select location"}
+                </option>
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id} className="text-slate-900">
+                    {location.name}
+                    {location.code ? ` (${location.code})` : ""}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+
+            <input
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={formData.website}
+              onChange={onInputChange}
+              className="hidden"
+            />
 
             <input
               name="email"
