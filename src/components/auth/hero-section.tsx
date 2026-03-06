@@ -79,7 +79,8 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [stepUpCode, setStepUpCode] = useState("");
-  const [stepUpChallenge, setStepUpChallenge] = useState<StepUpChallenge | null>(null);
+  const [stepUpChallenge, setStepUpChallenge] =
+    useState<StepUpChallenge | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -121,7 +122,10 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     };
 
     setStepUpChallenge(nextChallenge);
-    sessionStorage.setItem("pending_step_up_challenge", JSON.stringify(nextChallenge));
+    sessionStorage.setItem(
+      "pending_step_up_challenge",
+      JSON.stringify(nextChallenge),
+    );
   }
 
   function resolveAuthPayload(response: unknown): AuthPayload | null {
@@ -134,11 +138,21 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
         ? (data.user as Record<string, unknown>)
         : null;
 
-    const role =
-      normalizeRole((nestedUser?.role as string | undefined) ?? (data.userType as string | undefined) ?? (data.role as string | undefined) ?? null);
-    const id = (nestedUser?.id as string | number | undefined) ?? (data.id as string | number | undefined);
-    const name = (nestedUser?.name as string | undefined) ?? (data.name as string | undefined);
-    const email = (nestedUser?.email as string | undefined) ?? (data.email as string | undefined);
+    const role = normalizeRole(
+      (nestedUser?.role as string | undefined) ??
+        (data.userType as string | undefined) ??
+        (data.role as string | undefined) ??
+        null,
+    );
+    const id =
+      (nestedUser?.id as string | number | undefined) ??
+      (data.id as string | number | undefined);
+    const name =
+      (nestedUser?.name as string | undefined) ??
+      (data.name as string | undefined);
+    const email =
+      (nestedUser?.email as string | undefined) ??
+      (data.email as string | undefined);
 
     if (!token || !role || id === undefined || !name || !email) return null;
 
@@ -222,7 +236,9 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     if ("verification_required" in response && response.verification_required) {
       setSuccess(response.message ?? copy.verificationCodeSent);
       setTimeout(() => {
-        router.push(`/${locale}/auth/verify-email?email=${encodeURIComponent(response.email)}`);
+        router.push(
+          `/${locale}/auth/verify-email?email=${encodeURIComponent(response.email)}`,
+        );
       }, 600);
       return;
     }
@@ -273,20 +289,26 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
       </div>
 
       <div className="relative flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-slate-900 lg:flex-row">
-        <div className="relative flex h-48 items-center justify-center overflow-hidden p-8 lg:h-auto lg:w-1/2">
+        <div className="relative lg:w-1/2 h-48 lg:h-auto flex items-center justify-center p-8 overflow-hidden">
+          {/* Background Image */}
           <Image
-            src="/hero-image-two.jpg"
-            alt="Schepenkring Hero"
+            alt=""
+            src={"/boatslogo.jpg"}
             fill
-            priority
             className="object-cover"
+            priority
           />
-          <div className="absolute inset-0 bg-[#001d3d]/65" />
-          <div className="relative z-10 text-center text-white">
-            <p className="text-xs tracking-[0.25em] uppercase opacity-80">Schepenkring</p>
-            <h1 className="mt-3 text-3xl font-bold">CRM</h1>
-            <p className="mt-2 text-xs font-medium uppercase tracking-[0.12em] opacity-80">{copy.heroTitle}</p>
-            <p className="mt-3 text-sm opacity-80">{copy.heroSubtitle}</p>
+
+          {/* Overlay Logo (Centered) */}
+          <div className="relative z-10">
+            <Image
+              src={"/schepenkring-logo.png"}
+              alt={""}
+              width={240}
+              height={68}
+              className="object-contain"
+              priority
+            />
           </div>
         </div>
 
@@ -390,12 +412,15 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(event) => setRememberMe(event.target.checked)}
-                  className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 text-[#003566] focus:ring-[#003566]"
-                />
+                    className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 text-[#003566] focus:ring-[#003566]"
+                  />
                   <span>{copy.rememberTerminal}</span>
                 </label>
 
-                <Link href={`/${locale}/auth/verify-email`} className="text-xs text-gray-600 hover:text-[#003566] dark:text-slate-300">
+                <Link
+                  href={`/${locale}/auth/verify-email`}
+                  className="text-xs text-gray-600 hover:text-[#003566] dark:text-slate-300"
+                >
                   {copy.verifyEmail}
                 </Link>
               </div>
