@@ -481,5 +481,69 @@
       "due": "Vervalt",
       "overdue": "TE LAAT"
     }
+  },
+  "lockscreen": {
+    "pinPlaceholder": "PIN",
+    "welcomeBack": "Welkom terug",
+    "incorrectPin": "Onjuiste PIN",
+    "unlock": "Ontgrendel",
+    "logout": "Uitloggen",
+    "fallbackUser": "Gebruiker",
+    "profileAlt": "Profiel",
+    "lockNow": "Nu Vergrendelen",
+    "screenLocked": "Scherm vergrendeld"
+  },
+  "DashboardChat": {
+    "mobile": {
+      "conversations": "Conversaties",
+      "contact": "Contact"
+    },
+    "empty": {
+      "title": "Welkom bij Chat",
+      "description": "Selecteer een conversatie in het linkerpaneel om te beginnen met chatten. Je ziet hier berichten en contactgegevens."
+    },
+    "list": {
+      "title": "Berichten",
+      "count": "{count} conversatie(s)",
+      "searchPlaceholder": "Zoek conversaties...",
+      "emptyTitle": "Geen conversaties",
+      "emptySearch": "Probeer een andere zoekopdracht",
+      "emptyDefault": "Helemaal bijgewerkt!",
+      "widgetSource": "widget",
+      "tabs": {
+        "all": "Alle",
+        "open": "Open",
+        "pending": "In afwachting",
+        "solved": "Opgelost"
+      },
+      "time": {
+        "now": "nu",
+        "minutes": "{count}m",
+        "hours": "{count}u",
+        "days": "{count}d"
+      }
+    },
+    "messages": {
+      "today": "Vandaag",
+      "aiDraftReply": "AI Concept Antwoord",
+      "summarize": "Samenvatten",
+      "typePlaceholder": "Typ je bericht...",
+      "callAction": "Gesprek starten",
+      "callUnavailable": "Geen telefoonnummer beschikbaar",
+      "callFailed": "Kon gesprek niet starten. Probeer het opnieuw.",
+      "status": {
+        "open": "Open",
+        "pending": "In afwachting",
+        "solved": "Opgelost"
+      }
+    },
+    "detail": {
+      "contactInfo": "Contactgegevens",
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "location": "Locatie",
+      "company": "Bedrijf",
+      "sourceUrl": "Bron URL"
+    }
   }
 }

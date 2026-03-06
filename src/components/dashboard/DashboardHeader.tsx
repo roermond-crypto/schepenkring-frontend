@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { LogOut, Menu, Moon, Sun } from "lucide-react";
+import { Lock, LogOut, Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { toast } from "react-hot-toast";
 import { LanguageSwitcher } from "@/components/common/language-switcher";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 import type { UserRole } from "@/lib/auth/roles";
+import { lockScreenNow } from "@/lib/lockscreen";
 import Link from "next/link";
 
 type DashboardHeaderProps = {
@@ -29,9 +31,15 @@ export function DashboardHeader({
   const { resolvedTheme, setTheme } = useTheme();
   const dictionary = getDictionary(locale);
   const tHeader = dictionary.dashboard.header;
+  const tLock = dictionary.lockscreen;
 
   const toggleTheme = () =>
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
+
+  const handleManualLock = () => {
+    lockScreenNow("manual");
+    toast.success(tLock.screenLocked);
+  };
 
   const initials = (userName || tHeader.userFallback)
     .split(" ")
@@ -85,6 +93,16 @@ export function DashboardHeader({
           ) : (
             <Moon className="h-4 w-4" />
           )}
+        </button>
+
+        {/* Lock button */}
+        <button
+          type="button"
+          onClick={handleManualLock}
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-[#d6e1ee] bg-white text-[#0B1F3A] transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+          aria-label={tLock.lockNow}
+        >
+          <Lock className="h-4 w-4" />
         </button>
 
         <NotificationBell locale={locale} role={role} />

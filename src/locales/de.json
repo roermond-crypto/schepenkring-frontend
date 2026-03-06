@@ -481,5 +481,69 @@
       "due": "Fällig",
       "overdue": "ÜBERFÄLLIG"
     }
+  },
+  "lockscreen": {
+    "pinPlaceholder": "PIN",
+    "welcomeBack": "Willkommen zurück",
+    "incorrectPin": "Falsche PIN",
+    "unlock": "Entsperren",
+    "logout": "Abmelden",
+    "fallbackUser": "Benutzer",
+    "profileAlt": "Profil",
+    "lockNow": "Jetzt sperren",
+    "screenLocked": "Bildschirm gesperrt"
+  },
+  "DashboardChat": {
+    "mobile": {
+      "conversations": "Gespräche",
+      "contact": "Kontakt"
+    },
+    "empty": {
+      "title": "Willkommen im Chat",
+      "description": "Wählen Sie ein Gespräch aus dem linken Bereich aus, um zu chatten. Hier sehen Sie Nachrichten und Kontaktdetails."
+    },
+    "list": {
+      "title": "Nachrichten",
+      "count": "{count} Gespräch(e)",
+      "searchPlaceholder": "Gespräche suchen...",
+      "emptyTitle": "Keine Gespräche",
+      "emptySearch": "Versuchen Sie eine andere Suche",
+      "emptyDefault": "Alles auf dem neuesten Stand!",
+      "widgetSource": "Widget",
+      "tabs": {
+        "all": "Alle",
+        "open": "Offen",
+        "pending": "Ausstehend",
+        "solved": "Gelöst"
+      },
+      "time": {
+        "now": "jetzt",
+        "minutes": "{count}m",
+        "hours": "{count}Std",
+        "days": "{count}T"
+      }
+    },
+    "messages": {
+      "today": "Heute",
+      "aiDraftReply": "KI-Antwurf",
+      "summarize": "Zusammenfassen",
+      "typePlaceholder": "Nachricht eingeben...",
+      "callAction": "Anruf starten",
+      "callUnavailable": "Keine Telefonnummer verfügbar",
+      "callFailed": "Anruf fehlgeschlagen. Versuchen Sie es erneut.",
+      "status": {
+        "open": "Offen",
+        "pending": "Ausstehend",
+        "solved": "Gelöst"
+      }
+    },
+    "detail": {
+      "contactInfo": "Kontaktinfo",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "location": "Standort",
+      "company": "Unternehmen",
+      "sourceUrl": "Quell-URL"
+    }
   }
 }

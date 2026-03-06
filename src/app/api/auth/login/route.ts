@@ -102,9 +102,9 @@ export async function POST(request: NextRequest) {
       const status = error.response?.status ?? 500;
       const message =
         typeof error.response?.data === "object" &&
-        error.response?.data &&
-        "message" in error.response.data &&
-        typeof error.response.data.message === "string"
+          error.response?.data &&
+          "message" in error.response.data &&
+          typeof error.response.data.message === "string"
           ? error.response.data.message
           : "Invalid credentials";
 

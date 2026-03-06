@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { isSupportedLocale } from "@/lib/i18n";
+import { ChatWidget } from "@/components/widget/ChatWidget";
 
 type LocaleLayoutProps = {
   children: React.ReactNode;
@@ -13,5 +14,10 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     notFound();
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      <ChatWidget />
+    </>
+  );
 }

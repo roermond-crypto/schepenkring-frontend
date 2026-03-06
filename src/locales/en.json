@@ -93,7 +93,7 @@
       "schedule": "Schedule",
       "tasks": "Tasks",
       "harbor": "Harbor",
-      "interaction": "Interaction",
+      "interaction": "Chat",
       "settings": "Settings",
       "terminalSuffix": "Terminal",
       "online": "Online",
@@ -480,6 +480,70 @@
       "me": "Me",
       "due": "Due",
       "overdue": "OVERDUE"
+    }
+  },
+  "lockscreen": {
+    "pinPlaceholder": "PIN",
+    "welcomeBack": "Welcome back",
+    "incorrectPin": "Incorrect PIN",
+    "unlock": "Unlock",
+    "logout": "Log out",
+    "fallbackUser": "User",
+    "profileAlt": "Profile",
+    "lockNow": "Lock Now",
+    "screenLocked": "Screen locked"
+  },
+  "DashboardChat": {
+    "mobile": {
+      "conversations": "Conversations",
+      "contact": "Contact"
+    },
+    "empty": {
+      "title": "Welcome to Chat",
+      "description": "Select a conversation from the left panel to start chatting. You will see messages and contact details here."
+    },
+    "list": {
+      "title": "Messages",
+      "count": "{count} conversation(s)",
+      "searchPlaceholder": "Search conversations...",
+      "emptyTitle": "No conversations",
+      "emptySearch": "Try a different search",
+      "emptyDefault": "All caught up!",
+      "widgetSource": "widget",
+      "tabs": {
+        "all": "All",
+        "open": "Open",
+        "pending": "Pending",
+        "solved": "Solved"
+      },
+      "time": {
+        "now": "now",
+        "minutes": "{count}m",
+        "hours": "{count}h",
+        "days": "{count}d"
+      }
+    },
+    "messages": {
+      "today": "Today",
+      "aiDraftReply": "AI Draft Reply",
+      "summarize": "Summarize",
+      "typePlaceholder": "Type your message...",
+      "callAction": "Start call",
+      "callUnavailable": "No phone number available",
+      "callFailed": "Could not start the call. Try again.",
+      "status": {
+        "open": "Open",
+        "pending": "Pending",
+        "solved": "Solved"
+      }
+    },
+    "detail": {
+      "contactInfo": "Contact Info",
+      "email": "Email",
+      "phone": "Phone",
+      "location": "Location",
+      "company": "Company",
+      "sourceUrl": "Source URL"
     }
   }
 }

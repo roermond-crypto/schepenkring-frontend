@@ -82,7 +82,7 @@ export function Sidebar({
       { title: t.users, href: `${root}/users`, icon: Users },
       { title: t.schedule, href: `${root}/onboarding`, icon: Calendar },
       { title: t.harbor, href: `${root}/emails`, icon: Anchor },
-      { title: t.interaction, href: `${root}/emails`, icon: MessageSquare },
+      { title: t.interaction, href: `${root}/chat`, icon: MessageSquare },
       { title: t.settings, href: `${root}/onboarding`, icon: Settings },
       { title: t.tasks, href: `${root}/tasks`, icon: ClipboardList },
     ];
