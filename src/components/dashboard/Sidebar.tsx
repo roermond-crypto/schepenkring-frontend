@@ -11,6 +11,7 @@ import {
   ChevronRight,
   LogOut,
   MessageSquare,
+  Ship,
   Settings,
   Users,
   Wifi,
@@ -73,13 +74,14 @@ export function Sidebar({
   const menuItems = useMemo<MenuItem[]>(
     () => [
       { title: t.overview, href: root, icon: BarChart3 },
+      { title: t.boats, href: `${root}/yachts`, icon: Ship },
       { title: t.users, href: `${root}/users`, icon: Users },
       { title: t.schedule, href: `${root}/onboarding`, icon: Calendar },
       { title: t.harbor, href: `${root}/emails`, icon: Anchor },
       { title: t.interaction, href: `${root}/emails`, icon: MessageSquare },
       { title: t.settings, href: `${root}/onboarding`, icon: Settings },
     ],
-    [root, t.harbor, t.interaction, t.overview, t.schedule, t.settings, t.users],
+    [root, t.boats, t.harbor, t.interaction, t.overview, t.schedule, t.settings, t.users],
   );
 
   const navContent = (
