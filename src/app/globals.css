@@ -136,3 +136,74 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .copied-admin-theme [class*="rounded-3xl"][class*="border"],
+  .copied-admin-theme [class*="rounded-2xl"][class*="border"],
+  .copied-admin-theme [class*="rounded-xl"][class*="border"] {
+    border-color: #dbe7f5;
+  }
+
+  .copied-admin-theme [class*="rounded-3xl"][class*="border"] {
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+  }
+
+  .dark .copied-admin-theme {
+    color: #e2e8f0;
+  }
+
+  .dark .copied-admin-theme [class*="bg-gradient-to-"] {
+    background-image: linear-gradient(135deg, #0f172a, #111827) !important;
+  }
+
+  .dark .copied-admin-theme [class*="bg-white"],
+  .dark .copied-admin-theme [class*="bg-slate-50"],
+  .dark .copied-admin-theme [class*="bg-slate-100"],
+  .dark .copied-admin-theme [class*="bg-[#EFF4FF]"],
+  .dark .copied-admin-theme [class*="bg-[#F8FBFF]"],
+  .dark .copied-admin-theme [class*="bg-[#EAF3FF]"],
+  .dark .copied-admin-theme [class*="bg-[#f1f2f4]"] {
+    background-color: #0f172a !important;
+  }
+
+  .dark .copied-admin-theme [class*="text-slate-9"],
+  .dark .copied-admin-theme [class*="text-slate-8"],
+  .dark .copied-admin-theme [class*="text-slate-7"],
+  .dark .copied-admin-theme [class*="text-slate-6"],
+  .dark .copied-admin-theme [class*="text-slate-5"],
+  .dark .copied-admin-theme [class*="text-[#0B1F3A]"],
+  .dark .copied-admin-theme [class*="text-[#003566]"],
+  .dark .copied-admin-theme [class*="text-[#1E3A8A]"] {
+    color: #e2e8f0 !important;
+  }
+
+  .dark .copied-admin-theme [class*="border-slate-"],
+  .dark .copied-admin-theme [class*="border-[#B"],
+  .dark .copied-admin-theme [class*="border-[#C"],
+  .dark .copied-admin-theme [class*="border-[#D"] {
+    border-color: #334155 !important;
+  }
+
+  .dark .copied-admin-theme input,
+  .dark .copied-admin-theme select,
+  .dark .copied-admin-theme textarea {
+    background-color: #0b1220 !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+  }
+
+  .dark .copied-admin-theme input::placeholder,
+  .dark .copied-admin-theme textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  .dark .copied-admin-theme table thead,
+  .dark .copied-admin-theme table tbody,
+  .dark .copied-admin-theme table tr,
+  .dark .copied-admin-theme table td,
+  .dark .copied-admin-theme table th {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+  }
+}

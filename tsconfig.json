@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "next-intl": ["./src/shims/next-intl"]
     }
   },
   "include": [

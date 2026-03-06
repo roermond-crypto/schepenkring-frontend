@@ -91,6 +91,7 @@
       "overview": "Overzicht",
       "users": "Gebruikers",
       "schedule": "Planning",
+      "tasks": "Taken",
       "harbor": "Haven",
       "interaction": "Interactie",
       "settings": "Instellingen",
@@ -99,7 +100,10 @@
       "offline": "Offline",
       "logout": "Uitloggen",
       "expand": "Sidebar uitklappen",
-      "collapse": "Sidebar inklappen"
+      "collapse": "Sidebar inklappen",
+      "audit": "Audit",
+      "errors": "Fouten",
+      "harborPerformance": "Haven prestaties"
     },
     "notifications": {
       "label": "Meldingen",
@@ -117,6 +121,365 @@
       "minutesAgo": "m geleden",
       "hoursAgo": "u geleden",
       "daysAgo": "d geleden"
+    }
+  },
+  "DashboardAdminOverview": {
+    "title": "Admin-overzicht",
+    "welcomeBack": "Welkom terug, {name}",
+    "todayWeather": "Vandaag: 18° zonnig in Eindhoven",
+    "activeBiddingItems": "Je hebt {count} actief{count, plural, one {} other {e}} bieding{count, plural, one {} other {en}}.",
+    "liveSync": "Live synchronisatie",
+    "refresh": "Verversen",
+    "weeklyTrend": "Wekelijkse trend",
+    "viewDetails": "Bekijk details",
+    "trends": {
+      "thisWeek": "deze week",
+      "fromYesterday": "ten opzichte van gisteren",
+      "thisMonth": "deze maand"
+    },
+    "stats": {
+      "activeBids": "Actieve biedingen",
+      "pendingManifest": "Wachtend manifest",
+      "fleetInIntake": "Vloot in intake",
+      "completedSales": "Voltooide verkopen"
+    },
+    "snapshot": {
+      "boatsInIntake": "Schepen in intake",
+      "avgDaysToSale": "Gem. dagen tot verkoop",
+      "daysSuffix": " dagen",
+      "conversion": "Conversie",
+      "revenueThisMonth": "Omzet deze maand"
+    },
+    "sections": {
+      "businessInsights": "Bedrijfsinzichten",
+      "performanceSnapshot": "Prestatieoverzicht",
+      "marketPulse": "Marktbeeld",
+      "recentBiddingActivity": "Recente biedactiviteit",
+      "liveDiagnostics": "Live diagnostiek",
+      "systemAudit": "Systeemaudit"
+    },
+    "actions": {
+      "viewBiddings": "Bekijk biedingen"
+    },
+    "schedule": {
+      "live": "Live planning",
+      "title": "Boekingen en proefvaarten",
+      "prev": "Vorige",
+      "next": "Volgende",
+      "upcoming": "Aankomende afspraken",
+      "empty": "Geen boekings- of proefvaartgegevens uit de API.",
+      "booking": "Boeking",
+      "testDrive": "Proefvaart",
+      "yacht": "Schip",
+      "locationUnavailable": "Locatie niet beschikbaar",
+      "openFull": "Volledige planning openen"
+    },
+    "labels": {
+      "registry": "Register",
+      "unknown": "Onbekend",
+      "currentBid": "Huidig bod"
+    },
+    "audit": {
+      "ok": "OK",
+      "warning": "Waarschuwing",
+      "error": "Fout",
+      "taskUpdate": "Taakupdate",
+      "operatorAction": "Operatoractie",
+      "autoSystemEvent": "Automatische systeemgebeurtenis",
+      "on": "op",
+      "globalFleet": "Wereldwijde vloot"
+    },
+    "empty": {
+      "noRecentBiddingTitle": "Geen recente biedactiviteit",
+      "noRecentBiddingSubtitle": "Start een biedproces om hier live updates te zien.",
+      "noSystemLogs": "Nog geen recente systeemlogs."
+    },
+    "defaults": {
+      "userName": "Martijn"
+    }
+  },
+  "DashboardAdminAudit": {
+    "header": {
+      "title": "Systeemauditlog",
+      "subtitle": "Volg alle systeemactiviteiten en wijzigingen in realtime"
+    },
+    "actions": {
+      "filters": "Filters",
+      "refresh": "Verversen",
+      "exportCsv": "CSV exporteren"
+    },
+    "stats": {
+      "totalEvents": "Totaal gebeurtenissen",
+      "eventTypes": "Gebeurtenistypes",
+      "entityTypes": "Entiteitstypes",
+      "recentActivity": "Recente activiteit"
+    },
+    "filters": {
+      "title": "Geavanceerde filters",
+      "searchLogs": "Zoek logs",
+      "searchPlaceholder": "Zoek beschrijvingen, gebruikers, IP's...",
+      "fromDate": "Vanaf datum",
+      "toDate": "Tot datum",
+      "eventTypes": "Gebeurtenistypes",
+      "entityTypes": "Entiteitstypes",
+      "clearAll": "Wis alle filters ({count})"
+    },
+    "errors": {
+      "title": "Fout bij laden van gegevens",
+      "loadStats": "Laden van systeemstatistieken mislukt",
+      "loadLogs": "Laden van systeemlogs mislukt"
+    },
+    "logs": {
+      "title": "Activiteitslogs",
+      "showing": "Toont {from} - {to} van {total}",
+      "loading": "Activiteitslogs laden..."
+    },
+    "details": {
+      "userInformation": "Gebruikersinformatie",
+      "systemAction": "Systeemactie",
+      "name": "Naam",
+      "email": "E-mail",
+      "role": "Rol",
+      "action": "Actie",
+      "systemAutomatedAction": "Geautomatiseerde systeemactie",
+      "technicalDetails": "Technische details",
+      "entityDetails": "Entiteitsdetails",
+      "timestamp": "Tijdstempel",
+      "ipAddress": "IP-adres",
+      "changesMade": "Aangebrachte wijzigingen"
+    },
+    "systemUser": "Systeem",
+    "empty": {
+      "title": "Geen activiteitslogs gevonden",
+      "filtered": "Er zijn geen activiteitslogs die overeenkomen met je huidige filters. Probeer je zoekcriteria aan te passen.",
+      "default": "Er zijn nog geen activiteitslogs beschikbaar. Begin met het aanmaken van taken, het bijwerken van jachten of laat gebruikers inloggen."
+    },
+    "pagination": {
+      "resultsSummary": "Toont {from} tot {to} van {total} resultaten",
+      "firstPage": "Eerste pagina",
+      "previousPage": "Vorige pagina",
+      "nextPage": "Volgende pagina",
+      "lastPage": "Laatste pagina"
+    }
+  },
+  "DashboardAdminHarborPerformance": {
+    "hero": {
+      "kicker": "Havenanalyse",
+      "title": "Havenprestaties",
+      "description": "Vergelijk bereik, funnelconversie en commissieprestaties van alle havenpartners."
+    },
+    "actions": {
+      "refresh": "Verversen"
+    },
+    "stats": {
+      "users": "Gebruikers",
+      "impressions": "Vertoningen",
+      "clicks": "Klikken",
+      "deals": "Deals",
+      "commission": "Commissie"
+    },
+    "filters": {
+      "range": {
+        "7d": "Laatste 7 dagen",
+        "30d": "Laatste 30 dagen",
+        "90d": "Laatste 90 dagen"
+      },
+      "allCountries": "Alle landen",
+      "allDevices": "Alle apparaten",
+      "allSources": "Alle bronnen",
+      "countries": {
+        "nl": "Nederland (NL)",
+        "de": "Duitsland (DE)",
+        "be": "België (BE)"
+      },
+      "devices": {
+        "mobile": "Mobiel",
+        "desktop": "Desktop",
+        "tablet": "Tablet"
+      },
+      "sources": {
+        "googleOrganic": "Google organisch",
+        "googleAds": "Google Ads",
+        "facebookPaid": "Facebook betaald",
+        "instagramPaid": "Instagram betaald",
+        "direct": "Direct"
+      }
+    },
+    "table": {
+      "harbor": "Haven",
+      "users": "Gebruikers",
+      "impressions": "Vertoningen",
+      "clicks": "Klikken",
+      "forms": "Formulieren",
+      "submitted": "Verzonden",
+      "deals": "Deals",
+      "commission": "Commissie",
+      "benchmark": "Benchmark",
+      "rank": "Rang",
+      "avgCtr": "Gem. CTR {value}"
+    },
+    "states": {
+      "error": "Havenprestaties konden niet worden geladen.",
+      "empty": "Er zijn geen havenprestatiegegevens beschikbaar voor de huidige filters."
+    },
+    "panels": {
+      "reach": {
+        "title": "Bereik",
+        "description": "GA4 blijft de bron voor gebruikers, sessies en interactietrends in havenkampagnes."
+      },
+      "funnel": {
+        "title": "Funnel",
+        "description": "Funnelstatistieken combineren widgetvertoningen en klikken met inzendingen en afgeronde deals in het platform."
+      },
+      "revenue": {
+        "title": "Omzetbasis",
+        "description": "Commissieranglijsten gebruiken omzettoewijzing uit je database, niet uit GA4, zodat partnervergelijkingen correct blijven."
+      }
+    }
+  },
+  "DashboardAdminTasks": {
+    "title": "Taakoverzicht",
+    "subtitle": "Vlootbeheer en aansturing",
+    "loading": "Taken laden...",
+    "errors": {
+      "noToken": "Geen token"
+    },
+    "toasts": {
+      "authRequired": "Authenticatie vereist",
+      "loadFailed": "Laden van gegevens mislukt",
+      "taskUpdated": "Taak bijgewerkt",
+      "taskCreated": "Taak aangemaakt",
+      "saveFailed": "Opslaan van taak mislukt",
+      "taskDeleted": "Taak verwijderd",
+      "deleteFailed": "Verwijderen van taak mislukt",
+      "statusUpdated": "Status bijgewerkt",
+      "statusFailed": "Bijwerken van status mislukt",
+      "assignmentAccepted": "Toewijzing geaccepteerd",
+      "acceptFailed": "Accepteren mislukt",
+      "assignmentRejected": "Toewijzing afgewezen",
+      "rejectFailed": "Afwijzen mislukt",
+      "commentAdded": "Opmerking toegevoegd",
+      "commentFailed": "Opmerking toevoegen mislukt",
+      "fileUploaded": "Bestand geüpload",
+      "uploadFailed": "Uploaden mislukt",
+      "fileDeleted": "Bestand verwijderd"
+    },
+    "confirm": {
+      "deleteTask": "Deze taak verwijderen?"
+    },
+    "prompts": {
+      "deleteAttachment": "Bijlage verwijderen?"
+    },
+    "calendar": {
+      "sun": "Zo",
+      "mon": "Ma",
+      "tue": "Di",
+      "wed": "Wo",
+      "thu": "Do",
+      "fri": "Vr",
+      "sat": "Za",
+      "today": "Vandaag",
+      "more": "meer"
+    },
+    "modal": {
+      "newTask": "Nieuwe taak",
+      "edit": "Bewerken",
+      "taskType": "Taaktype",
+      "assignedTask": "Toegewezen taak",
+      "personalTask": "Persoonlijke taak",
+      "taskTitle": "Taaktitel *",
+      "description": "Beschrijving",
+      "priority": "Prioriteit",
+      "dueDate": "Vervaldatum",
+      "assignTo": "Toewijzen aan",
+      "assignToEmployee": "Toewijzen aan medewerker (zelfde haven)",
+      "status": "Status",
+      "personalAutoAssign": "Persoonlijke taken worden automatisch aan jou toegewezen",
+      "attachments": "Bijlagen",
+      "activityLog": "Activiteitenlog"
+    },
+    "validation": {
+      "titleRequired": "Titel is verplicht",
+      "descriptionRequired": "Beschrijving is verplicht",
+      "dueDateRequired": "Vervaldatum is verplicht",
+      "assignEmployee": "Wijs een medewerker toe"
+    },
+    "placeholders": {
+      "taskTitle": "Voer taaktitel in...",
+      "description": "Voeg meer details of een checklist toe...",
+      "selectUser": "Selecteer gebruiker",
+      "searchTasks": "ZOEK TAKEN...",
+      "addComment": "Typ een opmerking..."
+    },
+    "views": {
+      "list": "Lijst",
+      "board": "Bord",
+      "calendar": "Kalender"
+    },
+    "stats": {
+      "activeTasks": "Actieve taken",
+      "priority": "Prioriteit",
+      "completedAssets": "Voltooide items",
+      "monthlyEfficiency": "Maandelijkse efficiëntie",
+      "todayEfficiency": "Efficiëntie van vandaag"
+    },
+    "filters": {
+      "status": "Status",
+      "priority": "Prioriteit",
+      "type": "Type",
+      "allStatus": "Alle statussen",
+      "allPriorities": "Alle prioriteiten",
+      "allTypes": "Alle types"
+    },
+    "priority": {
+      "low": "Laag",
+      "medium": "Middel",
+      "high": "Hoog",
+      "urgent": "Urgent",
+      "critical": "Kritiek"
+    },
+    "status": {
+      "todo": "Te doen",
+      "inProgress": "In uitvoering",
+      "done": "Gedaan",
+      "pending": "In afwachting"
+    },
+    "type": {
+      "assigned": "Toegewezen",
+      "personal": "Persoonlijk"
+    },
+    "actions": {
+      "newTask": "Nieuwe taak",
+      "hideDone": "Voltooide verbergen",
+      "showDone": "Voltooide tonen",
+      "close": "Sluiten",
+      "cancel": "Annuleren",
+      "createTask": "Taak aanmaken",
+      "updateTask": "Taak bijwerken",
+      "accept": "Accepteren",
+      "reject": "Afwijzen",
+      "markDone": "Markeer als gedaan",
+      "done": "Gedaan",
+      "reopen": "Opnieuw openen",
+      "addFile": "Bestand toevoegen",
+      "post": "Plaatsen"
+    },
+    "board": {
+      "dropHere": "Sleep taken hierheen"
+    },
+    "empty": {
+      "noTasks": "Geen taken gevonden",
+      "changeFilters": "Probeer je filters aan te passen",
+      "createFirst": "Maak je eerste taak aan"
+    },
+    "labels": {
+      "task": "Taak",
+      "noDate": "Geen datum",
+      "createdBy": "Aangemaakt door",
+      "na": "—",
+      "me": "Ik",
+      "due": "Vervalt",
+      "overdue": "TE LAAT"
     }
   }
 }

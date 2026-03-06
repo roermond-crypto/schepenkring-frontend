@@ -91,6 +91,7 @@
       "overview": "Ubersicht",
       "users": "Benutzer",
       "schedule": "Zeitplan",
+      "tasks": "Aufgaben",
       "harbor": "Hafen",
       "interaction": "Interaktion",
       "settings": "Einstellungen",
@@ -99,7 +100,10 @@
       "offline": "Offline",
       "logout": "Abmelden",
       "expand": "Sidebar ausklappen",
-      "collapse": "Sidebar einklappen"
+      "collapse": "Sidebar einklappen",
+      "audit": "Audit",
+      "errors": "Fehler",
+      "harborPerformance": "Hafenleistung"
     },
     "notifications": {
       "label": "Benachrichtigungen",
@@ -116,7 +120,366 @@
       "justNow": "Gerade eben",
       "minutesAgo": " Min.",
       "hoursAgo": " Std.",
-      "daysAgo": " T." 
+      "daysAgo": " T."
+    }
+  },
+  "DashboardAdminOverview": {
+    "title": "Admin-Übersicht",
+    "welcomeBack": "Willkommen zurück, {name}",
+    "todayWeather": "Heute: 18° Sonnig in Eindhoven",
+    "activeBiddingItems": "Sie haben {count} aktive Gebote {count, plural, one {Artikel} other {Artikel}}.",
+    "liveSync": "Live-Synchronisation",
+    "refresh": "Aktualisieren",
+    "weeklyTrend": "Wöchentlicher Trend",
+    "viewDetails": "Details anzeigen",
+    "trends": {
+      "thisWeek": "diese Woche",
+      "fromYesterday": "gestern",
+      "thisMonth": "diesen Monat"
+    },
+    "stats": {
+      "activeBids": "Aktive Gebote",
+      "pendingManifest": "Ausstehende Manifeste",
+      "fleetInIntake": "Flotte im Eingang",
+      "completedSales": "Abgeschlossene Verkäufe"
+    },
+    "snapshot": {
+      "boatsInIntake": "Boote im Eingang",
+      "avgDaysToSale": "Durchschnittliche Tage bis zum Verkauf",
+      "daysSuffix": " Tage",
+      "conversion": "Konversion",
+      "revenueThisMonth": "Umsatz diesen Monat"
+    },
+    "sections": {
+      "businessInsights": "Geschäftsinsight",
+      "performanceSnapshot": "Leistungsübersicht",
+      "marketPulse": "Marktpuls",
+      "recentBiddingActivity": "Kürzliche Gebotsaktivität",
+      "liveDiagnostics": "Live-Diagnose",
+      "systemAudit": "System-Audit"
+    },
+    "actions": {
+      "viewBiddings": "Gebote anzeigen"
+    },
+    "schedule": {
+      "live": "Live-Zeitplan",
+      "title": "Buchungen und Testfahrten",
+      "prev": "Zurück",
+      "next": "Weiter",
+      "upcoming": "Bevorstehende Termine",
+      "empty": "Keine Buchungs- oder Testfahrtdaten aus der API.",
+      "booking": "Buchung",
+      "testDrive": "Testfahrt",
+      "yacht": "Schiff",
+      "locationUnavailable": "Standort nicht verfügbar",
+      "openFull": "Vollständigen Zeitplan öffnen"
+    },
+    "labels": {
+      "registry": "Registrierung",
+      "unknown": "Unbekannt",
+      "currentBid": "Aktueller Gebot"
+    },
+    "audit": {
+      "ok": "OK",
+      "warning": "Warnung",
+      "error": "Fehler",
+      "taskUpdate": "Aufgabenaktualisierung",
+      "operatorAction": "Operatoraktion",
+      "autoSystemEvent": "Auto-Systemereignis",
+      "on": "Ein",
+      "globalFleet": "Globale Flotte"
+    },
+    "empty": {
+      "noRecentBiddingTitle": "Keine kürzliche Gebotsaktivität",
+      "noRecentBiddingSubtitle": "Starten Sie einen Gebotsprozess, um hier Echtzeit-Updates zu sehen.",
+      "noSystemLogs": "Noch keine kürzlichen Systemprotokolle."
+    },
+    "defaults": {
+      "userName": "Martijn"
+    }
+  },
+  "DashboardAdminAudit": {
+    "header": {
+      "title": "System-Audit-Protokoll",
+      "subtitle": "Verfolgen Sie alle Systemaktivitäten und Änderungen in Echtzeit"
+    },
+    "actions": {
+      "filters": "Filter",
+      "refresh": "Aktualisieren",
+      "exportCsv": "Als CSV exportieren"
+    },
+    "stats": {
+      "totalEvents": "Gesamtanzahl Ereignisse",
+      "eventTypes": "Ereignistypen",
+      "entityTypes": "Entitätstypen",
+      "recentActivity": "Letzte Aktivität"
+    },
+    "filters": {
+      "title": "Erweiterte Filter",
+      "searchLogs": "Protokolle suchen",
+      "searchPlaceholder": "Suche nach Beschreibungen, Benutzern, IP-Adressen...",
+      "fromDate": "Von Datum",
+      "toDate": "Bis Datum",
+      "eventTypes": "Ereignistypen",
+      "entityTypes": "Entitätstypen",
+      "clearAll": "Alle Filter löschen ({count})"
+    },
+    "errors": {
+      "title": "Fehler beim Laden der Daten",
+      "loadStats": "Systemstatistiken konnten nicht geladen werden",
+      "loadLogs": "Systemprotokolle konnten nicht geladen werden"
+    },
+    "logs": {
+      "title": "Aktivitätsprotokolle",
+      "showing": "Anzeigen von {from} bis {to} von {total}",
+      "loading": "Aktivitätsprotokolle werden geladen..."
+    },
+    "details": {
+      "userInformation": "Benutzerinformationen",
+      "systemAction": "Systemaktion",
+      "name": "Name",
+      "email": "E-Mail",
+      "role": "Rolle",
+      "action": "Aktion",
+      "systemAutomatedAction": "Systemautomatisierte Aktion",
+      "technicalDetails": "Technische Details",
+      "entityDetails": "Entitätsdetails",
+      "timestamp": "Zeitstempel",
+      "ipAddress": "IP-Adresse",
+      "changesMade": "Vorgenommene Änderungen"
+    },
+    "systemUser": "System",
+    "empty": {
+      "title": "Keine Aktivitätsprotokolle gefunden",
+      "filtered": "Keine Aktivitätsprotokolle entsprechen Ihren aktuellen Filtern. Versuchen Sie, Ihre Suchkriterien anzupassen.",
+      "default": "Es sind noch keine Aktivitätsprotokolle verfügbar. Beginnen Sie, indem Sie Aufgaben erstellen, Yachten aktualisieren oder Benutzer anmelden lassen."
+    },
+    "pagination": {
+      "resultsSummary": "Anzeigen von {from} bis {to} von {total} Ergebnissen",
+      "firstPage": "Erste Seite",
+      "previousPage": "Vorherige Seite",
+      "nextPage": "Nächste Seite",
+      "lastPage": "Letzte Seite"
+    }
+  },
+  "DashboardAdminHarborPerformance": {
+    "hero": {
+      "kicker": "Hafenanalyse",
+      "title": "Hafenleistung",
+      "description": "Vergleichen Sie Reichweite, Funnel-Conversion und Provisionsleistung aller Hafenpartner."
+    },
+    "actions": {
+      "refresh": "Aktualisieren"
+    },
+    "stats": {
+      "users": "Benutzer",
+      "impressions": "Impressionen",
+      "clicks": "Klicks",
+      "deals": "Abschlüsse",
+      "commission": "Provision"
+    },
+    "filters": {
+      "range": {
+        "7d": "Letzte 7 Tage",
+        "30d": "Letzte 30 Tage",
+        "90d": "Letzte 90 Tage"
+      },
+      "allCountries": "Alle Länder",
+      "allDevices": "Alle Geräte",
+      "allSources": "Alle Quellen",
+      "countries": {
+        "nl": "Niederlande (NL)",
+        "de": "Deutschland (DE)",
+        "be": "Belgien (BE)"
+      },
+      "devices": {
+        "mobile": "Mobil",
+        "desktop": "Desktop",
+        "tablet": "Tablet"
+      },
+      "sources": {
+        "googleOrganic": "Google organisch",
+        "googleAds": "Google Ads",
+        "facebookPaid": "Facebook bezahlt",
+        "instagramPaid": "Instagram bezahlt",
+        "direct": "Direkt"
+      }
+    },
+    "table": {
+      "harbor": "Hafen",
+      "users": "Benutzer",
+      "impressions": "Impressionen",
+      "clicks": "Klicks",
+      "forms": "Formulare",
+      "submitted": "Gesendet",
+      "deals": "Abschlüsse",
+      "commission": "Provision",
+      "benchmark": "Benchmark",
+      "rank": "Rang",
+      "avgCtr": "Durchschn. CTR {value}"
+    },
+    "states": {
+      "error": "Hafenleistung konnte nicht geladen werden.",
+      "empty": "Für die aktuellen Filter sind keine Hafenleistungsdaten verfügbar."
+    },
+    "panels": {
+      "reach": {
+        "title": "Reichweite",
+        "description": "GA4 bleibt die Quelle für Benutzer, Sitzungen und Interaktionstrends in Hafenkampagnen."
+      },
+      "funnel": {
+        "title": "Funnel",
+        "description": "Funnel-Metriken kombinieren Widget-Impressionen und Klicks mit Einsendungen und abgeschlossenen Deals in der Plattform."
+      },
+      "revenue": {
+        "title": "Umsatzbasis",
+        "description": "Das Provisionsranking verwendet Ihre Umsatzzuordnung aus der Datenbank, nicht aus GA4, damit Partnervergleiche korrekt bleiben."
+      }
+    }
+  },
+  "DashboardAdminTasks": {
+    "title": "Aufgabenüberwachung",
+    "subtitle": "Flottenmanagement & Befehl",
+    "loading": "Aufgaben werden geladen...",
+    "errors": {
+      "noToken": "Kein Token"
+    },
+    "toasts": {
+      "authRequired": "Authentifizierung erforderlich",
+      "loadFailed": "Daten konnten nicht geladen werden",
+      "taskUpdated": "Aufgabe aktualisiert",
+      "taskCreated": "Aufgabe erstellt",
+      "saveFailed": "Aufgabe konnte nicht gespeichert werden",
+      "taskDeleted": "Aufgabe gelöscht",
+      "deleteFailed": "Aufgabe konnte nicht gelöscht werden",
+      "statusUpdated": "Status aktualisiert",
+      "statusFailed": "Status konnte nicht aktualisiert werden",
+      "assignmentAccepted": "Zuweisung akzeptiert",
+      "acceptFailed": "Akzeptieren fehlgeschlagen",
+      "assignmentRejected": "Zuweisung abgelehnt",
+      "rejectFailed": "Ablehnen fehlgeschlagen",
+      "commentAdded": "Kommentar hinzugefügt",
+      "commentFailed": "Kommentar konnte nicht hinzugefügt werden",
+      "fileUploaded": "Datei hochgeladen",
+      "uploadFailed": "Hochladen fehlgeschlagen",
+      "fileDeleted": "Datei gelöscht"
+    },
+    "confirm": {
+      "deleteTask": "Diese Aufgabe löschen?"
+    },
+    "prompts": {
+      "deleteAttachment": "Anhang löschen?"
+    },
+    "calendar": {
+      "sun": "Son",
+      "mon": "Mon",
+      "tue": "Die",
+      "wed": "Mit",
+      "thu": "Don",
+      "fri": "Fre",
+      "sat": "Sam",
+      "today": "Heute",
+      "more": "mehr"
+    },
+    "modal": {
+      "newTask": "Neue Aufgabe",
+      "edit": "Bearbeiten",
+      "taskType": "Aufgabentyp",
+      "assignedTask": "Zugewiesene Aufgabe",
+      "personalTask": "Persönliche Aufgabe",
+      "taskTitle": "Aufgabenüberschrift *",
+      "description": "Beschreibung",
+      "priority": "Priorität",
+      "dueDate": "Fälligkeitsdatum",
+      "assignTo": "Zuweisen an",
+      "assignToEmployee": "An Mitarbeiter zuweisen (dieselbe Hafen)",
+      "status": "Status",
+      "personalAutoAssign": "Persönliche Aufgaben werden automatisch Ihnen zugewiesen",
+      "attachments": "Anhänge",
+      "activityLog": "Aktivitätsprotokoll"
+    },
+    "validation": {
+      "titleRequired": "Überschrift ist erforderlich",
+      "descriptionRequired": "Beschreibung ist erforderlich",
+      "dueDateRequired": "Fälligkeitsdatum ist erforderlich",
+      "assignEmployee": "Bitte weisen Sie einen Mitarbeiter zu"
+    },
+    "placeholders": {
+      "taskTitle": "Aufgabenüberschrift eingeben...",
+      "description": "Weitere Details oder eine Checkliste hinzufügen...",
+      "selectUser": "Benutzer auswählen",
+      "searchTasks": "AUFGABEN SUCHEN...",
+      "addComment": "Kommentar eingeben..."
+    },
+    "views": {
+      "list": "Liste",
+      "board": "Tafel",
+      "calendar": "Kalender"
+    },
+    "stats": {
+      "activeTasks": "Aktive Aufgaben",
+      "priority": "Priorität",
+      "completedAssets": "Abgeschlossene Assets",
+      "monthlyEfficiency": "Monatliche Effizienz",
+      "todayEfficiency": "Heutige Effizienz"
+    },
+    "filters": {
+      "status": "Status",
+      "priority": "Priorität",
+      "type": "Typ",
+      "allStatus": "Alle Status",
+      "allPriorities": "Alle Prioritäten",
+      "allTypes": "Alle Typen"
+    },
+    "priority": {
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch",
+      "urgent": "Dringend",
+      "critical": "Kritisch"
+    },
+    "status": {
+      "todo": "Offen",
+      "inProgress": "In Bearbeitung",
+      "done": "Erledigt",
+      "pending": "Ausstehend"
+    },
+    "type": {
+      "assigned": "Zugewiesen",
+      "personal": "Persönlich"
+    },
+    "actions": {
+      "newTask": "Neue Aufgabe",
+      "hideDone": "Erledigte ausblenden",
+      "showDone": "Erledigte anzeigen",
+      "close": "Schließen",
+      "cancel": "Abbrechen",
+      "createTask": "Aufgabe erstellen",
+      "updateTask": "Aufgabe aktualisieren",
+      "accept": "Akzeptieren",
+      "reject": "Ablehnen",
+      "markDone": "Als erledigt markieren",
+      "done": "Erledigt",
+      "reopen": "Wieder öffnen",
+      "addFile": "Datei hinzufügen",
+      "post": "Posten"
+    },
+    "board": {
+      "dropHere": "Ziehen Sie Aufgaben hierher"
+    },
+    "empty": {
+      "noTasks": "Keine Aufgaben gefunden",
+      "changeFilters": "Versuchen Sie, Ihre Filter zu ändern",
+      "createFirst": "Erstellen Sie Ihre erste Aufgabe"
+    },
+    "labels": {
+      "task": "Aufgabe",
+      "noDate": "Kein Datum",
+      "createdBy": "Erstellt von",
+      "na": "—",
+      "me": "Ich",
+      "due": "Fällig",
+      "overdue": "ÜBERFÄLLIG"
     }
   }
 }

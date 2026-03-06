@@ -7,8 +7,12 @@ import {
   Anchor,
   BarChart3,
   Calendar,
+  ClipboardList,
+  Gauge,
   ChevronLeft,
   ChevronRight,
+  ShieldAlert,
+  TriangleAlert,
   LogOut,
   MessageSquare,
   Settings,
@@ -70,17 +74,41 @@ export function Sidebar({
 
   const root = `/${locale}/dashboard/${role}`;
 
-  const menuItems = useMemo<MenuItem[]>(
-    () => [
+  const menuItems = useMemo<MenuItem[]>(() => {
+    const items: MenuItem[] = [
       { title: t.overview, href: root, icon: BarChart3 },
-      { title: t.users, href: `${root}/users`, icon: Users },
-      { title: t.schedule, href: `${root}/onboarding`, icon: Calendar },
-      { title: t.harbor, href: `${root}/emails`, icon: Anchor },
-      { title: t.interaction, href: `${root}/emails`, icon: MessageSquare },
-      { title: t.settings, href: `${root}/onboarding`, icon: Settings },
-    ],
-    [root, t.harbor, t.interaction, t.overview, t.schedule, t.settings, t.users],
-  );
+      { title: t.tasks, href: `${root}/tasks`, icon: ClipboardList },
+    ];
+
+    if (role === "admin") {
+      items.splice(
+        4,
+        0,
+        {
+          title: t.harborPerformance,
+          href: `${root}/harbors/performance`,
+          icon: Gauge,
+        },
+        { title: t.audit, href: `${root}/audit`, icon: ShieldAlert },
+        { title: t.errors, href: `${root}/errors`, icon: TriangleAlert },
+      );
+    }
+
+    return items;
+  }, [
+    role,
+    root,
+    t.audit,
+    t.errors,
+    t.harbor,
+    t.harborPerformance,
+    t.interaction,
+    t.overview,
+    t.schedule,
+    t.settings,
+    t.tasks,
+    t.users,
+  ]);
 
   const navContent = (
     <>
@@ -96,16 +124,21 @@ export function Sidebar({
           </p>
         )}
         {isOnline ? (
-          <Wifi className="h-3.5 w-3.5 text-emerald-400" aria-label={t.online} />
+          <Wifi
+            className="h-3.5 w-3.5 text-emerald-400"
+            aria-label={t.online}
+          />
         ) : (
-          <WifiOff className="h-3.5 w-3.5 text-red-400" aria-label={t.offline} />
+          <WifiOff
+            className="h-3.5 w-3.5 text-red-400"
+            aria-label={t.offline}
+          />
         )}
       </div>
 
       <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pt-6">
         {menuItems.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive = pathname === item.href;
 
           return (
             <Link

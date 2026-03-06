@@ -91,6 +91,7 @@
       "overview": "Overview",
       "users": "Users",
       "schedule": "Schedule",
+      "tasks": "Tasks",
       "harbor": "Harbor",
       "interaction": "Interaction",
       "settings": "Settings",
@@ -99,7 +100,10 @@
       "offline": "Offline",
       "logout": "Logout",
       "expand": "Expand sidebar",
-      "collapse": "Collapse sidebar"
+      "collapse": "Collapse sidebar",
+      "audit": "Audit",
+      "errors": "Errors",
+      "harborPerformance": "Harbor Performance"
     },
     "notifications": {
       "label": "Notifications",
@@ -117,6 +121,365 @@
       "minutesAgo": "m ago",
       "hoursAgo": "h ago",
       "daysAgo": "d ago"
+    }
+  },
+  "DashboardAdminOverview": {
+    "title": "Admin Overview",
+    "welcomeBack": "Welcome back, {name}",
+    "todayWeather": "Today: 18° Sunny in Eindhoven",
+    "activeBiddingItems": "You have {count} active bidding {count, plural, one {item} other {items}}.",
+    "liveSync": "Live sync",
+    "refresh": "Refresh",
+    "weeklyTrend": "Weekly trend",
+    "viewDetails": "View details",
+    "trends": {
+      "thisWeek": "this week",
+      "fromYesterday": "from yesterday",
+      "thisMonth": "this month"
+    },
+    "stats": {
+      "activeBids": "Active Bids",
+      "pendingManifest": "Pending Manifest",
+      "fleetInIntake": "Fleet in Intake",
+      "completedSales": "Completed Sales"
+    },
+    "snapshot": {
+      "boatsInIntake": "Boats in intake",
+      "avgDaysToSale": "Avg days to sale",
+      "daysSuffix": " days",
+      "conversion": "Conversion",
+      "revenueThisMonth": "Revenue this month"
+    },
+    "sections": {
+      "businessInsights": "Business insights",
+      "performanceSnapshot": "Performance Snapshot",
+      "marketPulse": "Market pulse",
+      "recentBiddingActivity": "Recent Bidding Activity",
+      "liveDiagnostics": "Live diagnostics",
+      "systemAudit": "System Audit"
+    },
+    "actions": {
+      "viewBiddings": "View Biddings"
+    },
+    "schedule": {
+      "live": "Live schedule",
+      "title": "Bookings & Test Drives",
+      "prev": "Prev",
+      "next": "Next",
+      "upcoming": "Upcoming events",
+      "empty": "No booking or test-drive records from the API.",
+      "booking": "Booking",
+      "testDrive": "Test Drive",
+      "yacht": "Yacht",
+      "locationUnavailable": "Location unavailable",
+      "openFull": "Open full schedule"
+    },
+    "labels": {
+      "registry": "Registry",
+      "unknown": "Unknown",
+      "currentBid": "Current bid"
+    },
+    "audit": {
+      "ok": "OK",
+      "warning": "Warning",
+      "error": "Error",
+      "taskUpdate": "Task update",
+      "operatorAction": "Operator action",
+      "autoSystemEvent": "Auto-system event",
+      "on": "on",
+      "globalFleet": "Global Fleet"
+    },
+    "empty": {
+      "noRecentBiddingTitle": "No recent bidding activity",
+      "noRecentBiddingSubtitle": "Start a bidding process to see live updates here.",
+      "noSystemLogs": "No recent system logs yet."
+    },
+    "defaults": {
+      "userName": "Martijn"
+    }
+  },
+  "DashboardAdminAudit": {
+    "header": {
+      "title": "System Audit Log",
+      "subtitle": "Track all system activities and changes in real-time"
+    },
+    "actions": {
+      "filters": "Filters",
+      "refresh": "Refresh",
+      "exportCsv": "Export CSV"
+    },
+    "stats": {
+      "totalEvents": "Total Events",
+      "eventTypes": "Event Types",
+      "entityTypes": "Entity Types",
+      "recentActivity": "Recent Activity"
+    },
+    "filters": {
+      "title": "Advanced Filters",
+      "searchLogs": "Search Logs",
+      "searchPlaceholder": "Search descriptions, users, IPs...",
+      "fromDate": "From Date",
+      "toDate": "To Date",
+      "eventTypes": "Event Types",
+      "entityTypes": "Entity Types",
+      "clearAll": "Clear all filters ({count})"
+    },
+    "errors": {
+      "title": "Error Loading Data",
+      "loadStats": "Failed to load system statistics",
+      "loadLogs": "Failed to load system logs"
+    },
+    "logs": {
+      "title": "Activity Logs",
+      "showing": "Showing {from} - {to} of {total}",
+      "loading": "Loading activity logs..."
+    },
+    "details": {
+      "userInformation": "User Information",
+      "systemAction": "System Action",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "action": "Action",
+      "systemAutomatedAction": "System Automated Action",
+      "technicalDetails": "Technical Details",
+      "entityDetails": "Entity Details",
+      "timestamp": "Timestamp",
+      "ipAddress": "IP Address",
+      "changesMade": "Changes Made"
+    },
+    "systemUser": "System",
+    "empty": {
+      "title": "No activity logs found",
+      "filtered": "No activity logs match your current filters. Try adjusting your search criteria.",
+      "default": "No activity logs available yet. Start by creating tasks, updating yachts, or having users log in."
+    },
+    "pagination": {
+      "resultsSummary": "Showing {from} to {to} of {total} results",
+      "firstPage": "First page",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "lastPage": "Last page"
+    }
+  },
+  "DashboardAdminHarborPerformance": {
+    "hero": {
+      "kicker": "Harbor Analytics",
+      "title": "Harbor Performance",
+      "description": "Compare reach, funnel conversion, and commission performance across all harbor partners."
+    },
+    "actions": {
+      "refresh": "Refresh"
+    },
+    "stats": {
+      "users": "Users",
+      "impressions": "Impressions",
+      "clicks": "Clicks",
+      "deals": "Deals",
+      "commission": "Commission"
+    },
+    "filters": {
+      "range": {
+        "7d": "Last 7 days",
+        "30d": "Last 30 days",
+        "90d": "Last 90 days"
+      },
+      "allCountries": "All countries",
+      "allDevices": "All devices",
+      "allSources": "All sources",
+      "countries": {
+        "nl": "Netherlands (NL)",
+        "de": "Germany (DE)",
+        "be": "Belgium (BE)"
+      },
+      "devices": {
+        "mobile": "Mobile",
+        "desktop": "Desktop",
+        "tablet": "Tablet"
+      },
+      "sources": {
+        "googleOrganic": "Google Organic",
+        "googleAds": "Google Ads",
+        "facebookPaid": "Facebook Paid",
+        "instagramPaid": "Instagram Paid",
+        "direct": "Direct"
+      }
+    },
+    "table": {
+      "harbor": "Harbor",
+      "users": "Users",
+      "impressions": "Impressions",
+      "clicks": "Clicks",
+      "forms": "Forms",
+      "submitted": "Submitted",
+      "deals": "Deals",
+      "commission": "Commission",
+      "benchmark": "Benchmark",
+      "rank": "Rank",
+      "avgCtr": "Avg CTR {value}"
+    },
+    "states": {
+      "error": "Could not load harbor performance.",
+      "empty": "No harbor performance data is available for the current filters."
+    },
+    "panels": {
+      "reach": {
+        "title": "Reach",
+        "description": "GA4 remains the source for users, sessions, and interaction trends across harbor campaigns."
+      },
+      "funnel": {
+        "title": "Funnel",
+        "description": "Funnel metrics combine widget impressions and clicks with in-platform submissions and completed deals."
+      },
+      "revenue": {
+        "title": "Revenue Truth",
+        "description": "Commission ranking uses your database revenue attribution, not GA4, so partner payout comparisons stay accurate."
+      }
+    }
+  },
+  "DashboardAdminTasks": {
+    "title": "Task Oversight",
+    "subtitle": "Fleet Management & Command",
+    "loading": "Loading tasks...",
+    "errors": {
+      "noToken": "No token"
+    },
+    "toasts": {
+      "authRequired": "Authentication required",
+      "loadFailed": "Failed to load data",
+      "taskUpdated": "Task updated",
+      "taskCreated": "Task created",
+      "saveFailed": "Failed to save task",
+      "taskDeleted": "Task deleted",
+      "deleteFailed": "Failed to delete task",
+      "statusUpdated": "Status updated",
+      "statusFailed": "Failed to update status",
+      "assignmentAccepted": "Assignment accepted",
+      "acceptFailed": "Failed to accept",
+      "assignmentRejected": "Assignment rejected",
+      "rejectFailed": "Failed to reject",
+      "commentAdded": "Comment added",
+      "commentFailed": "Failed to add comment",
+      "fileUploaded": "File uploaded",
+      "uploadFailed": "Upload failed",
+      "fileDeleted": "File deleted"
+    },
+    "confirm": {
+      "deleteTask": "Delete this task?"
+    },
+    "prompts": {
+      "deleteAttachment": "Delete this attachment?"
+    },
+    "calendar": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "today": "Today",
+      "more": "more"
+    },
+    "modal": {
+      "newTask": "New Task",
+      "edit": "Edit",
+      "taskType": "Task Type",
+      "assignedTask": "Assigned Task",
+      "personalTask": "Personal Task",
+      "taskTitle": "Task Title *",
+      "description": "Description",
+      "priority": "Priority",
+      "dueDate": "Due Date",
+      "assignTo": "Assign To",
+      "assignToEmployee": "Assign to employee (same harbor)",
+      "status": "Status",
+      "personalAutoAssign": "Personal tasks will be assigned to you automatically",
+      "attachments": "Attachments",
+      "activityLog": "Activity Log"
+    },
+    "validation": {
+      "titleRequired": "Title is required",
+      "descriptionRequired": "Description is required",
+      "dueDateRequired": "Due date is required",
+      "assignEmployee": "Please assign to an employee"
+    },
+    "placeholders": {
+      "taskTitle": "Enter task title...",
+      "description": "Add more details or a checklist...",
+      "selectUser": "Select user",
+      "searchTasks": "SEARCH TASKS...",
+      "addComment": "Type a comment..."
+    },
+    "views": {
+      "list": "List",
+      "board": "Board",
+      "calendar": "Calendar"
+    },
+    "stats": {
+      "activeTasks": "Active Tasks",
+      "priority": "Priority",
+      "completedAssets": "Completed Assets",
+      "monthlyEfficiency": "Monthly Efficiency",
+      "todayEfficiency": "Today's Efficiency"
+    },
+    "filters": {
+      "status": "Status",
+      "priority": "Priority",
+      "type": "Type",
+      "allStatus": "All Status",
+      "allPriorities": "All Priorities",
+      "allTypes": "All Types"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent",
+      "critical": "Critical"
+    },
+    "status": {
+      "todo": "To Do",
+      "inProgress": "In Progress",
+      "done": "Done",
+      "pending": "Pending"
+    },
+    "type": {
+      "assigned": "Assigned",
+      "personal": "Personal"
+    },
+    "actions": {
+      "newTask": "New Task",
+      "hideDone": "Hide Done",
+      "showDone": "Show Done",
+      "close": "Close",
+      "cancel": "Cancel",
+      "createTask": "Create Task",
+      "updateTask": "Update Task",
+      "accept": "Accept",
+      "reject": "Reject",
+      "markDone": "Mark Done",
+      "done": "Done",
+      "reopen": "Re-open",
+      "addFile": "Add File",
+      "post": "Post"
+    },
+    "board": {
+      "dropHere": "Drop tasks here"
+    },
+    "empty": {
+      "noTasks": "No tasks found",
+      "changeFilters": "Try changing your filters",
+      "createFirst": "Create your first task"
+    },
+    "labels": {
+      "task": "Task",
+      "noDate": "No date",
+      "createdBy": "Created by",
+      "na": "—",
+      "me": "Me",
+      "due": "Due",
+      "overdue": "OVERDUE"
     }
   }
 }

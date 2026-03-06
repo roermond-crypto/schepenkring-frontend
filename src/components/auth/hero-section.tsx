@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   login,
@@ -272,7 +273,15 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
       </div>
 
       <div className="relative flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-slate-900 lg:flex-row">
-        <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-[#003566] to-[#001d3d] p-8 lg:h-auto lg:w-1/2">
+        <div className="relative flex h-48 items-center justify-center overflow-hidden p-8 lg:h-auto lg:w-1/2">
+          <Image
+            src="/hero-image-two.jpg"
+            alt="Schepenkring Hero"
+            fill
+            priority
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-[#001d3d]/65" />
           <div className="relative z-10 text-center text-white">
             <p className="text-xs tracking-[0.25em] uppercase opacity-80">Schepenkring</p>
             <h1 className="mt-3 text-3xl font-bold">CRM</h1>

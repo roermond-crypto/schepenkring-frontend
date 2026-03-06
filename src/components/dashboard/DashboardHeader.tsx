@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { LogOut, Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { LanguageSwitcher } from "@/components/common/language-switcher";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 import type { UserRole } from "@/lib/auth/roles";
+import Link from "next/link";
 
 type DashboardHeaderProps = {
   locale: AppLocale;
@@ -51,12 +53,19 @@ export function DashboardHeader({
         </button>
 
         <div className="shrink-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-            {tHeader.brand}
-          </p>
-          <p className="text-base font-bold text-[#0B1F3A] dark:text-slate-100">
-            {tHeader.title}
-          </p>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center group shrink-0">
+              <Image
+                alt=""
+                src="/schepenkring-logo.png"
+                width={140}
+                height={40}
+                quality={90}
+                className="object-contain transition-transform group-hover:scale-[1.02] h-8 w-auto sm:h-10"
+                priority
+              />
+            </Link>
+          </div>
         </div>
       </div>
 
