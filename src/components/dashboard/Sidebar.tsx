@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Ship,
   Settings,
+  Share2,
   Users,
   Wifi,
   WifiOff,
@@ -96,6 +97,11 @@ export function Sidebar({
           href: `${root}/harbors/performance`,
           icon: Gauge,
         },
+        {
+          title: t.socialAutomation,
+          href: `${root}/social`,
+          icon: Share2,
+        },
         { title: t.audit, href: `${root}/audit`, icon: ShieldAlert },
         { title: t.errors, href: `${root}/errors`, icon: TriangleAlert },
       );
@@ -114,6 +120,7 @@ export function Sidebar({
     t.overview,
     t.schedule,
     t.settings,
+    t.socialAutomation,
     t.tasks,
     t.users,
   ]);
