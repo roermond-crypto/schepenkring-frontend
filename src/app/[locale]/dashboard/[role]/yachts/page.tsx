@@ -380,7 +380,7 @@ export default function FleetManagementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 lg:p-12 -top-20">
+    <div className="yachts-page-theme -top-20 min-h-screen bg-[#F8FAFC] p-6 lg:p-12">
       <Toaster position="top-right" />
       {/* HEADER */}
       <div className="mb-12">
@@ -882,6 +882,44 @@ export default function FleetManagementPage() {
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        .dark .yachts-page-theme {
+          background: rgb(2 6 23) !important;
+          color: rgb(226 232 240);
+        }
+
+        .dark .yachts-page-theme .bg-white,
+        .dark .yachts-page-theme .bg-slate-50,
+        .dark .yachts-page-theme .bg-slate-100 {
+          background: rgb(15 23 42) !important;
+        }
+
+        .dark .yachts-page-theme .border-slate-200,
+        .dark .yachts-page-theme .border-slate-100 {
+          border-color: rgb(51 65 85) !important;
+        }
+
+        .dark .yachts-page-theme .text-slate-900,
+        .dark .yachts-page-theme .text-slate-800,
+        .dark .yachts-page-theme .text-\[\#003566\],
+        .dark .yachts-page-theme .text-blue-900 {
+          color: rgb(241 245 249) !important;
+        }
+
+        .dark .yachts-page-theme .text-slate-600,
+        .dark .yachts-page-theme .text-slate-500,
+        .dark .yachts-page-theme .text-slate-400 {
+          color: rgb(148 163 184) !important;
+        }
+
+        .dark .yachts-page-theme input,
+        .dark .yachts-page-theme select {
+          background: rgb(2 6 23) !important;
+          color: rgb(226 232 240) !important;
+          border-color: rgb(51 65 85) !important;
+        }
+      `}</style>
     </div>
   );
 }

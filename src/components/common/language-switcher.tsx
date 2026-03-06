@@ -4,15 +4,19 @@ import { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SUPPORTED_LOCALES, type AppLocale } from "@/lib/i18n";
+import enFlag from "../../../public/flags/en.svg";
+import nlFlag from "../../../public/flags/nl.svg";
+import deFlag from "../../../public/flags/de.svg";
+import type { StaticImageData } from "next/image";
 
 type LanguageSwitcherProps = {
   locale: AppLocale;
 };
 
-const META: Record<AppLocale, { name: string; icon: string }> = {
-  en: { name: "English", icon: "/flags/en.svg" },
-  nl: { name: "Nederlands", icon: "/flags/nl.svg" },
-  de: { name: "Deutsch", icon: "/flags/de.svg" },
+const META: Record<AppLocale, { name: string; icon: StaticImageData }> = {
+  en: { name: "English", icon: enFlag },
+  nl: { name: "Nederlands", icon: nlFlag },
+  de: { name: "Deutsch", icon: deFlag },
 };
 
 export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {

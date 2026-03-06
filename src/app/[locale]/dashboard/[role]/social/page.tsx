@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "@/shims/next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -61,16 +61,23 @@ const PUBLISHER_OPTIONS = [
     "apple",
 ];
 
-function normalizeList<T>(payload: any, keys: string[]): T[] {
+function normalizeList<T>(payload: unknown, keys: string[]): T[] {
     if (Array.isArray(payload)) return payload as T[];
-    if (Array.isArray(payload?.data)) return payload.data as T[];
+
+    const payloadObject = payload as
+        | { data?: unknown; [key: string]: unknown }
+        | undefined;
+    if (Array.isArray(payloadObject?.data)) return payloadObject.data as T[];
 
     for (const key of keys) {
-        if (Array.isArray(payload?.[key])) {
-            return payload[key] as T[];
+        if (Array.isArray(payloadObject?.[key])) {
+            return payloadObject[key] as T[];
         }
-        if (Array.isArray(payload?.data?.[key])) {
-            return payload.data[key] as T[];
+        const nestedData = payloadObject?.data as
+            | { [key: string]: unknown }
+            | undefined;
+        if (Array.isArray(nestedData?.[key])) {
+            return nestedData[key] as T[];
         }
     }
 
@@ -129,7 +136,7 @@ export default function AdminSocialAutomationPage() {
         skip_weekends: false,
     }));
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -157,11 +164,11 @@ export default function AdminSocialAutomationPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [t]);
 
     useEffect(() => {
-        loadData();
-    }, []);
+        void loadData();
+    }, [loadData]);
 
     const readyVideos = useMemo(
         () =>
@@ -287,7 +294,7 @@ export default function AdminSocialAutomationPage() {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="social-admin-page space-y-8">
             <Toaster position="top-center" />
 
             <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-[#F7FAFF] to-[#EAF3FF] px-6 py-8 shadow-[0_22px_60px_rgba(15,23,42,0.08)] sm:px-8">
@@ -769,6 +776,41 @@ export default function AdminSocialAutomationPage() {
                     )}
                 </div>
             </div>
+        <style jsx global>{`
+          .dark .social-admin-page {
+            color: rgb(226 232 240);
+          }
+
+          .dark .social-admin-page .text-slate-900 {
+            color: rgb(241 245 249) !important;
+          }
+
+          .dark .social-admin-page .text-slate-600,
+          .dark .social-admin-page .text-slate-500,
+          .dark .social-admin-page .text-slate-400 {
+            color: rgb(148 163 184) !important;
+          }
+
+          .dark .social-admin-page .border-slate-200,
+          .dark .social-admin-page [class*="border-white/80"] {
+            border-color: rgb(51 65 85) !important;
+          }
+
+          .dark .social-admin-page .bg-white,
+          .dark .social-admin-page [class*="bg-white/85"],
+          .dark .social-admin-page .bg-slate-50,
+          .dark .social-admin-page [class*="bg-slate-50/50"],
+          .dark .social-admin-page [class*="bg-slate-50/70"] {
+            background: rgb(15 23 42) !important;
+          }
+
+          .dark .social-admin-page input,
+          .dark .social-admin-page select {
+            background: rgb(2 6 23) !important;
+            color: rgb(226 232 240) !important;
+            border-color: rgb(51 65 85) !important;
+          }
+        `}</style>
         </div>
     );
 }

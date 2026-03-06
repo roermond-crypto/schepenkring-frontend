@@ -115,7 +115,7 @@ export function ChatPage() {
   }, [handleSelectConversation]);
 
   return (
-    <div className="space-y-6">
+    <div className="chat-page-theme space-y-6">
 
       <div className="flex h-[calc(100vh-24rem)] min-h-[38rem] bg-gradient-to-br from-slate-50 via-white to-blue-50/30 overflow-hidden rounded-2xl border border-slate-200/60 shadow-xl">
         {/* Mobile nav bar */}
@@ -199,6 +199,55 @@ export function ChatPage() {
           )}
         </div>
       </div>
+      <style jsx global>{`
+        .dark .chat-page-theme .bg-white,
+        .dark .chat-page-theme .bg-white\/70,
+        .dark .chat-page-theme .bg-white\/80,
+        .dark .chat-page-theme .bg-slate-50,
+        .dark .chat-page-theme .bg-slate-50\/50,
+        .dark .chat-page-theme .bg-slate-100,
+        .dark .chat-page-theme .bg-slate-100\/80 {
+          background: rgb(15 23 42) !important;
+        }
+
+        .dark .chat-page-theme .from-slate-50,
+        .dark .chat-page-theme .via-white,
+        .dark .chat-page-theme .to-blue-50\/30 {
+          --tw-gradient-from: rgb(2 6 23) var(--tw-gradient-from-position) !important;
+          --tw-gradient-via: rgb(15 23 42) var(--tw-gradient-via-position) !important;
+          --tw-gradient-to: rgb(30 41 59 / 0.3) var(--tw-gradient-to-position) !important;
+        }
+
+        .dark .chat-page-theme .border-slate-200,
+        .dark .chat-page-theme .border-slate-200\/60,
+        .dark .chat-page-theme .border-slate-200\/80 {
+          border-color: rgb(51 65 85) !important;
+        }
+
+        .dark .chat-page-theme .text-slate-900,
+        .dark .chat-page-theme .text-slate-800,
+        .dark .chat-page-theme .text-slate-700 {
+          color: rgb(241 245 249) !important;
+        }
+
+        .dark .chat-page-theme .text-slate-600,
+        .dark .chat-page-theme .text-slate-500,
+        .dark .chat-page-theme .text-slate-400 {
+          color: rgb(148 163 184) !important;
+        }
+
+        .dark .chat-page-theme input,
+        .dark .chat-page-theme textarea,
+        .dark .chat-page-theme select {
+          background: rgb(2 6 23) !important;
+          color: rgb(226 232 240) !important;
+          border-color: rgb(51 65 85) !important;
+        }
+
+        .dark .chat-page-theme [class*="ring-white"] {
+          --tw-ring-color: rgb(51 65 85) !important;
+        }
+      `}</style>
     </div>
   );
 }

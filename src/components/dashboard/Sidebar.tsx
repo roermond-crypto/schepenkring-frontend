@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Anchor,
   BarChart3,
+  Calendar,
   ClipboardList,
   Bot,
   Gauge,
@@ -78,12 +80,6 @@ export function Sidebar({
   const menuItems = useMemo<MenuItem[]>(() => {
     const items: MenuItem[] = [
       { title: t.overview, href: root, icon: BarChart3 },
-      { title: t.boats, href: `${root}/yachts`, icon: Ship },
-      { title: t.users, href: `${root}/users`, icon: Users },
-      { title: t.schedule, href: `${root}/onboarding`, icon: Calendar },
-      { title: t.harbor, href: `${root}/emails`, icon: Anchor },
-      { title: t.interaction, href: `${root}/chat`, icon: MessageSquare },
-      { title: t.settings, href: `${root}/onboarding`, icon: Settings },
       { title: t.tasks, href: `${root}/tasks`, icon: ClipboardList },
     ];
 
@@ -95,25 +91,25 @@ export function Sidebar({
         href: `${root}/harbors/performance`,
         icon: Gauge,
       });
+      items.push({
+        title: t.interaction,
+        href: `${root}/chat`,
+        icon: MessageSquare,
+      });
+      items.push({
+        title: t.socialAutomation,
+        href: `${root}/social`,
+        icon: Share2,
+      });
       items.push({ title: t.audit, href: `${root}/audit`, icon: ShieldAlert });
-      items.push({ title: t.errors, href: `${root}/errors`, icon: TriangleAlert });
-      items.splice(
-        4,
-        0,
-        {
-          title: t.harborPerformance,
-          href: `${root}/harbors/performance`,
-          icon: Gauge,
-        },
-        {
-          title: t.socialAutomation,
-          href: `${root}/social`,
-          icon: Share2,
-        },
-        { title: t.audit, href: `${root}/audit`, icon: ShieldAlert },
-        { title: t.errors, href: `${root}/errors`, icon: TriangleAlert },
-      );
+      items.push({
+        title: t.errors,
+        href: `${root}/errors`,
+        icon: TriangleAlert,
+      });
     }
+
+    items.push({ title: t.boats, href: `${root}/yachts`, icon: Ship });
 
     items.push({ title: t.settings, href: `${root}/account`, icon: Settings });
 
@@ -125,8 +121,11 @@ export function Sidebar({
     t.copilot,
     t.boats,
     t.errors,
+    t.harbor,
     t.harborPerformance,
+    t.interaction,
     t.overview,
+    t.schedule,
     t.settings,
     t.socialAutomation,
     t.tasks,

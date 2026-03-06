@@ -543,6 +543,8 @@
       "updateFailed": "Bijwerken van account mislukt.",
       "saved": "Account succesvol bijgewerkt.",
       "passwordMismatch": "Wachtwoordbevestiging komt niet overeen."
+    }
+  },
   "DashboardAdminSocial": {
     "title": "Sociale automatisering",
     "subtitle": "Videopijplijn en distributie",
