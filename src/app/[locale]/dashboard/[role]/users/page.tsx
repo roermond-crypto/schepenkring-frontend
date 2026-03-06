@@ -1,3 +1,751 @@
-export default function DashboardUsersPage() {
-  return null;
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  UserPlus,
+  Trash2,
+  X,
+  Loader2,
+  Search,
+  Eye,
+  EyeOff,
+  UserCircle,
+  Briefcase,
+  Anchor,
+  LogIn,
+  RefreshCw,
+  MoreVertical,
+  Shield,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  UsersRound,
+  ShieldCheck,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast, Toaster } from "react-hot-toast";
+import { useLocale, useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { setClientSession } from "@/lib/auth/client-session";
+
+type UserType = "ADMIN" | "EMPLOYEE" | "CLIENT";
+type UserStatus = "ACTIVE" | "DISABLED" | "BLOCKED";
+type UserCategory = "Employee" | "Admin" | "Partner" | "Customer";
+
+type UserRecord = {
+  id: number;
+  type: UserType;
+  status: UserStatus;
+  name: string;
+  email: string;
+  phone?: string | null;
+};
+
+type StatusUi = "Active" | "Inactive" | "Pending";
+
+const initials = (name: string) =>
+  name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+const avatarColors: Record<UserCategory, string> = {
+  Employee: "bg-blue-500",
+  Admin: "bg-indigo-600",
+  Partner: "bg-teal-500",
+  Customer: "bg-amber-500",
+};
+
+const statusConfig: Record<
+  StatusUi,
+  { color: string; icon: LucideIcon; bg: string }
+> = {
+  Active: {
+    color: "text-emerald-700 dark:text-emerald-300",
+    icon: CheckCircle2,
+    bg: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900",
+  },
+  Inactive: {
+    color: "text-red-600 dark:text-red-300",
+    icon: XCircle,
+    bg: "bg-red-50 border-red-200 dark:bg-red-950/40 dark:border-red-900",
+  },
+  Pending: {
+    color: "text-amber-600 dark:text-amber-300",
+    icon: Clock,
+    bg: "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900",
+  },
+};
+
+const tabConfig: { id: UserCategory; icon: LucideIcon }[] = [
+  { id: "Employee", icon: Briefcase },
+  { id: "Admin", icon: ShieldCheck },
+  { id: "Partner", icon: Anchor },
+  { id: "Customer", icon: UserCircle },
+];
+
+function mapTypeToCategory(type: UserType): UserCategory {
+  if (type === "ADMIN") return "Admin";
+  if (type === "EMPLOYEE") return "Employee";
+  return "Customer";
+}
+
+function mapCategoryToType(category: UserCategory): UserType {
+  if (category === "Admin") return "ADMIN";
+  if (category === "Employee") return "EMPLOYEE";
+  return "CLIENT";
+}
+
+function mapStatusToUi(status: UserStatus): StatusUi {
+  if (status === "ACTIVE") return "Active";
+  if (status === "BLOCKED") return "Pending";
+  return "Inactive";
+}
+
+function mapUiToStatus(status: StatusUi): UserStatus {
+  if (status === "Active") return "ACTIVE";
+  if (status === "Pending") return "BLOCKED";
+  return "DISABLED";
+}
+
+function mapTypeToRole(type: UserType) {
+  if (type === "ADMIN") return "admin";
+  if (type === "EMPLOYEE") return "employee";
+  return "client";
+}
+
+function idempotencyKey() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `idemp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function extractErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === "object" && error !== null) {
+    const maybeResponse = error as {
+      response?: { data?: { message?: string } };
+      message?: string;
+    };
+    return (
+      maybeResponse.response?.data?.message || maybeResponse.message || fallback
+    );
+  }
+  return fallback;
+}
+
+export default function RoleManagementPage() {
+  const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("DashboardAdminUsers");
+
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<UserCategory>("Employee");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [openActionId, setOpenActionId] = useState<number | null>(null);
+
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "Employee" as UserCategory,
+    access_level: "Limited" as "Limited" | "Full",
+    status: "Active" as StatusUi,
+  });
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/admin/users");
+      const list = Array.isArray(data?.data) ? data.data : [];
+      setUsers(list);
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, t("toasts.syncFailed")));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void fetchData();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setOpenActionId(null);
+    if (openActionId !== null) {
+      window.addEventListener("click", handler);
+      return () => window.removeEventListener("click", handler);
+    }
+  }, [openActionId]);
+
+  const handleEnrollment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      toast.loading(t("toasts.enrolling"), { id: "enroll" });
+      const payload = {
+        type: mapCategoryToType(newUser.role),
+        name: newUser.name,
+        email: newUser.email,
+        password: newUser.password,
+        status: mapUiToStatus(newUser.status),
+      };
+      const res = await api.post("/admin/users", payload);
+      setUsers((prev) => [res.data?.data ?? res.data, ...prev]);
+      setIsModalOpen(false);
+      setNewUser({
+        name: "",
+        email: "",
+        password: "",
+        role: "Employee",
+        access_level: "Limited",
+        status: "Active",
+      });
+      toast.success(t("toasts.enrolled"), { id: "enroll" });
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, t("toasts.enrollmentFailed")), {
+        id: "enroll",
+      });
+    }
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    try {
+      toast.loading(t("toasts.terminating"), { id: "delete" });
+      await api.delete(`/admin/users/${userId}`, {
+        headers: { "Idempotency-Key": idempotencyKey() },
+      });
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      toast.success(t("toasts.terminated"), { id: "delete" });
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, t("toasts.terminationFailed")), {
+        id: "delete",
+      });
+    }
+  };
+
+  const impersonateUser = async (user: UserRecord) => {
+    try {
+      const password = window.prompt(t("prompts.confirmAdminPassword"));
+      if (!password) return;
+      const otp = window.prompt(t("prompts.enterOtp")) || "";
+
+      toast.loading(t("toasts.assimilating"), { id: "impersonate" });
+      const res = await api.post(
+        `/admin/impersonate/${user.id}`,
+        { password, otp_code: otp || undefined },
+        { headers: { "Idempotency-Key": idempotencyKey() } },
+      );
+
+      const token = res.data?.token;
+      const impersonated = res.data?.impersonated;
+      if (!token || !impersonated)
+        throw new Error(t("toasts.impersonationFailed"));
+
+      setClientSession(token, {
+        id: String(impersonated.id),
+        name: impersonated.name,
+        email: impersonated.email,
+        role: mapTypeToRole(impersonated.type as UserType),
+      });
+
+      localStorage.setItem(
+        "impersonation_session",
+        JSON.stringify({
+          started_at: res.data?.session?.started_at,
+          impersonated_id: impersonated.id,
+          impersonated_name: impersonated.name,
+        }),
+      );
+
+      toast.success(t("toasts.identityAssumed", { name: impersonated.name }), {
+        id: "impersonate",
+      });
+      setTimeout(() => {
+        router.push(
+          `/${locale}/dashboard/${mapTypeToRole(impersonated.type as UserType)}`,
+        );
+        router.refresh();
+      }, 600);
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, t("toasts.impersonationFailed")), {
+        id: "impersonate",
+      });
+    }
+  };
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      const category = mapTypeToCategory(u.type);
+      if (category !== activeTab) return false;
+      const q = searchQuery.toLowerCase();
+      return (
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.phone || "").toLowerCase().includes(q)
+      );
+    });
+  }, [users, searchQuery, activeTab]);
+
+  const roleCounts = useMemo(() => {
+    const counts: Record<UserCategory, number> = {
+      Employee: 0,
+      Admin: 0,
+      Partner: 0,
+      Customer: 0,
+    };
+    users.forEach((u) => {
+      const category = mapTypeToCategory(u.type);
+      counts[category] += 1;
+    });
+    return counts;
+  }, [users]);
+
+  return (
+    <div className="min-h-screen max-w-[1400px] p-4 sm:p-6 lg:p-8">
+      <Toaster position="top-right" />
+
+      <div className="mb-8 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
+        <div>
+          <h1 className="text-3xl font-serif italic text-[#003566] dark:text-slate-100 sm:text-4xl">
+            {t("header.title")}
+          </h1>
+          <p className="mt-1.5 text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 dark:text-blue-300">
+            {t("header.subtitle")}
+          </p>
+        </div>
+        <div className="flex w-full items-center gap-3 lg:w-auto">
+          <div className="relative flex-1 lg:w-72">
+            <Search
+              size={15}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="text"
+              placeholder={t("header.searchPlaceholder")}
+              className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-900"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={() => {
+              setNewUser((prev) => ({ ...prev, role: activeTab }));
+              setIsModalOpen(true);
+            }}
+            className="h-10 shrink-0 gap-2 rounded-lg bg-[#003566] px-5 text-xs font-bold tracking-wider text-white transition-colors hover:bg-[#002a52]"
+          >
+            <UserPlus size={15} />
+            <span className="hidden sm:inline">{t("header.provisionNew")}</span>
+          </Button>
+        </div>
+      </div>
+
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {tabConfig.map(({ id, icon: Icon }) => {
+          const count = roleCounts[id];
+          const isActive = activeTab === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={cn(
+                "flex items-center gap-3 rounded-xl border p-4 text-left transition-all",
+                isActive
+                  ? "border-[#003566] bg-[#003566] text-white shadow-lg shadow-[#003566]/20"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-[#003566]/30 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                  isActive ? "bg-white/20" : "bg-slate-100 dark:bg-slate-800",
+                )}
+              >
+                <Icon
+                  size={18}
+                  className={
+                    isActive
+                      ? "text-white"
+                      : "text-[#003566] dark:text-slate-200"
+                  }
+                />
+              </div>
+              <div>
+                <p
+                  className={cn(
+                    "text-2xl font-bold leading-none",
+                    isActive
+                      ? "text-white"
+                      : "text-[#003566] dark:text-slate-100",
+                  )}
+                >
+                  {count}
+                </p>
+                <p
+                  className={cn(
+                    "mt-0.5 text-[10px] font-bold uppercase tracking-wider",
+                    isActive
+                      ? "text-white/70"
+                      : "text-slate-400 dark:text-slate-500",
+                  )}
+                >
+                  {t(`tabs.${id.toLowerCase()}`)}
+                </p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="hidden grid-cols-[1fr_1fr_140px_120px_80px] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 md:grid dark:border-slate-700 dark:bg-slate-800/70">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {t("fields.fullName")}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {t("fields.emailAddress")}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {t("fields.clearance")}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {t("labels.status")}
+          </p>
+          <p className="text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {t("actions.terminate")}
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-24">
+            <Loader2
+              className="animate-spin text-[#003566] dark:text-slate-200"
+              size={32}
+            />
+            <p className="text-sm text-slate-400">{t("labels.loadingUsers")}</p>
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
+              <UsersRound size={36} className="text-slate-300" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-slate-500">
+                {t("empty.title")}
+              </p>
+              <p className="mt-1 max-w-xs text-xs text-slate-400">
+                {t("empty.description", {
+                  role: t(`tabs.${activeTab.toLowerCase()}`).toLowerCase(),
+                })}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            {filteredUsers.map((user, i) => {
+              const status = statusConfig[mapStatusToUi(user.status)];
+              const StatusIcon = status.icon;
+              const category = mapTypeToCategory(user.type);
+
+              return (
+                <motion.div
+                  key={user.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="group"
+                >
+                  <div className="hidden grid-cols-[1fr_1fr_140px_120px_80px] items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/80 md:grid dark:hover:bg-slate-800/40">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={cn(
+                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white",
+                          avatarColors[category] || "bg-slate-500",
+                        )}
+                      >
+                        {initials(user.name)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#003566] dark:text-slate-100">
+                          {user.name}
+                        </p>
+                        {user.phone && (
+                          <p className="truncate text-[11px] text-slate-400">
+                            {user.phone}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="truncate text-sm text-slate-500 dark:text-slate-300">
+                      {user.email}
+                    </p>
+
+                    <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                      <Shield size={11} />
+                      {newUser.access_level}
+                    </span>
+
+                    <span
+                      className={cn(
+                        "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+                        status.bg,
+                        status.color,
+                      )}
+                    >
+                      <StatusIcon size={11} />
+                      {mapStatusToUi(user.status)}
+                    </span>
+
+                    <div className="relative flex justify-end">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenActionId(
+                            openActionId === user.id ? null : user.id,
+                          );
+                        }}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+
+                      <AnimatePresence>
+                        {openActionId === user.id && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="absolute right-0 top-10 z-30 w-52 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+                          >
+                            <button
+                              onClick={() => {
+                                void impersonateUser(user);
+                                setOpenActionId(null);
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                            >
+                              <span className="inline-flex items-center gap-3">
+                                <LogIn size={15} className="text-emerald-500" />
+                                {t("actions.assumeIdentity")}
+                              </span>
+                            </button>
+                            <div className="my-1 h-px bg-slate-100 dark:bg-slate-700" />
+                            <button
+                              onClick={() => {
+                                if (confirm(t("confirm.terminate"))) {
+                                  void handleDeleteUser(user.id);
+                                }
+                                setOpenActionId(null);
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
+                            >
+                              <span className="inline-flex items-center gap-3">
+                                <Trash2 size={15} />
+                                {t("actions.terminate")}
+                              </span>
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && filteredUsers.length > 0 && (
+          <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-6 py-3 dark:border-slate-800 dark:bg-slate-800/40">
+            <p className="text-xs text-slate-400">
+              {filteredUsers.length}{" "}
+              {t(`tabs.${activeTab.toLowerCase()}`).toLowerCase()}
+            </p>
+            <button
+              onClick={() => void fetchData()}
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#003566] hover:text-blue-700 dark:text-slate-200 dark:hover:text-slate-100"
+            >
+              <RefreshCw size={12} />
+              {t("actions.refresh")}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setIsModalOpen(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900"
+            >
+              <div className="bg-[#003566] px-6 pb-5 pt-6 text-white">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">
+                      {t("modal.title")}
+                    </h2>
+                    <p className="mt-1 text-sm text-blue-200">
+                      {t("modal.subtitle")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleEnrollment} className="space-y-5 p-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                      {t("fields.fullName")}
+                    </label>
+                    <input
+                      required
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+                      value={newUser.name}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, name: e.target.value })
+                      }
+                      placeholder="John Smith"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                      {t("fields.emailAddress")}
+                    </label>
+                    <input
+                      required
+                      type="email"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+                      value={newUser.email}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, email: e.target.value })
+                      }
+                      placeholder="john@example.com"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                    {t("fields.systemPassword")}
+                  </label>
+                  <div className="relative">
+                    <input
+                      required
+                      type={showPassword ? "text" : "password"}
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 pr-10 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+                      value={newUser.password}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, password: e.target.value })
+                      }
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                      {t("fields.assignment")}
+                    </label>
+                    <select
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
+                      value={newUser.role}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          role: e.target.value as UserCategory,
+                        })
+                      }
+                    >
+                      <option value="Employee">{t("tabs.employee")}</option>
+                      <option value="Admin">{t("tabs.admin")}</option>
+                      <option value="Customer">{t("tabs.customer")}</option>
+                      <option value="Partner">{t("tabs.partner")}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                      {t("fields.clearance")}
+                    </label>
+                    <select
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
+                      value={newUser.access_level}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          access_level: e.target.value as "Limited" | "Full",
+                        })
+                      }
+                    >
+                      <option value="Limited">{t("options.limited")}</option>
+                      <option value="Full">{t("options.full")}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                      {t("fields.accountStatus")}
+                    </label>
+                    <select
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
+                      value={newUser.status}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          status: e.target.value as StatusUi,
+                        })
+                      }
+                    >
+                      <option value="Active">{t("options.active")}</option>
+                      <option value="Inactive">{t("options.inactive")}</option>
+                      <option value="Pending">{t("options.pending")}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="h-12 w-full rounded-xl bg-[#003566] text-sm font-semibold text-white shadow-lg shadow-[#003566]/20 transition-colors hover:bg-[#002a52]"
+                >
+                  {t("actions.finalizeEnrollment")}
+                </Button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }

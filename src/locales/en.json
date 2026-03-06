@@ -92,6 +92,7 @@
       "users": "Users",
       "schedule": "Schedule",
       "tasks": "Tasks",
+      "copilot": "Copilot",
       "harbor": "Harbor",
       "interaction": "Interaction",
       "settings": "Settings",
@@ -121,6 +122,84 @@
       "minutesAgo": "m ago",
       "hoursAgo": "h ago",
       "daysAgo": "d ago"
+    }
+  },
+  "DashboardAdminCopilot": {
+    "hero": {
+      "kicker": "Admin Copilot",
+      "title": "Action Workflow Console",
+      "description": "Manage whitelist actions, generate drafts, validate payloads, and execute safely with confirmation.",
+      "refreshCatalog": "Refresh Catalog",
+      "refreshing": "Refreshing...",
+      "totalActions": "Total Actions",
+      "highRisk": "High Risk",
+      "generatedAt": "Generated At"
+    },
+    "catalog": {
+      "title": "Action Catalog",
+      "columns": {
+        "action": "Action",
+        "module": "Module",
+        "security": "Security",
+        "confirm": "Confirm"
+      },
+      "yes": "Yes",
+      "no": "No"
+    },
+    "sections": {
+      "draftIntent": "Draft Intent",
+      "validateExecute": "Validate & Execute",
+      "createAction": "Create Action",
+      "createPhrase": "Create Phrase"
+    },
+    "fields": {
+      "actionId": "action_id",
+      "title": "title",
+      "module": "module",
+      "routeTemplate": "route_template",
+      "risk": "risk",
+      "copilotActionId": "copilot_action_id",
+      "phrase": "phrase",
+      "language": "language",
+      "priority": "priority",
+      "payload": "payload",
+      "confirm": "confirm",
+      "enabled": "enabled"
+    },
+    "actions": {
+      "draft": "Draft",
+      "validate": "Validate",
+      "validating": "Validating...",
+      "execute": "Execute",
+      "creating": "Creating...",
+      "createAction": "Create Action",
+      "createPhrase": "Create Phrase"
+    },
+    "toasts": {
+      "loadCatalogFailed": "Failed to load action catalog",
+      "draftCreated": "Draft created",
+      "draftFailed": "Failed to draft action",
+      "invalidPayloadJson": "Payload must be valid JSON",
+      "actionIdRequired": "Action ID is required",
+      "validationCreated": "Validation token created",
+      "validationFailed": "Validation failed",
+      "validateFirst": "Validate first to get a validation token",
+      "executed": "Action executed",
+      "executeFailed": "Execution failed",
+      "actionAndTitleRequired": "action_id and title are required",
+      "actionCreated": "Action created",
+      "createActionFailed": "Failed to create action",
+      "phraseFieldsRequired": "copilot_action_id and phrase are required",
+      "phraseCreated": "Phrase added",
+      "createPhraseFailed": "Failed to create phrase"
+    },
+    "defaults": {
+      "prompt": "Generate the contract for deal 123",
+      "payload": "{\"deal_id\":123}",
+      "newActionTitle": "Create boat",
+      "newActionModule": "boats",
+      "newActionRoute": "/dashboard/admin/boats/create",
+      "phraseText": "create boat"
     }
   },
   "DashboardAdminOverview": {
@@ -335,6 +414,134 @@
         "title": "Revenue Truth",
         "description": "Commission ranking uses your database revenue attribution, not GA4, so partner payout comparisons stay accurate."
       }
+    }
+  },
+  "DashboardAdminUsers": {
+    "header": {
+      "title": "Users Administration",
+      "subtitle": "Identity and Access Control",
+      "searchPlaceholder": "Search by name or email...",
+      "provisionNew": "Provision New"
+    },
+    "tabs": {
+      "employee": "Employee",
+      "admin": "Admin",
+      "partner": "Partner",
+      "customer": "Customer"
+    },
+    "fields": {
+      "fullName": "Full Name",
+      "emailAddress": "Email Address",
+      "systemPassword": "System Password",
+      "assignment": "Assignment",
+      "clearance": "Clearance",
+      "accountStatus": "Account Status"
+    },
+    "options": {
+      "limited": "Limited",
+      "full": "Full",
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending"
+    },
+    "permissions": {
+      "pageAccessControl": "Page Access",
+      "default": "Default",
+      "allow": "Allow",
+      "deny": "Deny",
+      "resetAll": "Reset all"
+    },
+    "actions": {
+      "assumeIdentity": "Assume identity",
+      "terminate": "Terminate",
+      "finalizeEnrollment": "Finalize Enrollment",
+      "refresh": "Refresh"
+    },
+    "labels": {
+      "status": "Status",
+      "loadingUsers": "Loading users..."
+    },
+    "prompts": {
+      "confirmAdminPassword": "Confirm admin password:",
+      "enterOtp": "Enter OTP code (if required):"
+    },
+    "modal": {
+      "title": "Provision Account",
+      "subtitle": "Create a new user account"
+    },
+    "confirm": {
+      "terminate": "Terminate this account?"
+    },
+    "empty": {
+      "title": "No users found",
+      "description": "No {role} accounts have been added yet."
+    },
+    "toasts": {
+      "syncFailed": "Failed to synchronize users",
+      "enrolling": "Creating account...",
+      "enrolled": "Account created",
+      "enrollmentFailed": "Account creation failed",
+      "terminating": "Terminating account...",
+      "terminated": "Account terminated",
+      "terminationFailed": "Failed to terminate account",
+      "assimilating": "Starting impersonation...",
+      "identityAssumed": "Now impersonating {name}",
+      "impersonationFailed": "Failed to impersonate user",
+      "permissionUpdated": "Permission updated",
+      "permissionUpdateFailed": "Failed to update permission",
+      "permissionsReset": "Permissions reset",
+      "permissionsResetFailed": "Failed to reset permissions"
+    }
+  },
+  "DashboardAccount": {
+    "header": {
+      "title": "Account Control",
+      "subtitle": "Identity, profile and security settings"
+    },
+    "tabs": {
+      "profile": "Profile",
+      "personal": "Personal",
+      "address": "Address",
+      "security": "Security",
+      "password": "Password"
+    },
+    "fields": {
+      "fullName": "Full Name",
+      "emailAddress": "Email Address",
+      "phoneNumber": "Phone Number",
+      "dateOfBirth": "Date of Birth",
+      "locale": "Locale",
+      "timezone": "Timezone",
+      "addressLine1": "Address Line 1",
+      "addressLine2": "Address Line 2",
+      "city": "City",
+      "state": "State",
+      "postalCode": "Postal Code",
+      "country": "Country",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "twoFactor": "Two-factor authentication",
+      "otpSecret": "OTP Secret",
+      "otpCode": "OTP Code",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password"
+    },
+    "labels": {
+      "yes": "Yes",
+      "no": "No",
+      "confirmed": "Confirmed:",
+      "user": "User"
+    },
+    "actions": {
+      "syncProfile": "Sync Profile",
+      "saving": "Saving..."
+    },
+    "toasts": {
+      "loadFailed": "Failed to load account profile.",
+      "updateFailed": "Failed to update account.",
+      "saved": "Account updated successfully.",
+      "passwordMismatch": "Password confirmation does not match."
     }
   },
   "DashboardAdminTasks": {

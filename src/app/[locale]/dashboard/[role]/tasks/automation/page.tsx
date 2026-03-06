@@ -457,7 +457,9 @@ export default function TaskAutomationPage() {
           ? "creator"
         : template?.default_assignee_type === "seller"
             ? "seller"
-            : "harbor_user",
+            : template?.default_assignee_type === "admin" || template?.default_assignee_type === "employee"
+              ? "harbor_user"
+              : "harbor_user",
     specificUserId: String(template?.assigned_user_id || ""),
     relatedType: normalizeRelatedModelType(template?.related_type),
     relatedBoatId: String(template?.related_id || ""),
@@ -553,7 +555,7 @@ export default function TaskAutomationPage() {
           draft.assigneeRule === "specific_user"
             ? "specific_user"
             : draft.assigneeRule === "harbor_user"
-            ? "harbor"
+              ? "admin"
               : draft.assigneeRule,
         notification_enabled: true,
         email_enabled: true,

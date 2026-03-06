@@ -8,6 +8,7 @@ import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 import type { UserRole } from "@/lib/auth/roles";
 import Link from "next/link";
+import { CopilotSurface } from "@/components/copilot/CopilotSurface";
 
 type DashboardHeaderProps = {
   locale: AppLocale;
@@ -42,7 +43,7 @@ export function DashboardHeader({
 
   return (
     <header className="fixed left-0 right-0 top-0 z-50 flex h-20 items-center justify-between border-b border-[#d9e3f0] bg-white/95 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95 sm:px-6 lg:px-8">
-      <div className="flex items-center gap-3 sm:gap-4 lg:gap-12">
+      <div className="flex items-center gap-3 sm:gap-4 lg:gap-6">
         <button
           type="button"
           onClick={onOpenMobileNav}
@@ -53,7 +54,7 @@ export function DashboardHeader({
         </button>
 
         <div className="shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 lg:gap-4">
             <Link href="/" className="flex items-center group shrink-0">
               <Image
                 alt=""
@@ -65,6 +66,9 @@ export function DashboardHeader({
                 priority
               />
             </Link>
+            <div className="hidden md:block">
+              <CopilotSurface source="header" variant="compact" className="w-[22rem] lg:w-[24rem]" />
+            </div>
           </div>
         </div>
       </div>

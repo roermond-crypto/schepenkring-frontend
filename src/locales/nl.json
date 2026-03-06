@@ -92,6 +92,7 @@
       "users": "Gebruikers",
       "schedule": "Planning",
       "tasks": "Taken",
+      "copilot": "Copilot",
       "harbor": "Haven",
       "interaction": "Interactie",
       "settings": "Instellingen",
@@ -121,6 +122,84 @@
       "minutesAgo": "m geleden",
       "hoursAgo": "u geleden",
       "daysAgo": "d geleden"
+    }
+  },
+  "DashboardAdminCopilot": {
+    "hero": {
+      "kicker": "Admin Copilot",
+      "title": "Actie Workflow Console",
+      "description": "Beheer whitelist-acties, genereer drafts, valideer payloads en voer veilig uit met bevestiging.",
+      "refreshCatalog": "Catalogus verversen",
+      "refreshing": "Bezig met verversen...",
+      "totalActions": "Totaal acties",
+      "highRisk": "Hoog risico",
+      "generatedAt": "Gegenereerd op"
+    },
+    "catalog": {
+      "title": "Actiecatalogus",
+      "columns": {
+        "action": "Actie",
+        "module": "Module",
+        "security": "Beveiliging",
+        "confirm": "Bevestigen"
+      },
+      "yes": "Ja",
+      "no": "Nee"
+    },
+    "sections": {
+      "draftIntent": "Intentie opstellen",
+      "validateExecute": "Valideren & uitvoeren",
+      "createAction": "Actie maken",
+      "createPhrase": "Zin maken"
+    },
+    "fields": {
+      "actionId": "action_id",
+      "title": "titel",
+      "module": "module",
+      "routeTemplate": "route_template",
+      "risk": "risico",
+      "copilotActionId": "copilot_action_id",
+      "phrase": "zin",
+      "language": "taal",
+      "priority": "prioriteit",
+      "payload": "payload",
+      "confirm": "bevestigen",
+      "enabled": "ingeschakeld"
+    },
+    "actions": {
+      "draft": "Draft",
+      "validate": "Valideren",
+      "validating": "Bezig met valideren...",
+      "execute": "Uitvoeren",
+      "creating": "Bezig met maken...",
+      "createAction": "Actie maken",
+      "createPhrase": "Zin maken"
+    },
+    "toasts": {
+      "loadCatalogFailed": "Actiecatalogus laden mislukt",
+      "draftCreated": "Draft gemaakt",
+      "draftFailed": "Draft maken mislukt",
+      "invalidPayloadJson": "Payload moet geldige JSON zijn",
+      "actionIdRequired": "Action ID is verplicht",
+      "validationCreated": "Validatietoken gemaakt",
+      "validationFailed": "Validatie mislukt",
+      "validateFirst": "Valideer eerst om een validatietoken te krijgen",
+      "executed": "Actie uitgevoerd",
+      "executeFailed": "Uitvoeren mislukt",
+      "actionAndTitleRequired": "action_id en titel zijn verplicht",
+      "actionCreated": "Actie gemaakt",
+      "createActionFailed": "Actie maken mislukt",
+      "phraseFieldsRequired": "copilot_action_id en zin zijn verplicht",
+      "phraseCreated": "Zin toegevoegd",
+      "createPhraseFailed": "Zin maken mislukt"
+    },
+    "defaults": {
+      "prompt": "Genereer het contract voor deal 123",
+      "payload": "{\"deal_id\":123}",
+      "newActionTitle": "Boot maken",
+      "newActionModule": "boats",
+      "newActionRoute": "/dashboard/admin/boats/create",
+      "phraseText": "boot maken"
     }
   },
   "DashboardAdminOverview": {
@@ -335,6 +414,134 @@
         "title": "Omzetbasis",
         "description": "Commissieranglijsten gebruiken omzettoewijzing uit je database, niet uit GA4, zodat partnervergelijkingen correct blijven."
       }
+    }
+  },
+  "DashboardAdminUsers": {
+    "header": {
+      "title": "Gebruikersbeheer",
+      "subtitle": "Identiteit en toegangscontrole",
+      "searchPlaceholder": "Zoek op naam of e-mail...",
+      "provisionNew": "Nieuwe gebruiker"
+    },
+    "tabs": {
+      "employee": "Medewerker",
+      "admin": "Admin",
+      "partner": "Partner",
+      "customer": "Klant"
+    },
+    "fields": {
+      "fullName": "Volledige naam",
+      "emailAddress": "E-mailadres",
+      "systemPassword": "Systeemwachtwoord",
+      "assignment": "Toewijzing",
+      "clearance": "Toegang",
+      "accountStatus": "Accountstatus"
+    },
+    "options": {
+      "limited": "Beperkt",
+      "full": "Volledig",
+      "active": "Actief",
+      "inactive": "Inactief",
+      "pending": "In afwachting"
+    },
+    "permissions": {
+      "pageAccessControl": "Paginatoegang",
+      "default": "Standaard",
+      "allow": "Toestaan",
+      "deny": "Weigeren",
+      "resetAll": "Alles resetten"
+    },
+    "actions": {
+      "assumeIdentity": "Identiteit overnemen",
+      "terminate": "Beeindigen",
+      "finalizeEnrollment": "Gebruiker aanmaken",
+      "refresh": "Vernieuwen"
+    },
+    "labels": {
+      "status": "Status",
+      "loadingUsers": "Gebruikers laden..."
+    },
+    "prompts": {
+      "confirmAdminPassword": "Bevestig admin wachtwoord:",
+      "enterOtp": "Voer OTP-code in (indien vereist):"
+    },
+    "modal": {
+      "title": "Account aanmaken",
+      "subtitle": "Maak een nieuw gebruikersaccount"
+    },
+    "confirm": {
+      "terminate": "Deze account beeindigen?"
+    },
+    "empty": {
+      "title": "Geen gebruikers gevonden",
+      "description": "Er zijn nog geen {role}-accounts toegevoegd."
+    },
+    "toasts": {
+      "syncFailed": "Synchroniseren van gebruikers mislukt",
+      "enrolling": "Account wordt aangemaakt...",
+      "enrolled": "Account aangemaakt",
+      "enrollmentFailed": "Aanmaken van account mislukt",
+      "terminating": "Account wordt beeindigd...",
+      "terminated": "Account beeindigd",
+      "terminationFailed": "Beeindigen van account mislukt",
+      "assimilating": "Impersonatie starten...",
+      "identityAssumed": "Nu ingelogd als {name}",
+      "impersonationFailed": "Impersonatie mislukt",
+      "permissionUpdated": "Recht bijgewerkt",
+      "permissionUpdateFailed": "Bijwerken van recht mislukt",
+      "permissionsReset": "Rechten gereset",
+      "permissionsResetFailed": "Resetten van rechten mislukt"
+    }
+  },
+  "DashboardAccount": {
+    "header": {
+      "title": "Accountbeheer",
+      "subtitle": "Identiteit, profiel en beveiligingsinstellingen"
+    },
+    "tabs": {
+      "profile": "Profiel",
+      "personal": "Persoonlijk",
+      "address": "Adres",
+      "security": "Beveiliging",
+      "password": "Wachtwoord"
+    },
+    "fields": {
+      "fullName": "Volledige naam",
+      "emailAddress": "E-mailadres",
+      "phoneNumber": "Telefoonnummer",
+      "dateOfBirth": "Geboortedatum",
+      "locale": "Taal",
+      "timezone": "Tijdzone",
+      "addressLine1": "Adresregel 1",
+      "addressLine2": "Adresregel 2",
+      "city": "Stad",
+      "state": "Provincie",
+      "postalCode": "Postcode",
+      "country": "Land",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "twoFactor": "Twee-factor authenticatie",
+      "otpSecret": "OTP-geheim",
+      "otpCode": "OTP-code",
+      "currentPassword": "Huidig wachtwoord",
+      "newPassword": "Nieuw wachtwoord",
+      "confirmPassword": "Bevestig wachtwoord"
+    },
+    "labels": {
+      "yes": "Ja",
+      "no": "Nee",
+      "confirmed": "Bevestigd:",
+      "user": "Gebruiker"
+    },
+    "actions": {
+      "syncProfile": "Profiel synchroniseren",
+      "saving": "Opslaan..."
+    },
+    "toasts": {
+      "loadFailed": "Laden van accountprofiel mislukt.",
+      "updateFailed": "Bijwerken van account mislukt.",
+      "saved": "Account succesvol bijgewerkt.",
+      "passwordMismatch": "Wachtwoordbevestiging komt niet overeen."
     }
   },
   "DashboardAdminTasks": {

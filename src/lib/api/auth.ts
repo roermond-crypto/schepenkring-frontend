@@ -6,6 +6,11 @@ export type SessionUser = {
   name: string;
   email: string;
   role: UserRole;
+  type?: "ADMIN" | "EMPLOYEE" | "CLIENT";
+  status?: "ACTIVE" | "DISABLED" | "BLOCKED";
+  phone?: string | null;
+  client_location_id?: number | null;
+  locations?: Array<{ id: number; name?: string; code?: string; role?: string }>;
 };
 
 export type SessionResponse = {
@@ -39,16 +44,45 @@ export type SignupResponse =
       message?: string;
     };
 
+export type PublicLocation = {
+  id: number;
+  name: string;
+  code?: string | null;
+};
+
+export async function getPublicLocations() {
+  return apiRequest<PublicLocation[]>({
+    url: "/public/locations",
+    method: "GET",
+  });
+}
+
 export async function login(payload: {
   email: string;
   password: string;
   remember_terminal?: boolean;
+  device_name?: string;
 }) {
-  return apiRequest<LoginResponse>({
-    url: "/login",
-    method: "POST",
-    data: payload,
-  });
+  const body = {
+    email: payload.email,
+    password: payload.password,
+    remember_terminal: payload.remember_terminal,
+    device_name: payload.device_name ?? "web",
+  };
+
+  try {
+    return await apiRequest<LoginResponse>({
+      url: "/auth/login",
+      method: "POST",
+      data: body,
+    });
+  } catch {
+    return apiRequest<LoginResponse>({
+      url: "/login",
+      method: "POST",
+      data: body,
+    });
+  }
 }
 
 export async function verifyStepUp(payload: {
@@ -80,17 +114,39 @@ export async function verifyStepUp(payload: {
   throw new Error("Verification endpoint not available");
 }
 
-export async function signup(payload: { name: string; email: string; password: string }) {
-  return apiRequest<SignupResponse>({
-    url: "/register",
-    method: "POST",
-    data: {
-      ...payload,
-      password_confirmation: payload.password,
-      accept_terms: true,
-      role: "client",
-    },
-  });
+export async function signup(payload: {
+  name: string;
+  email: string;
+  phone?: string;
+  location_id?: number;
+  website?: string;
+  password: string;
+}) {
+  const body = {
+    name: payload.name,
+    email: payload.email,
+    phone: payload.phone,
+    location_id: payload.location_id,
+    website: payload.website ?? "",
+    password: payload.password,
+    password_confirmation: payload.password,
+    accept_terms: true,
+    role: "client",
+  };
+
+  try {
+    return await apiRequest<SignupResponse>({
+      url: "/auth/register",
+      method: "POST",
+      data: body,
+    });
+  } catch {
+    return apiRequest<SignupResponse>({
+      url: "/register",
+      method: "POST",
+      data: body,
+    });
+  }
 }
 
 export async function verifyEmail(payload: { email: string; code: string }) {
