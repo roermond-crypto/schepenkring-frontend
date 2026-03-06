@@ -28,21 +28,21 @@ export type StepUpChallengeResponse = {
 
 export type LoginResponse =
   | {
-      token?: string;
-      user: SessionUser;
-    }
+    token?: string;
+    user: SessionUser;
+  }
   | StepUpChallengeResponse;
 
 export type SignupResponse =
   | {
-      token?: string;
-      user: SessionUser;
-    }
+    token?: string;
+    user: SessionUser;
+  }
   | {
-      verification_required: true;
-      email: string;
-      message?: string;
-    };
+    verification_required: true;
+    email: string;
+    message?: string;
+  };
 
 export type PublicLocation = {
   id: number;
@@ -83,6 +83,12 @@ export async function login(payload: {
       data: body,
     });
   }
+  return apiRequest<LoginResponse>({
+    baseURL: "/api/auth",
+    url: "/login",
+    method: "POST",
+    data: payload,
+  });
 }
 
 export async function verifyStepUp(payload: {
@@ -100,6 +106,7 @@ export async function verifyStepUp(payload: {
   for (const endpoint of endpoints) {
     try {
       return await apiRequest<{ token?: string; user: SessionUser }>({
+        baseURL: "/api/auth",
         url: endpoint,
         method: "POST",
         data: payload,
@@ -147,10 +154,23 @@ export async function signup(payload: {
       data: body,
     });
   }
+export async function signup(payload: { name: string; email: string; password: string }) {
+  return apiRequest<SignupResponse>({
+    baseURL: "/api/auth",
+    url: "/signup",
+    method: "POST",
+    data: {
+      ...payload,
+      password_confirmation: payload.password,
+      accept_terms: true,
+      role: "client",
+    },
+  });
 }
 
 export async function verifyEmail(payload: { email: string; code: string }) {
   return apiRequest<{ verified: boolean; token?: string; user?: SessionUser }>({
+    baseURL: "/api/auth",
     url: "/verify-email",
     method: "POST",
     data: payload,
@@ -159,6 +179,7 @@ export async function verifyEmail(payload: { email: string; code: string }) {
 
 export async function resendVerification(payload: { email: string }) {
   return apiRequest<{ sent: true; message?: string }>({
+    baseURL: "/api/auth",
     url: "/resend-verification",
     method: "POST",
     data: payload,
@@ -167,6 +188,7 @@ export async function resendVerification(payload: { email: string }) {
 
 export async function logout() {
   return apiRequest<{ success?: true; message?: string }>({
+    baseURL: "/api/auth",
     url: "/logout",
     method: "POST",
   });
@@ -174,6 +196,7 @@ export async function logout() {
 
 export async function getSession() {
   return apiRequest<SessionResponse>({
+    baseURL: "/api/auth",
     url: "/session",
     method: "GET",
   });

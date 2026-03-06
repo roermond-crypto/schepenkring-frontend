@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button";
 import { toast, Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
-const STORAGE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || "https://schepen-kring.nl/storage/";
+const STORAGE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || "https://app.schepen-kring.nl/storage/";
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=600&q=80";
 

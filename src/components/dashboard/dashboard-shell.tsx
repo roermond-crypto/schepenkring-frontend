@@ -11,6 +11,8 @@ import type { AppLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { stopImpersonation } from "@/lib/api/account";
 import { Button } from "@/components/ui/button";
+import LockscreenOverlay from "@/components/LockscreenOverlay";
+import { NetworkStatusBar } from "@/components/common/NetworkStatusBar";
 
 type DashboardShellProps = {
   locale: AppLocale;
@@ -78,76 +80,71 @@ export function DashboardShell({ locale, role, userName, userEmail, children }: 
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f8fc] dark:bg-slate-950">
-      <DashboardHeader
-        locale={locale}
-        role={role}
-        userName={userName}
-        userEmail={userEmail}
-        onOpenMobileNav={() => setMobileOpen(true)}
-        onLogout={handleLogout}
-      />
-
-      <div className="flex w-full min-w-0 pt-20">
-        <Sidebar
+    <LockscreenOverlay locale={locale} userName={userName}>
+      <NetworkStatusBar />
+      <div className="min-h-screen bg-[#f5f8fc] dark:bg-slate-950">
+        <DashboardHeader
           locale={locale}
           role={role}
-          variant="sidebar"
+          userName={userName}
+          userEmail={userEmail}
+          onOpenMobileNav={() => setMobileOpen(true)}
           onLogout={handleLogout}
-          onCollapse={setIsSidebarCollapsed}
         />
 
-        <div
-          className={cn(
-            "fixed inset-0 z-50 lg:hidden",
-            mobileOpen ? "pointer-events-auto" : "pointer-events-none",
-          )}
-          aria-hidden={!mobileOpen}
-        >
-          <button
-            type="button"
-            className={cn(
-              "absolute inset-0 bg-black/50 transition-opacity duration-300",
-              mobileOpen ? "opacity-100" : "opacity-0",
-            )}
-            onClick={() => setMobileOpen(false)}
-            aria-label="Close navigation"
+        <div className="flex w-full min-w-0 pt-20">
+          <Sidebar
+            locale={locale}
+            role={role}
+            variant="sidebar"
+            onLogout={handleLogout}
+            onCollapse={setIsSidebarCollapsed}
           />
+
           <div
             className={cn(
-              "absolute left-0 top-0 h-full transform transition-transform duration-300 ease-out",
-              mobileOpen ? "translate-x-0" : "-translate-x-full",
+              "fixed inset-0 z-50 lg:hidden",
+              mobileOpen ? "pointer-events-auto" : "pointer-events-none",
+            )}
+            aria-hidden={!mobileOpen}
+          >
+            <button
+              type="button"
+              className={cn(
+                "absolute inset-0 bg-black/50 transition-opacity duration-300",
+                mobileOpen ? "opacity-100" : "opacity-0",
+              )}
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close navigation"
+            />
+            <div
+              className={cn(
+                "absolute left-0 top-0 h-full transform transition-transform duration-300 ease-out",
+                mobileOpen ? "translate-x-0" : "-translate-x-full",
+              )}
+            >
+              <Sidebar
+                locale={locale}
+                role={role}
+                variant="drawer"
+                onLogout={handleLogout}
+                onNavigate={() => setMobileOpen(false)}
+              />
+            </div>
+          </div>
+
+          <main
+            className={cn(
+              "min-h-[calc(100vh-80px)] w-full min-w-0 flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8",
+              "ml-0 transition-[margin] duration-300",
+              !isSidebarCollapsed && "lg:ml-64",
+              isSidebarCollapsed && "lg:ml-20",
             )}
           >
-            <Sidebar
-              locale={locale}
-              role={role}
-              variant="drawer"
-              onLogout={handleLogout}
-              onNavigate={() => setMobileOpen(false)}
-            />
-          </div>
+            {children}
+          </main>
         </div>
-
-        <main
-          className={cn(
-            "min-h-[calc(100vh-80px)] w-full min-w-0 flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8",
-            "ml-0 transition-[margin] duration-300",
-            !isSidebarCollapsed && "lg:ml-64",
-            isSidebarCollapsed && "lg:ml-20",
-          )}
-        >
-          {impersonatingName ? (
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/40 dark:text-amber-200">
-              <span>You are impersonating {impersonatingName}.</span>
-              <Button type="button" size="sm" variant="outline" disabled={stoppingImpersonation} onClick={() => void handleStopImpersonation()}>
-                {stoppingImpersonation ? "Stopping..." : "Stop impersonation"}
-              </Button>
-            </div>
-          ) : null}
-          {children}
-        </main>
       </div>
-    </div>
+    </LockscreenOverlay>
   );
 }

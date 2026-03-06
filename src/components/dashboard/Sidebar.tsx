@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Ship,
   Settings,
+  Share2,
   Users,
   Wifi,
   WifiOff,
@@ -81,7 +82,7 @@ export function Sidebar({
       { title: t.users, href: `${root}/users`, icon: Users },
       { title: t.schedule, href: `${root}/onboarding`, icon: Calendar },
       { title: t.harbor, href: `${root}/emails`, icon: Anchor },
-      { title: t.interaction, href: `${root}/emails`, icon: MessageSquare },
+      { title: t.interaction, href: `${root}/chat`, icon: MessageSquare },
       { title: t.settings, href: `${root}/onboarding`, icon: Settings },
       { title: t.tasks, href: `${root}/tasks`, icon: ClipboardList },
     ];
@@ -96,6 +97,22 @@ export function Sidebar({
       });
       items.push({ title: t.audit, href: `${root}/audit`, icon: ShieldAlert });
       items.push({ title: t.errors, href: `${root}/errors`, icon: TriangleAlert });
+      items.splice(
+        4,
+        0,
+        {
+          title: t.harborPerformance,
+          href: `${root}/harbors/performance`,
+          icon: Gauge,
+        },
+        {
+          title: t.socialAutomation,
+          href: `${root}/social`,
+          icon: Share2,
+        },
+        { title: t.audit, href: `${root}/audit`, icon: ShieldAlert },
+        { title: t.errors, href: `${root}/errors`, icon: TriangleAlert },
+      );
     }
 
     items.push({ title: t.settings, href: `${root}/account`, icon: Settings });
@@ -111,6 +128,7 @@ export function Sidebar({
     t.harborPerformance,
     t.overview,
     t.settings,
+    t.socialAutomation,
     t.tasks,
     t.users,
   ]);

@@ -94,7 +94,7 @@
       "tasks": "Tasks",
       "copilot": "Copilot",
       "harbor": "Harbor",
-      "interaction": "Interaction",
+      "interaction": "Chat",
       "settings": "Settings",
       "terminalSuffix": "Terminal",
       "online": "Online",
@@ -104,7 +104,8 @@
       "collapse": "Collapse sidebar",
       "audit": "Audit",
       "errors": "Errors",
-      "harborPerformance": "Harbor Performance"
+      "harborPerformance": "Harbor Performance",
+      "socialAutomation": "Social Automation"
     },
     "notifications": {
       "label": "Notifications",
@@ -542,6 +543,78 @@
       "updateFailed": "Failed to update account.",
       "saved": "Account updated successfully.",
       "passwordMismatch": "Password confirmation does not match."
+  "DashboardAdminSocial": {
+    "title": "Social Automation",
+    "subtitle": "Video Pipeline & Distribution",
+    "description": "Manage generated boat videos, schedule content in batches, and monitor publication performance across connected social publishers.",
+    "actions": {
+      "refresh": "Refresh",
+      "schedule": "Schedule Selected",
+      "open": "Open Video",
+      "regenerate": "Regenerate",
+      "reschedule": "Reschedule",
+      "retry": "Retry",
+      "cancel": "Cancel",
+      "saveReschedule": "Save Time"
+    },
+    "stats": {
+      "videos": "Videos",
+      "scheduled": "Scheduled",
+      "published": "Published",
+      "impressions": "Impressions"
+    },
+    "scheduler": {
+      "label": "Scheduler",
+      "title": "30-Day Planner",
+      "description": "Choose the posting cadence, pick publishers, and queue the selected videos for automatic publishing.",
+      "startDate": "Start Date",
+      "time": "Posting Time",
+      "publishers": "Publishers",
+      "skipWeekends": "Skip weekend dates when building the schedule.",
+      "selectedVideos": "Selected Videos",
+      "useAllReady": "Use All Ready",
+      "videosChosen": "videos selected",
+      "readyAvailable": "ready to schedule"
+    },
+    "library": {
+      "label": "Library",
+      "videos": "Videos",
+      "posts": "Posts"
+    },
+    "videoCard": {
+      "video": "Video",
+      "boat": "Boat",
+      "duration": "Duration",
+      "template": "Template",
+      "created": "Created"
+    },
+    "postCard": {
+      "post": "Post",
+      "video": "Video",
+      "publishers": "Publishers",
+      "scheduled": "Scheduled",
+      "published": "Published",
+      "impressions": "Impressions",
+      "clicks": "Clicks"
+    },
+    "empty": {
+      "videos": "No rendered videos are available yet.",
+      "posts": "No scheduled or published posts have been created yet."
+    },
+    "errors": {
+      "loadFailed": "Could not load social automation data.",
+      "selectVideos": "Select at least one video before scheduling.",
+      "scheduleFailed": "Could not create the publishing schedule.",
+      "regenerateFailed": "Could not queue video regeneration.",
+      "retryFailed": "Could not retry this post.",
+      "invalidReschedule": "Choose a valid date and time.",
+      "rescheduleFailed": "Could not reschedule this post."
+    },
+    "toasts": {
+      "scheduleCreated": "Publishing schedule created.",
+      "videoQueued": "Video regeneration queued.",
+      "retryQueued": "Retry queued.",
+      "rescheduled": "Post rescheduled."
     }
   },
   "DashboardAdminTasks": {
@@ -687,6 +760,70 @@
       "me": "Me",
       "due": "Due",
       "overdue": "OVERDUE"
+    }
+  },
+  "lockscreen": {
+    "pinPlaceholder": "PIN",
+    "welcomeBack": "Welcome back",
+    "incorrectPin": "Incorrect PIN",
+    "unlock": "Unlock",
+    "logout": "Log out",
+    "fallbackUser": "User",
+    "profileAlt": "Profile",
+    "lockNow": "Lock Now",
+    "screenLocked": "Screen locked"
+  },
+  "DashboardChat": {
+    "mobile": {
+      "conversations": "Conversations",
+      "contact": "Contact"
+    },
+    "empty": {
+      "title": "Welcome to Chat",
+      "description": "Select a conversation from the left panel to start chatting. You will see messages and contact details here."
+    },
+    "list": {
+      "title": "Messages",
+      "count": "{count} conversation(s)",
+      "searchPlaceholder": "Search conversations...",
+      "emptyTitle": "No conversations",
+      "emptySearch": "Try a different search",
+      "emptyDefault": "All caught up!",
+      "widgetSource": "widget",
+      "tabs": {
+        "all": "All",
+        "open": "Open",
+        "pending": "Pending",
+        "solved": "Solved"
+      },
+      "time": {
+        "now": "now",
+        "minutes": "{count}m",
+        "hours": "{count}h",
+        "days": "{count}d"
+      }
+    },
+    "messages": {
+      "today": "Today",
+      "aiDraftReply": "AI Draft Reply",
+      "summarize": "Summarize",
+      "typePlaceholder": "Type your message...",
+      "callAction": "Start call",
+      "callUnavailable": "No phone number available",
+      "callFailed": "Could not start the call. Try again.",
+      "status": {
+        "open": "Open",
+        "pending": "Pending",
+        "solved": "Solved"
+      }
+    },
+    "detail": {
+      "contactInfo": "Contact Info",
+      "email": "Email",
+      "phone": "Phone",
+      "location": "Location",
+      "company": "Company",
+      "sourceUrl": "Source URL"
     }
   }
 }
