@@ -543,6 +543,8 @@
       "updateFailed": "Konto konnte nicht aktualisiert werden.",
       "saved": "Konto erfolgreich aktualisiert.",
       "passwordMismatch": "Passwortbestatigung stimmt nicht uberein."
+    }
+  },
   "DashboardAdminSocial": {
     "title": "Social-Automatisierung",
     "subtitle": "Videopipeline und Verteilung",

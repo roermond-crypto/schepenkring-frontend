@@ -1,10 +1,19 @@
 import axios from "axios";
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  process.env.NEXT_PUBLIC_BACKEND_API_URL ??
-  process.env.BACKEND_API_URL ??
-  "http://localhost:8000/api";
+function resolveBaseUrl() {
+  const configured =
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ??
+    process.env.BACKEND_API_URL;
+  if (configured) return configured;
+  if (
+    typeof window !== "undefined" &&
+    window.location.hostname === "localhost"
+  ) {
+    return "http://localhost:8000/api";
+  }
+  return "https://app.schepen-kring.nl/api";
+}
 
 export const api = axios.create({
   baseURL: resolveBaseUrl(),

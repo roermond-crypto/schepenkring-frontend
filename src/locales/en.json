@@ -543,6 +543,8 @@
       "updateFailed": "Failed to update account.",
       "saved": "Account updated successfully.",
       "passwordMismatch": "Password confirmation does not match."
+    }
+  },
   "DashboardAdminSocial": {
     "title": "Social Automation",
     "subtitle": "Video Pipeline & Distribution",

@@ -16,6 +16,8 @@ import { setClientSession } from "@/lib/auth/client-session";
 import { normalizeRole, type UserRole } from "@/lib/auth/roles";
 import { type AppLocale } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/common/language-switcher";
+import boatsHeroImage from "../../../public/boatslogo.jpg";
+import schepenkringLogo from "../../../public/schepenkring-logo.png";
 
 type AuthMode = "login" | "register";
 
@@ -342,7 +344,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
           {/* Background Image */}
           <Image
             alt=""
-            src={"/boatslogo.jpg"}
+            src={boatsHeroImage}
             fill
             className="object-cover"
             priority
@@ -351,7 +353,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
           {/* Overlay Logo (Centered) */}
           <div className="relative z-10">
             <Image
-              src={"/schepenkring-logo.png"}
+              src={schepenkringLogo}
               alt={""}
               width={240}
               height={68}

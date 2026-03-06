@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { logout } from "@/lib/api/auth";
-import { clearClientSession, setClientSession } from "@/lib/auth/client-session";
+import {
+  clearClientSession,
+  setClientSession,
+} from "@/lib/auth/client-session";
 import type { UserRole } from "@/lib/auth/roles";
 import type { AppLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -22,11 +25,19 @@ type DashboardShellProps = {
   children: React.ReactNode;
 };
 
-export function DashboardShell({ locale, role, userName, userEmail, children }: DashboardShellProps) {
+export function DashboardShell({
+  locale,
+  role,
+  userName,
+  userEmail,
+  children,
+}: DashboardShellProps) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [impersonatingName, setImpersonatingName] = useState<string | null>(null);
+  const [impersonatingName, setImpersonatingName] = useState<string | null>(
+    null,
+  );
   const [stoppingImpersonation, setStoppingImpersonation] = useState(false);
 
   useEffect(() => {
@@ -49,7 +60,7 @@ export function DashboardShell({ locale, role, userName, userEmail, children }: 
       // Clear local session even if backend logout fails.
     }
     clearClientSession();
-    router.push(`/${locale}/login`);
+    router.push(`/${locale}`);
     router.refresh();
   }
 

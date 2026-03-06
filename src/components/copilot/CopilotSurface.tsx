@@ -44,6 +44,17 @@ type VoiceOption = {
   lang: string;
 };
 
+type SpeechRecognitionCtor = new () => {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  start: () => void;
+};
+
 function compactText(value?: string | null) {
   if (!value) return "";
   return value.replace(/\s+/g, " ").trim();
@@ -319,8 +330,8 @@ export function CopilotSurface({
     if (typeof window === "undefined") return;
 
     const speechWindow = window as Window & {
-      SpeechRecognition?: new () => SpeechRecognition;
-      webkitSpeechRecognition?: new () => SpeechRecognition;
+      SpeechRecognition?: SpeechRecognitionCtor;
+      webkitSpeechRecognition?: SpeechRecognitionCtor;
     };
 
     const Recognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
@@ -336,7 +347,7 @@ export function CopilotSurface({
     recognition.onstart = () => setListening(true);
     recognition.onend = () => setListening(false);
     recognition.onerror = () => setListening(false);
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event) => {
       const transcript = compactText(event?.results?.[0]?.[0]?.transcript);
       if (transcript) {
         setQuery(transcript);
