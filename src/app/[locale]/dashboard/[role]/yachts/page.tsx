@@ -2,8 +2,9 @@
 
 import { useState, useEffect, SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api/http";
-import { useLocale, useTranslations } from "@/lib/i18n-hooks";
+import { api } from "@/lib/api";
+import { useLocale } from "next-intl";
+import { getDictionary } from "@/lib/i18n";
 import {
   Plus,
   Loader2,
@@ -79,7 +80,7 @@ const statusConfig: Record<string, { color: string; bg: string; border: string }
 export default function FleetManagementPage() {
   const router = useRouter();
   const locale = useLocale();
-  const dict = useTranslations(locale);
+  const dict = getDictionary(locale) as any;
   const t = dict.DashboardYachts || {} as any;
   const [fleet, setFleet] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

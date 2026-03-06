@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, SyntheticEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { api } from "@/lib/api/http";
+import { api } from "@/lib/api";
 import {
   Camera,
   Loader2,
@@ -41,7 +41,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
-import { useLocale, useTranslations } from "@/lib/i18n-hooks";
+import { useLocale } from "next-intl";
+import { getDictionary } from "@/lib/i18n";
 
 const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
   ssr: false,
@@ -104,7 +105,7 @@ export default function YachtEditorPage() {
   // We can't safely extract locale from params directly if it's missing or async,
   // so we'll grab it safely using our hook that reads the pathname
   const locale = useLocale();
-  const dict = useTranslations(locale);
+  const dict = getDictionary(locale) as any;
   const t = dict?.YachtWizard || {} as any;
   const router = useRouter();
 
