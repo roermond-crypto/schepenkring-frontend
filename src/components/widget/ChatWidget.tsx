@@ -7,9 +7,11 @@ import {
   Minimize2,
   Paperclip,
   Send,
+  WifiOff,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 type Step = "intro" | "chat";
 type ThemePreset = "ocean" | "violet" | "sunset";
@@ -395,6 +397,7 @@ export function ChatWidget({
   themePreset = "ocean",
   colorSettings,
 }: ChatWidgetProps) {
+  const { isOnline } = useNetworkStatus();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<Step>("chat");
   const [guestInfo, setGuestInfo] = useState<PreChatFormData | null>({
@@ -565,13 +568,28 @@ export function ChatWidget({
             </div>
 
             <div className="h-[calc(100%-52px)]">
-              <ChatBody
-                messages={messages}
-                onSend={handleSendMessage}
-                typing={typing}
-                colors={colors}
-                harborName={harborName}
-              />
+              {!isOnline ? (
+                <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+                    <WifiOff size={28} className="text-slate-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-700">
+                    No internet connection
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
+                    Please check your connection and try again.
+                    We&rsquo;ll be here when you&rsquo;re back online.
+                  </p>
+                </div>
+              ) : (
+                <ChatBody
+                  messages={messages}
+                  onSend={handleSendMessage}
+                  typing={typing}
+                  colors={colors}
+                  harborName={harborName}
+                />
+              )}
             </div>
           </div>
         </>

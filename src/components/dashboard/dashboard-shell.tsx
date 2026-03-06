@@ -10,6 +10,7 @@ import type { UserRole } from "@/lib/auth/roles";
 import type { AppLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import LockscreenOverlay from "@/components/LockscreenOverlay";
+import { NetworkStatusBar } from "@/components/common/NetworkStatusBar";
 
 type DashboardShellProps = {
   locale: AppLocale;
@@ -37,6 +38,7 @@ export function DashboardShell({ locale, role, userName, userEmail, children }: 
 
   return (
     <LockscreenOverlay locale={locale} userName={userName}>
+      <NetworkStatusBar />
       <div className="min-h-screen bg-[#f5f8fc] dark:bg-slate-950">
         <DashboardHeader
           locale={locale}
