@@ -4,7 +4,7 @@ const baseURL =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   process.env.NEXT_PUBLIC_BACKEND_API_URL ??
   process.env.BACKEND_API_URL ??
-  "https://app.schepen-kring.nl/api";
+  "http://localhost:8000/api";
 
 export const api = axios.create({
   baseURL,

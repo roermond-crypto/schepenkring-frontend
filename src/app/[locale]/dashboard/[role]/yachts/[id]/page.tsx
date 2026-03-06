@@ -81,7 +81,7 @@ const DRAFT_KEY_PREFIX = "yacht_draft_";
 const MAX_IMAGES_UPLOAD = 30;
 
 // Configuration
-const STORAGE_URL = "https://schepen-kring.nl/storage/";
+const STORAGE_URL = "https://app.schepen-kring.nl/storage/";
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=600&q=80";
 
@@ -472,7 +472,9 @@ export default function YachtEditorPage() {
       toast.loading("Creating vessel draft...");
       const fd = new FormData();
       fd.append("status", "draft");
-      const createRes = await api.post("/yachts", fd);
+      const createRes = await api.post("/yachts", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       targetId = createRes.data.id;
       setCreatedYachtId(targetId as number);
     }
@@ -505,7 +507,9 @@ export default function YachtEditorPage() {
       try {
         const fd = new FormData();
         fd.append("status", "draft");
-        const createRes = await api.post("/yachts", fd);
+        const createRes = await api.post("/yachts", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
         targetId = createRes.data.id;
         setCreatedYachtId(targetId as number);
         toast.dismiss(loadingToastId);
@@ -694,7 +698,9 @@ export default function YachtEditorPage() {
         toast.loading("Creating vessel draft...", { id: toastId });
         const fd = new FormData();
         fd.append("status", "draft");
-        const createRes = await api.post("/yachts", fd);
+        const createRes = await api.post("/yachts", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
         targetId = createRes.data.id;
         setCreatedYachtId(targetId as number);
       }
@@ -703,7 +709,9 @@ export default function YachtEditorPage() {
       const uploadFd = new FormData();
       filesToUpload.forEach((f) => uploadFd.append("images[]", f));
 
-      const res = await api.post(`/yachts/${targetId}/images/upload`, uploadFd);
+      const res = await api.post(`/yachts/${targetId}/images/upload`, uploadFd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       // Auto-set the first uploaded file as main profile
       if (!mainFile && !mainPreview && filesToUpload.length > 0) {
@@ -1263,13 +1271,17 @@ export default function YachtEditorPage() {
 
       if (!isNewMode && selectedYacht) {
         // UPDATE
-        await api.put(`/yachts/${selectedYacht.id}`, formData);
+        formData.append("_method", "PUT");
+        await api.post(`/yachts/${selectedYacht.id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       } else {
         // CREATE NEW
         try {
           const res = await api.post("/partner/yachts", formData, {
             headers: {
               "X-Offline-ID": offlineIdRef.current,
+              "Content-Type": "multipart/form-data",
             }
           });
           finalYachtId = res.data.id;
@@ -1281,6 +1293,7 @@ export default function YachtEditorPage() {
             const res = await api.post("/yachts", formData, {
               headers: {
                 "X-Offline-ID": offlineIdRef.current,
+                "Content-Type": "multipart/form-data",
               }
             });
             finalYachtId = res.data.id;

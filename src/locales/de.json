@@ -103,7 +103,8 @@
       "collapse": "Sidebar einklappen",
       "audit": "Audit",
       "errors": "Fehler",
-      "harborPerformance": "Hafenleistung"
+      "harborPerformance": "Hafenleistung",
+      "socialAutomation": "Social-Automatisierung"
     },
     "notifications": {
       "label": "Benachrichtigungen",
@@ -337,6 +338,80 @@
       }
     }
   },
+  "DashboardAdminSocial": {
+    "title": "Social-Automatisierung",
+    "subtitle": "Videopipeline und Verteilung",
+    "description": "Verwalten Sie generierte Bootsvideos, planen Sie Inhalte in Serien und verfolgen Sie die Veröffentlichungsleistung über verbundene Social-Publisher.",
+    "actions": {
+      "refresh": "Aktualisieren",
+      "schedule": "Auswahl planen",
+      "open": "Video öffnen",
+      "regenerate": "Neu generieren",
+      "reschedule": "Neu planen",
+      "retry": "Erneut versuchen",
+      "cancel": "Abbrechen",
+      "saveReschedule": "Zeit speichern"
+    },
+    "stats": {
+      "videos": "Videos",
+      "scheduled": "Geplant",
+      "published": "Veröffentlicht",
+      "impressions": "Impressionen"
+    },
+    "scheduler": {
+      "label": "Planer",
+      "title": "30-Tage-Planer",
+      "description": "Wählen Sie den Veröffentlichungsrhythmus, die Publisher und stellen Sie die ausgewählten Videos für die automatische Veröffentlichung ein.",
+      "startDate": "Startdatum",
+      "time": "Veröffentlichungszeit",
+      "publishers": "Publisher",
+      "skipWeekends": "Wochenendtage beim Erstellen des Plans überspringen.",
+      "selectedVideos": "Ausgewählte Videos",
+      "useAllReady": "Alle Bereiten nutzen",
+      "videosChosen": "Videos ausgewählt",
+      "readyAvailable": "bereit zur Planung"
+    },
+    "library": {
+      "label": "Bibliothek",
+      "videos": "Videos",
+      "posts": "Posts"
+    },
+    "videoCard": {
+      "video": "Video",
+      "boat": "Boot",
+      "duration": "Dauer",
+      "template": "Vorlage",
+      "created": "Erstellt"
+    },
+    "postCard": {
+      "post": "Post",
+      "video": "Video",
+      "publishers": "Publisher",
+      "scheduled": "Geplant",
+      "published": "Veröffentlicht",
+      "impressions": "Impressionen",
+      "clicks": "Klicks"
+    },
+    "empty": {
+      "videos": "Es sind noch keine gerenderten Videos verfügbar.",
+      "posts": "Es wurden noch keine geplanten oder veröffentlichten Posts erstellt."
+    },
+    "errors": {
+      "loadFailed": "Die Daten zur Social-Automatisierung konnten nicht geladen werden.",
+      "selectVideos": "Wählen Sie mindestens ein Video aus, bevor Sie planen.",
+      "scheduleFailed": "Der Veröffentlichungsplan konnte nicht erstellt werden.",
+      "regenerateFailed": "Die Neugenerierung des Videos konnte nicht in die Warteschlange gestellt werden.",
+      "retryFailed": "Dieser Post konnte nicht erneut versucht werden.",
+      "invalidReschedule": "Wählen Sie ein gültiges Datum und eine gültige Uhrzeit.",
+      "rescheduleFailed": "Dieser Post konnte nicht neu geplant werden."
+    },
+    "toasts": {
+      "scheduleCreated": "Veröffentlichungsplan erstellt.",
+      "videoQueued": "Video-Neugenerierung in die Warteschlange gestellt.",
+      "retryQueued": "Erneuter Versuch in die Warteschlange gestellt.",
+      "rescheduled": "Post neu geplant."
+    }
+  },
   "DashboardAdminTasks": {
     "title": "Aufgabenüberwachung",
     "subtitle": "Flottenmanagement & Befehl",
@@ -480,6 +555,70 @@
       "me": "Ich",
       "due": "Fällig",
       "overdue": "ÜBERFÄLLIG"
+    }
+  },
+  "lockscreen": {
+    "pinPlaceholder": "PIN",
+    "welcomeBack": "Willkommen zurück",
+    "incorrectPin": "Falsche PIN",
+    "unlock": "Entsperren",
+    "logout": "Abmelden",
+    "fallbackUser": "Benutzer",
+    "profileAlt": "Profil",
+    "lockNow": "Jetzt sperren",
+    "screenLocked": "Bildschirm gesperrt"
+  },
+  "DashboardChat": {
+    "mobile": {
+      "conversations": "Gespräche",
+      "contact": "Kontakt"
+    },
+    "empty": {
+      "title": "Willkommen im Chat",
+      "description": "Wählen Sie ein Gespräch aus dem linken Bereich aus, um zu chatten. Hier sehen Sie Nachrichten und Kontaktdetails."
+    },
+    "list": {
+      "title": "Nachrichten",
+      "count": "{count} Gespräch(e)",
+      "searchPlaceholder": "Gespräche suchen...",
+      "emptyTitle": "Keine Gespräche",
+      "emptySearch": "Versuchen Sie eine andere Suche",
+      "emptyDefault": "Alles auf dem neuesten Stand!",
+      "widgetSource": "Widget",
+      "tabs": {
+        "all": "Alle",
+        "open": "Offen",
+        "pending": "Ausstehend",
+        "solved": "Gelöst"
+      },
+      "time": {
+        "now": "jetzt",
+        "minutes": "{count}m",
+        "hours": "{count}Std",
+        "days": "{count}T"
+      }
+    },
+    "messages": {
+      "today": "Heute",
+      "aiDraftReply": "KI-Antwurf",
+      "summarize": "Zusammenfassen",
+      "typePlaceholder": "Nachricht eingeben...",
+      "callAction": "Anruf starten",
+      "callUnavailable": "Keine Telefonnummer verfügbar",
+      "callFailed": "Anruf fehlgeschlagen. Versuchen Sie es erneut.",
+      "status": {
+        "open": "Offen",
+        "pending": "Ausstehend",
+        "solved": "Gelöst"
+      }
+    },
+    "detail": {
+      "contactInfo": "Kontaktinfo",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "location": "Standort",
+      "company": "Unternehmen",
+      "sourceUrl": "Quell-URL"
     }
   }
 }

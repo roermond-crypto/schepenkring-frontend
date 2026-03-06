@@ -103,7 +103,8 @@
       "collapse": "Sidebar inklappen",
       "audit": "Audit",
       "errors": "Fouten",
-      "harborPerformance": "Haven prestaties"
+      "harborPerformance": "Haven prestaties",
+      "socialAutomation": "Sociale automatisering"
     },
     "notifications": {
       "label": "Meldingen",
@@ -337,6 +338,80 @@
       }
     }
   },
+  "DashboardAdminSocial": {
+    "title": "Sociale automatisering",
+    "subtitle": "Videopijplijn en distributie",
+    "description": "Beheer gegenereerde bootvideo's, plan content in batches en volg publicatieprestaties over gekoppelde social publishers.",
+    "actions": {
+      "refresh": "Verversen",
+      "schedule": "Selectie inplannen",
+      "open": "Video openen",
+      "regenerate": "Opnieuw genereren",
+      "reschedule": "Opnieuw plannen",
+      "retry": "Opnieuw proberen",
+      "cancel": "Annuleren",
+      "saveReschedule": "Tijd opslaan"
+    },
+    "stats": {
+      "videos": "Video's",
+      "scheduled": "Gepland",
+      "published": "Gepubliceerd",
+      "impressions": "Weergaven"
+    },
+    "scheduler": {
+      "label": "Planner",
+      "title": "30-dagenplanner",
+      "description": "Kies het publicatieritme, selecteer publishers en zet de gekozen video's klaar voor automatische publicatie.",
+      "startDate": "Startdatum",
+      "time": "Publicatietijd",
+      "publishers": "Publishers",
+      "skipWeekends": "Sla weekenddata over bij het opbouwen van de planning.",
+      "selectedVideos": "Geselecteerde video's",
+      "useAllReady": "Gebruik alle klaarstaande",
+      "videosChosen": "video's geselecteerd",
+      "readyAvailable": "klaar om te plannen"
+    },
+    "library": {
+      "label": "Bibliotheek",
+      "videos": "Video's",
+      "posts": "Posts"
+    },
+    "videoCard": {
+      "video": "Video",
+      "boat": "Boot",
+      "duration": "Duur",
+      "template": "Template",
+      "created": "Aangemaakt"
+    },
+    "postCard": {
+      "post": "Post",
+      "video": "Video",
+      "publishers": "Publishers",
+      "scheduled": "Gepland",
+      "published": "Gepubliceerd",
+      "impressions": "Weergaven",
+      "clicks": "Klikken"
+    },
+    "empty": {
+      "videos": "Er zijn nog geen gerenderde video's beschikbaar.",
+      "posts": "Er zijn nog geen geplande of gepubliceerde posts aangemaakt."
+    },
+    "errors": {
+      "loadFailed": "Sociale automatiseringsgegevens konden niet worden geladen.",
+      "selectVideos": "Selecteer minstens één video voordat je plant.",
+      "scheduleFailed": "De publicatieplanning kon niet worden aangemaakt.",
+      "regenerateFailed": "Videoregeneratie kon niet in de wachtrij worden gezet.",
+      "retryFailed": "Deze post kon niet opnieuw worden geprobeerd.",
+      "invalidReschedule": "Kies een geldige datum en tijd.",
+      "rescheduleFailed": "Deze post kon niet opnieuw worden ingepland."
+    },
+    "toasts": {
+      "scheduleCreated": "Publicatieplanning aangemaakt.",
+      "videoQueued": "Videoregeneratie in wachtrij gezet.",
+      "retryQueued": "Opnieuw proberen in wachtrij gezet.",
+      "rescheduled": "Post opnieuw ingepland."
+    }
+  },
   "DashboardAdminTasks": {
     "title": "Taakoverzicht",
     "subtitle": "Vlootbeheer en aansturing",
@@ -480,6 +555,70 @@
       "me": "Ik",
       "due": "Vervalt",
       "overdue": "TE LAAT"
+    }
+  },
+  "lockscreen": {
+    "pinPlaceholder": "PIN",
+    "welcomeBack": "Welkom terug",
+    "incorrectPin": "Onjuiste PIN",
+    "unlock": "Ontgrendel",
+    "logout": "Uitloggen",
+    "fallbackUser": "Gebruiker",
+    "profileAlt": "Profiel",
+    "lockNow": "Nu Vergrendelen",
+    "screenLocked": "Scherm vergrendeld"
+  },
+  "DashboardChat": {
+    "mobile": {
+      "conversations": "Conversaties",
+      "contact": "Contact"
+    },
+    "empty": {
+      "title": "Welkom bij Chat",
+      "description": "Selecteer een conversatie in het linkerpaneel om te beginnen met chatten. Je ziet hier berichten en contactgegevens."
+    },
+    "list": {
+      "title": "Berichten",
+      "count": "{count} conversatie(s)",
+      "searchPlaceholder": "Zoek conversaties...",
+      "emptyTitle": "Geen conversaties",
+      "emptySearch": "Probeer een andere zoekopdracht",
+      "emptyDefault": "Helemaal bijgewerkt!",
+      "widgetSource": "widget",
+      "tabs": {
+        "all": "Alle",
+        "open": "Open",
+        "pending": "In afwachting",
+        "solved": "Opgelost"
+      },
+      "time": {
+        "now": "nu",
+        "minutes": "{count}m",
+        "hours": "{count}u",
+        "days": "{count}d"
+      }
+    },
+    "messages": {
+      "today": "Vandaag",
+      "aiDraftReply": "AI Concept Antwoord",
+      "summarize": "Samenvatten",
+      "typePlaceholder": "Typ je bericht...",
+      "callAction": "Gesprek starten",
+      "callUnavailable": "Geen telefoonnummer beschikbaar",
+      "callFailed": "Kon gesprek niet starten. Probeer het opnieuw.",
+      "status": {
+        "open": "Open",
+        "pending": "In afwachting",
+        "solved": "Opgelost"
+      }
+    },
+    "detail": {
+      "contactInfo": "Contactgegevens",
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "location": "Locatie",
+      "company": "Bedrijf",
+      "sourceUrl": "Bron URL"
     }
   }
 }
