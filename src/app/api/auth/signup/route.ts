@@ -98,7 +98,6 @@ export async function POST(request: NextRequest) {
           email: backendUser.email,
           role: "client" as const,
         },
-        token: payload.token,
       },
       { status: 201 },
     );

@@ -94,7 +94,6 @@ export async function POST(request: NextRequest) {
           email: backendUser.email,
           role: normalizedRole,
         },
-        token: payload.token,
       },
       { status: 200 },
     );
