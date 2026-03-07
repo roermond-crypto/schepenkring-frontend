@@ -39,22 +39,21 @@ export function middleware(request: NextRequest) {
   }
 
   const subPath = `/${segments.slice(1).join("/")}`;
-  const isLoginRoute = subPath === "/login";
+  const isLoginRoute = subPath === "/login" || subPath.startsWith("/login/");
   const isSignupRoute = subPath === "/signup";
-  const isAuthRoute = subPath === "/auth";
-  const isVerifyEmailRoute = subPath === "/auth/verify-email";
-  const isDashboardRoute = subPath.startsWith("/dashboard");
-  const isLocaleRoot = subPath === "/";
+  const isAuthRoute = subPath === "/auth" || subPath.startsWith("/auth/");
+
+  const isPublicRoute = isLoginRoute || isSignupRoute || isAuthRoute;
 
   const hasToken = Boolean(request.cookies.get(AUTH_TOKEN_COOKIE)?.value);
   const encodedSession = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
   const isAuthed = hasToken && Boolean(encodedSession);
 
-  if (!isAuthed && (isDashboardRoute || isLocaleRoot)) {
+  if (!isAuthed && !isPublicRoute) {
     return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
   }
 
-  if (isAuthed && (isLoginRoute || isSignupRoute || isAuthRoute || isVerifyEmailRoute)) {
+  if (isAuthed && isPublicRoute) {
     const role = getRoleFromSessionCookie(encodedSession) ?? "admin";
     return NextResponse.redirect(new URL(`/${locale}/dashboard/${role}`, request.url));
   }
@@ -63,5 +62,14 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - images, icons, and other public folder files
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|manifest.json).*)",
+  ],
 };

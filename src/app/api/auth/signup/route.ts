@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json(
       {
+        token: payload.token,
         user: {
           id: String(backendUser.id),
           name: backendUser.name,
@@ -118,9 +119,9 @@ export async function POST(request: NextRequest) {
       const status = error.response?.status ?? 500;
       const message =
         typeof error.response?.data === "object" &&
-        error.response?.data &&
-        "message" in error.response.data &&
-        typeof error.response.data.message === "string"
+          error.response?.data &&
+          "message" in error.response.data &&
+          typeof error.response.data.message === "string"
           ? error.response.data.message
           : "Signup failed";
 
