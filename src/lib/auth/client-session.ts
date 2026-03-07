@@ -21,6 +21,7 @@ export function setClientSession(token: string, user: SessionUser) {
     expires: MAX_AGE / (60 * 60 * 24),
     sameSite: "lax" as const,
     secure,
+    path: "/",
   };
 
   Cookies.set(AUTH_TOKEN_COOKIE, token, options);
@@ -28,8 +29,8 @@ export function setClientSession(token: string, user: SessionUser) {
 }
 
 export function clearClientSession() {
-  Cookies.remove(AUTH_TOKEN_COOKIE);
-  Cookies.remove(AUTH_SESSION_COOKIE);
+  Cookies.remove(AUTH_TOKEN_COOKIE, { path: "/" });
+  Cookies.remove(AUTH_SESSION_COOKIE, { path: "/" });
 }
 
 export function getClientToken() {

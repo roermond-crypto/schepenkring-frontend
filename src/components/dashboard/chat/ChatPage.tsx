@@ -94,7 +94,8 @@ export function ChatPage() {
   const handleStatusChange = useCallback(
     async (status: ConversationStatus) => {
       if (!selectedConv) return;
-      await updateConversationStatus(selectedConv.id, status);
+      // user_id stores the lead ID for status updates
+      await updateConversationStatus(selectedConv.id, status, selectedConv.user_id);
       setSelectedConv((prev) => (prev ? { ...prev, status } : null));
       loadConversations();
     },

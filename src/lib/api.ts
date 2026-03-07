@@ -14,33 +14,16 @@ export const api = axios.create({
   },
 });
 
+import { getClientToken } from "@/lib/auth/client-session";
+
 api.interceptors.request.use((config) => {
   if (typeof window === "undefined") {
     return config;
   }
 
-  const cookieToken = document.cookie
-    .split("; ")
-    .find((part) => part.startsWith("schepenkring_auth_token="))
-    ?.split("=")[1];
-
-  const localStorageToken =
-    localStorage.getItem("auth_token") ??
-    localStorage.getItem("admin_token") ??
-    (() => {
-      const raw = localStorage.getItem("user_data");
-      if (!raw) return null;
-      try {
-        const parsed = JSON.parse(raw) as { token?: string };
-        return parsed.token ?? null;
-      } catch {
-        return null;
-      }
-    })();
-
-  const token = cookieToken || localStorageToken;
+  const token = getClientToken();
   if (token) {
-    config.headers.Authorization = `Bearer ${decodeURIComponent(token)}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
   return config;

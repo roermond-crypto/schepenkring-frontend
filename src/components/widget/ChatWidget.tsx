@@ -2,26 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
-  ArrowLeft,
   MessageCircle,
   Minimize2,
   Paperclip,
   Send,
   WifiOff,
   X,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
-type Step = "intro" | "chat";
 type ThemePreset = "ocean" | "violet" | "sunset";
-
-interface PreChatFormData {
-  name: string;
-  email: string;
-  phone: string;
-  harbor: string;
-}
 
 interface WidgetMessage {
   id: string;
@@ -33,6 +25,7 @@ interface WidgetMessage {
 interface ChatWidgetProps {
   harborId?: string;
   harborName?: string;
+  locationId?: number;
   accentColor?: string;
   themePreset?: ThemePreset;
   colorSettings?: Partial<WidgetColors>;
@@ -92,148 +85,36 @@ const quickPrompts = [
   "Do you support this harbor?",
 ];
 
-function getSupportReply(input: string, harborName?: string) {
-  const normalized = input.toLowerCase();
-  if (normalized.includes("viewing") || normalized.includes("visit")) {
-    return "Yes. Share your preferred date and time, and we will confirm availability for you.";
-  }
-  if (normalized.includes("price") || normalized.includes("offer")) {
-    return "We can help with pricing and offer steps. Tell us the boat or harbor page you are viewing right now.";
-  }
-  if (normalized.includes("harbor") && harborName) {
-    return `Yes, we support ${harborName}. We can guide you through onboarding or listing updates.`;
-  }
-  return "Thanks, your message is received. A support agent will reply shortly with the next step.";
-}
+// ── Public API helper (no auth needed) ─────────────────────────────
+const PUBLIC_API_BASE =
+  (typeof window !== "undefined"
+    ? process.env.NEXT_PUBLIC_BACKEND_API_URL
+    : process.env.BACKEND_API_URL) ?? "";
 
-function PreChatForm({
-  onSubmit,
-  colors,
-}: {
-  onSubmit: (data: PreChatFormData) => void;
-  colors: WidgetColors;
-}) {
-  const [form, setForm] = useState<PreChatFormData>({
-    name: "",
-    email: "",
-    phone: "",
-    harbor: "",
+async function publicApi<T>(
+  method: string,
+  path: string,
+  body?: Record<string, unknown>
+): Promise<T> {
+  const res = await fetch(`${PUBLIC_API_BASE}${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
   });
 
-  const canSubmit = form.name.trim() && form.email.trim();
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    console.error("[ChatWidget] API error:", res.status, err);
+    throw new Error(err.message || `API ${res.status}`);
+  }
 
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!canSubmit) return;
-        onSubmit(form);
-      }}
-      className="flex h-full flex-col"
-    >
-      <div className="bg-slate-950 px-5 py-6 text-white">
-        <div className="mb-4 flex items-center gap-3">
-          <div
-            className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-lg"
-            style={{
-              background: `linear-gradient(140deg, ${colors.headerStart}, ${colors.headerEnd})`,
-            }}
-          >
-            <MessageCircle size={20} />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-white/65">
-              NauticSecure Support
-            </p>
-            <h3 className="text-base font-semibold leading-tight">
-              Start a conversation
-            </h3>
-          </div>
-        </div>
-        <p className="text-sm text-white/70">
-          Ask anything about boats, harbors, listings, or onboarding.
-        </p>
-      </div>
-
-      <div className="flex-1 space-y-3 overflow-y-auto bg-white px-5 py-5">
-        <label className="block">
-          <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Name
-          </span>
-          <input
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="Your full name"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:bg-white"
-          />
-        </label>
-
-        <label className="block">
-          <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Email
-          </span>
-          <input
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            placeholder="you@example.com"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:bg-white"
-          />
-        </label>
-
-        <label className="block">
-          <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Phone (optional)
-          </span>
-          <input
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            placeholder="+31 6 1234 5678"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:bg-white"
-          />
-        </label>
-
-        <label className="block">
-          <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Harbor (optional)
-          </span>
-          <select
-            value={form.harbor}
-            onChange={(e) => setForm({ ...form, harbor: e.target.value })}
-            className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:bg-white"
-          >
-            <option value="">Select harbor...</option>
-            <option value="HISWA-4401">Harbor One Marina</option>
-            <option value="HISWA-2234">Zeeland Jachthaven</option>
-            <option value="HISWA-1102">IJmuiden Port</option>
-          </select>
-        </label>
-      </div>
-
-      <div className="border-t border-slate-100 bg-white px-5 py-4">
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className={cn(
-            "w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition",
-            canSubmit
-              ? "shadow-lg hover:translate-y-[-1px]"
-              : "cursor-not-allowed bg-slate-300",
-          )}
-          style={
-            canSubmit
-              ? {
-                background: `linear-gradient(130deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
-              }
-              : undefined
-          }
-        >
-          Continue to chat
-        </button>
-      </div>
-    </form>
-  );
+  return res.json();
 }
+
+// ── Chat Body Sub-Component ────────────────────────────────────────
 
 function ChatBody({
   messages,
@@ -241,12 +122,14 @@ function ChatBody({
   typing,
   colors,
   harborName,
+  sending,
 }: {
   messages: WidgetMessage[];
   onSend: (text: string) => void;
   typing: boolean;
   colors: WidgetColors;
   harborName?: string;
+  sending: boolean;
 }) {
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -257,7 +140,7 @@ function ChatBody({
 
   const handleSend = () => {
     const value = input.trim();
-    if (!value) return;
+    if (!value || sending) return;
     onSend(value);
     setInput("");
   };
@@ -273,7 +156,8 @@ function ChatBody({
             <button
               key={prompt}
               onClick={() => onSend(prompt)}
-              className="rounded-full border px-3 py-1.5 text-xs transition hover:opacity-85"
+              disabled={sending}
+              className="rounded-full border px-3 py-1.5 text-xs transition hover:opacity-85 disabled:opacity-50"
               style={{
                 borderColor: colors.quickChipBorder,
                 background: colors.quickChipBg,
@@ -286,7 +170,8 @@ function ChatBody({
           {harborName && (
             <button
               onClick={() => onSend(`I need support for ${harborName}`)}
-              className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-700 transition hover:bg-sky-100"
+              disabled={sending}
+              className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-700 transition hover:bg-sky-100 disabled:opacity-50"
             >
               Support for {harborName}
             </button>
@@ -305,7 +190,7 @@ function ChatBody({
                 "max-w-[84%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
                 msg.isUser
                   ? "rounded-br-sm text-white shadow-md"
-                  : "rounded-bl-sm border border-slate-200 bg-white text-slate-800",
+                  : "rounded-bl-sm border border-slate-200 bg-white text-slate-800"
               )}
               style={
                 msg.isUser
@@ -319,7 +204,7 @@ function ChatBody({
               <p
                 className={cn(
                   "mt-1 text-[10px]",
-                  msg.isUser ? "text-white/70" : "text-slate-400",
+                  msg.isUser ? "text-white/70" : "text-slate-400"
                 )}
               >
                 {msg.timestamp.toLocaleTimeString([], {
@@ -362,27 +247,32 @@ function ChatBody({
               }
             }}
             placeholder="Type your message..."
-            className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:bg-white"
+            disabled={sending}
+            className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:bg-white disabled:opacity-50"
           />
           <button
             type="button"
             onClick={handleSend}
-            disabled={!input.trim()}
+            disabled={!input.trim() || sending}
             className={cn(
               "flex h-9 w-9 items-center justify-center rounded-lg text-white transition",
-              input.trim()
+              input.trim() && !sending
                 ? "shadow-md hover:translate-y-[-1px]"
-                : "cursor-not-allowed bg-slate-300",
+                : "cursor-not-allowed bg-slate-300"
             )}
             style={
-              input.trim()
+              input.trim() && !sending
                 ? {
                   background: `linear-gradient(130deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
                 }
                 : undefined
             }
           >
-            <Send size={14} />
+            {sending ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Send size={14} />
+            )}
           </button>
         </div>
       </div>
@@ -390,28 +280,26 @@ function ChatBody({
   );
 }
 
+// ── Main Widget ────────────────────────────────────────────────────
+
 export function ChatWidget({
   harborId,
   harborName,
+  locationId,
   accentColor,
   themePreset = "ocean",
   colorSettings,
 }: ChatWidgetProps) {
   const { isOnline } = useNetworkStatus();
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<Step>("chat");
-  const [guestInfo, setGuestInfo] = useState<PreChatFormData | null>({
-    name: "sa",
-    email: "sa@example.com",
-    phone: "",
-    harbor: "",
-  });
-  const [typing, setTyping] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [guestName, setGuestName] = useState<string | null>(null);
   const [messages, setMessages] = useState<WidgetMessage[]>([
     {
       id: "init",
       isUser: false,
-      text: "Hi sa, welcome. I can help with boats, harbors, or support requests.",
+      text: "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
       timestamp: new Date(),
     },
   ]);
@@ -433,35 +321,25 @@ export function ChatWidget({
       ({
         "--widget-primary": colors.launcherStart,
       }) as CSSProperties,
-    [colors.launcherStart],
+    [colors.launcherStart]
   );
 
   const resetChat = () => {
-    setTyping(false);
+    setSending(false);
+    setConversationId(null);
+    setGuestName(null);
     setMessages([
       {
         id: "init",
         isUser: false,
-        text: "Hi sa, welcome. I can help with boats, harbors, or support requests.",
+        text: "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
         timestamp: new Date(),
       },
     ]);
   };
 
-  const handleIntroSubmit = (data: PreChatFormData) => {
-    setGuestInfo(data);
-    setStep("chat");
-    setMessages([
-      {
-        id: `sys-${Date.now()}`,
-        isUser: false,
-        text: `Hi ${data.name}, welcome. I can help with boats, harbors, or support requests${harborId ? ` (context: ${harborId})` : ""}.`,
-        timestamp: new Date(),
-      },
-    ]);
-  };
-
-  const handleSendMessage = (text: string) => {
+  const handleSendMessage = async (text: string) => {
+    // Add user message to UI immediately
     const userMessage: WidgetMessage = {
       id: `u-${Date.now()}`,
       text,
@@ -469,20 +347,70 @@ export function ChatWidget({
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
-    setTyping(true);
+    setSending(true);
 
-    setTimeout(() => {
+    try {
+      if (!conversationId) {
+        // First message: create lead + conversation + initial message
+        const clientMessageId = `widget-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+        const response = await publicApi<{
+          lead: { id: number; name: string | null };
+          conversation: { id: string };
+          message: { id: string };
+        }>("POST", "/public/leads", {
+          location_id: locationId ?? 1,
+          source_url: typeof window !== "undefined" ? window.location.href : undefined,
+          message: text,
+          client_message_id: clientMessageId,
+        });
+
+        setConversationId(response.conversation.id);
+
+        // Add confirmation message
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `sys-${Date.now()}`,
+            isUser: false,
+            text: "Thanks! Your message has been received. A support agent will respond shortly.",
+            timestamp: new Date(),
+          },
+        ]);
+      } else {
+        // Subsequent messages: send to existing conversation
+        const clientMessageId = `widget-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+        await publicApi("POST", `/public/conversations/${conversationId}/messages`, {
+          body: text,
+          client_message_id: clientMessageId,
+        });
+
+        // Add confirmation
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `sys-${Date.now()}`,
+            isUser: false,
+            text: "Message sent. Our team will get back to you soon.",
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("[ChatWidget] Send failed:", error);
       setMessages((prev) => [
         ...prev,
         {
-          id: `b-${Date.now()}`,
-          text: getSupportReply(text, harborName),
+          id: `err-${Date.now()}`,
           isUser: false,
+          text: "Sorry, we couldn't send your message right now. Please try again.",
           timestamp: new Date(),
         },
       ]);
-      setTyping(false);
-    }, 900);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -497,7 +425,10 @@ export function ChatWidget({
             }}
             aria-label="Open chat"
           >
-            <MessageCircle size={22} className="transition group-hover:scale-110" />
+            <MessageCircle
+              size={22}
+              className="transition group-hover:scale-110"
+            />
             <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white" />
           </button>
         </div>
@@ -527,9 +458,7 @@ export function ChatWidget({
                     {harborName || "NauticSecure"}
                   </h4>
                   <p className="text-[11px] text-white/70">
-                    {guestInfo?.name
-                      ? `Chatting as ${guestInfo.name}`
-                      : "Online support"}
+                    {conversationId ? "Connected to support" : "Online support"}
                   </p>
                 </div>
               </div>
@@ -585,9 +514,10 @@ export function ChatWidget({
                 <ChatBody
                   messages={messages}
                   onSend={handleSendMessage}
-                  typing={typing}
+                  typing={sending}
                   colors={colors}
                   harborName={harborName}
+                  sending={sending}
                 />
               )}
             </div>
