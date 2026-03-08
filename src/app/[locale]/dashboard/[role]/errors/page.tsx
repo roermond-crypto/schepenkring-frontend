@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { normalizeRole } from "@/lib/auth/roles";
 import {
   AlertCircle,
   Bot,
@@ -543,29 +544,33 @@ export default function AdminErrorsPage() {
   useEffect(() => {
     const userDataRaw =
       typeof window !== "undefined" ? localStorage.getItem("user_data") : null;
+    const redirectToRoleDashboard = (fallbackRole = "admin") => {
+      const nextRole = fallbackRole === "employee" ? "employee" : "admin";
+      router.replace(`/${locale}/dashboard/${nextRole}`);
+    };
 
     if (!userDataRaw) {
-      router.replace("/dashboard");
+      redirectToRoleDashboard();
       return;
     }
 
     try {
       const userData = JSON.parse(userDataRaw);
-      const role = String(
-        userData?.role || userData?.userType || "",
-      ).toLowerCase();
+      const role = normalizeRole(
+        userData?.role || userData?.userType || userData?.type || null,
+      );
 
       if (role !== "admin" && role !== "employee") {
-        router.replace("/dashboard");
+        redirectToRoleDashboard();
         return;
       }
     } catch {
-      router.replace("/dashboard");
+      redirectToRoleDashboard();
       return;
     }
 
     setAccessChecked(true);
-  }, [router]);
+  }, [locale, router]);
 
   useEffect(() => {
     if (!accessChecked) return;
