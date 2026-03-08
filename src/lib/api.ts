@@ -39,5 +39,15 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+  console.log("[AXIOS REQUEST]", {
+    url: config.url,
+    baseURL: config.baseURL,
+    method: config.method
+  });
+
   return config;
 });
+
+if (typeof window !== "undefined") {
+  (window as any).debugApi = api;
+}
