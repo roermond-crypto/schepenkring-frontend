@@ -85,7 +85,10 @@ function Sparkline({ points }: { points: number[] }) {
   return (
     <div className="h-11 w-32">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 5, right: 0, left: 0, bottom: 0 }}
+        >
           <defs>
             <linearGradient id="sparkStroke" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#60A5FA" stopOpacity={0.8} />
@@ -103,7 +106,12 @@ function Sparkline({ points }: { points: number[] }) {
               }
               return null;
             }}
-            cursor={{ stroke: 'white', strokeWidth: 1, strokeDasharray: '3 3', strokeOpacity: 0.5 }}
+            cursor={{
+              stroke: "white",
+              strokeWidth: 1,
+              strokeDasharray: "3 3",
+              strokeOpacity: 0.5,
+            }}
           />
           <Area
             type="monotone"
@@ -160,23 +168,34 @@ export default function AdminDashboardHome() {
     if (showSkeleton) setLoading(true);
     setIsRefreshing(true);
     try {
-      const [yachtsRes, tasksRes, bidsRes, logsRes, summaryRes] = await Promise.allSettled([
-        api.get("/yachts"),
-        api.get("/tasks"),
-        api.get("/bids?page=1"),
-        api.get("/system-logs?per_page=5"),
-        api.get("/dashboard/summary"),
-      ]);
+      const [yachtsRes, tasksRes, bidsRes, logsRes, summaryRes] =
+        await Promise.allSettled([
+          api.get("/yachts"),
+          api.get("/tasks"),
+          api.get("/bids?page=1"),
+          api.get("/system-logs?per_page=5"),
+          api.get("/dashboard/summary"),
+        ]);
 
-      const yachts = yachtsRes.status === "fulfilled" ? yachtsRes.value.data || [] : [];
-      const tasks = tasksRes.status === "fulfilled" ? tasksRes.value.data || [] : [];
-      const bidsRaw = bidsRes.status === "fulfilled" ? (bidsRes.value.data?.data || bidsRes.value.data || []) : [];
-      const systemLogs = logsRes.status === "fulfilled"
-        ? (logsRes.value.data?.data || logsRes.value.data?.logs || [])
-        : [];
+      const yachts =
+        yachtsRes.status === "fulfilled" ? yachtsRes.value.data || [] : [];
+      const tasks =
+        tasksRes.status === "fulfilled" ? tasksRes.value.data || [] : [];
+      const bidsRaw =
+        bidsRes.status === "fulfilled"
+          ? bidsRes.value.data?.data || bidsRes.value.data || []
+          : [];
+      const systemLogs =
+        logsRes.status === "fulfilled"
+          ? logsRes.value.data?.data || logsRes.value.data?.logs || []
+          : [];
 
-      const activeBids = yachts.filter((y: any) => y.status === "For Bid").length;
-      const intake = yachts.filter((y: any) => y.status === "Draft" || y.status === "For Sale").length;
+      const activeBids = yachts.filter(
+        (y: any) => y.status === "For Bid",
+      ).length;
+      const intake = yachts.filter(
+        (y: any) => y.status === "Draft" || y.status === "For Sale",
+      ).length;
       const pending = tasks.filter((t: any) => t.status !== "Done").length;
       const soldYachts = yachts.filter((y: any) => y.status === "Sold");
       const now = new Date();
@@ -202,22 +221,22 @@ export default function AdminDashboardHome() {
       const avgDaysToSale =
         soldYachts.length > 0
           ? Math.round(
-            soldYachts.reduce((acc: number, y: any) => {
-              const created = y.created_at ? new Date(y.created_at) : null;
-              const updated = y.updated_at ? new Date(y.updated_at) : null;
-              if (!created || !updated) return acc;
-              return (
-                acc +
-                Math.max(
-                  1,
-                  Math.round(
-                    (updated.getTime() - created.getTime()) /
-                    (1000 * 60 * 60 * 24),
-                  ),
-                )
-              );
-            }, 0) / soldYachts.length,
-          )
+              soldYachts.reduce((acc: number, y: any) => {
+                const created = y.created_at ? new Date(y.created_at) : null;
+                const updated = y.updated_at ? new Date(y.updated_at) : null;
+                if (!created || !updated) return acc;
+                return (
+                  acc +
+                  Math.max(
+                    1,
+                    Math.round(
+                      (updated.getTime() - created.getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    ),
+                  )
+                );
+              }, 0) / soldYachts.length,
+            )
           : 0;
 
       setData({
@@ -238,12 +257,15 @@ export default function AdminDashboardHome() {
           .slice(0, 3),
         auditLogs:
           systemLogs.length > 0 ? systemLogs.slice(0, 5) : tasks.slice(0, 5),
-        trends: summaryRes.status === "fulfilled" && summaryRes.value.data ? summaryRes.value.data : {
-          activeBids: { change: 0, sparkline: [] },
-          pendingTasks: { change: 0, sparkline: [] },
-          fleetIntake: { change: 0, sparkline: [] },
-          completedSales: { change: 0, sparkline: [] },
-        }
+        trends:
+          summaryRes.status === "fulfilled" && summaryRes.value.data
+            ? summaryRes.value.data
+            : {
+                activeBids: { change: 0, sparkline: [] },
+                pendingTasks: { change: 0, sparkline: [] },
+                fleetIntake: { change: 0, sparkline: [] },
+                completedSales: { change: 0, sparkline: [] },
+              },
       });
     } catch (error) {
       console.error("Admin dashboard sync error:", error);
@@ -371,7 +393,7 @@ export default function AdminDashboardHome() {
   const welcomeName =
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("user_data") || "{}")?.name ||
-      t("defaults.userName")
+        t("defaults.userName")
       : t("defaults.userName");
 
   return (
@@ -385,7 +407,11 @@ export default function AdminDashboardHome() {
               {t("welcomeBack", { name: welcomeName })}
             </p>
             <h1 className="text-3xl font-black text-[#0B1F3A] sm:text-4xl dark:text-slate-100">
-              {overviewTitle}
+              {role === "client"
+                ? t("title_client")
+                : role === "employee"
+                  ? t("title_employee")
+                  : t("title_admin")}
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#1E3A8A] dark:text-slate-300">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 font-semibold dark:bg-slate-800/90 dark:text-slate-100">
@@ -473,7 +499,9 @@ export default function AdminDashboardHome() {
                           <CountUpNumber value={stat.value as number} />
                         )}
                       </h3>
-                      <p className="mt-2 text-sm font-semibold text-white/90">Weekly Trend</p>
+                      <p className="mt-2 text-sm font-semibold text-white/90">
+                        Weekly Trend
+                      </p>
                     </div>
 
                     <div className="rounded-xl border border-white/20 bg-black/10 px-2 py-1">
@@ -489,7 +517,10 @@ export default function AdminDashboardHome() {
                     </div>
                     <div className="flex items-center text-xs font-semibold text-white group-hover:text-amber-300 transition-colors duration-200">
                       View details
-                      <ArrowRight size={13} className="ml-1 transition-transform group-hover:translate-x-1" />
+                      <ArrowRight
+                        size={13}
+                        className="ml-1 transition-transform group-hover:translate-x-1"
+                      />
                     </div>
                   </div>
                 </motion.div>
@@ -507,7 +538,10 @@ export default function AdminDashboardHome() {
                   {t("sections.performanceSnapshot")}
                 </h2>
               </div>
-              <Sparkles className="text-[#1E3A8A] dark:text-sky-300" size={18} />
+              <Sparkles
+                className="text-[#1E3A8A] dark:text-sky-300"
+                size={18}
+              />
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
               {performanceSnapshot.map((item) => (
@@ -515,14 +549,16 @@ export default function AdminDashboardHome() {
                   key={item.label}
                   className="rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800"
                 >
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    {item.label}
+                  </p>
                   <p className="mt-1 text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
                     {item.isCurrency
                       ? new Intl.NumberFormat("de-DE", {
-                        style: "currency",
-                        currency: "EUR",
-                        minimumFractionDigits: 0,
-                      }).format(item.value)
+                          style: "currency",
+                          currency: "EUR",
+                          minimumFractionDigits: 0,
+                        }).format(item.value)
                       : `${item.value}${item.suffix}`}
                   </p>
                   <div className="mt-3 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700/50">
@@ -540,8 +576,18 @@ export default function AdminDashboardHome() {
         </>
       )}
 
-      <div className={cn("grid grid-cols-1 gap-6", showAuditPanel ? "xl:grid-cols-3" : "xl:grid-cols-1")}>
-        <div className={cn("rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900", showAuditPanel && "xl:col-span-2")}>
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-6",
+          showAuditPanel ? "xl:grid-cols-3" : "xl:grid-cols-1",
+        )}
+      >
+        <div
+          className={cn(
+            "rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900",
+            showAuditPanel && "xl:col-span-2",
+          )}
+        >
           <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
             <div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -634,96 +680,100 @@ export default function AdminDashboardHome() {
 
         {showAuditPanel && (
           <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
-          <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
-            <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                {t("sections.liveDiagnostics")}
-              </p>
-              <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
-                {t("sections.systemAudit")}
-              </h2>
+            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("sections.liveDiagnostics")}
+                </p>
+                <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                  {t("sections.systemAudit")}
+                </h2>
+              </div>
+              <Activity
+                size={17}
+                className="text-[#1E3A8A] dark:text-sky-300"
+              />
             </div>
-            <Activity size={17} className="text-[#1E3A8A] dark:text-sky-300" />
-          </div>
-          <div className="space-y-4">
-            {loading &&
-              Array.from({ length: 5 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className="animate-pulse rounded-lg border border-slate-100 p-3 dark:border-slate-700"
-                >
-                  <div className="h-3 w-4/5 rounded bg-slate-200 dark:bg-slate-700" />
-                  <div className="mt-2 h-2.5 w-1/3 rounded bg-slate-100 dark:bg-slate-800" />
-                </div>
-              ))}
-
-            {!loading &&
-              data.auditLogs.slice(0, 5).map((task: any) => {
-                const status = auditStatus(task);
-                const StatusIcon = status.icon;
-                return (
+            <div className="space-y-4">
+              {loading &&
+                Array.from({ length: 5 }).map((_, idx) => (
                   <div
-                    key={task.id}
-                    className="rounded-xl border border-slate-200 p-3 transition hover:border-[#BBD0F2] dark:border-slate-700 dark:hover:border-slate-600"
+                    key={idx}
+                    className="animate-pulse rounded-lg border border-slate-100 p-3 dark:border-slate-700"
                   >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={cn(
-                          "mt-0.5 rounded-full p-1.5 text-white",
-                          status.dot,
-                        )}
-                      >
-                        <StatusIcon size={12} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">
-                          {task.description ||
-                            task.title ||
-                            task.event_type ||
-                            task.action ||
-                            t("audit.taskUpdate")}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          {task.entity_type ||
-                            (task.assigned_to
-                              ? t("audit.operatorAction")
-                              : t("audit.autoSystemEvent"))}{" "}
-                          {task.entity_id
-                            ? `#${task.entity_id}`
-                            : `${t("audit.on")} ${t("audit.globalFleet")}`}
-                        </p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span
-                            className={cn("text-xs font-semibold", status.text)}
-                          >
-                            {status.label}
-                          </span>
-                          <span className="text-xs text-slate-400 dark:text-slate-500">
-                            {formatDistanceToNow(
-                              new Date(task.created_at || task.updated_at),
-                              {
-                                addSuffix: true,
-                              },
-                            )}
-                          </span>
+                    <div className="h-3 w-4/5 rounded bg-slate-200 dark:bg-slate-700" />
+                    <div className="mt-2 h-2.5 w-1/3 rounded bg-slate-100 dark:bg-slate-800" />
+                  </div>
+                ))}
+
+              {!loading &&
+                data.auditLogs.slice(0, 5).map((task: any) => {
+                  const status = auditStatus(task);
+                  const StatusIcon = status.icon;
+                  return (
+                    <div
+                      key={task.id}
+                      className="rounded-xl border border-slate-200 p-3 transition hover:border-[#BBD0F2] dark:border-slate-700 dark:hover:border-slate-600"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={cn(
+                            "mt-0.5 rounded-full p-1.5 text-white",
+                            status.dot,
+                          )}
+                        >
+                          <StatusIcon size={12} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">
+                            {task.description ||
+                              task.title ||
+                              task.event_type ||
+                              task.action ||
+                              t("audit.taskUpdate")}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            {task.entity_type ||
+                              (task.assigned_to
+                                ? t("audit.operatorAction")
+                                : t("audit.autoSystemEvent"))}{" "}
+                            {task.entity_id
+                              ? `#${task.entity_id}`
+                              : `${t("audit.on")} ${t("audit.globalFleet")}`}
+                          </p>
+                          <div className="mt-2 flex items-center justify-between">
+                            <span
+                              className={cn(
+                                "text-xs font-semibold",
+                                status.text,
+                              )}
+                            >
+                              {status.label}
+                            </span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500">
+                              {formatDistanceToNow(
+                                new Date(task.created_at || task.updated_at),
+                                {
+                                  addSuffix: true,
+                                },
+                              )}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
 
-            {!loading && data.auditLogs.length === 0 && (
-              <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                {t("empty.noSystemLogs")}
-              </div>
-            )}
-          </div>
+              {!loading && data.auditLogs.length === 0 && (
+                <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  {t("empty.noSystemLogs")}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
-
-
     </div>
   );
 }

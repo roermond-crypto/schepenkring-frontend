@@ -5,14 +5,18 @@ function resolveBaseUrl() {
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.NEXT_PUBLIC_BACKEND_API_URL ??
     process.env.BACKEND_API_URL;
-  if (configured) return configured;
-  if (
-    typeof window !== "undefined" &&
-    window.location.hostname === "localhost"
-  ) {
-    return "http://localhost:8000/api";
+
+  let finalUrl = "https://app.schepen-kring.nl/api";
+  if (configured) {
+    finalUrl = configured;
+  } else if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    finalUrl = "http://localhost:8000/api";
   }
-  return "https://app.schepen-kring.nl/api";
+
+  if (typeof window !== "undefined") {
+    console.log("[DEBUG API BASE URL]", { configured, finalUrl, host: window.location.hostname });
+  }
+  return finalUrl;
 }
 
 export const api = axios.create({
@@ -35,5 +39,15 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+  console.log("[AXIOS REQUEST]", {
+    url: config.url,
+    baseURL: config.baseURL,
+    method: config.method
+  });
+
   return config;
 });
+
+if (typeof window !== "undefined") {
+  (window as any).debugApi = api;
+}

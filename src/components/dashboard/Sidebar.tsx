@@ -79,7 +79,11 @@ export function Sidebar({
 
   const menuItems = useMemo<MenuItem[]>(() => {
     const items: MenuItem[] = [
-      { title: t.overview, href: root, icon: BarChart3 },
+      {
+        title: (t as any)[`overview_${role}`] || t.overview,
+        href: root,
+        icon: BarChart3,
+      },
       { title: t.tasks, href: `${root}/tasks`, icon: ClipboardList },
     ];
 
@@ -142,7 +146,7 @@ export function Sidebar({
       >
         {(!isCollapsed || isDrawer) && (
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-            {`${role} ${t.terminalSuffix}`}
+            {`${role === "employee" ? "medewerker" : role === "client" ? "klant" : role} ${t.terminalSuffix}`}
           </p>
         )}
         {isOnline ? (
@@ -158,7 +162,7 @@ export function Sidebar({
         )}
       </div>
 
-      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pt-6">
+      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pt-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
 

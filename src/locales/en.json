@@ -89,6 +89,9 @@
       "clients": "Clients",
       "leads": "Leads",
       "overview": "Overview",
+      "overview_admin": "Admin Overview",
+      "overview_client": "Client Overview",
+      "overview_employee": "Sales Dashboard",
       "users": "Users",
       "schedule": "Schedule",
       "tasks": "Tasks",
@@ -204,12 +207,10 @@
     }
   },
   "DashboardAdminOverview": {
-    "title": "Admin Overview",
-    "roleTitles": {
-      "admin": "Admin Overview",
-      "team": "Team Overview",
-      "client": "Client Overview"
-    },
+    "title": "Dashboard Overview",
+    "title_admin": "Admin Overview",
+    "title_client": "Client Overview",
+    "title_employee": "Sales Dashboard",
     "welcomeBack": "Welcome back, {name}",
     "todayWeather": "Today: 18° Sunny in Eindhoven",
     "activeBiddingItems": "You have {count} active bidding {count, plural, one {item} other {items}}.",

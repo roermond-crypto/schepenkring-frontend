@@ -44,6 +44,7 @@ import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { getDictionary } from "@/lib/i18n";
 import { normalizeRole } from "@/lib/auth/roles";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
   ssr: false,
@@ -171,6 +172,8 @@ export default function YachtEditorPage() {
   const [boatVideos, setBoatVideos] = useState<any[]>([]);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [isPublishingVideo, setIsPublishingVideo] = useState<number | null>(null);
+  const [deleteVideoDialogOpen, setDeleteVideoDialogOpen] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState<number | null>(null);
 
   // Image Pipeline Hook (server-side processing)
   const [createdYachtId, setCreatedYachtId] = useState<number | null>(null);
@@ -268,6 +271,8 @@ export default function YachtEditorPage() {
   const [boatDocuments, setBoatDocuments] = useState<any[]>([]);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [fetchingChecklist, setFetchingChecklist] = useState(false);
+  const [deleteDocumentDialogOpen, setDeleteDocumentDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
 
   // Fetch Checklist Templates & Documents for Step 5
   useEffect(() => {
@@ -540,26 +545,42 @@ export default function YachtEditorPage() {
     }
   };
 
-  const handleDocumentDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to remove this document?")) return;
+  const handleDocumentDelete = (id: number) => {
+    setDocumentToDelete(id);
+    setDeleteDocumentDialogOpen(true);
+  };
+
+  const executeDocumentDelete = async () => {
+    if (!documentToDelete) return;
     const targetId = isNewMode ? createdYachtId : yachtId;
     try {
-      await api.delete(`/yachts/${targetId}/documents/${id}`);
-      setBoatDocuments(prev => prev.filter(doc => doc.id !== id));
+      await api.delete(`/yachts/${targetId}/documents/${documentToDelete}`);
+      setBoatDocuments(prev => prev.filter(doc => doc.id !== documentToDelete));
       toast.success("Document removed");
     } catch (err) {
       toast.error("Failed to delete document");
+    } finally {
+      setDeleteDocumentDialogOpen(false);
+      setDocumentToDelete(null);
     }
   };
 
-  const handleVideoDelete = async (id: number) => {
-    if (!confirm(t?.video?.confirmDelete || "Are you sure you want to remove this video?")) return;
+  const handleVideoDelete = (id: number) => {
+    setVideoToDelete(id);
+    setDeleteVideoDialogOpen(true);
+  };
+
+  const executeVideoDelete = async () => {
+    if (!videoToDelete) return;
     try {
-      await api.delete(`/boat-videos/${id}`);
-      setBoatVideos(prev => prev.filter(v => v.id !== id));
+      await api.delete(`/boat-videos/${videoToDelete}`);
+      setBoatVideos(prev => prev.filter(v => v.id !== videoToDelete));
       toast.success(t?.video?.removed || "Video removed");
     } catch (err) {
       toast.error(t?.video?.removeFailed || "Failed to remove video");
+    } finally {
+      setDeleteVideoDialogOpen(false);
+      setVideoToDelete(null);
     }
   };
 
@@ -3510,6 +3531,28 @@ export default function YachtEditorPage() {
           border-color: rgb(51 65 85) !important;
         }
       `}</style>
+
+      <ConfirmDialog
+        open={deleteDocumentDialogOpen}
+        onOpenChange={setDeleteDocumentDialogOpen}
+        title="Remove Document"
+        description="Are you sure you want to remove this document? This action cannot be undone."
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={executeDocumentDelete}
+      />
+
+      <ConfirmDialog
+        open={deleteVideoDialogOpen}
+        onOpenChange={setDeleteVideoDialogOpen}
+        title={t?.video?.confirmDeleteTitle || "Remove Video"}
+        description={t?.video?.confirmDelete || "Are you sure you want to remove this video?"}
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={executeVideoDelete}
+      />
     </div>
   );
 }
