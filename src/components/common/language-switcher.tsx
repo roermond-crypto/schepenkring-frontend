@@ -7,6 +7,7 @@ import { SUPPORTED_LOCALES, type AppLocale } from "@/lib/i18n";
 import enFlag from "../../../public/flags/en.svg";
 import nlFlag from "../../../public/flags/nl.svg";
 import deFlag from "../../../public/flags/de.svg";
+import frFlag from "../../../public/flags/fr.svg";
 import type { StaticImageData } from "next/image";
 
 type LanguageSwitcherProps = {
@@ -17,6 +18,7 @@ const META: Record<AppLocale, { name: string; icon: StaticImageData }> = {
   en: { name: "English", icon: enFlag },
   nl: { name: "Nederlands", icon: nlFlag },
   de: { name: "Deutsch", icon: deFlag },
+  fr: { name: "Français", icon: frFlag },
 };
 
 export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
