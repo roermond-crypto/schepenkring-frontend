@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { toast, Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { normalizeRole } from "@/lib/auth/roles";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const STORAGE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || "https://app.schepen-kring.nl/storage/";
 const PLACEHOLDER_IMAGE =
@@ -89,6 +90,8 @@ export default function FleetManagementPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [yachtToDelete, setYachtToDelete] = useState<any>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("boat_name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -178,16 +181,17 @@ export default function FleetManagementPage() {
     e.currentTarget.classList.add("opacity-50", "grayscale");
   };
 
-  const handleDelete = async (yacht: any) => {
-    const yachtName = yacht.boat_name || yacht.name || t?.fallbacks?.unnamedVessel || "Unnamed Vessel";
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${yachtName}?`,
-    );
-    if (!confirmed) return;
+  const handleDelete = (yacht: any) => {
+    setYachtToDelete(yacht);
+    setDeleteDialogOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!yachtToDelete) return;
 
     try {
       setIsSubmitting(true);
-      await api.delete(`/yachts/${yacht.id}`);
+      await api.delete(`/yachts/${yachtToDelete.id}`);
       fetchFleet();
       toast.success(t?.toasts?.deleted || "Vessel deleted");
     } catch (err: any) {
@@ -201,6 +205,8 @@ export default function FleetManagementPage() {
       }
     } finally {
       setIsSubmitting(false);
+      setDeleteDialogOpen(false);
+      setYachtToDelete(null);
     }
   };
 
@@ -923,6 +929,22 @@ export default function FleetManagementPage() {
           border-color: rgb(51 65 85) !important;
         }
       `}</style>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={t?.deleteConfirmTitle || "Delete Vessel"}
+        description={
+          t?.deleteConfirmDescription
+            ? t.deleteConfirmDescription.replace("{name}", yachtToDelete?.boat_name || yachtToDelete?.name || t?.fallbacks?.unnamedVessel || "Unnamed Vessel")
+            : `Are you sure you want to delete ${yachtToDelete?.boat_name || yachtToDelete?.name || t?.fallbacks?.unnamedVessel || "Unnamed Vessel"}? This action cannot be undone.`
+        }
+        confirmText={t?.deleteConfirmAction || "Delete"}
+        cancelText={t?.cancel || "Cancel"}
+        variant="destructive"
+        onConfirm={executeDelete}
+        isLoading={isSubmitting}
+      />
     </div>
   );
 }

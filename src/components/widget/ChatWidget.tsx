@@ -29,6 +29,7 @@ interface ChatWidgetProps {
   accentColor?: string;
   themePreset?: ThemePreset;
   colorSettings?: Partial<WidgetColors>;
+  isEmbedded?: boolean;
 }
 
 interface WidgetColors {
@@ -289,6 +290,7 @@ export function ChatWidget({
   accentColor,
   themePreset = "ocean",
   colorSettings,
+  isEmbedded,
 }: ChatWidgetProps) {
   const { isOnline } = useNetworkStatus();
   const [isOpen, setIsOpen] = useState(false);
@@ -303,6 +305,19 @@ export function ChatWidget({
       timestamp: new Date(),
     },
   ]);
+
+  useEffect(() => {
+    if (isEmbedded && typeof window !== "undefined") {
+      window.parent.postMessage(
+        {
+          type: "CHAT_WIDGET_STATE",
+          isOpen,
+          isMobile: window.innerWidth < 640,
+        },
+        "*"
+      );
+    }
+  }, [isOpen, isEmbedded]);
 
   const colors = useMemo<WidgetColors>(() => {
     const base = THEME_PRESETS[themePreset];
