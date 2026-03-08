@@ -127,6 +127,15 @@ export default function AdminDashboardHome() {
   const params = useParams<{ role?: string }>();
   const role = normalizeRole(params?.role) ?? "admin";
   const dashboardBase = `/dashboard/${role}`;
+  const isAdminRole = role === "admin";
+  const showAdminSalesInsights = role !== "client";
+  const showAuditPanel = role !== "client";
+  const overviewTitle =
+    role === "admin"
+      ? t("roleTitles.admin")
+      : role === "client"
+        ? t("roleTitles.client")
+        : t("roleTitles.team");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState<DashboardData>({
@@ -376,18 +385,20 @@ export default function AdminDashboardHome() {
               {t("welcomeBack", { name: welcomeName })}
             </p>
             <h1 className="text-3xl font-black text-[#0B1F3A] sm:text-4xl dark:text-slate-100">
-              {t("title")}
+              {overviewTitle}
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#1E3A8A] dark:text-slate-300">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 font-semibold dark:bg-slate-800/90 dark:text-slate-100">
                 <Sun size={14} />
                 {t("todayWeather")}
               </span>
-              <span className="font-semibold">
-                {t("activeBiddingItems", {
-                  count: data.activeBidsCount,
-                })}
-              </span>
+              {isAdminRole && (
+                <span className="font-semibold">
+                  {t("activeBiddingItems", {
+                    count: data.activeBidsCount,
+                  })}
+                </span>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -409,124 +420,128 @@ export default function AdminDashboardHome() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat, i) => (
-          <Link href={stat.link} key={stat.label} passHref>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className={cn(
-                "group relative overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br p-6 text-white shadow-[0_16px_34px_rgba(11,31,58,0.2)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_38px_rgba(11,31,58,0.28)]",
-                stat.tone,
-              )}
-            >
-              <stat.icon
-                size={92}
-                className="absolute -right-6 -bottom-5 rotate-12 opacity-10 transition-transform duration-500 group-hover:scale-110"
-              />
+      {showAdminSalesInsights && (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {stats.map((stat, i) => (
+              <Link href={stat.link} key={stat.label} passHref>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className={cn(
+                    "group relative overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br p-6 text-white shadow-[0_16px_34px_rgba(11,31,58,0.2)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_38px_rgba(11,31,58,0.28)]",
+                    stat.tone,
+                  )}
+                >
+                  <stat.icon
+                    size={92}
+                    className="absolute -right-6 -bottom-5 rotate-12 opacity-10 transition-transform duration-500 group-hover:scale-110"
+                  />
 
-              <div className="relative z-10 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="rounded-xl bg-white/20 p-2 backdrop-blur-md">
-                    <stat.icon size={20} className="text-white" />
+                  <div className="relative z-10 space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="rounded-xl bg-white/20 p-2 backdrop-blur-md">
+                        <stat.icon size={20} className="text-white" />
+                      </div>
+                      <span
+                        className={cn(
+                          "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                          stat.positive
+                            ? "bg-emerald-500/20 text-emerald-100"
+                            : "bg-red-500/20 text-red-100",
+                        )}
+                      >
+                        {stat.change} {stat.trendLabel}
+                      </span>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
+                        {stat.label}
+                      </p>
+                      <h3 className="mt-1 text-4xl font-black leading-none">
+                        {loading ? (
+                          <span className="inline-block h-10 w-24 animate-pulse rounded-md bg-white/20" />
+                        ) : stat.isCurrency ? (
+                          new Intl.NumberFormat("de-DE", {
+                            style: "currency",
+                            currency: "EUR",
+                            minimumFractionDigits: 0,
+                          }).format(stat.value as number)
+                        ) : (
+                          <CountUpNumber value={stat.value as number} />
+                        )}
+                      </h3>
+                      <p className="mt-2 text-sm font-semibold text-white/90">Weekly Trend</p>
+                    </div>
+
+                    <div className="rounded-xl border border-white/20 bg-black/10 px-2 py-1">
+                      <Sparkline points={stat.sparkline} />
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-white/20">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-sky-300 to-emerald-300"
+                        style={{
+                          width: `${Math.min(100, Math.max(8, (Number(stat.value) || 0) * 8))}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center text-xs font-semibold text-white group-hover:text-amber-300 transition-colors duration-200">
+                      View details
+                      <ArrowRight size={13} className="ml-1 transition-transform group-hover:translate-x-1" />
+                    </div>
                   </div>
-                  <span
-                    className={cn(
-                      "rounded-full px-2.5 py-1 text-[11px] font-semibold",
-                      stat.positive
-                        ? "bg-emerald-500/20 text-emerald-100"
-                        : "bg-red-500/20 text-red-100",
-                    )}
-                  >
-                    {stat.change} {stat.trendLabel}
-                  </span>
-                </div>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
 
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
-                    {stat.label}
-                  </p>
-                  <h3 className="mt-1 text-4xl font-black leading-none">
-                    {loading ? (
-                      <span className="inline-block h-10 w-24 animate-pulse rounded-md bg-white/20" />
-                    ) : stat.isCurrency ? (
-                      new Intl.NumberFormat("de-DE", {
+          <section className="rounded-2xl border border-[#CFDCF2] bg-white/80 p-6 shadow-[0_8px_28px_rgba(11,31,58,0.08)] backdrop-blur dark:border-slate-700 dark:bg-[#0f172a]/90">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("sections.businessInsights")}
+                </p>
+                <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                  {t("sections.performanceSnapshot")}
+                </h2>
+              </div>
+              <Sparkles className="text-[#1E3A8A] dark:text-sky-300" size={18} />
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {performanceSnapshot.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800"
+                >
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</p>
+                  <p className="mt-1 text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                    {item.isCurrency
+                      ? new Intl.NumberFormat("de-DE", {
                         style: "currency",
                         currency: "EUR",
                         minimumFractionDigits: 0,
-                      }).format(stat.value as number)
-                    ) : (
-                      <CountUpNumber value={stat.value as number} />
-                    )}
-                  </h3>
-                  <p className="mt-2 text-sm font-semibold text-white/90">Weekly Trend</p>
+                      }).format(item.value)
+                      : `${item.value}${item.suffix}`}
+                  </p>
+                  <div className="mt-3 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700/50">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#1E3A8A] to-[#16A34A]"
+                      style={{
+                        width: `${Math.min(100, Math.round((item.value / (item.target || 1)) * 100))}%`,
+                      }}
+                    />
+                  </div>
                 </div>
-
-                <div className="rounded-xl border border-white/20 bg-black/10 px-2 py-1">
-                  <Sparkline points={stat.sparkline} />
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-white/20">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-sky-300 to-emerald-300"
-                    style={{
-                      width: `${Math.min(100, Math.max(8, (Number(stat.value) || 0) * 8))}%`,
-                    }}
-                  />
-                </div>
-                <div className="flex items-center text-xs font-semibold text-white group-hover:text-amber-300 transition-colors duration-200">
-                  View details
-                  <ArrowRight size={13} className="ml-1 transition-transform group-hover:translate-x-1" />
-                </div>
-              </div>
-            </motion.div>
-          </Link>
-        ))}
-      </div>
-
-      <section className="rounded-2xl border border-[#CFDCF2] bg-white/80 p-6 shadow-[0_8px_28px_rgba(11,31,58,0.08)] backdrop-blur dark:border-slate-700 dark:bg-[#0f172a]/90">
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {t("sections.businessInsights")}
-            </p>
-            <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
-              {t("sections.performanceSnapshot")}
-            </h2>
-          </div>
-          <Sparkles className="text-[#1E3A8A] dark:text-sky-300" size={18} />
-        </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {performanceSnapshot.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800"
-            >
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</p>
-              <p className="mt-1 text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
-                {item.isCurrency
-                  ? new Intl.NumberFormat("de-DE", {
-                    style: "currency",
-                    currency: "EUR",
-                    minimumFractionDigits: 0,
-                  }).format(item.value)
-                  : `${item.value}${item.suffix}`}
-              </p>
-              <div className="mt-3 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700/50">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#1E3A8A] to-[#16A34A]"
-                  style={{
-                    width: `${Math.min(100, Math.round((item.value / (item.target || 1)) * 100))}%`,
-                  }}
-                />
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
+        </>
+      )}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
+      <div className={cn("grid grid-cols-1 gap-6", showAuditPanel ? "xl:grid-cols-3" : "xl:grid-cols-1")}>
+        <div className={cn("rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900", showAuditPanel && "xl:col-span-2")}>
           <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
             <div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -617,7 +632,8 @@ export default function AdminDashboardHome() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
+        {showAuditPanel && (
+          <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
           <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
             <div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -703,7 +719,8 @@ export default function AdminDashboardHome() {
               </div>
             )}
           </div>
-        </div>
+          </div>
+        )}
       </div>
 
 

@@ -32,6 +32,7 @@ interface ConversationMessagesProps {
   onSendMessage: (text: string, attachments?: File[]) => void;
   onStartCall: (phoneNumber: string) => Promise<void>;
   onStatusChange: (status: ConversationStatus) => void;
+  onOpenDetails?: () => void;
 }
 
 function StatusBadge({
@@ -240,6 +241,7 @@ export function ConversationMessages({
   onSendMessage,
   onStartCall,
   onStatusChange,
+  onOpenDetails,
 }: ConversationMessagesProps) {
   const t = useTranslations("DashboardChat");
   const [input, setInput] = useState("");
@@ -277,9 +279,8 @@ export function ConversationMessages({
   };
 
   const cycleStatus = () => {
-    const order: ConversationStatus[] = ["open", "pending", "solved"];
-    const current = order.indexOf(conversation.status);
-    const next = order[(current + 1) % order.length];
+    const next: ConversationStatus =
+      conversation.status === "solved" ? "open" : "solved";
     onStatusChange(next);
   };
 
@@ -361,7 +362,11 @@ export function ConversationMessages({
           <button className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
             <Video size={14} className="text-slate-500" />
           </button>
-          <button className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
+          <button
+            type="button"
+            onClick={onOpenDetails}
+            className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
+          >
             <Info size={14} className="text-slate-500" />
           </button>
         </div>

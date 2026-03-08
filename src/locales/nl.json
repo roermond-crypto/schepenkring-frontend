@@ -104,7 +104,7 @@
       "collapse": "Sidebar inklappen",
       "audit": "Audit",
       "errors": "Fouten",
-      "harborPerformance": "Haven prestaties",
+      "harborPerformance": "Salesfunnel",
       "socialAutomation": "Sociale automatisering"
     },
     "notifications": {
@@ -205,6 +205,11 @@
   },
   "DashboardAdminOverview": {
     "title": "Admin-overzicht",
+    "roleTitles": {
+      "admin": "Admin-overzicht",
+      "team": "Teamoverzicht",
+      "client": "Clientoverzicht"
+    },
     "welcomeBack": "Welkom terug, {name}",
     "todayWeather": "Vandaag: 18° zonnig in Eindhoven",
     "activeBiddingItems": "Je hebt {count} actief{count, plural, one {} other {e}} bieding{count, plural, one {} other {en}}.",
@@ -344,9 +349,9 @@
   },
   "DashboardAdminHarborPerformance": {
     "hero": {
-      "kicker": "Havenanalyse",
-      "title": "Havenprestaties",
-      "description": "Vergelijk bereik, funnelconversie en commissieprestaties van alle havenpartners."
+      "kicker": "Salesanalyse",
+      "title": "Salesfunnel",
+      "description": "Volg platformbrede funnelprestaties met inzichten per locatie."
     },
     "actions": {
       "refresh": "Verversen"
@@ -365,6 +370,7 @@
         "90d": "Laatste 90 dagen"
       },
       "allCountries": "Alle landen",
+      "allLocations": "Alle locaties",
       "allDevices": "Alle apparaten",
       "allSources": "Alle bronnen",
       "countries": {
@@ -386,7 +392,7 @@
       }
     },
     "table": {
-      "harbor": "Haven",
+      "location": "Locatie",
       "users": "Gebruikers",
       "impressions": "Vertoningen",
       "clicks": "Klikken",
@@ -399,8 +405,8 @@
       "avgCtr": "Gem. CTR {value}"
     },
     "states": {
-      "error": "Havenprestaties konden niet worden geladen.",
-      "empty": "Er zijn geen havenprestatiegegevens beschikbaar voor de huidige filters."
+      "error": "Salesfunnel-prestaties konden niet worden geladen.",
+      "empty": "Er zijn geen salesfunnel-gegevens beschikbaar voor de huidige filters."
     },
     "panels": {
       "reach": {
@@ -825,7 +831,9 @@
       "phone": "Telefoon",
       "location": "Locatie",
       "company": "Bedrijf",
-      "sourceUrl": "Bron URL"
+      "sourceUrl": "Bron URL",
+      "sharedFiles": "Gedeelde bestanden ({count})",
+      "activity": "Activiteit"
     }
   }
 }
