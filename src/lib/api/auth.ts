@@ -28,21 +28,21 @@ export type StepUpChallengeResponse = {
 
 export type LoginResponse =
   | {
-      token?: string;
-      user: SessionUser;
-    }
+    token?: string;
+    user: SessionUser;
+  }
   | StepUpChallengeResponse;
 
 export type SignupResponse =
   | {
-      token?: string;
-      user: SessionUser;
-    }
+    token?: string;
+    user: SessionUser;
+  }
   | {
-      verification_required: true;
-      email: string;
-      message?: string;
-    };
+    verification_required: true;
+    email: string;
+    message?: string;
+  };
 
 export type PublicLocation = {
   id: number;
@@ -150,7 +150,7 @@ export async function resendVerification(payload: { email: string }) {
 
 export async function logout() {
   return apiRequest<{ success?: true; message?: string }>({
-    url: "/logout",
+    url: "/auth/logout",
     method: "POST",
   });
 }

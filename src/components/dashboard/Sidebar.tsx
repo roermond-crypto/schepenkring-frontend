@@ -158,7 +158,7 @@ export function Sidebar({
         )}
       </div>
 
-      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pt-6">
+      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pt-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
 
