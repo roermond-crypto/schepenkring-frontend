@@ -40,6 +40,7 @@ export default async function DashboardRoleLayout({ children, params }: Dashboar
       role={session.user.role}
       userName={session.user.name}
       userEmail={session.user.email}
+      userAvatar={session.user.avatar}
     >
       {children}
     </DashboardShell>

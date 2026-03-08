@@ -23,12 +23,14 @@ interface LockscreenOverlayProps {
     children: React.ReactNode;
     locale: AppLocale;
     userName: string;
+    userAvatar?: string;
 }
 
 export default function LockscreenOverlay({
     children,
     locale,
     userName,
+    userAvatar,
 }: LockscreenOverlayProps) {
     const router = useRouter();
     const t = getDictionary(locale).lockscreen;
@@ -234,10 +236,18 @@ export default function LockscreenOverlay({
                                         </div>
 
                                         {/* Center: avatar */}
-                                        <div className="shrink-0 w-20 sm:-ml-2 h-20 sm:w-24 sm:h-24 rounded-full bg-white shadow-xl z-10 flex items-center justify-center overflow-hidden border-[6px] border-white">
-                                            <div className="flex h-full w-full items-center justify-center bg-[#E7F0FF] text-lg font-bold text-[#0B1F3A]">
-                                                {initials || <User className="w-10 h-10 text-slate-400" />}
-                                            </div>
+                                        <div className="shrink-0 w-20 sm:-ml-2 h-20 sm:w-24 sm:h-24 rounded-full bg-[#E7F0FF] shadow-xl z-10 flex items-center justify-center overflow-hidden border-[6px] border-white">
+                                            {userAvatar ? (
+                                                <img
+                                                    src={userAvatar}
+                                                    alt="Avatar"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center text-lg font-bold text-[#0B1F3A]">
+                                                    {initials || <User className="w-10 h-10 text-slate-400" />}
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Right: PIN input */}

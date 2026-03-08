@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import { useTranslations } from "next-intl";
@@ -22,10 +22,14 @@ import {
   updateMePersonal,
   updateMeProfile,
   updateMeSecurity,
+  updateAvatar,
   type MeUser,
 } from "@/lib/api/account";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { setClientSession, getClientToken } from "@/lib/auth/client-session";
 
 type AccountTab = "profile" | "personal" | "address" | "security" | "password";
 
@@ -43,11 +47,50 @@ function extractErrorMessage(error: unknown, fallback: string) {
 
 export default function DashboardAccountPage() {
   const t = useTranslations("DashboardAccount");
+  const router = useRouter();
+
+  const placeInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<AccountTab>("profile");
   const [user, setUser] = useState<MeUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    setUploadingAvatar(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await updateAvatar(formData);
+      setUser(response.data);
+      setSuccess("Profile picture updated successfully!");
+
+      const token = getClientToken();
+      if (token && response.data) {
+        setClientSession(token, {
+          id: String(response.data.id),
+          name: response.data.name,
+          email: response.data.email,
+          avatar: response.data.avatar || undefined,
+          role: response.data.role || response.data.type?.toLowerCase() || "client",
+        } as any);
+      }
+
+      router.refresh();
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, "Failed to upload profile picture."));
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -133,6 +176,106 @@ export default function DashboardAccountPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== "address") return;
+    if (typeof window === "undefined") return;
+    if (!placeInputRef.current) return;
+
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+    if (!apiKey) return;
+
+    let cancelled = false;
+
+    const setupAutocomplete = () => {
+      const googleRef = (window as any).google;
+      if (!googleRef?.maps?.places?.Autocomplete || !placeInputRef.current) return;
+
+      const autocomplete = new googleRef.maps.places.Autocomplete(
+        placeInputRef.current,
+        {
+          fields: ["address_components", "formatted_address"],
+          types: ["address"],
+        }
+      );
+
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (!place.address_components) return;
+
+        let address1 = "";
+        let city = "";
+        let state = "";
+        let postal = "";
+        let countryObj = "";
+
+        place.address_components.forEach((component: any) => {
+          const types = component.types;
+          if (types.includes("street_number")) {
+            address1 = `${component.long_name} ${address1}`;
+          }
+          if (types.includes("route")) {
+            address1 += component.short_name;
+          }
+          if (types.includes("locality")) {
+            city = component.long_name;
+          }
+          if (types.includes("administrative_area_level_1")) {
+            state = component.long_name;
+          }
+          if (types.includes("postal_code")) {
+            postal = component.long_name;
+          }
+          if (types.includes("country")) {
+            countryObj = component.long_name;
+          }
+        });
+
+        setAddress((prev) => ({
+          ...prev,
+          address_line1: address1.trim() || placeInputRef.current?.value || prev.address_line1,
+          city: city || prev.city,
+          state: state || prev.state,
+          postal_code: postal || prev.postal_code,
+          country: countryObj || prev.country,
+        }));
+      });
+    };
+
+    const existingGoogle = (window as any).google;
+    if (existingGoogle?.maps?.places?.Autocomplete) {
+      setupAutocomplete();
+      return;
+    }
+
+    const scriptId = "google-places-script";
+    let script = document.getElementById(scriptId) as HTMLScriptElement;
+
+    const handleLoad = () => {
+      if (!cancelled) setupAutocomplete();
+    };
+
+    if (script) {
+      script.addEventListener("load", handleLoad);
+      return () => {
+        cancelled = true;
+        script?.removeEventListener("load", handleLoad);
+      };
+    }
+
+    script = document.createElement("script");
+    script.id = scriptId;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.addEventListener("load", handleLoad);
+    document.head.appendChild(script);
+
+    return () => {
+      cancelled = true;
+      script?.removeEventListener("load", handleLoad);
+    };
+  }, [activeTab]);
 
   const completion = useMemo(() => {
     const fields = [
@@ -320,19 +463,63 @@ export default function DashboardAccountPage() {
                 {success ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div> : null}
 
                 {activeTab === "profile" ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><User size={12} /> {t("fields.fullName")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.name} onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))} />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.locale")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.locale} onChange={(e) => setProfile((p) => ({ ...p, locale: e.target.value }))} />
-                    </label>
-                    <label className="space-y-2 sm:col-span-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.timezone")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.timezone} onChange={(e) => setProfile((p) => ({ ...p, timezone: e.target.value }))} />
-                    </label>
+                  <div className="space-y-6">
+                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-[#E7F0FF] shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                        {user?.avatar ? (
+                          <Image src={user.avatar} alt="Avatar" className="h-full w-full object-cover" fill unoptimized />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-[#0B1F3A] dark:text-slate-100">
+                            {profile.name?.split(" ").map((s) => s[0]).join("").toUpperCase().slice(0, 2) || "U"}
+                          </div>
+                        )}
+                        {uploadingAvatar && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                            <Loader2 className="h-6 w-6 animate-spin text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-1 flex-col justify-center space-y-2 text-center sm:text-left">
+                        <div>
+                          <p className="text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">{t("labels.profilePicture") || "Profile Picture"}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {t("labels.uploadHelp") || "Upload a new avatar (max 5MB, WEBP/JPG/PNG)."}
+                          </p>
+                        </div>
+                        <div className="relative inline-flex">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={uploadingAvatar}
+                            className="h-9 relative overflow-hidden text-xs"
+                          >
+                            {uploadingAvatar ? t("actions.uploading") || "Uploading..." : t("actions.uploadImage") || "Upload Image"}
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="absolute inset-0 cursor-pointer opacity-0"
+                              onChange={handleAvatarUpload}
+                              disabled={uploadingAvatar}
+                            />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <label className="space-y-2">
+                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><User size={12} /> {t("fields.fullName")}</span>
+                        <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.name} onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))} />
+                      </label>
+                      <label className="space-y-2">
+                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.locale")}</span>
+                        <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.locale} onChange={(e) => setProfile((p) => ({ ...p, locale: e.target.value }))} />
+                      </label>
+                      <label className="space-y-2 sm:col-span-2">
+                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.timezone")}</span>
+                        <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.timezone} onChange={(e) => setProfile((p) => ({ ...p, timezone: e.target.value }))} />
+                      </label>
+                    </div>
                   </div>
                 ) : null}
 
@@ -365,7 +552,7 @@ export default function DashboardAccountPage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-2 sm:col-span-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><MapPin size={12} /> {t("fields.addressLine1")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={address.address_line1} onChange={(e) => setAddress((p) => ({ ...p, address_line1: e.target.value }))} />
+                      <input ref={placeInputRef} autoComplete="off" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={address.address_line1} onChange={(e) => setAddress((p) => ({ ...p, address_line1: e.target.value }))} />
                     </label>
                     <label className="space-y-2 sm:col-span-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><MapPin size={12} /> {t("fields.addressLine2")}</span>

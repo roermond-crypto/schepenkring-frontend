@@ -9,6 +9,7 @@ export type SessionUser = {
   id: string;
   name: string;
   email: string;
+  avatar?: string;
   role: UserRole;
 };
 
@@ -36,6 +37,7 @@ function decodeSession(value: string): SessionUser | null {
       id: parsed.id,
       name: parsed.name,
       email: parsed.email,
+      avatar: parsed.avatar,
       role,
     };
   } catch {
