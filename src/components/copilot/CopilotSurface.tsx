@@ -78,7 +78,7 @@ function normalizeCopilotHref(rawHref: string) {
 
   const href = rawHref.startsWith("/") ? rawHref : `/${rawHref}`;
 
-  const localeMatch = href.match(/^\/(en|nl|de)(\/.*|$)/);
+  const localeMatch = href.match(/^\/(en|nl|de|fr)(\/.*|$)/);
   const localePrefix = localeMatch ? `/${localeMatch[1]}` : "";
   const pathWithoutLocale = localeMatch ? localeMatch[2] || "/" : href;
 

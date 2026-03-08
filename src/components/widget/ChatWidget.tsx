@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import {
   MessageCircle,
   Minimize2,
@@ -95,7 +101,7 @@ const PUBLIC_API_BASE =
 async function publicApi<T>(
   method: string,
   path: string,
-  body?: Record<string, unknown>
+  body?: Record<string, unknown>,
 ): Promise<T> {
   const res = await fetch(`${PUBLIC_API_BASE}${path}`, {
     method,
@@ -191,13 +197,13 @@ function ChatBody({
                 "max-w-[84%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
                 msg.isUser
                   ? "rounded-br-sm text-white shadow-md"
-                  : "rounded-bl-sm border border-slate-200 bg-white text-slate-800"
+                  : "rounded-bl-sm border border-slate-200 bg-white text-slate-800",
               )}
               style={
                 msg.isUser
                   ? {
-                    background: `linear-gradient(140deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
-                  }
+                      background: `linear-gradient(140deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                    }
                   : undefined
               }
             >
@@ -205,7 +211,7 @@ function ChatBody({
               <p
                 className={cn(
                   "mt-1 text-[10px]",
-                  msg.isUser ? "text-white/70" : "text-slate-400"
+                  msg.isUser ? "text-white/70" : "text-slate-400",
                 )}
               >
                 {msg.timestamp.toLocaleTimeString([], {
@@ -259,13 +265,13 @@ function ChatBody({
               "flex h-9 w-9 items-center justify-center rounded-lg text-white transition",
               input.trim() && !sending
                 ? "shadow-md hover:translate-y-[-1px]"
-                : "cursor-not-allowed bg-slate-300"
+                : "cursor-not-allowed bg-slate-300",
             )}
             style={
               input.trim() && !sending
                 ? {
-                  background: `linear-gradient(130deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
-                }
+                    background: `linear-gradient(130deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                  }
                 : undefined
             }
           >
@@ -323,10 +329,10 @@ export function ChatWidget({
     const base = THEME_PRESETS[themePreset];
     const fromAccent = accentColor
       ? {
-        launcherStart: accentColor,
-        headerStart: accentColor,
-        userBubbleStart: accentColor,
-      }
+          launcherStart: accentColor,
+          headerStart: accentColor,
+          userBubbleStart: accentColor,
+        }
       : {};
     return { ...base, ...fromAccent, ...colorSettings };
   }, [accentColor, colorSettings, themePreset]);
@@ -336,7 +342,7 @@ export function ChatWidget({
       ({
         "--widget-primary": colors.launcherStart,
       }) as CSSProperties,
-    [colors.launcherStart]
+    [colors.launcherStart],
   );
 
   const resetChat = () => {
@@ -375,7 +381,8 @@ export function ChatWidget({
           message: { id: string };
         }>("POST", "/public/leads", {
           location_id: locationId ?? 1,
-          source_url: typeof window !== "undefined" ? window.location.href : undefined,
+          source_url:
+            typeof window !== "undefined" ? window.location.href : undefined,
           message: text,
           client_message_id: clientMessageId,
         });
@@ -396,10 +403,14 @@ export function ChatWidget({
         // Subsequent messages: send to existing conversation
         const clientMessageId = `widget-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-        await publicApi("POST", `/public/conversations/${conversationId}/messages`, {
-          body: text,
-          client_message_id: clientMessageId,
-        });
+        await publicApi(
+          "POST",
+          `/public/conversations/${conversationId}/messages`,
+          {
+            body: text,
+            client_message_id: clientMessageId,
+          },
+        );
 
         // Add confirmation
         setMessages((prev) => [
@@ -457,7 +468,7 @@ export function ChatWidget({
             aria-label="Close chat backdrop"
           />
 
-          <div className="fixed inset-x-3 bottom-3 top-16 z-50 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[620px] sm:w-[390px] sm:rounded-2xl">
+          <div className="fixed inset-x-3 bottom-3 top-16 z-50 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-24 sm:w-[390px] sm:rounded-2xl">
             <div
               className="relative flex items-center justify-between overflow-hidden px-4 py-3 text-white"
               style={{
@@ -521,8 +532,8 @@ export function ChatWidget({
                     No internet connection
                   </p>
                   <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-                    Please check your connection and try again.
-                    We&rsquo;ll be here when you&rsquo;re back online.
+                    Please check your connection and try again. We&rsquo;ll be
+                    here when you&rsquo;re back online.
                   </p>
                 </div>
               ) : (

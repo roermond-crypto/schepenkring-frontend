@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { ConversationList } from "./ConversationList";
 import { ConversationMessages } from "./ConversationMessages";
+import { ContactDetailPanel } from "./ContactDetailPanel";
 import {
   getConversations,
   getMessages,
@@ -17,6 +18,7 @@ import type {
   Conversation,
   ConversationStatus,
   ContactInfo,
+  SystemEvent,
   SupportMessage,
 } from "@/types/chat";
 import { Menu } from "lucide-react";
@@ -34,6 +36,7 @@ export function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<"list" | "messages">("list");
+  const [showDetailPanel, setShowDetailPanel] = useState(false);
 
   // Load conversations
   const loadConversations = useCallback(async () => {
@@ -47,12 +50,16 @@ export function ChatPage() {
   }, [statusFilter, searchQuery]);
 
   useEffect(() => {
-    loadConversations();
+    const timer = window.setTimeout(() => {
+      void loadConversations();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadConversations]);
 
   // Select conversation
   const handleSelectConversation = useCallback(async (conv: Conversation) => {
     setSelectedConv(conv);
+    setShowDetailPanel(true);
     setMessagesLoading(true);
     setMobilePanel("messages");
 
@@ -61,7 +68,30 @@ export function ChatPage() {
       getContactInfo(conv.id),
     ]);
     setMessages(msgs);
-    setContact(contactData);
+    const fallbackEvents: SystemEvent[] =
+      contactData?.events && contactData.events.length > 0
+        ? contactData.events
+        : [
+            {
+              id: `evt-${conv.id}`,
+              conversation_id: conv.id,
+              type: "status",
+              description: `Conversation status: ${conv.status}`,
+              created_at: conv.updated_at,
+            },
+          ];
+
+    setContact({
+      name: contactData?.name && contactData.name !== "Loading..." ? contactData.name : conv.contact_name,
+      email: contactData?.email ?? conv.guest_email,
+      phone: contactData?.phone ?? conv.guest_phone,
+      company: contactData?.company ?? conv.contact_company,
+      avatar: contactData?.avatar ?? conv.contact_avatar,
+      status: contactData?.status ?? "online",
+      location: contactData?.location ?? conv.context?.place_id,
+      shared_files: contactData?.shared_files ?? [],
+      events: fallbackEvents,
+    });
     setMessagesLoading(false);
   }, []);
 
@@ -172,6 +202,7 @@ export function ChatPage() {
               onSendMessage={handleSendMessage}
               onStartCall={handleStartCall}
               onStatusChange={handleStatusChange}
+              onOpenDetails={() => setShowDetailPanel(true)}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center px-8">
@@ -199,6 +230,16 @@ export function ChatPage() {
             </div>
           )}
         </div>
+
+        {selectedConv && showDetailPanel && (
+          <div className="hidden w-[340px] flex-shrink-0 border-l border-slate-200/60 lg:block">
+            <ContactDetailPanel
+              contact={contact}
+              conversation={selectedConv}
+              onClose={() => setShowDetailPanel(false)}
+            />
+          </div>
+        )}
       </div>
       <style jsx global>{`
         .dark .chat-page-theme .bg-white,

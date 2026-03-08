@@ -107,7 +107,7 @@
       "collapse": "Sidebar einklappen",
       "audit": "Audit",
       "errors": "Fehler",
-      "harborPerformance": "Hafenleistung",
+      "harborPerformance": "Salesfunnel",
       "socialAutomation": "Social-Automatisierung"
     },
     "notifications": {
@@ -207,10 +207,10 @@
     }
   },
   "DashboardAdminOverview": {
-    "title": "Admin-Übersicht",
+     "title": "Admin-Übersicht",
     "title_admin": "Admin-Übersicht",
-    "title_client": "Kunden-Übersicht",
-    "title_employee": "Verkaufs-Dashboard",
+    "title_client": "Kundenübersicht",
+    "title_employee": "Team-Übersicht",
     "welcomeBack": "Willkommen zurück, {name}",
     "todayWeather": "Heute: 18° Sonnig in Eindhoven",
     "activeBiddingItems": "Sie haben {count} aktive Gebote {count, plural, one {Artikel} other {Artikel}}.",
@@ -350,9 +350,9 @@
   },
   "DashboardAdminHarborPerformance": {
     "hero": {
-      "kicker": "Hafenanalyse",
-      "title": "Hafenleistung",
-      "description": "Vergleichen Sie Reichweite, Funnel-Conversion und Provisionsleistung aller Hafenpartner."
+      "kicker": "Sales-Analyse",
+      "title": "Salesfunnel",
+      "description": "Verfolgen Sie die plattformweite Funnel-Performance mit standortbezogenen Einblicken."
     },
     "actions": {
       "refresh": "Aktualisieren"
@@ -371,6 +371,7 @@
         "90d": "Letzte 90 Tage"
       },
       "allCountries": "Alle Länder",
+      "allLocations": "Alle Standorte",
       "allDevices": "Alle Geräte",
       "allSources": "Alle Quellen",
       "countries": {
@@ -392,7 +393,7 @@
       }
     },
     "table": {
-      "harbor": "Hafen",
+      "location": "Standort",
       "users": "Benutzer",
       "impressions": "Impressionen",
       "clicks": "Klicks",
@@ -405,8 +406,8 @@
       "avgCtr": "Durchschn. CTR {value}"
     },
     "states": {
-      "error": "Hafenleistung konnte nicht geladen werden.",
-      "empty": "Für die aktuellen Filter sind keine Hafenleistungsdaten verfügbar."
+      "error": "Salesfunnel-Daten konnten nicht geladen werden.",
+      "empty": "Für die aktuellen Filter sind keine Salesfunnel-Daten verfügbar."
     },
     "panels": {
       "reach": {
@@ -831,7 +832,9 @@
       "phone": "Telefon",
       "location": "Standort",
       "company": "Unternehmen",
-      "sourceUrl": "Quell-URL"
+      "sourceUrl": "Quell-URL",
+      "sharedFiles": "Geteilte Dateien ({count})",
+      "activity": "Aktivität"
     }
   }
 }

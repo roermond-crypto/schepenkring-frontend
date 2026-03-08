@@ -85,7 +85,10 @@ function Sparkline({ points }: { points: number[] }) {
   return (
     <div className="h-11 w-32">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 5, right: 0, left: 0, bottom: 0 }}
+        >
           <defs>
             <linearGradient id="sparkStroke" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#60A5FA" stopOpacity={0.8} />
@@ -103,7 +106,12 @@ function Sparkline({ points }: { points: number[] }) {
               }
               return null;
             }}
-            cursor={{ stroke: 'white', strokeWidth: 1, strokeDasharray: '3 3', strokeOpacity: 0.5 }}
+            cursor={{
+              stroke: "white",
+              strokeWidth: 1,
+              strokeDasharray: "3 3",
+              strokeOpacity: 0.5,
+            }}
           />
           <Area
             type="monotone"
@@ -127,6 +135,15 @@ export default function AdminDashboardHome() {
   const params = useParams<{ role?: string }>();
   const role = normalizeRole(params?.role) ?? "admin";
   const dashboardBase = `/dashboard/${role}`;
+  const isAdminRole = role === "admin";
+  const showAdminSalesInsights = role !== "client";
+  const showAuditPanel = role !== "client";
+  const overviewTitle =
+    role === "admin"
+      ? t("roleTitles.admin")
+      : role === "client"
+        ? t("roleTitles.client")
+        : t("roleTitles.team");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState<DashboardData>({
@@ -151,23 +168,34 @@ export default function AdminDashboardHome() {
     if (showSkeleton) setLoading(true);
     setIsRefreshing(true);
     try {
-      const [yachtsRes, tasksRes, bidsRes, logsRes, summaryRes] = await Promise.allSettled([
-        api.get("/yachts"),
-        api.get("/tasks"),
-        api.get("/bids?page=1"),
-        api.get("/system-logs?per_page=5"),
-        api.get("/dashboard/summary"),
-      ]);
+      const [yachtsRes, tasksRes, bidsRes, logsRes, summaryRes] =
+        await Promise.allSettled([
+          api.get("/yachts"),
+          api.get("/tasks"),
+          api.get("/bids?page=1"),
+          api.get("/system-logs?per_page=5"),
+          api.get("/dashboard/summary"),
+        ]);
 
-      const yachts = yachtsRes.status === "fulfilled" ? yachtsRes.value.data || [] : [];
-      const tasks = tasksRes.status === "fulfilled" ? tasksRes.value.data || [] : [];
-      const bidsRaw = bidsRes.status === "fulfilled" ? (bidsRes.value.data?.data || bidsRes.value.data || []) : [];
-      const systemLogs = logsRes.status === "fulfilled"
-        ? (logsRes.value.data?.data || logsRes.value.data?.logs || [])
-        : [];
+      const yachts =
+        yachtsRes.status === "fulfilled" ? yachtsRes.value.data || [] : [];
+      const tasks =
+        tasksRes.status === "fulfilled" ? tasksRes.value.data || [] : [];
+      const bidsRaw =
+        bidsRes.status === "fulfilled"
+          ? bidsRes.value.data?.data || bidsRes.value.data || []
+          : [];
+      const systemLogs =
+        logsRes.status === "fulfilled"
+          ? logsRes.value.data?.data || logsRes.value.data?.logs || []
+          : [];
 
-      const activeBids = yachts.filter((y: any) => y.status === "For Bid").length;
-      const intake = yachts.filter((y: any) => y.status === "Draft" || y.status === "For Sale").length;
+      const activeBids = yachts.filter(
+        (y: any) => y.status === "For Bid",
+      ).length;
+      const intake = yachts.filter(
+        (y: any) => y.status === "Draft" || y.status === "For Sale",
+      ).length;
       const pending = tasks.filter((t: any) => t.status !== "Done").length;
       const soldYachts = yachts.filter((y: any) => y.status === "Sold");
       const now = new Date();
@@ -193,22 +221,22 @@ export default function AdminDashboardHome() {
       const avgDaysToSale =
         soldYachts.length > 0
           ? Math.round(
-            soldYachts.reduce((acc: number, y: any) => {
-              const created = y.created_at ? new Date(y.created_at) : null;
-              const updated = y.updated_at ? new Date(y.updated_at) : null;
-              if (!created || !updated) return acc;
-              return (
-                acc +
-                Math.max(
-                  1,
-                  Math.round(
-                    (updated.getTime() - created.getTime()) /
-                    (1000 * 60 * 60 * 24),
-                  ),
-                )
-              );
-            }, 0) / soldYachts.length,
-          )
+              soldYachts.reduce((acc: number, y: any) => {
+                const created = y.created_at ? new Date(y.created_at) : null;
+                const updated = y.updated_at ? new Date(y.updated_at) : null;
+                if (!created || !updated) return acc;
+                return (
+                  acc +
+                  Math.max(
+                    1,
+                    Math.round(
+                      (updated.getTime() - created.getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    ),
+                  )
+                );
+              }, 0) / soldYachts.length,
+            )
           : 0;
 
       setData({
@@ -229,12 +257,15 @@ export default function AdminDashboardHome() {
           .slice(0, 3),
         auditLogs:
           systemLogs.length > 0 ? systemLogs.slice(0, 5) : tasks.slice(0, 5),
-        trends: summaryRes.status === "fulfilled" && summaryRes.value.data ? summaryRes.value.data : {
-          activeBids: { change: 0, sparkline: [] },
-          pendingTasks: { change: 0, sparkline: [] },
-          fleetIntake: { change: 0, sparkline: [] },
-          completedSales: { change: 0, sparkline: [] },
-        }
+        trends:
+          summaryRes.status === "fulfilled" && summaryRes.value.data
+            ? summaryRes.value.data
+            : {
+                activeBids: { change: 0, sparkline: [] },
+                pendingTasks: { change: 0, sparkline: [] },
+                fleetIntake: { change: 0, sparkline: [] },
+                completedSales: { change: 0, sparkline: [] },
+              },
       });
     } catch (error) {
       console.error("Admin dashboard sync error:", error);
@@ -362,7 +393,7 @@ export default function AdminDashboardHome() {
   const welcomeName =
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("user_data") || "{}")?.name ||
-      t("defaults.userName")
+        t("defaults.userName")
       : t("defaults.userName");
 
   return (
@@ -376,20 +407,24 @@ export default function AdminDashboardHome() {
               {t("welcomeBack", { name: welcomeName })}
             </p>
             <h1 className="text-3xl font-black text-[#0B1F3A] sm:text-4xl dark:text-slate-100">
-              {role === "client" ? t("title_client") :
-                role === "employee" ? t("title_employee") :
-                  t("title_admin")}
+              {role === "client"
+                ? t("title_client")
+                : role === "employee"
+                  ? t("title_employee")
+                  : t("title_admin")}
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#1E3A8A] dark:text-slate-300">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 font-semibold dark:bg-slate-800/90 dark:text-slate-100">
                 <Sun size={14} />
                 {t("todayWeather")}
               </span>
-              <span className="font-semibold">
-                {t("activeBiddingItems", {
-                  count: data.activeBidsCount,
-                })}
-              </span>
+              {isAdminRole && (
+                <span className="font-semibold">
+                  {t("activeBiddingItems", {
+                    count: data.activeBidsCount,
+                  })}
+                </span>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -411,124 +446,148 @@ export default function AdminDashboardHome() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat, i) => (
-          <Link href={stat.link} key={stat.label} passHref>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className={cn(
-                "group relative overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br p-6 text-white shadow-[0_16px_34px_rgba(11,31,58,0.2)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_38px_rgba(11,31,58,0.28)]",
-                stat.tone,
-              )}
-            >
-              <stat.icon
-                size={92}
-                className="absolute -right-6 -bottom-5 rotate-12 opacity-10 transition-transform duration-500 group-hover:scale-110"
-              />
-
-              <div className="relative z-10 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="rounded-xl bg-white/20 p-2 backdrop-blur-md">
-                    <stat.icon size={20} className="text-white" />
-                  </div>
-                  <span
-                    className={cn(
-                      "rounded-full px-2.5 py-1 text-[11px] font-semibold",
-                      stat.positive
-                        ? "bg-emerald-500/20 text-emerald-100"
-                        : "bg-red-500/20 text-red-100",
-                    )}
-                  >
-                    {stat.change} {stat.trendLabel}
-                  </span>
-                </div>
-
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
-                    {stat.label}
-                  </p>
-                  <h3 className="mt-1 text-4xl font-black leading-none">
-                    {loading ? (
-                      <span className="inline-block h-10 w-24 animate-pulse rounded-md bg-white/20" />
-                    ) : stat.isCurrency ? (
-                      new Intl.NumberFormat("de-DE", {
-                        style: "currency",
-                        currency: "EUR",
-                        minimumFractionDigits: 0,
-                      }).format(stat.value as number)
-                    ) : (
-                      <CountUpNumber value={stat.value as number} />
-                    )}
-                  </h3>
-                  <p className="mt-2 text-sm font-semibold text-white/90">Weekly Trend</p>
-                </div>
-
-                <div className="rounded-xl border border-white/20 bg-black/10 px-2 py-1">
-                  <Sparkline points={stat.sparkline} />
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-white/20">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-sky-300 to-emerald-300"
-                    style={{
-                      width: `${Math.min(100, Math.max(8, (Number(stat.value) || 0) * 8))}%`,
-                    }}
+      {showAdminSalesInsights && (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {stats.map((stat, i) => (
+              <Link href={stat.link} key={stat.label} passHref>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className={cn(
+                    "group relative overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br p-6 text-white shadow-[0_16px_34px_rgba(11,31,58,0.2)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_38px_rgba(11,31,58,0.28)]",
+                    stat.tone,
+                  )}
+                >
+                  <stat.icon
+                    size={92}
+                    className="absolute -right-6 -bottom-5 rotate-12 opacity-10 transition-transform duration-500 group-hover:scale-110"
                   />
-                </div>
-                <div className="flex items-center text-xs font-semibold text-white group-hover:text-amber-300 transition-colors duration-200">
-                  View details
-                  <ArrowRight size={13} className="ml-1 transition-transform group-hover:translate-x-1" />
-                </div>
-              </div>
-            </motion.div>
-          </Link>
-        ))}
-      </div>
 
-      <section className="rounded-2xl border border-[#CFDCF2] bg-white/80 p-6 shadow-[0_8px_28px_rgba(11,31,58,0.08)] backdrop-blur dark:border-slate-700 dark:bg-[#0f172a]/90">
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {t("sections.businessInsights")}
-            </p>
-            <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
-              {t("sections.performanceSnapshot")}
-            </h2>
+                  <div className="relative z-10 space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="rounded-xl bg-white/20 p-2 backdrop-blur-md">
+                        <stat.icon size={20} className="text-white" />
+                      </div>
+                      <span
+                        className={cn(
+                          "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                          stat.positive
+                            ? "bg-emerald-500/20 text-emerald-100"
+                            : "bg-red-500/20 text-red-100",
+                        )}
+                      >
+                        {stat.change} {stat.trendLabel}
+                      </span>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
+                        {stat.label}
+                      </p>
+                      <h3 className="mt-1 text-4xl font-black leading-none">
+                        {loading ? (
+                          <span className="inline-block h-10 w-24 animate-pulse rounded-md bg-white/20" />
+                        ) : stat.isCurrency ? (
+                          new Intl.NumberFormat("de-DE", {
+                            style: "currency",
+                            currency: "EUR",
+                            minimumFractionDigits: 0,
+                          }).format(stat.value as number)
+                        ) : (
+                          <CountUpNumber value={stat.value as number} />
+                        )}
+                      </h3>
+                      <p className="mt-2 text-sm font-semibold text-white/90">
+                        Weekly Trend
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-white/20 bg-black/10 px-2 py-1">
+                      <Sparkline points={stat.sparkline} />
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-white/20">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-sky-300 to-emerald-300"
+                        style={{
+                          width: `${Math.min(100, Math.max(8, (Number(stat.value) || 0) * 8))}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center text-xs font-semibold text-white group-hover:text-amber-300 transition-colors duration-200">
+                      View details
+                      <ArrowRight
+                        size={13}
+                        className="ml-1 transition-transform group-hover:translate-x-1"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            ))}
           </div>
-          <Sparkles className="text-[#1E3A8A] dark:text-sky-300" size={18} />
-        </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {performanceSnapshot.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800"
-            >
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</p>
-              <p className="mt-1 text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
-                {item.isCurrency
-                  ? new Intl.NumberFormat("de-DE", {
-                    style: "currency",
-                    currency: "EUR",
-                    minimumFractionDigits: 0,
-                  }).format(item.value)
-                  : `${item.value}${item.suffix}`}
-              </p>
-              <div className="mt-3 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700/50">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#1E3A8A] to-[#16A34A]"
-                  style={{
-                    width: `${Math.min(100, Math.round((item.value / (item.target || 1)) * 100))}%`,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
+          <section className="rounded-2xl border border-[#CFDCF2] bg-white/80 p-6 shadow-[0_8px_28px_rgba(11,31,58,0.08)] backdrop-blur dark:border-slate-700 dark:bg-[#0f172a]/90">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("sections.businessInsights")}
+                </p>
+                <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                  {t("sections.performanceSnapshot")}
+                </h2>
+              </div>
+              <Sparkles
+                className="text-[#1E3A8A] dark:text-sky-300"
+                size={18}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {performanceSnapshot.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800"
+                >
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                    {item.isCurrency
+                      ? new Intl.NumberFormat("de-DE", {
+                          style: "currency",
+                          currency: "EUR",
+                          minimumFractionDigits: 0,
+                        }).format(item.value)
+                      : `${item.value}${item.suffix}`}
+                  </p>
+                  <div className="mt-3 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700/50">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#1E3A8A] to-[#16A34A]"
+                      style={{
+                        width: `${Math.min(100, Math.round((item.value / (item.target || 1)) * 100))}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-6",
+          showAuditPanel ? "xl:grid-cols-3" : "xl:grid-cols-1",
+        )}
+      >
+        <div
+          className={cn(
+            "rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900",
+            showAuditPanel && "xl:col-span-2",
+          )}
+        >
           <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
             <div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -619,96 +678,102 @@ export default function AdminDashboardHome() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
-          <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
-            <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                {t("sections.liveDiagnostics")}
-              </p>
-              <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
-                {t("sections.systemAudit")}
-              </h2>
+        {showAuditPanel && (
+          <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
+            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("sections.liveDiagnostics")}
+                </p>
+                <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                  {t("sections.systemAudit")}
+                </h2>
+              </div>
+              <Activity
+                size={17}
+                className="text-[#1E3A8A] dark:text-sky-300"
+              />
             </div>
-            <Activity size={17} className="text-[#1E3A8A] dark:text-sky-300" />
-          </div>
-          <div className="space-y-4">
-            {loading &&
-              Array.from({ length: 5 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className="animate-pulse rounded-lg border border-slate-100 p-3 dark:border-slate-700"
-                >
-                  <div className="h-3 w-4/5 rounded bg-slate-200 dark:bg-slate-700" />
-                  <div className="mt-2 h-2.5 w-1/3 rounded bg-slate-100 dark:bg-slate-800" />
-                </div>
-              ))}
-
-            {!loading &&
-              data.auditLogs.slice(0, 5).map((task: any) => {
-                const status = auditStatus(task);
-                const StatusIcon = status.icon;
-                return (
+            <div className="space-y-4">
+              {loading &&
+                Array.from({ length: 5 }).map((_, idx) => (
                   <div
-                    key={task.id}
-                    className="rounded-xl border border-slate-200 p-3 transition hover:border-[#BBD0F2] dark:border-slate-700 dark:hover:border-slate-600"
+                    key={idx}
+                    className="animate-pulse rounded-lg border border-slate-100 p-3 dark:border-slate-700"
                   >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={cn(
-                          "mt-0.5 rounded-full p-1.5 text-white",
-                          status.dot,
-                        )}
-                      >
-                        <StatusIcon size={12} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">
-                          {task.description ||
-                            task.title ||
-                            task.event_type ||
-                            task.action ||
-                            t("audit.taskUpdate")}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          {task.entity_type ||
-                            (task.assigned_to
-                              ? t("audit.operatorAction")
-                              : t("audit.autoSystemEvent"))}{" "}
-                          {task.entity_id
-                            ? `#${task.entity_id}`
-                            : `${t("audit.on")} ${t("audit.globalFleet")}`}
-                        </p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span
-                            className={cn("text-xs font-semibold", status.text)}
-                          >
-                            {status.label}
-                          </span>
-                          <span className="text-xs text-slate-400 dark:text-slate-500">
-                            {formatDistanceToNow(
-                              new Date(task.created_at || task.updated_at),
-                              {
-                                addSuffix: true,
-                              },
-                            )}
-                          </span>
+                    <div className="h-3 w-4/5 rounded bg-slate-200 dark:bg-slate-700" />
+                    <div className="mt-2 h-2.5 w-1/3 rounded bg-slate-100 dark:bg-slate-800" />
+                  </div>
+                ))}
+
+              {!loading &&
+                data.auditLogs.slice(0, 5).map((task: any) => {
+                  const status = auditStatus(task);
+                  const StatusIcon = status.icon;
+                  return (
+                    <div
+                      key={task.id}
+                      className="rounded-xl border border-slate-200 p-3 transition hover:border-[#BBD0F2] dark:border-slate-700 dark:hover:border-slate-600"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={cn(
+                            "mt-0.5 rounded-full p-1.5 text-white",
+                            status.dot,
+                          )}
+                        >
+                          <StatusIcon size={12} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">
+                            {task.description ||
+                              task.title ||
+                              task.event_type ||
+                              task.action ||
+                              t("audit.taskUpdate")}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            {task.entity_type ||
+                              (task.assigned_to
+                                ? t("audit.operatorAction")
+                                : t("audit.autoSystemEvent"))}{" "}
+                            {task.entity_id
+                              ? `#${task.entity_id}`
+                              : `${t("audit.on")} ${t("audit.globalFleet")}`}
+                          </p>
+                          <div className="mt-2 flex items-center justify-between">
+                            <span
+                              className={cn(
+                                "text-xs font-semibold",
+                                status.text,
+                              )}
+                            >
+                              {status.label}
+                            </span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500">
+                              {formatDistanceToNow(
+                                new Date(task.created_at || task.updated_at),
+                                {
+                                  addSuffix: true,
+                                },
+                              )}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
 
-            {!loading && data.auditLogs.length === 0 && (
-              <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                {t("empty.noSystemLogs")}
-              </div>
-            )}
+              {!loading && data.auditLogs.length === 0 && (
+                <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  {t("empty.noSystemLogs")}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
-
-
     </div>
   );
 }

@@ -4,9 +4,20 @@ import { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SUPPORTED_LOCALES, type AppLocale } from "@/lib/i18n";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import enFlag from "../../../public/flags/en.svg";
 import nlFlag from "../../../public/flags/nl.svg";
 import deFlag from "../../../public/flags/de.svg";
+import frFlag from "../../../public/flags/fr.svg";
 import type { StaticImageData } from "next/image";
 
 type LanguageSwitcherProps = {
@@ -17,20 +28,68 @@ const META: Record<AppLocale, { name: string; icon: StaticImageData }> = {
   en: { name: "English", icon: enFlag },
   nl: { name: "Nederlands", icon: nlFlag },
   de: { name: "Deutsch", icon: deFlag },
+  fr: { name: "Français", icon: frFlag },
 };
+
+function hasUnsavedYachtDraftProgress(pathname: string): boolean {
+  if (typeof window === "undefined") return false;
+  if (!pathname.includes("/yachts")) return false;
+
+  try {
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith("yacht_draft_")) continue;
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as {
+        pendingSync?: boolean;
+        data?: Record<string, Record<string, unknown>>;
+      };
+
+      if (parsed.pendingSync) return true;
+
+      const hasStepData = Object.values(parsed.data || {}).some(
+        (step) => step && Object.keys(step).length > 0,
+      );
+      if (hasStepData) return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
 
 export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingLocale, setPendingLocale] = useState<AppLocale | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const changeLanguage = (nextLocale: AppLocale) => {
+  const navigateToLocale = (nextLocale: AppLocale) => {
     const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
     const query = searchParams.toString();
     const nextPath = `/${nextLocale}${pathWithoutLocale === "/" ? "" : pathWithoutLocale}${query ? `?${query}` : ""}`;
     router.push(nextPath);
     setIsOpen(false);
+  };
+
+  const changeLanguage = (nextLocale: AppLocale) => {
+    if (nextLocale === locale) {
+      setIsOpen(false);
+      return;
+    }
+
+    if (hasUnsavedYachtDraftProgress(pathname)) {
+      setPendingLocale(nextLocale);
+      setConfirmOpen(true);
+      setIsOpen(false);
+      return;
+    }
+
+    navigateToLocale(nextLocale);
   };
 
   return (
@@ -74,6 +133,40 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
           ))}
         </div>
       ) : null}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="rounded-2xl border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#003566] dark:text-slate-100">
+              Unsaved boat progress
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500 dark:text-slate-400">
+              You have unsaved boat draft progress. Switching language may interrupt your current editing flow.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setPendingLocale(null);
+                setConfirmOpen(false);
+              }}
+            >
+              Stay
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingLocale) {
+                  navigateToLocale(pendingLocale);
+                }
+                setPendingLocale(null);
+                setConfirmOpen(false);
+              }}
+            >
+              Switch language
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
