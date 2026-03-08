@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
-import { normalizeRole } from "@/lib/auth/roles";
 import {
   AlertCircle,
   Bot,
@@ -194,7 +192,6 @@ function redactSensitiveData(value: unknown): unknown {
 
 export default function AdminErrorsPage() {
   const locale = useLocale();
-  const router = useRouter();
   const copy = useMemo(() => {
     const isNl = locale === "nl";
     const isDe = locale === "de";
@@ -542,35 +539,10 @@ export default function AdminErrorsPage() {
   }, [copy.loadFailed, loadDetail, loadErrors, loadStats, selectedErrorId]);
 
   useEffect(() => {
-    const userDataRaw =
-      typeof window !== "undefined" ? localStorage.getItem("user_data") : null;
-    const redirectToRoleDashboard = (fallbackRole = "admin") => {
-      const nextRole = fallbackRole === "employee" ? "employee" : "admin";
-      router.replace(`/${locale}/dashboard/${nextRole}`);
-    };
-
-    if (!userDataRaw) {
-      redirectToRoleDashboard();
-      return;
-    }
-
-    try {
-      const userData = JSON.parse(userDataRaw);
-      const role = normalizeRole(
-        userData?.role || userData?.userType || userData?.type || null,
-      );
-
-      if (role !== "admin" && role !== "employee") {
-        redirectToRoleDashboard();
-        return;
-      }
-    } catch {
-      redirectToRoleDashboard();
-      return;
-    }
-
+    // Access is already enforced by middleware/cookies. Avoid localStorage-based
+    // redirects here because they can be stale or missing in production.
     setAccessChecked(true);
-  }, [locale, router]);
+  }, []);
 
   useEffect(() => {
     if (!accessChecked) return;
