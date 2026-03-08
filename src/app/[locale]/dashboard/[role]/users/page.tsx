@@ -31,6 +31,24 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { setClientSession } from "@/lib/auth/client-session";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type UserType = "ADMIN" | "EMPLOYEE" | "CLIENT";
 type UserStatus = "ACTIVE" | "DISABLED" | "BLOCKED";
@@ -39,10 +57,30 @@ type UserCategory = "Employee" | "Admin" | "Partner" | "Customer";
 type UserRecord = {
   id: number;
   type: UserType;
+  role?: string;
   status: UserStatus;
   name: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  date_of_birth?: string | null;
   email: string;
   phone?: string | null;
+  timezone?: string | null;
+  locale?: string | null;
+  two_factor_enabled?: boolean;
+  last_login_at?: string | null;
+  notifications_enabled?: boolean;
+  email_notifications_enabled?: boolean;
+  client_location_id?: number | null;
+  client_location?: { id: number; name: string; code?: string | null } | null;
+  locations?: Array<{
+    id: number;
+    name?: string;
+    code?: string;
+    role?: string;
+  }>;
+  created_at?: string;
+  updated_at?: string;
 };
 
 type StatusUi = "Active" | "Inactive" | "Pending";
@@ -140,6 +178,16 @@ function extractErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "Never";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Never";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
 export default function RoleManagementPage() {
   const router = useRouter();
   const locale = useLocale();
@@ -152,6 +200,11 @@ export default function RoleManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [openActionId, setOpenActionId] = useState<number | null>(null);
+  const [terminateTarget, setTerminateTarget] = useState<UserRecord | null>(null);
+  const [impersonateTarget, setImpersonateTarget] = useState<UserRecord | null>(null);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [impersonating, setImpersonating] = useState(false);
 
   const [newUser, setNewUser] = useState({
     name: "",
@@ -232,12 +285,13 @@ export default function RoleManagementPage() {
     }
   };
 
-  const impersonateUser = async (user: UserRecord) => {
+  const impersonateUser = async (
+    user: UserRecord,
+    password: string,
+    otp?: string,
+  ) => {
     try {
-      const password = window.prompt(t("prompts.confirmAdminPassword"));
-      if (!password) return;
-      const otp = window.prompt(t("prompts.enterOtp")) || "";
-
+      setImpersonating(true);
       toast.loading(t("toasts.assimilating"), { id: "impersonate" });
       const res = await api.post(
         `/admin/impersonate/${user.id}`,
@@ -269,6 +323,9 @@ export default function RoleManagementPage() {
       toast.success(t("toasts.identityAssumed", { name: impersonated.name }), {
         id: "impersonate",
       });
+      setImpersonateTarget(null);
+      setAdminPassword("");
+      setOtpCode("");
       setTimeout(() => {
         router.push(
           `/${locale}/dashboard/${mapTypeToRole(impersonated.type as UserType)}`,
@@ -279,6 +336,8 @@ export default function RoleManagementPage() {
       toast.error(extractErrorMessage(err, t("toasts.impersonationFailed")), {
         id: "impersonate",
       });
+    } finally {
+      setImpersonating(false);
     }
   };
 
@@ -406,8 +465,8 @@ export default function RoleManagementPage() {
         })}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="hidden grid-cols-[1fr_1fr_140px_120px_80px] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 md:grid dark:border-slate-700 dark:bg-slate-800/70">
+      <div className="overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="hidden grid-cols-[1fr_1.25fr_190px_120px_80px] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 md:grid dark:border-slate-700 dark:bg-slate-800/70">
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {t("fields.fullName")}
           </p>
@@ -464,7 +523,7 @@ export default function RoleManagementPage() {
                   transition={{ delay: i * 0.03 }}
                   className="group"
                 >
-                  <div className="hidden grid-cols-[1fr_1fr_140px_120px_80px] items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/80 md:grid dark:hover:bg-slate-800/40">
+                  <div className="hidden grid-cols-[1fr_1.25fr_190px_120px_80px] items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/80 md:grid dark:hover:bg-slate-800/40">
                     <div className="flex min-w-0 items-center gap-3">
                       <div
                         className={cn(
@@ -478,22 +537,41 @@ export default function RoleManagementPage() {
                         <p className="truncate text-sm font-semibold text-[#003566] dark:text-slate-100">
                           {user.name}
                         </p>
-                        {user.phone && (
-                          <p className="truncate text-[11px] text-slate-400">
-                            {user.phone}
-                          </p>
-                        )}
+                        <p className="truncate text-[11px] text-slate-400">
+                          {[user.first_name, user.last_name]
+                            .filter(Boolean)
+                            .join(" ") || "No profile name"}
+                        </p>
+                        <p className="truncate text-[11px] text-slate-400">
+                          {user.phone || "No phone"}
+                        </p>
                       </div>
                     </div>
 
-                    <p className="truncate text-sm text-slate-500 dark:text-slate-300">
-                      {user.email}
-                    </p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-slate-500 dark:text-slate-300">
+                        {user.email}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                        {user.client_location?.name ||
+                          (user.locations?.length
+                            ? `${user.locations.length} location(s)`
+                            : "No location")}
+                      </p>
+                      <p className="truncate text-[11px] text-slate-400">
+                        Last login: {formatDateTime(user.last_login_at)}
+                      </p>
+                    </div>
 
-                    <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
-                      <Shield size={11} />
-                      {newUser.access_level}
-                    </span>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                        <Shield size={11} />
+                        {user.role || user.type}
+                      </span>
+                      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                        {user.two_factor_enabled ? "2FA On" : "2FA Off"}
+                      </span>
+                    </div>
 
                     <span
                       className={cn(
@@ -529,7 +607,9 @@ export default function RoleManagementPage() {
                           >
                             <button
                               onClick={() => {
-                                void impersonateUser(user);
+                                setImpersonateTarget(user);
+                                setAdminPassword("");
+                                setOtpCode("");
                                 setOpenActionId(null);
                               }}
                               className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -542,9 +622,7 @@ export default function RoleManagementPage() {
                             <div className="my-1 h-px bg-slate-100 dark:bg-slate-700" />
                             <button
                               onClick={() => {
-                                if (confirm(t("confirm.terminate"))) {
-                                  void handleDeleteUser(user.id);
-                                }
+                                setTerminateTarget(user);
                                 setOpenActionId(null);
                               }}
                               className="w-full px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
@@ -746,6 +824,120 @@ export default function RoleManagementPage() {
           </div>
         )}
       </AnimatePresence>
+
+      <Dialog
+        open={Boolean(impersonateTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setImpersonateTarget(null);
+            setAdminPassword("");
+            setOtpCode("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md rounded-2xl border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+          <DialogHeader>
+            <DialogTitle className="text-[#003566] dark:text-slate-100">
+              {t("actions.assumeIdentity")}
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 dark:text-slate-400">
+              {impersonateTarget
+                ? `You are about to impersonate ${impersonateTarget.name}.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                {t("prompts.confirmAdminPassword")}
+              </label>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                {t("prompts.enterOtp")}
+              </label>
+              <input
+                type="text"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+                placeholder="123456"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setImpersonateTarget(null);
+                setAdminPassword("");
+                setOtpCode("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={!impersonateTarget || !adminPassword.trim() || impersonating}
+              onClick={() => {
+                if (!impersonateTarget) return;
+                void impersonateUser(
+                  impersonateTarget,
+                  adminPassword.trim(),
+                  otpCode.trim() || undefined,
+                );
+              }}
+              className="bg-[#003566] text-white hover:bg-[#002a52]"
+            >
+              {impersonating ? "Please wait..." : t("actions.assumeIdentity")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={Boolean(terminateTarget)}
+        onOpenChange={(open) => {
+          if (!open) setTerminateTarget(null);
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#003566] dark:text-slate-100">
+              {t("actions.terminate")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500 dark:text-slate-400">
+              {terminateTarget
+                ? `This will disable ${terminateTarget.name}'s account access.`
+                : t("confirm.terminate")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTerminateTarget(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!terminateTarget) return;
+                void handleDeleteUser(terminateTarget.id);
+                setTerminateTarget(null);
+              }}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {t("actions.terminate")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

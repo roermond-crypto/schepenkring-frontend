@@ -47,6 +47,15 @@ export function middleware(request: NextRequest) {
   }
 
   const subPath = `/${segments.slice(1).join("/")}`;
+  const isLocaleDashboardRoot =
+    subPath === "/dashboard" || subPath === "/dashboard/";
+
+  if (isLocaleDashboardRoot) {
+    return NextResponse.redirect(
+      new URL(`/${locale}/dashboard/${cookieRole}`, request.url),
+    );
+  }
+
   const isLoginRoute = subPath === "/login" || subPath.startsWith("/login/");
   const isSignupRoute = subPath === "/signup";
   const isAuthRoute = subPath === "/auth" || subPath.startsWith("/auth/");

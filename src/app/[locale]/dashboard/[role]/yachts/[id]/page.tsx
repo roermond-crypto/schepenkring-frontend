@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { getDictionary } from "@/lib/i18n";
+import { normalizeRole } from "@/lib/auth/roles";
 
 const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
   ssr: false,
@@ -101,10 +102,11 @@ type AvailabilityRule = {
 };
 
 export default function YachtEditorPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id: string; role?: string }>();
   // We can't safely extract locale from params directly if it's missing or async,
   // so we'll grab it safely using our hook that reads the pathname
   const locale = useLocale();
+  const role = normalizeRole(params?.role) ?? "admin";
   const dict = getDictionary(locale) as any;
   const t = dict?.YachtWizard || {} as any;
   const router = useRouter();
@@ -450,7 +452,7 @@ export default function YachtEditorPage() {
       } catch (err) {
         console.error("Failed to fetch yacht details", err);
         toast.error("Failed to load yacht details");
-        router.push(`/${locale}/dashboard/admin/yachts`);
+        router.push(`/${locale}/dashboard/${role}/yachts`);
       } finally {
         setLoading(false);
       }
@@ -1323,7 +1325,7 @@ export default function YachtEditorPage() {
           ? "Vessel Registered Successfully"
           : "Manifest Updated Successfully",
       );
-      router.push("/nl/dashboard/admin/yachts");
+      router.push(`/${locale}/dashboard/${role}/yachts`);
     } catch (err: any) {
       console.error("Submission error:", err);
 
@@ -1944,7 +1946,7 @@ export default function YachtEditorPage() {
                               type="button"
                               variant="outline"
                               className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
-                              onClick={() => router.push(`/${locale}/dashboard/admin/yachts/${yachtId}/video-settings`)}
+                              onClick={() => router.push(`/${locale}/dashboard/${role}/yachts/${yachtId}/video-settings`)}
                               disabled={isNewMode && !createdYachtId}
                             >
                               Social Settings

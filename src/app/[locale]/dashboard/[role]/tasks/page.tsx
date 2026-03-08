@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useParams } from "next/navigation";
 import axios from "axios";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -1391,6 +1392,8 @@ function TaskModal({
 // ============================================
 export default function AdminTaskBoardPage() {
   const t = useTranslations("DashboardAdminTasks");
+  const params = useParams<{ role?: string }>();
+  const role = params?.role ?? "admin";
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -1943,7 +1946,7 @@ export default function AdminTaskBoardPage() {
               >
                 <Plus size={16} className="mr-2" /> {t("actions.newTask")}
               </button>
-              <Link href="/dashboard/admin/tasks/automation">
+              <Link href={`/dashboard/${role}/tasks/automation`}>
                 <button className="rounded-none h-12 w-fit px-8 border text-xs uppercase tracking-widest font-black flex items-center">
                   <CalendarIcon size={16} className="mr-2" /> Automation Rules
                 </button>

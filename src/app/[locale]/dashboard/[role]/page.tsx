@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import { AreaChart, Area, Tooltip, ResponsiveContainer } from "recharts";
@@ -23,6 +24,7 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "@/i18n/navigation";
+import { normalizeRole } from "@/lib/auth/roles";
 
 type DashboardData = {
   activeBidsCount: number;
@@ -122,6 +124,9 @@ function Sparkline({ points }: { points: number[] }) {
 export default function AdminDashboardHome() {
   const locale = useLocale();
   const t = useTranslations("DashboardAdminOverview");
+  const params = useParams<{ role?: string }>();
+  const role = normalizeRole(params?.role) ?? "admin";
+  const dashboardBase = `/dashboard/${role}`;
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState<DashboardData>({
@@ -253,7 +258,7 @@ export default function AdminDashboardHome() {
       trendLabel: "this week",
       icon: TrendingUp,
       tone: "from-[#122746] to-[#1E3A8A]",
-      link: "/dashboard/admin/biddings",
+      link: `${dashboardBase}/yachts`,
       sparkline: data.trends.activeBids.sparkline,
       positive: data.trends.activeBids.change >= 0,
     },
@@ -264,7 +269,7 @@ export default function AdminDashboardHome() {
       trendLabel: "from yesterday",
       icon: Clock,
       tone: "from-[#0B1F3A] to-[#0F355E]",
-      link: "/dashboard/admin/tasks",
+      link: `${dashboardBase}/tasks`,
       sparkline: data.trends.pendingTasks.sparkline,
       positive: data.trends.pendingTasks.change <= 0,
     },
@@ -275,7 +280,7 @@ export default function AdminDashboardHome() {
       trendLabel: "this week",
       icon: AlertCircle,
       tone: "from-[#122746] to-[#1E3A8A]",
-      link: "/dashboard/admin/yachts",
+      link: `${dashboardBase}/yachts`,
       sparkline: data.trends.fleetIntake.sparkline,
       positive: data.trends.fleetIntake.change >= 0,
     },
@@ -286,7 +291,7 @@ export default function AdminDashboardHome() {
       trendLabel: "this month",
       icon: CheckCircle2,
       tone: "from-[#0D2A4F] to-[#1E3A8A]",
-      link: "/dashboard/admin/yachts",
+      link: `${dashboardBase}/yachts`,
       sparkline: data.trends.completedSales.sparkline,
       positive: data.trends.completedSales.change >= 0,
       isCurrency: true,
@@ -532,7 +537,7 @@ export default function AdminDashboardHome() {
               </h2>
             </div>
             <Link
-              href="/dashboard/admin/biddings"
+              href={`${dashboardBase}/yachts`}
               className="inline-flex items-center gap-1 rounded-lg border border-[#BED0EE] bg-[#EFF4FF] px-3 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-[#dfe9ff] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               {t("actions.viewBiddings")}
@@ -601,7 +606,7 @@ export default function AdminDashboardHome() {
                   {t("empty.noRecentBiddingSubtitle")}
                 </p>
                 <Link
-                  href="/dashboard/admin/biddings"
+                  href={`${dashboardBase}/yachts`}
                   className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
                 >
                   {t("actions.viewBiddings")}
