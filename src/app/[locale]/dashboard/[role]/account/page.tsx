@@ -227,7 +227,7 @@ export default function DashboardAccountPage() {
             postal = component.long_name;
           }
           if (types.includes("country")) {
-            countryObj = component.long_name;
+            countryObj = component.short_name;
           }
         });
 
