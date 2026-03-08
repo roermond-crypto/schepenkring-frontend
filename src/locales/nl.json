@@ -89,6 +89,9 @@
       "clients": "Klanten",
       "leads": "Leads",
       "overview": "Overzicht",
+      "overview_admin": "Admin-overzicht",
+      "overview_client": "Klantenoverzicht",
+      "overview_employee": "Verkoopdashboard",
       "users": "Gebruikers",
       "schedule": "Planning",
       "tasks": "Taken",
@@ -204,7 +207,10 @@
     }
   },
   "DashboardAdminOverview": {
-    "title": "Admin-overzicht",
+    "title": "Dashboard Overzicht",
+    "title_admin": "Admin-overzicht",
+    "title_client": "Klantenoverzicht",
+    "title_employee": "Verkoopdashboard",
     "welcomeBack": "Welkom terug, {name}",
     "todayWeather": "Vandaag: 18° zonnig in Eindhoven",
     "activeBiddingItems": "Je hebt {count} actief{count, plural, one {} other {e}} bieding{count, plural, one {} other {en}}.",

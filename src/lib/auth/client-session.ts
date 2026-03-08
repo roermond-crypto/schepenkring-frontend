@@ -34,5 +34,35 @@ export function clearClientSession() {
 }
 
 export function getClientToken() {
-  return Cookies.get(AUTH_TOKEN_COOKIE) ?? null;
+  if (typeof window === "undefined") return null;
+
+  const cookieToken = Cookies.get(AUTH_TOKEN_COOKIE);
+  if (cookieToken) return cookieToken;
+
+  // Fallback 1: Manual parsing (in case js-cookie fails due to encoding/hydration)
+  const rawCookie = document.cookie
+    .split("; ")
+    .find((part) => part.startsWith(`${AUTH_TOKEN_COOKIE}=`))
+    ?.split("=")[1];
+
+  if (rawCookie) return decodeURIComponent(rawCookie);
+
+  // Fallback 2: Local storage (used by other app versions/pages like Tasks)
+  const authToken = localStorage.getItem("auth_token");
+  if (authToken) return authToken;
+
+  const adminToken = localStorage.getItem("admin_token");
+  if (adminToken) return adminToken;
+
+  const userDataRaw = localStorage.getItem("user_data");
+  if (userDataRaw) {
+    try {
+      const userData = JSON.parse(userDataRaw);
+      if (userData?.token) return userData.token;
+    } catch {
+      // Ignore
+    }
+  }
+
+  return null;
 }

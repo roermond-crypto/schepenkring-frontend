@@ -376,7 +376,9 @@ export default function AdminDashboardHome() {
               {t("welcomeBack", { name: welcomeName })}
             </p>
             <h1 className="text-3xl font-black text-[#0B1F3A] sm:text-4xl dark:text-slate-100">
-              {t("title")}
+              {role === "client" ? t("title_client") :
+                role === "employee" ? t("title_employee") :
+                  t("title_admin")}
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#1E3A8A] dark:text-slate-300">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 font-semibold dark:bg-slate-800/90 dark:text-slate-100">
