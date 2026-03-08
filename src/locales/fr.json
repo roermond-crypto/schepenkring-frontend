@@ -1,0 +1,840 @@
+{
+  "common": {
+    "brand": "Schepenkring CRM",
+    "login": "Connexion",
+    "signup": "S'inscrire",
+    "dashboard": "Tableau de bord",
+    "logout": "Se déconnecter",
+    "themeToggle": "Basculer le thème"
+  },
+  "landing": {
+    "nav": {
+      "features": "Fonctionnalités",
+      "roles": "Rôles",
+      "contact": "Contact"
+    },
+    "hero": {
+      "eyebrow": "Plateforme opérationnelle interne",
+      "title": "Centre de contrôle pour bateaux, prospects, clients et flux de travail IA.",
+      "description": "Exécutez Schepenkring à partir d'un espace de travail multilingue unique avec un accès basé sur les rôles et une architecture prête pour l'automatisation."
+    },
+    "roles": {
+      "title": "Un tableau de bord, quatre rôles",
+      "description": "Client, employé, emplacement et Admin accèdent à la même interface du tableau de bord avec des autorisations propres au rôle.",
+      "items": {
+        "client": "Client",
+        "employee": "Employé",
+        "location": "Emplacement",
+        "admin": "Administrateur"
+      }
+    }
+  },
+  "auth": {
+    "heroTitle": "Connexion CRM interne pour Schepenkring.",
+    "heroSubtitle": "Tableau de bord opérationnel pour bateaux, prospects et clients.",
+    "welcomeBack": "Bon retour",
+    "createAccount": "Créer un compte",
+    "loginDescription": "Connectez-vous à votre compte du tableau de bord.",
+    "registerDescription": "Inscription client uniquement. Les autres rôles sont créés par l'administrateur.",
+    "loginTitle": "Se connecter",
+    "loginError": "Identifiants invalides. Veuillez réessayer.",
+    "signupTitle": "Inscription client",
+    "signupError": "Impossible de créer le compte. Veuillez vérifier vos informations.",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "verificationCode": "Code de vérification",
+    "rememberTerminal": "Se souvenir du terminal",
+    "verifyEmail": "Vérifier l'e-mail",
+    "registerCta": "S'enregistrer",
+    "processing": "Traitement...",
+    "validating": "Validation en cours...",
+    "verifyContinue": "Vérifier et continuer",
+    "noAccountSignup": "Pas de compte ? S'inscrire en tant que Client",
+    "alreadyHaveAccount": "Vous avez déjà un compte ? Connexion",
+    "clientSignup": "Inscription client",
+    "confirmPasswordRequired": "La confirmation du mot de passe est requise.",
+    "passwordsDontMatch": "Les mots de passe ne correspondent pas.",
+    "enterVerificationCode": "Saisissez votre code de vérification.",
+    "verificationCodeSent": "Code de vérification envoyé à votre e-mail.",
+    "invalidLoginResponse": "Réponse de connexion invalide.",
+    "authFailed": "Échec de l'authentification.",
+    "name": "Nom complet",
+    "newClient": "Nouveau client ?",
+    "hasAccount": "Vous avez déjà un compte ?",
+    "signin": "Se connecter",
+    "signupNotice": "L'inscription n'est disponible que pour les Clients. Les utilisateurs Employee, Location et Admin sont créés par l'administrateur système.",
+    "submitLogin": "Connexion",
+    "submitSignup": "S'inscrire en tant que Client"
+  },
+  "dashboard": {
+    "welcome": "Content de vous revoir",
+    "metrics": {
+      "leads": "Prospects",
+      "boats": "Bateaux importés",
+      "ai": "Tâches IA",
+      "threads": "Fils de discussion"
+    },
+    "header": {
+      "brand": "Schepenkring",
+      "title": "Tableau de bord CRM",
+      "openMenu": "Ouvrir le menu",
+      "toggleTheme": "Basculer le thème",
+      "userFallback": "Utilisateur",
+      "logout": "Se déconnecter"
+    },
+    "sidebar": {
+      "dashboard": "Tableau de bord",
+      "boats": "Bateaux",
+      "clients": "Clients",
+      "leads": "Prospects",
+      "overview": "Aperçu",
+      "overview_admin": "Aperçu administrateur",
+      "overview_client": "Aperçu client",
+      "overview_employee": "Tableau de bord des ventes",
+      "users": "Utilisateurs",
+      "schedule": "Planning",
+      "tasks": "Tâches",
+      "copilot": "Copilote",
+      "harbor": "Port",
+      "interaction": "Chat",
+      "settings": "Paramètres",
+      "terminalSuffix": "Terminal",
+      "online": "En ligne",
+      "offline": "Hors ligne",
+      "logout": "Se déconnecter",
+      "expand": "Développer la barre latérale",
+      "collapse": "Réduire la barre latérale",
+      "audit": "Audit",
+      "errors": "Erreurs",
+      "harborPerformance": "Entonnoir de vente",
+      "socialAutomation": "Automatisation sociale"
+    },
+    "notifications": {
+      "label": "Notifications",
+      "title": "Notifications",
+      "viewAll": "Voir tout",
+      "loading": "Chargement...",
+      "empty": "Pas encore de notifications",
+      "markAllRead": "Tout marquer comme lu",
+      "defaultSender": "Système",
+      "defaultMessage": "Mise à jour de la notification",
+      "fallbackLead": "Un nouveau prospect a été assigné à votre file d'attente.",
+      "fallbackExport": "Exportation du bateau terminée avec succès.",
+      "fallbackProfile": "Les coordonnées du profil client ont été mises à jour.",
+      "justNow": "À l'instant",
+      "minutesAgo": "il y a m",
+      "hoursAgo": "il y a h",
+      "daysAgo": "il y a d"
+    }
+  },
+  "DashboardAdminCopilot": {
+    "hero": {
+      "kicker": "Copilote Admin",
+      "title": "Console de workflow d'actions",
+      "description": "Gérez les actions de la liste blanche, générez des brouillons, validez les payloads et exécutez en toute sécurité avec confirmation.",
+      "refreshCatalog": "Actualiser le catalogue",
+      "refreshing": "Actualisation en cours...",
+      "totalActions": "Total des actions",
+      "highRisk": "Risque élevé",
+      "generatedAt": "Généré le"
+    },
+    "catalog": {
+      "title": "Catalogue d'actions",
+      "columns": {
+        "action": "Action",
+        "module": "Module",
+        "security": "Sécurité",
+        "confirm": "Confirmer"
+      },
+      "yes": "Oui",
+      "no": "Non"
+    },
+    "sections": {
+      "draftIntent": "Brouillon d'intention",
+      "validateExecute": "Valider et exécuter",
+      "createAction": "Créer une action",
+      "createPhrase": "Créer une phrase"
+    },
+    "fields": {
+      "actionId": "identifiant_action",
+      "title": "titre",
+      "module": "module",
+      "routeTemplate": "modèle_de_route",
+      "risk": "risque",
+      "copilotActionId": "id_action_copilote",
+      "phrase": "phrase",
+      "language": "langue",
+      "priority": "priorité",
+      "payload": "payload",
+      "confirm": "confirmer",
+      "enabled": "activé"
+    },
+    "actions": {
+      "draft": "Brouillon",
+      "validate": "Valider",
+      "validating": "Validation en cours...",
+      "execute": "Exécuter",
+      "creating": "Création en cours...",
+      "createAction": "Créer une action",
+      "createPhrase": "Créer une phrase"
+    },
+    "toasts": {
+      "loadCatalogFailed": "Échec du chargement du catalogue d'actions",
+      "draftCreated": "Brouillon créé",
+      "draftFailed": "Échec de la création du brouillon d'action",
+      "invalidPayloadJson": "Le payload doit être un JSON valide.",
+      "actionIdRequired": "L'identifiant de l'action est requis.",
+      "validationCreated": "Jeton de validation créé",
+      "validationFailed": "Échec de la validation",
+      "validateFirst": "Validez d'abord pour obtenir un jeton de validation",
+      "executed": "Action exécutée",
+      "executeFailed": "Exécution échouée",
+      "actionAndTitleRequired": "action_id et titre sont obligatoires",
+      "actionCreated": "Action créée",
+      "createActionFailed": "Échec de la création de l'action",
+      "phraseFieldsRequired": "copilot_action_id et phrase sont obligatoires",
+      "phraseCreated": "Phrase ajoutée",
+      "createPhraseFailed": "Échec de la création de la phrase"
+    },
+    "defaults": {
+      "prompt": "Générer le contrat pour l'affaire 123",
+      "payload": "{\"deal_id\":123}",
+      "newActionTitle": "Créer un bateau",
+      "newActionModule": "bateaux",
+      "newActionRoute": "/dashboard/admin/boats/create",
+      "phraseText": "créer un bateau"
+    }
+  },
+  "DashboardAdminOverview": {
+    "title": "Aperçu du tableau de bord",
+    "title_admin": "Aperçu Admin",
+    "title_client": "Aperçu Client",
+    "title_employee": "Tableau de bord des ventes",
+    "welcomeBack": "Bon retour, {name}",
+    "todayWeather": "Aujourd'hui : 18° Ensoleillé à Eindhoven",
+    "activeBiddingItems": "Vous avez {count} enchères actives.",
+    "liveSync": "Synchronisation en direct",
+    "refresh": "Actualiser",
+    "weeklyTrend": "Tendance hebdomadaire",
+    "viewDetails": "Voir les détails",
+    "trends": {
+      "thisWeek": "cette semaine",
+      "fromYesterday": "à partir d'hier",
+      "thisMonth": "ce mois-ci"
+    },
+    "stats": {
+      "activeBids": "Enchères actives",
+      "pendingManifest": "Manifeste en attente",
+      "fleetInIntake": "Flotte en entrée",
+      "completedSales": "Ventes terminées"
+    },
+    "snapshot": {
+      "boatsInIntake": "Bateaux en entrée",
+      "avgDaysToSale": "Jours moyens jusqu'à la vente",
+      "daysSuffix": "jours",
+      "conversion": "Conversion",
+      "revenueThisMonth": "Chiffre d'affaires ce mois-ci"
+    },
+    "sections": {
+      "businessInsights": "Aperçus commerciaux",
+      "performanceSnapshot": "Aperçu des performances",
+      "marketPulse": "Pouls du marché",
+      "recentBiddingActivity": "Activité d'enchères récente",
+      "liveDiagnostics": "Diagnostics en direct",
+      "systemAudit": "Audit du système"
+    },
+    "actions": {
+      "viewBiddings": "Voir les enchères"
+    },
+    "schedule": {
+      "live": "Horaire en direct",
+      "title": "Réservations et essais",
+      "prev": "Précédent",
+      "next": "Suivant",
+      "upcoming": "Événements à venir",
+      "empty": "Aucun enregistrement de réservation ou d'essai routier provenant de l'API.",
+      "booking": "Réservation",
+      "testDrive": "Essai routier",
+      "yacht": "Yacht",
+      "locationUnavailable": "Emplacement indisponible",
+      "openFull": "Ouvrir le planning complet"
+    },
+    "labels": {
+      "registry": "Registre",
+      "unknown": "Inconnu",
+      "currentBid": "Enchère actuelle"
+    },
+    "audit": {
+      "ok": "OK",
+      "warning": "Avertissement",
+      "error": "Erreur",
+      "taskUpdate": "Mise à jour de la tâche",
+      "operatorAction": "Action de l'opérateur",
+      "autoSystemEvent": "Événement automatique du système",
+      "on": "activé",
+      "globalFleet": "Flotte mondiale"
+    },
+    "empty": {
+      "noRecentBiddingTitle": "Aucune activité d'enchères récente",
+      "noRecentBiddingSubtitle": "Démarrez un processus d'enchères pour voir les mises à jour en direct ici.",
+      "noSystemLogs": "Aucun journal système récent pour le moment."
+    },
+    "defaults": {
+      "userName": "Martijn"
+    }
+  },
+  "DashboardAdminAudit": {
+    "header": {
+      "title": "Journal d'audit système",
+      "subtitle": "Suivez toutes les activités et les changements du système en temps réel"
+    },
+    "actions": {
+      "filters": "Filtres",
+      "refresh": "Actualiser",
+      "exportCsv": "Exporter CSV"
+    },
+    "stats": {
+      "totalEvents": "Événements totaux",
+      "eventTypes": "Types d'événements",
+      "entityTypes": "Types d'entités",
+      "recentActivity": "Activité récente"
+    },
+    "filters": {
+      "title": "Filtres avancés",
+      "searchLogs": "Rechercher dans les journaux",
+      "searchPlaceholder": "Descriptions, utilisateurs, IPs...",
+      "fromDate": "Date de début",
+      "toDate": "Date de fin",
+      "eventTypes": "Types d'événements",
+      "entityTypes": "Types d'entités",
+      "clearAll": "Effacer tous les filtres ({count})"
+    },
+    "errors": {
+      "title": "Erreur lors du chargement des données",
+      "loadStats": "Échec du chargement des statistiques système",
+      "loadLogs": "Échec du chargement des journaux système"
+    },
+    "logs": {
+      "title": "Journaux d'activité",
+      "showing": "Affichage de {from} à {to} sur {total}",
+      "loading": "Chargement des journaux d'activité..."
+    },
+    "details": {
+      "userInformation": "Informations utilisateur",
+      "systemAction": "Action du système",
+      "name": "Nom",
+      "email": "Courriel",
+      "role": "Rôle",
+      "action": "Action",
+      "systemAutomatedAction": "Action automatisée du système",
+      "technicalDetails": "Détails techniques",
+      "entityDetails": "Détails de l'entité",
+      "timestamp": "Horodatage",
+      "ipAddress": "Adresse IP",
+      "changesMade": "Modifications apportées"
+    },
+    "systemUser": "Système",
+    "empty": {
+      "title": "Aucun journal d'activité trouvé",
+      "filtered": "Aucun journal d'activité ne correspond à vos filtres actuels. Essayez d'ajuster vos critères de recherche.",
+      "default": "Aucun journal d'activité disponible pour le moment. Commencez par créer des tâches, mettre à jour des yachts ou demander aux utilisateurs de se connecter."
+    },
+    "pagination": {
+      "resultsSummary": "Affichage de {from} à {to} sur {total} résultats",
+      "firstPage": "Première page",
+      "previousPage": "Page précédente",
+      "nextPage": "Page suivante",
+      "lastPage": "Dernière page"
+    }
+  },
+  "DashboardAdminHarborPerformance": {
+    "hero": {
+      "kicker": "Analyse des ventes",
+      "title": "Entonnoir de vente",
+      "description": "Suivez les performances de l'entonnoir à l'échelle de la plateforme grâce à des informations basées sur la localisation."
+    },
+    "actions": {
+      "refresh": "Actualiser"
+    },
+    "stats": {
+      "users": "Utilisateurs",
+      "impressions": "Impressions",
+      "clicks": "Clics",
+      "deals": "Affaires",
+      "commission": "Commission"
+    },
+    "filters": {
+      "range": {
+        "7d": "7 derniers jours",
+        "30d": "30 derniers jours",
+        "90d": "90 derniers jours"
+      },
+      "allCountries": "Tous les pays",
+      "allLocations": "Tous les emplacements",
+      "allDevices": "Tous les appareils",
+      "allSources": "Toutes les sources",
+      "countries": {
+        "nl": "Pays-Bas (NL)",
+        "de": "Allemagne (DE)",
+        "be": "Belgique (BE)"
+      },
+      "devices": {
+        "mobile": "Mobile",
+        "desktop": "Ordinateur de bureau",
+        "tablet": "Tablette"
+      },
+      "sources": {
+        "googleOrganic": "Google organique",
+        "googleAds": "Google Ads",
+        "facebookPaid": "Facebook Publicité",
+        "instagramPaid": "Instagram Publicité",
+        "direct": "Direct"
+      }
+    },
+    "table": {
+      "location": "Emplacement",
+      "users": "Utilisateurs",
+      "impressions": "Impressions",
+      "clicks": "Clics",
+      "forms": "Formulaires",
+      "submitted": "Soumis",
+      "deals": "Affaires",
+      "commission": "Commission",
+      "benchmark": "Benchmark",
+      "rank": "Classement",
+      "avgCtr": "CTR moyen {value}"
+    },
+    "states": {
+      "error": "Impossible de charger les performances de l'entonnoir de vente.",
+      "empty": "Aucune donnée de l'entonnoir de vente disponible pour les filtres actuels."
+    },
+    "panels": {
+      "reach": {
+        "title": "Portée",
+        "description": "GA4 reste la source pour les utilisateurs, les sessions et les tendances d'interaction sur les campagnes Harbor."
+      },
+      "funnel": {
+        "title": "Entonnoir",
+        "description": "Les métriques de l'entonnoir combinent les impressions et les clics des widgets avec les soumissions sur la plateforme et les transactions conclues."
+      },
+      "revenue": {
+        "title": "Vérité des revenus",
+        "description": "Le classement des commissions utilise l'attribution des revenus de votre base de données, pas GA4, afin de garantir la précision des comparaisons de paiements aux partenaires."
+      }
+    }
+  },
+  "DashboardAdminUsers": {
+    "header": {
+      "title": "Administration des utilisateurs",
+      "subtitle": "Gestion des identités et des accès",
+      "searchPlaceholder": "Rechercher par nom ou e‑mail...",
+      "provisionNew": "Provisionner"
+    },
+    "tabs": {
+      "employee": "Employé",
+      "admin": "Administrateur",
+      "partner": "Partenaire",
+      "customer": "Client"
+    },
+    "fields": {
+      "fullName": "Nom complet",
+      "emailAddress": "Adresse e-mail",
+      "systemPassword": "Mot de passe système",
+      "assignment": "Affectation",
+      "clearance": "Habilitation",
+      "accountStatus": "Statut du compte"
+    },
+    "options": {
+      "limited": "Limité",
+      "full": "Complet",
+      "active": "Actif",
+      "inactive": "Inactif",
+      "pending": "En attente"
+    },
+    "permissions": {
+      "pageAccessControl": "Accès aux pages",
+      "default": "Par défaut",
+      "allow": "Autoriser",
+      "deny": "Refuser",
+      "resetAll": "Réinitialiser tout"
+    },
+    "actions": {
+      "assumeIdentity": "Assumer l'identité",
+      "terminate": "Terminer",
+      "finalizeEnrollment": "Finaliser l'inscription",
+      "refresh": "Actualiser"
+    },
+    "labels": {
+      "status": "Statut",
+      "loadingUsers": "Chargement des utilisateurs..."
+    },
+    "prompts": {
+      "confirmAdminPassword": "Confirmer le mot de passe administrateur :",
+      "enterOtp": "Saisissez le code OTP (si requis) :"
+    },
+    "modal": {
+      "title": "Provisionner le compte",
+      "subtitle": "Créer un nouveau compte utilisateur"
+    },
+    "confirm": {
+      "terminate": "Terminer ce compte ?"
+    },
+    "empty": {
+      "title": "Aucun utilisateur trouvé",
+      "description": "Aucun compte {role} n'a encore été ajouté."
+    },
+    "toasts": {
+      "syncFailed": "Échec de la synchronisation des utilisateurs",
+      "enrolling": "Création du compte...",
+      "enrolled": "Compte créé",
+      "enrollmentFailed": "Échec de la création du compte",
+      "terminating": "Suppression du compte...",
+      "terminated": "Compte supprimé",
+      "terminationFailed": "Échec de la suppression du compte",
+      "assimilating": "Démarrage de l’usurpation d’identité...",
+      "identityAssumed": "Désormais, vous usurpez l’identité de {name}",
+      "impersonationFailed": "Échec de l’usurpation de l’utilisateur",
+      "permissionUpdated": "Permission mise à jour",
+      "permissionUpdateFailed": "Échec de la mise à jour des permissions",
+      "permissionsReset": "Permissions réinitialisées",
+      "permissionsResetFailed": "Échec de la réinitialisation des permissions"
+    }
+  },
+  "DashboardAccount": {
+    "header": {
+      "title": "Contrôle du compte",
+      "subtitle": "Paramètres d’identité, de profil et de sécurité"
+    },
+    "tabs": {
+      "profile": "Profil",
+      "personal": "Personnel",
+      "address": "Adresse",
+      "security": "Sécurité",
+      "password": "Mot de passe"
+    },
+    "fields": {
+      "fullName": "Nom complet",
+      "emailAddress": "Adresse e-mail",
+      "phoneNumber": "Numéro de téléphone",
+      "dateOfBirth": "Date de naissance",
+      "locale": "Langue",
+      "timezone": "Fuseau horaire",
+      "addressLine1": "Adresse ligne 1",
+      "addressLine2": "Adresse ligne 2",
+      "city": "Ville",
+      "state": "État",
+      "postalCode": "Code postal",
+      "country": "Pays",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "twoFactor": "Authentification à deux facteurs",
+      "otpSecret": "Secret OTP",
+      "otpCode": "Code OTP",
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le mot de passe"
+    },
+    "labels": {
+      "yes": "Oui",
+      "no": "Non",
+      "confirmed": "Confirmé:",
+      "user": "Utilisateur"
+    },
+    "actions": {
+      "syncProfile": "Synchroniser le profil",
+      "saving": "Sauvegarde en cours..."
+    },
+    "toasts": {
+      "loadFailed": "Échec du chargement du profil du compte.",
+      "updateFailed": "Échec de la mise à jour du compte.",
+      "saved": "Compte mis à jour avec succès.",
+      "passwordMismatch": "La confirmation du mot de passe ne correspond pas."
+    }
+  },
+  "DashboardAdminSocial": {
+    "title": "Automatisation sociale",
+    "subtitle": "Pipeline vidéo & distribution",
+    "description": "Gérez les vidéos de bateaux générées, programmez du contenu par lots et surveillez les performances de publication sur les éditeurs sociaux connectés.",
+    "actions": {
+      "refresh": "Actualiser",
+      "schedule": "Programmer les éléments sélectionnés",
+      "open": "Ouvrir la vidéo",
+      "regenerate": "Régénérer",
+      "reschedule": "Reprogrammer",
+      "retry": "Réessayer",
+      "cancel": "Annuler",
+      "saveReschedule": "Gagner du temps"
+    },
+    "stats": {
+      "videos": "Vidéos",
+      "scheduled": "Planifiés",
+      "published": "Publiés",
+      "impressions": "Impressions"
+    },
+    "scheduler": {
+      "label": "Planificateur",
+      "title": "Planificateur sur 30 jours",
+      "description": "Choisissez la cadence de publication, sélectionnez les éditeurs et mettez en file d'attente les vidéos sélectionnées pour une publication automatique.",
+      "startDate": "Date de début",
+      "time": "Heure de publication",
+      "publishers": "Éditeurs",
+      "skipWeekends": "Ignorer les dates du week-end lors de la création du planning.",
+      "selectedVideos": "Vidéos sélectionnées",
+      "useAllReady": "Utiliser tout ce qui est prêt",
+      "videosChosen": "vidéos sélectionnées",
+      "readyAvailable": "prêtes à être programmées"
+    },
+    "library": {
+      "label": "Bibliothèque",
+      "videos": "Vidéos",
+      "posts": "Publications"
+    },
+    "videoCard": {
+      "video": "Vidéo",
+      "boat": "Bateau",
+      "duration": "Durée",
+      "template": "Modèle",
+      "created": "Créé"
+    },
+    "postCard": {
+      "post": "Publication",
+      "video": "Vidéo",
+      "publishers": "Éditeurs",
+      "scheduled": "Planifiés",
+      "published": "Publiés",
+      "impressions": "Impressions",
+      "clicks": "Clics"
+    },
+    "empty": {
+      "videos": "Aucune vidéo rendue n'est encore disponible.",
+      "posts": "Aucune publication planifiée ou publiée n'a encore été créée."
+    },
+    "errors": {
+      "loadFailed": "Impossible de charger les données d'automatisation sociale.",
+      "selectVideos": "Sélectionnez au moins une vidéo avant de programmer.",
+      "scheduleFailed": "Impossible de créer le calendrier de publication.",
+      "regenerateFailed": "Impossible de mettre en file d'attente la régénération de la vidéo.",
+      "retryFailed": "Impossible de réessayer cette publication.",
+      "invalidReschedule": "Choisissez une date et une heure valides.",
+      "rescheduleFailed": "Impossible de reprogrammer cette publication."
+    },
+    "toasts": {
+      "scheduleCreated": "Calendrier de publication créé.",
+      "videoQueued": "Régénération vidéo en file d'attente.",
+      "retryQueued": "Nouvelle tentative en file d'attente.",
+      "rescheduled": "Publication reprogrammée."
+    }
+  },
+  "DashboardAdminTasks": {
+    "title": "Supervision des tâches.",
+    "subtitle": "Gestion de la flotte et Commandement.",
+    "loading": "Chargement des tâches...",
+    "errors": {
+      "noToken": "Aucun jeton."
+    },
+    "toasts": {
+      "authRequired": "Authentification requise.",
+      "loadFailed": "Échec du chargement des données.",
+      "taskUpdated": "Tâche mise à jour.",
+      "taskCreated": "Tâche créée.",
+      "saveFailed": "Échec de l'enregistrement de la tâche.",
+      "taskDeleted": "Tâche supprimée.",
+      "deleteFailed": "Échec de la suppression de la tâche.",
+      "statusUpdated": "Statut mis à jour.",
+      "statusFailed": "Échec de la mise à jour du statut.",
+      "assignmentAccepted": "Affectation acceptée.",
+      "acceptFailed": "Échec de l'acceptation.",
+      "assignmentRejected": "Affectation rejetée.",
+      "rejectFailed": "Échec du rejet.",
+      "commentAdded": "Commentaire ajouté.",
+      "commentFailed": "Échec de l'ajout du commentaire.",
+      "fileUploaded": "Fichier téléversé.",
+      "uploadFailed": "Échec du téléversement.",
+      "fileDeleted": "Fichier supprimé."
+    },
+    "confirm": {
+      "deleteTask": "Supprimer cette tâche ?"
+    },
+    "prompts": {
+      "deleteAttachment": "Supprimer cette pièce jointe ?"
+    },
+    "calendar": {
+      "sun": "Dim",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mer",
+      "thu": "Jeu",
+      "fri": "Ven",
+      "sat": "Sam",
+      "today": "Aujourd'hui",
+      "more": "plus"
+    },
+    "modal": {
+      "newTask": "Nouvelle tâche.",
+      "edit": "Modifier.",
+      "taskType": "Type de tâche.",
+      "assignedTask": "Tâche assignée.",
+      "personalTask": "Tâche personnelle.",
+      "taskTitle": "Titre de la tâche *",
+      "description": "Description",
+      "priority": "Priorité",
+      "dueDate": "Date d'échéance.",
+      "assignTo": "Attribuer à",
+      "assignToEmployee": "Attribuer à l'employé (même port)",
+      "status": "Statut",
+      "personalAutoAssign": "Les tâches personnelles vous seront automatiquement attribuées.",
+      "attachments": "Pièces jointes.",
+      "activityLog": "Journal d'activité"
+    },
+    "validation": {
+      "titleRequired": "Le titre est requis",
+      "descriptionRequired": "La description est requise",
+      "dueDateRequired": "La date d'échéance est requise",
+      "assignEmployee": "Veuillez l'assigner à un employé"
+    },
+    "placeholders": {
+      "taskTitle": "Saisissez le titre de la tâche...",
+      "description": "Ajoutez plus de détails ou une liste de contrôle...",
+      "selectUser": "Sélectionner un utilisateur",
+      "searchTasks": "RECHERCHER DES TÂCHES...",
+      "addComment": "Tapez un commentaire..."
+    },
+    "views": {
+      "list": "Liste",
+      "board": "Tableau",
+      "calendar": "Calendrier"
+    },
+    "stats": {
+      "activeTasks": "Tâches actives",
+      "priority": "Priorité",
+      "completedAssets": "Éléments terminés",
+      "monthlyEfficiency": "Efficacité mensuelle",
+      "todayEfficiency": "Efficacité d'aujourd'hui"
+    },
+    "filters": {
+      "status": "Statut",
+      "priority": "Priorité",
+      "type": "Type",
+      "allStatus": "Tous les statuts",
+      "allPriorities": "Toutes les priorités",
+      "allTypes": "Tous les types"
+    },
+    "priority": {
+      "low": "Basse",
+      "medium": "Moyenne",
+      "high": "Haute",
+      "urgent": "Urgente",
+      "critical": "Critique"
+    },
+    "status": {
+      "todo": "À faire",
+      "inProgress": "En cours",
+      "done": "Terminé",
+      "pending": "En attente"
+    },
+    "type": {
+      "assigned": "Assigné",
+      "personal": "Personnel"
+    },
+    "actions": {
+      "newTask": "Nouvelle tâche",
+      "hideDone": "Masquer les tâches terminées",
+      "showDone": "Afficher les tâches terminées",
+      "close": "Fermer",
+      "cancel": "Annuler",
+      "createTask": "Créer une tâche",
+      "updateTask": "Mettre à jour la tâche",
+      "accept": "Accepter",
+      "reject": "Rejeter",
+      "markDone": "Marquer comme terminé",
+      "done": "Terminé",
+      "reopen": "Rouvrir",
+      "addFile": "Ajouter un fichier",
+      "post": "Publier"
+    },
+    "board": {
+      "dropHere": "Déposez les tâches ici"
+    },
+    "empty": {
+      "noTasks": "Aucune tâche trouvée",
+      "changeFilters": "Essayez de changer vos filtres",
+      "createFirst": "Créez votre première tâche"
+    },
+    "labels": {
+      "task": "Tâche",
+      "noDate": "Aucune date",
+      "createdBy": "Créé par",
+      "na": "—",
+      "me": "Moi",
+      "due": "Échéance",
+      "overdue": "EN RETARD"
+    }
+  },
+  "lockscreen": {
+    "pinPlaceholder": "Code PIN",
+    "welcomeBack": "Bon retour",
+    "incorrectPin": "PIN incorrect",
+    "unlock": "Déverrouiller",
+    "logout": "Se déconnecter",
+    "fallbackUser": "Utilisateur",
+    "profileAlt": "Profil",
+    "lockNow": "Verrouiller maintenant",
+    "screenLocked": "Écran verrouillé"
+  },
+  "DashboardChat": {
+    "mobile": {
+      "conversations": "Conversations",
+      "contact": "Contact"
+    },
+    "empty": {
+      "title": "Bienvenue dans le chat",
+      "description": "Sélectionnez une conversation dans le panneau de gauche pour commencer à discuter. Vous verrez les messages et les détails du contact ici."
+    },
+    "list": {
+      "title": "Messages",
+      "count": "{count} conversations",
+      "searchPlaceholder": "Rechercher des conversations...",
+      "emptyTitle": "Aucune conversation",
+      "emptySearch": "Essayez une autre recherche",
+      "emptyDefault": "Tout est à jour !",
+      "widgetSource": "widget",
+      "tabs": {
+        "all": "Tous",
+        "open": "Ouvrir",
+        "pending": "En attente",
+        "solved": "Résolu"
+      },
+      "time": {
+        "now": "maintenant",
+        "minutes": "{count}m",
+        "hours": "{count}h",
+        "days": "{count}d"
+      }
+    },
+    "messages": {
+      "today": "Aujourd'hui",
+      "aiDraftReply": "Réponse brouillon IA",
+      "summarize": "Résumer",
+      "typePlaceholder": "Tapez votre message...",
+      "callAction": "Démarrer l'appel",
+      "callUnavailable": "Aucun numéro de téléphone disponible",
+      "callFailed": "Impossible de lancer l'appel. Réessayez.",
+      "status": {
+        "open": "Ouvrir",
+        "pending": "En attente",
+        "solved": "Résolu"
+      }
+    },
+    "detail": {
+      "contactInfo": "Informations de contact",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "location": "Emplacement",
+      "company": "Entreprise",
+      "sourceUrl": "URL source",
+      "sharedFiles": "Fichiers partagés ({count})",
+      "activity": "Activité"
+    }
+  }
+}

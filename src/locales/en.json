@@ -107,7 +107,7 @@
       "collapse": "Collapse sidebar",
       "audit": "Audit",
       "errors": "Errors",
-      "harborPerformance": "Harbor Performance",
+      "harborPerformance": "Salesfunnel",
       "socialAutomation": "Social Automation"
     },
     "notifications": {
@@ -350,9 +350,9 @@
   },
   "DashboardAdminHarborPerformance": {
     "hero": {
-      "kicker": "Harbor Analytics",
-      "title": "Harbor Performance",
-      "description": "Compare reach, funnel conversion, and commission performance across all harbor partners."
+      "kicker": "Sales Analytics",
+      "title": "Salesfunnel",
+      "description": "Track platform-wide funnel performance with location-based insights."
     },
     "actions": {
       "refresh": "Refresh"
@@ -371,6 +371,7 @@
         "90d": "Last 90 days"
       },
       "allCountries": "All countries",
+      "allLocations": "All locations",
       "allDevices": "All devices",
       "allSources": "All sources",
       "countries": {
@@ -392,7 +393,7 @@
       }
     },
     "table": {
-      "harbor": "Harbor",
+      "location": "Location",
       "users": "Users",
       "impressions": "Impressions",
       "clicks": "Clicks",
@@ -405,8 +406,8 @@
       "avgCtr": "Avg CTR {value}"
     },
     "states": {
-      "error": "Could not load harbor performance.",
-      "empty": "No harbor performance data is available for the current filters."
+      "error": "Could not load salesfunnel performance.",
+      "empty": "No salesfunnel data is available for the current filters."
     },
     "panels": {
       "reach": {
@@ -831,7 +832,9 @@
       "phone": "Phone",
       "location": "Location",
       "company": "Company",
-      "sourceUrl": "Source URL"
+      "sourceUrl": "Source URL",
+      "sharedFiles": "Shared files ({count})",
+      "activity": "Activity"
     }
   }
 }

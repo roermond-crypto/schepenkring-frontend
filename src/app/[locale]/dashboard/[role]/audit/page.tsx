@@ -34,9 +34,9 @@ interface SystemLog {
   entity_type: string;
   entity_id: number | null;
   user_id: number | null;
-  old_data: any;
-  new_data: any;
-  changes: any;
+  old_data: Record<string, unknown> | null;
+  new_data: Record<string, unknown> | null;
+  changes: Record<string, unknown> | null;
   description: string;
   ip_address: string | null;
   user_agent: string | null;
@@ -47,6 +47,30 @@ interface SystemLog {
     email: string;
     role: string;
   };
+}
+
+interface AuditApiItem {
+  id: number;
+  created_at: string;
+  actor_id: number | null;
+  actor?: {
+    id: number;
+    type?: string;
+    status?: string;
+    name?: string;
+    email?: string;
+    phone?: string | null;
+  };
+  action?: string;
+  entity_type?: string;
+  entity_id?: number | null;
+  risk_level?: string;
+  result?: string;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  metadata?: Record<string, unknown> | null;
+  snapshot_before?: Record<string, unknown> | null;
+  snapshot_after?: Record<string, unknown> | null;
 }
 
 interface SystemStats {
@@ -68,7 +92,8 @@ interface PaginationMeta {
   to: number;
 }
 
-const API_BASE = "https://app.schepen-kring.nl/api";
+const API_BASE =
+  process.env.NEXT_PUBLIC_BACKEND_API_URL || "https://app.schepen-kring.nl/api";
 
 function getStoredToken() {
   if (typeof window === "undefined") return null;
@@ -109,13 +134,13 @@ function getAuthHeaders() {
 
 export default function SystemAuditPage() {
   const t = useTranslations("DashboardAdminAudit");
+  const loadLogsErrorText = t("errors.loadLogs");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<SystemLog[]>([]);
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null);
-  const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [pagination, setPagination] = useState<PaginationMeta>({
     total: 0,
@@ -141,83 +166,94 @@ export default function SystemAuditPage() {
   // API CALLS
   // ============================================
 
-  const fetchSystemStats = useCallback(async () => {
-    try {
-      console.log("Fetching system stats...");
-      const response = await fetch(`${API_BASE}/system-logs/summary`, {
-        headers: getAuthHeaders(),
-      });
+  const normalizeAuditItem = (item: AuditApiItem): SystemLog => {
+    const action = item.action || "audit.unknown";
+    const entityType = item.entity_type || "Entity";
+    const entityName = entityType.split("\\").pop() || entityType;
+    const reason =
+      typeof item.metadata?.reason === "string" ? item.metadata.reason : "";
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Stats API error:", response.status, errorText);
-        throw new Error(`API Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("System stats received:", data);
-      setSystemStats(data);
-      return data;
-    } catch (error: any) {
-      console.error("Error fetching system stats:", error);
-      setApiError(error.message || t("errors.loadStats"));
-      return null;
-    }
-  }, [t]);
+    return {
+      id: item.id,
+      event_type: action,
+      entity_type: entityType,
+      entity_id: item.entity_id ?? null,
+      user_id: item.actor_id ?? null,
+      old_data: item.snapshot_before || null,
+      new_data: item.snapshot_after || null,
+      changes:
+        item.snapshot_before || item.snapshot_after
+          ? {
+              before: item.snapshot_before || null,
+              after: item.snapshot_after || null,
+            }
+          : null,
+      description: reason
+        ? `${action} - ${reason}`
+        : `${action} on ${entityName}${item.entity_id ? ` #${item.entity_id}` : ""}`,
+      ip_address: item.ip_address ?? null,
+      user_agent: item.user_agent ?? null,
+      created_at: item.created_at,
+      user: item.actor
+        ? {
+            id: item.actor.id,
+            name: item.actor.name || "Unknown",
+            email: item.actor.email || "",
+            role: item.actor.type || "USER",
+          }
+        : undefined,
+    };
+  };
 
   const fetchSystemLogs = useCallback(async () => {
     setIsRefreshing(true);
     setApiError(null);
 
     try {
-      console.log("Fetching system logs...");
-
       const params = new URLSearchParams();
 
       if (filters.event_type.length > 0) {
-        filters.event_type.forEach((type) =>
-          params.append("event_type[]", type),
-        );
+        params.append("action", filters.event_type[0]);
       }
 
       if (filters.entity_type.length > 0) {
-        filters.entity_type.forEach((type) =>
-          params.append("entity_type[]", type),
-        );
+        params.append("entity_type", filters.entity_type[0]);
       }
 
       if (filters.dateRange.from) {
-        params.append("start_date", filters.dateRange.from);
+        params.append("date_from", filters.dateRange.from);
       }
 
       if (filters.dateRange.to) {
-        params.append("end_date", filters.dateRange.to);
+        params.append("date_to", filters.dateRange.to);
       }
 
       if (filters.search) {
         params.append("search", filters.search);
       }
 
+      params.append("per_page", String(pagination.per_page || 50));
+      params.append("sort_by", "created_at");
+      params.append("sort_dir", "desc");
       params.append("page", filters.page.toString());
 
-      const url = `${API_BASE}/system-logs?${params.toString()}`;
-      console.log("Fetching URL:", url);
+      const url = `${API_BASE}/audit?${params.toString()}`;
 
       const response = await fetch(url, {
         headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Logs API error:", response.status, errorText);
         throw new Error(`API Error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("System logs received:", data);
+      const logs: SystemLog[] = Array.isArray(data.data)
+        ? data.data.map(normalizeAuditItem)
+        : [];
 
-      setSystemLogs(data.data || []);
-      setFilteredLogs(data.data || []);
+      setSystemLogs(logs);
+      setFilteredLogs(logs);
       setPagination(
         data.meta || {
           total: 0,
@@ -228,30 +264,64 @@ export default function SystemAuditPage() {
           to: 0,
         },
       );
-    } catch (error: any) {
-      console.error("Error fetching system logs:", error);
-      setApiError(error.message || t("errors.loadLogs"));
+    } catch (error: unknown) {
+      setApiError(
+        error instanceof Error ? error.message : loadLogsErrorText,
+      );
       setSystemLogs([]);
       setFilteredLogs([]);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [filters, t]);
+  }, [filters, pagination.per_page, loadLogsErrorText]);
 
   // ============================================
   // FILTERS AND UTILITIES
   // ============================================
 
-  const availableEventTypes = useMemo(() => {
-    if (!systemStats?.summary?.event_types) return [];
-    return systemStats.summary.event_types.map((et) => et.event_type);
-  }, [systemStats]);
+  const stats = useMemo<SystemStats>(() => {
+    const eventCount = new Map<string, number>();
+    const entityCount = new Map<string, number>();
+    const dailyCount = new Map<string, number>();
 
-  const availableEntityTypes = useMemo(() => {
-    if (!systemStats?.summary?.entity_types) return [];
-    return systemStats.summary.entity_types.map((et) => et.entity_type);
-  }, [systemStats]);
+    for (const log of systemLogs) {
+      eventCount.set(log.event_type, (eventCount.get(log.event_type) || 0) + 1);
+      entityCount.set(
+        log.entity_type,
+        (entityCount.get(log.entity_type) || 0) + 1,
+      );
+      const day = log.created_at.slice(0, 10);
+      dailyCount.set(day, (dailyCount.get(day) || 0) + 1);
+    }
+
+    return {
+      summary: {
+        total_logs: pagination.total || systemLogs.length,
+        event_types: Array.from(eventCount.entries()).map(
+          ([event_type, count]) => ({ event_type, count }),
+        ),
+        entity_types: Array.from(entityCount.entries()).map(
+          ([entity_type, count]) => ({ entity_type, count }),
+        ),
+      },
+      recent_activity: systemLogs.slice(0, 10),
+      daily_activity: Array.from(dailyCount.entries()).map(([date, count]) => ({
+        date,
+        count,
+      })),
+    };
+  }, [pagination.total, systemLogs]);
+
+  const availableEventTypes = useMemo(
+    () => stats.summary.event_types.map((et) => et.event_type),
+    [stats.summary.event_types],
+  );
+
+  const availableEntityTypes = useMemo(
+    () => stats.summary.entity_types.map((et) => et.entity_type),
+    [stats.summary.entity_types],
+  );
 
   const toggleEventFilter = (eventType: string) => {
     setFilters((prev) => ({
@@ -290,35 +360,34 @@ export default function SystemAuditPage() {
 
   const formatEventType = (eventType: string) => {
     return eventType
-      .split("_")
+      .replaceAll(".", " ")
+      .replaceAll("\\", " ")
+      .split(/[_\s]+/)
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   };
 
   const getEventIcon = (eventType: string) => {
     const iconProps = { size: 18, className: "flex-shrink-0" };
+    const normalized = eventType.toLowerCase();
 
-    switch (eventType.toLowerCase()) {
-      case "create":
-      case "created":
+    switch (true) {
+      case normalized.includes("create"):
         return (
           <CheckCircle
             {...iconProps}
             className="flex-shrink-0 text-green-600"
           />
         );
-      case "update":
-      case "updated":
+      case normalized.includes("update"):
         return (
           <Activity {...iconProps} className="flex-shrink-0 text-blue-600" />
         );
-      case "delete":
-      case "deleted":
+      case normalized.includes("delete"):
         return (
           <XCircle {...iconProps} className="flex-shrink-0 text-red-600" />
         );
-      case "login":
-      case "logout":
+      case normalized.includes("login") || normalized.includes("logout"):
         return (
           <User {...iconProps} className="flex-shrink-0 text-purple-600" />
         );
@@ -330,18 +399,16 @@ export default function SystemAuditPage() {
   };
 
   const getEventColor = (eventType: string) => {
-    switch (eventType.toLowerCase()) {
-      case "create":
-      case "created":
+    const normalized = eventType.toLowerCase();
+
+    switch (true) {
+      case normalized.includes("create"):
         return "bg-green-50 text-green-700 border-green-200";
-      case "update":
-      case "updated":
+      case normalized.includes("update"):
         return "bg-blue-50 text-blue-700 border-blue-200";
-      case "delete":
-      case "deleted":
+      case normalized.includes("delete"):
         return "bg-red-50 text-red-700 border-red-200";
-      case "login":
-      case "logout":
+      case normalized.includes("login") || normalized.includes("logout"):
         return "bg-purple-50 text-purple-700 border-purple-200";
       default:
         return "bg-slate-50 text-slate-700 border-slate-200";
@@ -349,12 +416,15 @@ export default function SystemAuditPage() {
   };
 
   const getEntityName = (log: SystemLog) => {
-    const entityType = formatEventType(log.entity_type);
+    const entityType = formatEventType(
+      log.entity_type.split("\\").pop() || log.entity_type,
+    );
     const entityId = log.entity_id ? `#${log.entity_id}` : "";
     return `${entityType} ${entityId}`.trim();
   };
 
   const handleExport = () => {
+    if (filteredLogs.length === 0) return;
     const csvData = filteredLogs.map((log) => ({
       timestamp: log.created_at,
       event_type: log.event_type,
@@ -383,21 +453,8 @@ export default function SystemAuditPage() {
   // ============================================
 
   useEffect(() => {
-    const initializeData = async () => {
-      setLoading(true);
-      await fetchSystemStats();
-      await fetchSystemLogs();
-      setLoading(false);
-    };
-
-    initializeData();
-  }, []);
-
-  useEffect(() => {
-    if (!loading) {
-      fetchSystemLogs();
-    }
-  }, [filters]);
+    void fetchSystemLogs();
+  }, [fetchSystemLogs]);
 
   // ============================================
   // PAGINATION HELPERS
@@ -409,7 +466,7 @@ export default function SystemAuditPage() {
     const halfRange = Math.floor(maxPagesToShow / 2);
 
     let startPage = Math.max(1, pagination.current_page - halfRange);
-    let endPage = Math.min(
+    const endPage = Math.min(
       pagination.last_page,
       startPage + maxPagesToShow - 1,
     );
@@ -506,7 +563,7 @@ export default function SystemAuditPage() {
         </motion.div>
 
         {/* Stats Cards */}
-        {systemStats && (
+        {stats && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -520,7 +577,7 @@ export default function SystemAuditPage() {
                 </div>
               </div>
               <p className="text-3xl font-black text-slate-900 mb-1">
-                {systemStats.summary.total_logs.toLocaleString()}
+                {stats.summary.total_logs.toLocaleString()}
               </p>
               <p className="text-sm text-slate-600 font-medium">
                 {t("stats.totalEvents")}
@@ -534,7 +591,7 @@ export default function SystemAuditPage() {
                 </div>
               </div>
               <p className="text-3xl font-black text-slate-900 mb-1">
-                {systemStats.summary.event_types.length}
+                {stats.summary.event_types.length}
               </p>
               <p className="text-sm text-slate-600 font-medium">
                 {t("stats.eventTypes")}
@@ -548,7 +605,7 @@ export default function SystemAuditPage() {
                 </div>
               </div>
               <p className="text-3xl font-black text-slate-900 mb-1">
-                {systemStats.summary.entity_types.length}
+                {stats.summary.entity_types.length}
               </p>
               <p className="text-sm text-slate-600 font-medium">
                 {t("stats.entityTypes")}
@@ -562,7 +619,7 @@ export default function SystemAuditPage() {
                 </div>
               </div>
               <p className="text-3xl font-black text-slate-900 mb-1">
-                {systemStats.recent_activity.length}
+                {stats.recent_activity.length}
               </p>
               <p className="text-sm text-slate-600 font-medium">
                 {t("stats.recentActivity")}

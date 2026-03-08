@@ -92,7 +92,7 @@ export function Sidebar({
       items.push({ title: t.copilot, href: `${root}/copilot`, icon: Bot });
       items.push({
         title: t.harborPerformance,
-        href: `${root}/harbors/performance`,
+        href: `${root}/performance`,
         icon: Gauge,
       });
       items.push({
@@ -190,7 +190,7 @@ export function Sidebar({
         })}
       </nav>
 
-      <div className="border-t border-[#1A355F] p-3">
+      {/* <div className="border-t border-[#1A355F] p-3">
         <button
           type="button"
           onClick={onLogout}
@@ -202,7 +202,7 @@ export function Sidebar({
           <LogOut className="h-4 w-4" />
           {(!isCollapsed || isDrawer) && <span>{t.logout}</span>}
         </button>
-      </div>
+      </div> */}
     </>
   );
 
