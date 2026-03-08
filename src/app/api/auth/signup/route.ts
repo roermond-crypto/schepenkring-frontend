@@ -59,7 +59,6 @@ export async function POST(request: NextRequest) {
       password,
       password_confirmation: password,
       accept_terms: true,
-      role: "client",
     });
 
     const payload = backendResponse.data;

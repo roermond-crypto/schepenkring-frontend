@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { getDictionary } from "@/lib/i18n";
+import { normalizeRole } from "@/lib/auth/roles";
 
 const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
   ssr: false,
@@ -101,10 +102,11 @@ type AvailabilityRule = {
 };
 
 export default function YachtEditorPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id: string; role?: string }>();
   // We can't safely extract locale from params directly if it's missing or async,
   // so we'll grab it safely using our hook that reads the pathname
   const locale = useLocale();
+  const role = normalizeRole(params?.role) ?? "admin";
   const dict = getDictionary(locale) as any;
   const t = dict?.YachtWizard || {} as any;
   const router = useRouter();
@@ -450,7 +452,7 @@ export default function YachtEditorPage() {
       } catch (err) {
         console.error("Failed to fetch yacht details", err);
         toast.error("Failed to load yacht details");
-        router.push(`/${locale}/dashboard/admin/yachts`);
+        router.push(`/${locale}/dashboard/${role}/yachts`);
       } finally {
         setLoading(false);
       }
@@ -1323,7 +1325,7 @@ export default function YachtEditorPage() {
           ? "Vessel Registered Successfully"
           : "Manifest Updated Successfully",
       );
-      router.push("/nl/dashboard/admin/yachts");
+      router.push(`/${locale}/dashboard/${role}/yachts`);
     } catch (err: any) {
       console.error("Submission error:", err);
 
@@ -1344,14 +1346,14 @@ export default function YachtEditorPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-slate-950">
         <Loader2 className="animate-spin text-[#003566]" size={40} />
       </div>
     );
   }
 
   return (
-    <div className="bg-[#F8FAFC]">
+    <div className="yacht-editor-theme bg-[#F8FAFC]">
       <Toaster position="top-right" />
 
       {showExtractModal && (
@@ -1944,7 +1946,7 @@ export default function YachtEditorPage() {
                               type="button"
                               variant="outline"
                               className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
-                              onClick={() => router.push(`/${locale}/dashboard/admin/yachts/${yachtId}/video-settings`)}
+                              onClick={() => router.push(`/${locale}/dashboard/${role}/yachts/${yachtId}/video-settings`)}
                               disabled={isNewMode && !createdYachtId}
                             >
                               Social Settings
@@ -3468,6 +3470,46 @@ export default function YachtEditorPage() {
           </div>
         </form>
       </div>
+
+      <style jsx global>{`
+        .dark .yacht-editor-theme {
+          background: rgb(2 6 23) !important;
+          color: rgb(226 232 240);
+        }
+
+        .dark .yacht-editor-theme .bg-white,
+        .dark .yacht-editor-theme .bg-slate-50,
+        .dark .yacht-editor-theme .bg-slate-100 {
+          background: rgb(15 23 42) !important;
+        }
+
+        .dark .yacht-editor-theme .border-slate-100,
+        .dark .yacht-editor-theme .border-slate-200,
+        .dark .yacht-editor-theme .border-slate-300,
+        .dark .yacht-editor-theme .border-gray-200 {
+          border-color: rgb(51 65 85) !important;
+        }
+
+        .dark .yacht-editor-theme .text-slate-900,
+        .dark .yacht-editor-theme .text-slate-800,
+        .dark .yacht-editor-theme .text-slate-700 {
+          color: rgb(241 245 249) !important;
+        }
+
+        .dark .yacht-editor-theme .text-slate-600,
+        .dark .yacht-editor-theme .text-slate-500,
+        .dark .yacht-editor-theme .text-slate-400 {
+          color: rgb(148 163 184) !important;
+        }
+
+        .dark .yacht-editor-theme input,
+        .dark .yacht-editor-theme select,
+        .dark .yacht-editor-theme textarea {
+          background: rgb(2 6 23) !important;
+          color: rgb(226 232 240) !important;
+          border-color: rgb(51 65 85) !important;
+        }
+      `}</style>
     </div>
   );
 }

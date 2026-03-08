@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "@/shims/next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -128,6 +128,7 @@ export default function AdminSocialAutomationPage() {
     const [selectedVideoIds, setSelectedVideoIds] = useState<number[]>([]);
     const [reschedulePostId, setReschedulePostId] = useState<number | null>(null);
     const [rescheduleValue, setRescheduleValue] = useState("");
+    const hasLoadedInitialData = useRef(false);
     const [scheduleForm, setScheduleForm] = useState<ScheduleForm>(() => ({
         start_date: new Date().toISOString().slice(0, 10),
         cadence: "daily",
@@ -160,13 +161,15 @@ export default function AdminSocialAutomationPage() {
                 current.filter((id) => nextVideos.some((video) => video.id === id)),
             );
         } catch {
-            setError(t("errors.loadFailed"));
+            setError("Could not load social automation data.");
         } finally {
             setLoading(false);
         }
-    }, [t]);
+    }, []);
 
     useEffect(() => {
+        if (hasLoadedInitialData.current) return;
+        hasLoadedInitialData.current = true;
         void loadData();
     }, [loadData]);
 
@@ -286,18 +289,18 @@ export default function AdminSocialAutomationPage() {
 
     const statusClass = (value?: string | null) => {
         const status = (value || "").toLowerCase();
-        if (status.includes("publish")) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-        if (status.includes("sched")) return "bg-blue-50 text-blue-700 border-blue-200";
-        if (status.includes("fail")) return "bg-red-50 text-red-700 border-red-200";
-        if (status.includes("ready")) return "bg-cyan-50 text-cyan-700 border-cyan-200";
-        return "bg-slate-50 text-slate-600 border-slate-200";
+        if (status.includes("publish")) return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900";
+        if (status.includes("sched")) return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900";
+        if (status.includes("fail")) return "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900";
+        if (status.includes("ready")) return "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-900";
+        return "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
     };
 
     return (
         <div className="social-admin-page space-y-8">
             <Toaster position="top-center" />
 
-            <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-[#F7FAFF] to-[#EAF3FF] px-6 py-8 shadow-[0_22px_60px_rgba(15,23,42,0.08)] sm:px-8">
+            <div className="social-hero relative overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-[#F7FAFF] to-[#EAF3FF] px-6 py-8 shadow-[0_22px_60px_rgba(15,23,42,0.08)] sm:px-8">
                 <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-blue-200/40 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-20 left-8 h-40 w-40 rounded-full bg-cyan-200/40 blur-3xl" />
 
@@ -781,6 +784,15 @@ export default function AdminSocialAutomationPage() {
             color: rgb(226 232 240);
           }
 
+          .dark .social-admin-page .social-hero {
+            background: linear-gradient(
+              135deg,
+              rgb(2 6 23) 0%,
+              rgb(15 23 42) 55%,
+              rgb(30 41 59) 100%
+            ) !important;
+          }
+
           .dark .social-admin-page .text-slate-900 {
             color: rgb(241 245 249) !important;
           }
@@ -798,6 +810,10 @@ export default function AdminSocialAutomationPage() {
 
           .dark .social-admin-page .bg-white,
           .dark .social-admin-page [class*="bg-white/85"],
+          .dark .social-admin-page .bg-blue-50,
+          .dark .social-admin-page .bg-red-50,
+          .dark .social-admin-page .bg-emerald-50,
+          .dark .social-admin-page .bg-cyan-50,
           .dark .social-admin-page .bg-slate-50,
           .dark .social-admin-page [class*="bg-slate-50/50"],
           .dark .social-admin-page [class*="bg-slate-50/70"] {

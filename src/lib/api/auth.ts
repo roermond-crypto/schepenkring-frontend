@@ -123,7 +123,6 @@ export async function signup(payload: {
     password: payload.password,
     password_confirmation: payload.password,
     accept_terms: true,
-    role: "client",
   };
 
   return apiRequest<SignupResponse>({

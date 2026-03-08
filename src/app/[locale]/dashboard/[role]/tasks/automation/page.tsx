@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
+import { useParams } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import {
@@ -376,6 +377,8 @@ const normalizeRelatedModelType = (value: unknown): RelatedModelType => {
 
 export default function TaskAutomationPage() {
   const locale = useLocale().split("-")[0] as keyof typeof copyByLocale;
+  const params = useParams<{ role?: string }>();
+  const role = params?.role ?? "admin";
   const copy = copyByLocale[locale] ?? copyByLocale.en;
 
   const [draft, setDraft] = useState<AutomationRule>(initialRule);
@@ -648,7 +651,7 @@ export default function TaskAutomationPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link href="/dashboard/admin/tasks">
+              <Link href={`/dashboard/${role}/tasks`}>
                 <Button
                   type="button"
                   variant="outline"
