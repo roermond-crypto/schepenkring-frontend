@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
+import { useParams } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import {
@@ -376,6 +377,8 @@ const normalizeRelatedModelType = (value: unknown): RelatedModelType => {
 
 export default function TaskAutomationPage() {
   const locale = useLocale().split("-")[0] as keyof typeof copyByLocale;
+  const params = useParams<{ role?: string }>();
+  const role = params?.role ?? "admin";
   const copy = copyByLocale[locale] ?? copyByLocale.en;
 
   const [draft, setDraft] = useState<AutomationRule>(initialRule);
@@ -457,7 +460,9 @@ export default function TaskAutomationPage() {
           ? "creator"
         : template?.default_assignee_type === "seller"
             ? "seller"
-            : "harbor_user",
+            : template?.default_assignee_type === "admin" || template?.default_assignee_type === "employee"
+              ? "harbor_user"
+              : "harbor_user",
     specificUserId: String(template?.assigned_user_id || ""),
     relatedType: normalizeRelatedModelType(template?.related_type),
     relatedBoatId: String(template?.related_id || ""),
@@ -553,7 +558,7 @@ export default function TaskAutomationPage() {
           draft.assigneeRule === "specific_user"
             ? "specific_user"
             : draft.assigneeRule === "harbor_user"
-            ? "harbor"
+              ? "admin"
               : draft.assigneeRule,
         notification_enabled: true,
         email_enabled: true,
@@ -609,7 +614,7 @@ export default function TaskAutomationPage() {
   };
 
   return (
-    <div className="copied-admin-theme min-h-screen px-4 py-8 md:px-8">
+    <div className="copied-admin-theme min-h-screen px-4 py-8 text-slate-900 md:px-8 dark:text-slate-100">
       <div className="mx-auto max-w-7xl space-y-8">
         <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_20px_70px_-40px_rgba(15,23,42,0.45)] backdrop-blur md:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -646,7 +651,7 @@ export default function TaskAutomationPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link href="/dashboard/admin/tasks">
+              <Link href={`/dashboard/${role}/tasks`}>
                 <Button
                   type="button"
                   variant="outline"
@@ -669,13 +674,13 @@ export default function TaskAutomationPage() {
         </section>
 
         {feedback && (
-          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
             {feedback}
           </div>
         )}
 
         {errorText && (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-300">
             <AlertCircle className="mr-2 inline h-4 w-4" />
             {errorText}
           </div>
@@ -1148,6 +1153,35 @@ export default function TaskAutomationPage() {
       </div>
 
       <style jsx global>{`
+        .dark .copied-admin-theme section {
+          background: rgb(15 23 42 / 0.92) !important;
+          border-color: rgb(51 65 85 / 0.9) !important;
+        }
+
+        .dark .copied-admin-theme .text-slate-900 {
+          color: rgb(241 245 249) !important;
+        }
+
+        .dark .copied-admin-theme .text-slate-700,
+        .dark .copied-admin-theme .text-slate-600,
+        .dark .copied-admin-theme .text-slate-500,
+        .dark .copied-admin-theme .text-slate-400 {
+          color: rgb(148 163 184) !important;
+        }
+
+        .dark .copied-admin-theme .bg-white,
+        .dark .copied-admin-theme .bg-white\/90,
+        .dark .copied-admin-theme .bg-slate-50,
+        .dark .copied-admin-theme .bg-slate-50\/80 {
+          background: rgb(15 23 42) !important;
+        }
+
+        .dark .copied-admin-theme .border-slate-300,
+        .dark .copied-admin-theme .border-slate-200,
+        .dark .copied-admin-theme .border-slate-200\/80 {
+          border-color: rgb(51 65 85) !important;
+        }
+
         .input-base {
           width: 100%;
           border-radius: 1rem;
@@ -1165,6 +1199,12 @@ export default function TaskAutomationPage() {
         .input-base:focus {
           border-color: rgb(14 165 233);
           box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+        }
+
+        .dark .copied-admin-theme .input-base {
+          background: rgb(2 6 23);
+          border-color: rgb(51 65 85);
+          color: rgb(226 232 240);
         }
       `}</style>
     </div>

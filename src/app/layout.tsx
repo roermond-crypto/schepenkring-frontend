@@ -7,10 +7,7 @@ export const metadata: Metadata = {
   title: "Schepenkring CRM",
   description:
     "Internal control center for boats, clients, leads, and operations.",
-  icons: {
-    icon: "/schepenkring-logo.png",
-    apple: "/schepenkring-logo.png",
-  },
+
   manifest: "/manifest.json",
 };
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useParams } from "next/navigation";
 import axios from "axios";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -75,6 +76,47 @@ interface Task {
   position?: number;
 }
 
+interface BoardColumn {
+  id: number;
+  board_id: number;
+  name: string;
+  position: number;
+  location_id?: number;
+}
+
+interface BoardData {
+  id: number;
+  name?: string;
+  columns: BoardColumn[];
+}
+
+interface TaskActivity {
+  id: number | string;
+  action?: string;
+  description?: string;
+  created_at: string;
+  user?: { name?: string } | null;
+}
+
+interface TaskAttachment {
+  id: number;
+  file_name: string;
+  file_path: string;
+  created_at: string;
+  user?: { name?: string } | null;
+}
+
+type TaskSubmitData = {
+  title: string;
+  description: string;
+  priority: Task["priority"];
+  status: Task["status"];
+  column_id?: number;
+  assigned_to: string | number | null;
+  due_date: string;
+  type: "assigned" | "personal";
+};
+
 type ViewMode = "list" | "calendar" | "board";
 type StatusFilter = "all" | "To Do" | "In Progress" | "Done";
 type PriorityFilter = "all" | "Low" | "Medium" | "High";
@@ -106,6 +148,65 @@ function getStoredToken() {
   }
 
   return null;
+}
+
+function getCurrentLocationId() {
+  if (typeof window === "undefined") return null;
+  const userDataRaw = localStorage.getItem("user_data");
+  if (!userDataRaw) return null;
+
+  try {
+    const userData = JSON.parse(userDataRaw) as {
+      location_id?: number | string;
+      locationId?: number | string;
+      location?: { id?: number | string };
+    };
+
+    const locationValue =
+      userData.location_id ?? userData.locationId ?? userData.location?.id;
+    if (locationValue === null || locationValue === undefined || locationValue === "") {
+      return null;
+    }
+
+    const parsed = Number(locationValue);
+    return Number.isNaN(parsed) ? null : parsed;
+  } catch {
+    return null;
+  }
+}
+
+function fromApiStatus(status: string | undefined): Task["status"] {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "new" || normalized === "pending") return "To Do";
+  if (normalized === "in progress") return "In Progress";
+  if (normalized === "done" || normalized === "completed") return "Done";
+  return "To Do";
+}
+
+function toApiStatus(status: Task["status"]): string {
+  if (status === "To Do") return "New";
+  return status;
+}
+
+function resolveApiErrorMessage(
+  error: unknown,
+  t: (key: string) => string,
+  fallbackKey: string,
+) {
+  if (typeof error === "object" && error !== null) {
+    const maybeResponse = error as {
+      response?: { data?: { message?: string; error?: string } };
+      message?: string;
+    };
+    const raw =
+      maybeResponse.response?.data?.message ??
+      maybeResponse.response?.data?.error ??
+      maybeResponse.message;
+    if (typeof raw === "string" && raw.trim()) {
+      return raw.includes(".") ? t(raw) : raw;
+    }
+  }
+  return t(fallbackKey);
 }
 
 // ============================================
@@ -395,10 +496,10 @@ function CalendarView({
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: TaskSubmitData) => void;
   task?: Task;
   users: User[];
-  columns?: any[];
+  columns?: BoardColumn[];
   preSelectedColId?: number;
 }
 
@@ -469,8 +570,8 @@ function TaskModal({
     return { headers: token ? { Authorization: `Bearer ${token}` } : {} };
   };
 
-  const [activities, setActivities] = useState<any[]>([]);
-  const [attachments, setAttachments] = useState<any[]>([]);
+  const [activities, setActivities] = useState<TaskActivity[]>([]);
+  const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [uploading, setUploading] = useState(false);
   const [loadingExtras, setLoadingExtras] = useState(false);
@@ -1291,6 +1392,8 @@ function TaskModal({
 // ============================================
 export default function AdminTaskBoardPage() {
   const t = useTranslations("DashboardAdminTasks");
+  const params = useParams<{ role?: string }>();
+  const role = params?.role ?? "admin";
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -1313,8 +1416,8 @@ export default function AdminTaskBoardPage() {
     type: "all" as TypeFilter,
   });
 
-  const [board, setBoard] = useState<any>(null);
-  const [columns, setColumns] = useState<any[]>([]);
+  const [board, setBoard] = useState<BoardData | null>(null);
+  const [columns, setColumns] = useState<BoardColumn[]>([]);
   const [preSelectedColId, setPreSelectedColId] = useState<number | undefined>(
     undefined,
   );
@@ -1334,25 +1437,36 @@ export default function AdminTaskBoardPage() {
     setLoading(true);
     try {
       const token = getStoredToken();
+      const locationId = getCurrentLocationId();
       if (!token) {
         toast.error(t("toasts.authRequired"));
         return;
       }
 
-      const tasksRes = await axios.get(`${API_BASE}/tasks`, getHeaders());
-      const boardsRes = await axios.get(`${API_BASE}/boards`, getHeaders());
+      const tasksRes = await axios.get(`${API_BASE}/tasks`, {
+        ...getHeaders(),
+        params: locationId ? { location_id: locationId } : undefined,
+      });
+      const boardsRes = await axios.get(`${API_BASE}/boards`, {
+        ...getHeaders(),
+        params: locationId ? { location_id: locationId } : undefined,
+      });
       // Admin: fetch all employees (or all users) for assignment
-      const usersRes = await axios.get(`${API_BASE}/public/users/employees`); // public endpoint
+      const usersRes = await axios.get(`${API_BASE}/public/users/employees`, {
+        ...getHeaders(),
+        params: locationId ? { location_id: locationId } : undefined,
+      });
 
-      setTasks(tasksRes.data);
+      const nextTasks = Array.isArray(tasksRes.data) ? tasksRes.data : [];
+      setTasks(nextTasks.map((task: Task) => ({ ...task, status: fromApiStatus(task.status) })));
       if (boardsRes.data && boardsRes.data.columns) {
         setBoard(boardsRes.data);
         setColumns(boardsRes.data.columns);
       }
       setUsers(usersRes.data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching data:", error);
-      toast.error(error.response?.data?.error || t("toasts.loadFailed"));
+      toast.error(resolveApiErrorMessage(error, t, "toasts.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -1466,7 +1580,7 @@ export default function AdminTaskBoardPage() {
     return filtered;
   }, [tasks, filters, showDone]);
 
-  const handleTaskSubmit = async (taskData: any) => {
+  const handleTaskSubmit = async (taskData: TaskSubmitData) => {
     try {
       const token = getStoredToken();
       if (!token) throw new Error(t("errors.noToken"));
@@ -1477,9 +1591,13 @@ export default function AdminTaskBoardPage() {
       };
       const dataToSend = {
         ...taskData,
+        status: toApiStatus(taskData.status as Task["status"]),
         assigned_to: taskData.assigned_to
-          ? parseInt(taskData.assigned_to)
+          ? typeof taskData.assigned_to === "number"
+            ? taskData.assigned_to
+            : parseInt(taskData.assigned_to, 10)
           : null,
+        location_id: getCurrentLocationId(),
       };
 
       console.log("SENDING TASK DATA TO BACKEND:", JSON.stringify(dataToSend));
@@ -1498,9 +1616,9 @@ export default function AdminTaskBoardPage() {
       await fetchData();
       setIsModalOpen(false);
       setEditingTask(undefined);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving task:", error);
-      toast.error(error.response?.data?.error || t("toasts.saveFailed"));
+      toast.error(resolveApiErrorMessage(error, t, "toasts.saveFailed"));
     }
   };
 
@@ -1510,8 +1628,8 @@ export default function AdminTaskBoardPage() {
       await axios.delete(`${API_BASE}/tasks/${taskId}`, getHeaders());
       toast.success(t("toasts.taskDeleted"));
       await fetchData();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || t("toasts.deleteFailed"));
+    } catch (error: unknown) {
+      toast.error(resolveApiErrorMessage(error, t, "toasts.deleteFailed"));
     }
   };
 
@@ -1522,15 +1640,15 @@ export default function AdminTaskBoardPage() {
     try {
       await axios.patch(
         `${API_BASE}/tasks/${taskId}/status`,
-        { status: newStatus },
+        { status: toApiStatus(newStatus) },
         getHeaders(),
       );
       setTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)),
       );
       toast.success(t("toasts.statusUpdated"));
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || t("toasts.statusFailed"));
+    } catch (error: unknown) {
+      toast.error(resolveApiErrorMessage(error, t, "toasts.statusFailed"));
     }
   };
 
@@ -1595,7 +1713,7 @@ export default function AdminTaskBoardPage() {
   const handleColumnMove = async (
     colId: number,
     newPosition: number,
-    cols: any[],
+    cols: BoardColumn[],
   ) => {
     setColumns(cols);
     try {
@@ -1613,12 +1731,16 @@ export default function AdminTaskBoardPage() {
     taskId: number,
     newColId: number,
     newPosition: number,
-    tasksMap: Record<number, any[]>,
+    tasksMap: Record<number, Task[]>,
   ) => {
-    const payloadTasks: any[] = [];
+    const payloadTasks: Array<{ id: number; column_id: number; position: number }> = [];
     Object.keys(tasksMap).forEach((colId) => {
       tasksMap[Number(colId)].forEach((t) => {
-        payloadTasks.push({ id: t.id, column_id: colId, position: t.position });
+        payloadTasks.push({
+          id: t.id,
+          column_id: Number(colId),
+          position: t.position ?? 0,
+        });
       });
     });
 
@@ -1649,21 +1771,21 @@ export default function AdminTaskBoardPage() {
 
   const handleAcceptTask = async (taskId: number) => {
     try {
-      await axios.post(`${API_BASE}/tasks/${taskId}/accept`, {}, getHeaders());
+      await axios.patch(`${API_BASE}/tasks/${taskId}/accept`, {}, getHeaders());
       toast.success(t("toasts.assignmentAccepted"));
       await fetchData();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || t("toasts.acceptFailed"));
+    } catch (error: unknown) {
+      toast.error(resolveApiErrorMessage(error, t, "toasts.acceptFailed"));
     }
   };
 
   const handleRejectTask = async (taskId: number) => {
     try {
-      await axios.post(`${API_BASE}/tasks/${taskId}/reject`, {}, getHeaders());
+      await axios.patch(`${API_BASE}/tasks/${taskId}/reject`, {}, getHeaders());
       toast.success(t("toasts.assignmentRejected"));
       await fetchData();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || t("toasts.rejectFailed"));
+    } catch (error: unknown) {
+      toast.error(resolveApiErrorMessage(error, t, "toasts.rejectFailed"));
     }
   };
 
@@ -1824,7 +1946,7 @@ export default function AdminTaskBoardPage() {
               >
                 <Plus size={16} className="mr-2" /> {t("actions.newTask")}
               </button>
-              <Link href="/dashboard/admin/tasks/automation">
+              <Link href={`/dashboard/${role}/tasks/automation`}>
                 <button className="rounded-none h-12 w-fit px-8 border text-xs uppercase tracking-widest font-black flex items-center">
                   <CalendarIcon size={16} className="mr-2" /> Automation Rules
                 </button>

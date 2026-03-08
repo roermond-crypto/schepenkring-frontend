@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { normalizeRole } from "@/lib/auth/roles";
 import {
   AlertCircle,
   Bot,
@@ -543,29 +544,33 @@ export default function AdminErrorsPage() {
   useEffect(() => {
     const userDataRaw =
       typeof window !== "undefined" ? localStorage.getItem("user_data") : null;
+    const redirectToRoleDashboard = (fallbackRole = "admin") => {
+      const nextRole = fallbackRole === "employee" ? "employee" : "admin";
+      router.replace(`/${locale}/dashboard/${nextRole}`);
+    };
 
     if (!userDataRaw) {
-      router.replace("/dashboard");
+      redirectToRoleDashboard();
       return;
     }
 
     try {
       const userData = JSON.parse(userDataRaw);
-      const role = String(
-        userData?.role || userData?.userType || "",
-      ).toLowerCase();
+      const role = normalizeRole(
+        userData?.role || userData?.userType || userData?.type || null,
+      );
 
       if (role !== "admin" && role !== "employee") {
-        router.replace("/dashboard");
+        redirectToRoleDashboard();
         return;
       }
     } catch {
-      router.replace("/dashboard");
+      redirectToRoleDashboard();
       return;
     }
 
     setAccessChecked(true);
-  }, [router]);
+  }, [locale, router]);
 
   useEffect(() => {
     if (!accessChecked) return;
@@ -1207,16 +1212,16 @@ export default function AdminErrorsPage() {
         }}
       >
         <DialogContent
-          className="max-h-[88vh] max-w-5xl overflow-y-auto rounded-[2rem] border-slate-200 p-0 sm:max-w-5xl"
+          className="max-h-[88vh] max-w-5xl overflow-y-auto rounded-[2rem] border-slate-200 bg-white p-0 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 sm:max-w-5xl"
           showCloseButton={true}
         >
-          <div className="border-b border-slate-200 bg-gradient-to-r from-white via-[#F8FBFF] to-[#EFF6FF] px-6 py-5">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-white via-[#F8FBFF] to-[#EFF6FF] px-6 py-5 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-[#0B1F3A]">
+              <DialogTitle className="flex items-center gap-3 text-[#0B1F3A] dark:text-slate-100">
                 <Bot className="h-5 w-5 text-blue-600" />
                 {copy.detailTitle}
               </DialogTitle>
-              <DialogDescription>{copy.detailSubtitle}</DialogDescription>
+              <DialogDescription className="dark:text-slate-400">{copy.detailSubtitle}</DialogDescription>
             </DialogHeader>
           </div>
 
@@ -1232,7 +1237,7 @@ export default function AdminErrorsPage() {
             ) : (
               <div className="space-y-6">
                 <div className="grid gap-4 lg:grid-cols-3">
-                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 lg:col-span-2">
+                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/80 lg:col-span-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={cn(
@@ -1251,27 +1256,27 @@ export default function AdminErrorsPage() {
                         {selectedRecord.status}
                       </span>
                     </div>
-                    <h2 className="mt-4 text-2xl font-bold text-[#0B1F3A]">
+                    <h2 className="mt-4 text-2xl font-bold text-[#0B1F3A] dark:text-slate-100">
                       {selectedRecord.title || selectedRecord.message}
                     </h2>
-                    <p className="mt-2 text-sm text-slate-600">
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
                       {selectedRecord.message}
                     </p>
-                    <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                    <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       {friendly.referenceCode}
                     </p>
                   </div>
 
-                  <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       {copy.usersAffected}
                     </p>
-                    <p className="mt-2 text-3xl font-black text-[#0B1F3A]">
+                    <p className="mt-2 text-3xl font-black text-[#0B1F3A] dark:text-slate-100">
                       {Number(
                         selectedRecord.users_affected || 0,
                       ).toLocaleString()}
                     </p>
-                    <div className="mt-4 space-y-2 text-xs text-slate-500">
+                    <div className="mt-4 space-y-2 text-xs text-slate-500 dark:text-slate-400">
                       <p>
                         {copy.lastSeen}:{" "}
                         {formatDate(selectedRecord.last_seen_at, locale)}
@@ -1288,14 +1293,14 @@ export default function AdminErrorsPage() {
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-3xl border border-blue-200 bg-blue-50 p-5">
+                  <div className="rounded-3xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-900/60 dark:bg-blue-950/40">
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
                       {copy.userMessage}
                     </p>
-                    <h3 className="mt-3 text-lg font-bold text-[#0B1F3A]">
+                    <h3 className="mt-3 text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
                       {friendly.title}
                     </h3>
-                    <p className="mt-2 text-sm text-slate-700">
+                    <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
                       {friendly.body}
                     </p>
                     <p className="mt-3 text-xs font-semibold text-blue-700">
@@ -1303,21 +1308,21 @@ export default function AdminErrorsPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       {copy.developerSummary}
                     </p>
-                    <p className="mt-3 text-sm text-slate-700">
+                    <p className="mt-3 text-sm text-slate-700 dark:text-slate-300">
                       {friendly.developerSummary}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
                         {copy.category}: {friendly.category}
                       </span>
-                      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
                         {selectedRecord.project || "project"}
                       </span>
-                      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
                         {selectedRecord.environment || "env"}
                       </span>
                     </div>
@@ -1325,8 +1330,8 @@ export default function AdminErrorsPage() {
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       Tags
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -1335,47 +1340,47 @@ export default function AdminErrorsPage() {
                           ([key, value]) => (
                             <span
                               key={key}
-                              className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700"
+                              className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-200"
                             >
                               {key}: {String(value)}
                             </span>
                           ),
                         )
                       ) : (
-                        <span className="text-sm text-slate-500">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">
                           No tags available.
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       {copy.reports}
                     </p>
-                    <div className="mt-3 space-y-2 text-sm text-slate-600">
+                    <div className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
                       {(selectedError?.reports || []).length ? (
                         (selectedError?.reports || [])
                           .slice(0, 5)
                           .map((report, index) => (
                             <div
                               key={index}
-                              className="rounded-2xl bg-slate-50 px-4 py-3"
+                              className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-700/50"
                             >
-                              <p className="font-semibold text-[#0B1F3A]">
+                              <p className="font-semibold text-[#0B1F3A] dark:text-slate-100">
                                 {String(
                                   report.title ||
                                     report.type ||
                                     `Report ${index + 1}`,
                                 )}
                               </p>
-                              <p className="mt-1 text-xs text-slate-500">
+                              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                 {String(report.message || report.summary || "")}
                               </p>
                             </div>
                           ))
                       ) : (
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                           No related reports.
                         </p>
                       )}
@@ -1383,8 +1388,8 @@ export default function AdminErrorsPage() {
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                     {copy.addNote}
                   </p>
                   <div className="mt-3 space-y-3">
@@ -1392,27 +1397,27 @@ export default function AdminErrorsPage() {
                       (selectedRecord.notes || []).map((note, index) => (
                         <div
                           key={String(note.id || note.created_at || index)}
-                          className="rounded-2xl bg-slate-50 px-4 py-3"
+                          className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-700/50"
                         >
-                          <p className="text-sm text-slate-700">
+                          <p className="text-sm text-slate-700 dark:text-slate-200">
                             {note.note || "—"}
                           </p>
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                             {note.user?.name || "Internal"} •{" "}
                             {formatDate(note.created_at, locale)}
                           </p>
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         No internal notes yet.
                       </p>
                     )}
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                     {copy.payload}
                   </p>
                   <pre className="mt-3 overflow-x-auto rounded-2xl bg-slate-950 p-4 text-xs text-slate-200">
@@ -1427,15 +1432,15 @@ export default function AdminErrorsPage() {
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       {copy.addNote}
                     </p>
                     <textarea
                       value={noteInput}
                       onChange={(event) => setNoteInput(event.target.value)}
                       placeholder={copy.notePlaceholder}
-                      className="mt-3 min-h-28 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#003566]"
+                      className="mt-3 min-h-28 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-[#003566] dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
                     />
                     <Button
                       type="button"
@@ -1450,15 +1455,15 @@ export default function AdminErrorsPage() {
                     </Button>
                   </div>
 
-                  <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800/60">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       {copy.assign}
                     </p>
                     <input
                       value={assignUserId}
                       onChange={(event) => setAssignUserId(event.target.value)}
                       placeholder={copy.assignPlaceholder}
-                      className="mt-3 h-11 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none focus:border-[#003566]"
+                      className="mt-3 h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#003566] dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
                     />
                     <Button
                       type="button"
@@ -1481,7 +1486,7 @@ export default function AdminErrorsPage() {
             )}
           </div>
 
-          <DialogFooter className="border-t border-slate-200 px-6 py-5 sm:justify-between">
+          <DialogFooter className="border-t border-slate-200 px-6 py-5 dark:border-slate-700 sm:justify-between">
             <div className="flex flex-wrap gap-3">
               <Button
                 type="button"

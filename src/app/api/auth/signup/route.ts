@@ -5,11 +5,19 @@ import { getBackendApiClient } from "@/lib/server/backend-api";
 
 type BackendSignupResponse = {
   token?: string;
-  user?: {
-    id: string;
+  data?: {
+    id: string | number;
     name: string;
     email: string;
-    role: "client";
+    role?: string;
+    type?: string;
+  };
+  user?: {
+    id: string | number;
+    name: string;
+    email: string;
+    role?: string;
+    type?: string;
   };
   verification_required?: boolean;
   message?: string;
@@ -17,7 +25,14 @@ type BackendSignupResponse = {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as { name?: string; email?: string; password?: string };
+    const body = (await request.json()) as {
+      name?: string;
+      email?: string;
+      phone?: string;
+      location_id?: number;
+      website?: string;
+      password?: string;
+    };
 
     const name = body.name?.trim();
     const email = body.email?.trim();
@@ -35,13 +50,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const backendResponse = await backendApi.post<BackendSignupResponse>("/auth/signup", {
+    const backendResponse = await backendApi.post<BackendSignupResponse>("/auth/register", {
       name,
       email,
+      phone: body.phone ?? undefined,
+      location_id: body.location_id ?? undefined,
+      website: body.website ?? "",
       password,
       password_confirmation: password,
       accept_terms: true,
-      role: "client",
     });
 
     const payload = backendResponse.data;
@@ -57,11 +74,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!payload.token || !payload.user) {
+    const backendUser = payload.data ?? payload.user;
+
+    if (!payload.token || !backendUser) {
       return NextResponse.json({ message: "Invalid signup response" }, { status: 500 });
     }
 
-    if (payload.user.role !== "client") {
+    const rawType = (backendUser.type ?? backendUser.role ?? "").toLowerCase();
+    if (rawType && rawType !== "client") {
       return NextResponse.json(
         { message: "Signup is restricted to client accounts only" },
         { status: 403 },
@@ -72,9 +92,9 @@ export async function POST(request: NextRequest) {
       {
         token: payload.token,
         user: {
-          id: payload.user.id,
-          name: payload.user.name,
-          email: payload.user.email,
+          id: String(backendUser.id),
+          name: backendUser.name,
+          email: backendUser.email,
           role: "client" as const,
         },
       },
@@ -84,9 +104,9 @@ export async function POST(request: NextRequest) {
     setAuthCookies(response, {
       token: payload.token,
       user: {
-        id: payload.user.id,
-        name: payload.user.name,
-        email: payload.user.email,
+        id: String(backendUser.id),
+        name: backendUser.name,
+        email: backendUser.email,
         role: "client",
       },
     });

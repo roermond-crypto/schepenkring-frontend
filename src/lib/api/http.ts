@@ -11,10 +11,20 @@ export class ApiError extends Error {
   }
 }
 
-const backendBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "";
+function resolveBackendBaseUrl() {
+  const configured =
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ??
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    process.env.BACKEND_API_URL;
+  if (configured) return configured;
+  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    return "http://localhost:8000/api";
+  }
+  return "https://app.schepen-kring.nl/api";
+}
 
 const httpClient = axios.create({
-  baseURL: backendBaseUrl || undefined,
+  baseURL: resolveBackendBaseUrl(),
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -33,13 +43,6 @@ httpClient.interceptors.request.use(
 );
 
 export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
-  if (!httpClient.defaults.baseURL) {
-    throw new ApiError(
-      "NEXT_PUBLIC_BACKEND_API_URL is not configured. Set it in .env and restart dev server.",
-      500,
-    );
-  }
-
   try {
     const response = await httpClient.request<T>(config);
     return response.data;

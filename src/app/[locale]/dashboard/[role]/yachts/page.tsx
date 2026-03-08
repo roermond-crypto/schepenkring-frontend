@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, SyntheticEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useLocale } from "next-intl";
 import { getDictionary } from "@/lib/i18n";
@@ -33,6 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast, Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { normalizeRole } from "@/lib/auth/roles";
 
 const STORAGE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || "https://app.schepen-kring.nl/storage/";
 const PLACEHOLDER_IMAGE =
@@ -79,7 +80,9 @@ const statusConfig: Record<string, { color: string; bg: string; border: string }
 
 export default function FleetManagementPage() {
   const router = useRouter();
+  const params = useParams<{ role?: string }>();
   const locale = useLocale();
+  const role = normalizeRole(params?.role) ?? "admin";
   const dict = getDictionary(locale) as any;
   const t = dict.DashboardYachts || {} as any;
   const [fleet, setFleet] = useState<any[]>([]);
@@ -380,7 +383,7 @@ export default function FleetManagementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 lg:p-12 -top-20">
+    <div className="yachts-page-theme -top-20 min-h-screen bg-[#F8FAFC] p-6 lg:p-12">
       <Toaster position="top-right" />
       {/* HEADER */}
       <div className="mb-12">
@@ -402,7 +405,7 @@ export default function FleetManagementPage() {
               {t?.actions?.refresh || "Refresh"}
             </Button>
             <Button
-              onClick={() => router.push(`/${locale}/dashboard/admin/yachts/new`)}
+              onClick={() => router.push(`/${locale}/dashboard/${role}/yachts/new`)}
               className="bg-[#003566] text-white hover:bg-blue-800 rounded-none h-12 px-8 font-black uppercase text-[10px] tracking-widest transition-all shadow-lg flex items-center gap-2"
             >
               <Plus size={14} />
@@ -581,7 +584,7 @@ export default function FleetManagementPage() {
               : t?.empty?.noVessels || "Register your first vessel to get started"}
           </p>
           <Button
-            onClick={() => router.push(`/${locale}/dashboard/admin/yachts/new`)}
+            onClick={() => router.push(`/${locale}/dashboard/${role}/yachts/new`)}
             className="bg-[#003566] text-white hover:bg-blue-800 rounded-none px-8 font-black uppercase text-[10px] tracking-widest"
           >
             <Plus className="mr-2 w-4 h-4" />
@@ -631,7 +634,7 @@ export default function FleetManagementPage() {
                 <div className="absolute inset-0 bg-[#003566]/90 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-6">
                   <button
                     onClick={() =>
-                      router.push(`/${locale}/dashboard/admin/yachts/${yacht.id}`)
+                      router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
                     }
                     className="w-full max-w-[200px] bg-white text-[#003566] px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2"
                   >
@@ -721,7 +724,7 @@ export default function FleetManagementPage() {
                 <div className="pt-4 border-t border-slate-100 mt-auto">
                   <button
                     onClick={() =>
-                      router.push(`/${locale}/dashboard/admin/yachts/${yacht.id}`)
+                      router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
                     }
                     className="w-full text-[9px] font-black uppercase text-blue-600 tracking-widest hover:text-blue-800 transition-colors flex items-center justify-center gap-1"
                   >
@@ -823,7 +826,7 @@ export default function FleetManagementPage() {
               <div className="col-span-2 flex items-center justify-end gap-2">
                 <button
                   onClick={() =>
-                    router.push(`/${locale}/dashboard/admin/yachts/${yacht.id}`)
+                    router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
                   }
                   className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
                   title="Edit"
@@ -832,7 +835,7 @@ export default function FleetManagementPage() {
                 </button>
                 <button
                   onClick={() =>
-                    router.push(`/${locale}/dashboard/admin/yachts/${yacht.id}`)
+                    router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
                   }
                   className="p-2 text-emerald-600 hover:text-emerald-800 transition-colors"
                   title="View"
@@ -882,6 +885,44 @@ export default function FleetManagementPage() {
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        .dark .yachts-page-theme {
+          background: rgb(2 6 23) !important;
+          color: rgb(226 232 240);
+        }
+
+        .dark .yachts-page-theme .bg-white,
+        .dark .yachts-page-theme .bg-slate-50,
+        .dark .yachts-page-theme .bg-slate-100 {
+          background: rgb(15 23 42) !important;
+        }
+
+        .dark .yachts-page-theme .border-slate-200,
+        .dark .yachts-page-theme .border-slate-100 {
+          border-color: rgb(51 65 85) !important;
+        }
+
+        .dark .yachts-page-theme .text-slate-900,
+        .dark .yachts-page-theme .text-slate-800,
+        .dark .yachts-page-theme .text-\[\#003566\],
+        .dark .yachts-page-theme .text-blue-900 {
+          color: rgb(241 245 249) !important;
+        }
+
+        .dark .yachts-page-theme .text-slate-600,
+        .dark .yachts-page-theme .text-slate-500,
+        .dark .yachts-page-theme .text-slate-400 {
+          color: rgb(148 163 184) !important;
+        }
+
+        .dark .yachts-page-theme input,
+        .dark .yachts-page-theme select {
+          background: rgb(2 6 23) !important;
+          color: rgb(226 232 240) !important;
+          border-color: rgb(51 65 85) !important;
+        }
+      `}</style>
     </div>
   );
 }

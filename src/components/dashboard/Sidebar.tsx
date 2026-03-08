@@ -8,6 +8,7 @@ import {
   BarChart3,
   Calendar,
   ClipboardList,
+  Bot,
   Gauge,
   ChevronLeft,
   ChevronRight,
@@ -79,39 +80,45 @@ export function Sidebar({
   const menuItems = useMemo<MenuItem[]>(() => {
     const items: MenuItem[] = [
       { title: t.overview, href: root, icon: BarChart3 },
-      { title: t.boats, href: `${root}/yachts`, icon: Ship },
-      { title: t.users, href: `${root}/users`, icon: Users },
-      { title: t.schedule, href: `${root}/onboarding`, icon: Calendar },
-      { title: t.harbor, href: `${root}/emails`, icon: Anchor },
-      { title: t.interaction, href: `${root}/chat`, icon: MessageSquare },
-      { title: t.settings, href: `${root}/onboarding`, icon: Settings },
       { title: t.tasks, href: `${root}/tasks`, icon: ClipboardList },
     ];
 
     if (role === "admin") {
-      items.splice(
-        4,
-        0,
-        {
-          title: t.harborPerformance,
-          href: `${root}/harbors/performance`,
-          icon: Gauge,
-        },
-        {
-          title: t.socialAutomation,
-          href: `${root}/social`,
-          icon: Share2,
-        },
-        { title: t.audit, href: `${root}/audit`, icon: ShieldAlert },
-        { title: t.errors, href: `${root}/errors`, icon: TriangleAlert },
-      );
+      items.push({ title: t.users, href: `${root}/users`, icon: Users });
+      items.push({ title: t.copilot, href: `${root}/copilot`, icon: Bot });
+      items.push({
+        title: t.harborPerformance,
+        href: `${root}/harbors/performance`,
+        icon: Gauge,
+      });
+      items.push({
+        title: t.interaction,
+        href: `${root}/chat`,
+        icon: MessageSquare,
+      });
+      items.push({
+        title: t.socialAutomation,
+        href: `${root}/social`,
+        icon: Share2,
+      });
+      items.push({ title: t.audit, href: `${root}/audit`, icon: ShieldAlert });
+      items.push({
+        title: t.errors,
+        href: `${root}/errors`,
+        icon: TriangleAlert,
+      });
     }
+
+    items.push({ title: t.boats, href: `${root}/yachts`, icon: Ship });
+
+    items.push({ title: t.settings, href: `${root}/account`, icon: Settings });
 
     return items;
   }, [
     role,
     root,
     t.audit,
+    t.copilot,
     t.boats,
     t.errors,
     t.harbor,

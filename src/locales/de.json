@@ -92,6 +92,7 @@
       "users": "Benutzer",
       "schedule": "Zeitplan",
       "tasks": "Aufgaben",
+      "copilot": "Copilot",
       "harbor": "Hafen",
       "interaction": "Interaktion",
       "settings": "Einstellungen",
@@ -122,6 +123,84 @@
       "minutesAgo": " Min.",
       "hoursAgo": " Std.",
       "daysAgo": " T."
+    }
+  },
+  "DashboardAdminCopilot": {
+    "hero": {
+      "kicker": "Admin Copilot",
+      "title": "Aktions-Workflow-Konsole",
+      "description": "Verwalten Sie Whitelist-Aktionen, erstellen Sie Entwürfe, validieren Sie Payloads und führen Sie sicher mit Bestätigung aus.",
+      "refreshCatalog": "Katalog aktualisieren",
+      "refreshing": "Wird aktualisiert...",
+      "totalActions": "Gesamtaktionen",
+      "highRisk": "Hohes Risiko",
+      "generatedAt": "Erstellt am"
+    },
+    "catalog": {
+      "title": "Aktionskatalog",
+      "columns": {
+        "action": "Aktion",
+        "module": "Modul",
+        "security": "Sicherheit",
+        "confirm": "Bestätigen"
+      },
+      "yes": "Ja",
+      "no": "Nein"
+    },
+    "sections": {
+      "draftIntent": "Intent entwerfen",
+      "validateExecute": "Validieren & Ausführen",
+      "createAction": "Aktion erstellen",
+      "createPhrase": "Phrase erstellen"
+    },
+    "fields": {
+      "actionId": "action_id",
+      "title": "titel",
+      "module": "modul",
+      "routeTemplate": "route_template",
+      "risk": "risiko",
+      "copilotActionId": "copilot_action_id",
+      "phrase": "phrase",
+      "language": "sprache",
+      "priority": "priorität",
+      "payload": "payload",
+      "confirm": "bestätigen",
+      "enabled": "aktiv"
+    },
+    "actions": {
+      "draft": "Entwurf",
+      "validate": "Validieren",
+      "validating": "Wird validiert...",
+      "execute": "Ausführen",
+      "creating": "Wird erstellt...",
+      "createAction": "Aktion erstellen",
+      "createPhrase": "Phrase erstellen"
+    },
+    "toasts": {
+      "loadCatalogFailed": "Aktionskatalog konnte nicht geladen werden",
+      "draftCreated": "Entwurf erstellt",
+      "draftFailed": "Entwurf konnte nicht erstellt werden",
+      "invalidPayloadJson": "Payload muss gültiges JSON sein",
+      "actionIdRequired": "Action ID ist erforderlich",
+      "validationCreated": "Validierungstoken erstellt",
+      "validationFailed": "Validierung fehlgeschlagen",
+      "validateFirst": "Bitte zuerst validieren, um ein Validierungstoken zu erhalten",
+      "executed": "Aktion ausgeführt",
+      "executeFailed": "Ausführung fehlgeschlagen",
+      "actionAndTitleRequired": "action_id und titel sind erforderlich",
+      "actionCreated": "Aktion erstellt",
+      "createActionFailed": "Aktion konnte nicht erstellt werden",
+      "phraseFieldsRequired": "copilot_action_id und phrase sind erforderlich",
+      "phraseCreated": "Phrase hinzugefügt",
+      "createPhraseFailed": "Phrase konnte nicht erstellt werden"
+    },
+    "defaults": {
+      "prompt": "Vertrag für Deal 123 erstellen",
+      "payload": "{\"deal_id\":123}",
+      "newActionTitle": "Boot erstellen",
+      "newActionModule": "boats",
+      "newActionRoute": "/dashboard/admin/boats/create",
+      "phraseText": "boot erstellen"
     }
   },
   "DashboardAdminOverview": {
@@ -336,6 +415,134 @@
         "title": "Umsatzbasis",
         "description": "Das Provisionsranking verwendet Ihre Umsatzzuordnung aus der Datenbank, nicht aus GA4, damit Partnervergleiche korrekt bleiben."
       }
+    }
+  },
+  "DashboardAdminUsers": {
+    "header": {
+      "title": "Benutzerverwaltung",
+      "subtitle": "Identitats- und Zugriffssteuerung",
+      "searchPlaceholder": "Nach Name oder E-Mail suchen...",
+      "provisionNew": "Neu anlegen"
+    },
+    "tabs": {
+      "employee": "Mitarbeiter",
+      "admin": "Admin",
+      "partner": "Partner",
+      "customer": "Kunde"
+    },
+    "fields": {
+      "fullName": "Vollstandiger Name",
+      "emailAddress": "E-Mail-Adresse",
+      "systemPassword": "Systempasswort",
+      "assignment": "Zuweisung",
+      "clearance": "Berechtigung",
+      "accountStatus": "Kontostatus"
+    },
+    "options": {
+      "limited": "Begrenzt",
+      "full": "Voll",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "pending": "Ausstehend"
+    },
+    "permissions": {
+      "pageAccessControl": "Seitenzugriff",
+      "default": "Standard",
+      "allow": "Erlauben",
+      "deny": "Verweigern",
+      "resetAll": "Alles zurucksetzen"
+    },
+    "actions": {
+      "assumeIdentity": "Identitat ubernehmen",
+      "terminate": "Beenden",
+      "finalizeEnrollment": "Benutzer anlegen",
+      "refresh": "Aktualisieren"
+    },
+    "labels": {
+      "status": "Status",
+      "loadingUsers": "Benutzer werden geladen..."
+    },
+    "prompts": {
+      "confirmAdminPassword": "Admin-Passwort bestatigen:",
+      "enterOtp": "OTP-Code eingeben (falls erforderlich):"
+    },
+    "modal": {
+      "title": "Konto anlegen",
+      "subtitle": "Neues Benutzerkonto erstellen"
+    },
+    "confirm": {
+      "terminate": "Dieses Konto beenden?"
+    },
+    "empty": {
+      "title": "Keine Benutzer gefunden",
+      "description": "Es wurden noch keine {role}-Konten angelegt."
+    },
+    "toasts": {
+      "syncFailed": "Synchronisierung fehlgeschlagen",
+      "enrolling": "Konto wird erstellt...",
+      "enrolled": "Konto erstellt",
+      "enrollmentFailed": "Kontoerstellung fehlgeschlagen",
+      "terminating": "Konto wird beendet...",
+      "terminated": "Konto beendet",
+      "terminationFailed": "Beenden fehlgeschlagen",
+      "assimilating": "Impersonation wird gestartet...",
+      "identityAssumed": "Jetzt als {name} angemeldet",
+      "impersonationFailed": "Impersonation fehlgeschlagen",
+      "permissionUpdated": "Berechtigung aktualisiert",
+      "permissionUpdateFailed": "Aktualisierung fehlgeschlagen",
+      "permissionsReset": "Berechtigungen zuruckgesetzt",
+      "permissionsResetFailed": "Zurucksetzen fehlgeschlagen"
+    }
+  },
+  "DashboardAccount": {
+    "header": {
+      "title": "Kontoverwaltung",
+      "subtitle": "Identitat, Profil und Sicherheitseinstellungen"
+    },
+    "tabs": {
+      "profile": "Profil",
+      "personal": "Personlich",
+      "address": "Adresse",
+      "security": "Sicherheit",
+      "password": "Passwort"
+    },
+    "fields": {
+      "fullName": "Vollstandiger Name",
+      "emailAddress": "E-Mail-Adresse",
+      "phoneNumber": "Telefonnummer",
+      "dateOfBirth": "Geburtsdatum",
+      "locale": "Sprache",
+      "timezone": "Zeitzone",
+      "addressLine1": "Adresszeile 1",
+      "addressLine2": "Adresszeile 2",
+      "city": "Stadt",
+      "state": "Bundesland",
+      "postalCode": "Postleitzahl",
+      "country": "Land",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "twoFactor": "Zwei-Faktor-Authentifizierung",
+      "otpSecret": "OTP-Geheimnis",
+      "otpCode": "OTP-Code",
+      "currentPassword": "Aktuelles Passwort",
+      "newPassword": "Neues Passwort",
+      "confirmPassword": "Passwort bestatigen"
+    },
+    "labels": {
+      "yes": "Ja",
+      "no": "Nein",
+      "confirmed": "Bestatigt:",
+      "user": "Benutzer"
+    },
+    "actions": {
+      "syncProfile": "Profil synchronisieren",
+      "saving": "Speichern..."
+    },
+    "toasts": {
+      "loadFailed": "Kontoprofil konnte nicht geladen werden.",
+      "updateFailed": "Konto konnte nicht aktualisiert werden.",
+      "saved": "Konto erfolgreich aktualisiert.",
+      "passwordMismatch": "Passwortbestatigung stimmt nicht uberein."
     }
   },
   "DashboardAdminSocial": {
