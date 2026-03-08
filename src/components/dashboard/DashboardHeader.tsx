@@ -17,6 +17,7 @@ type DashboardHeaderProps = {
   role: UserRole;
   userName: string;
   userEmail: string;
+  userAvatar?: string;
   onOpenMobileNav: () => void;
   onLogout: () => void;
 };
@@ -26,6 +27,7 @@ export function DashboardHeader({
   role,
   userName,
   userEmail,
+  userAvatar,
   onOpenMobileNav,
   onLogout,
 }: DashboardHeaderProps) {
@@ -112,8 +114,19 @@ export function DashboardHeader({
         <NotificationBell locale={locale} role={role} />
 
         <div className="hidden items-center gap-3 rounded-xl border border-[#d6e1ee] bg-white px-3 py-2 sm:flex dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E7F0FF] text-xs font-semibold text-[#0B1F3A] dark:bg-slate-700 dark:text-slate-100">
-            {initials || "U"}
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#E7F0FF] text-xs font-semibold text-[#0B1F3A] dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
+            {userAvatar ? (
+              <Image
+                src={userAvatar}
+                alt={userName || "Avatar"}
+                width={32}
+                height={32}
+                className="h-full w-full object-cover"
+                unoptimized
+              />
+            ) : (
+              initials || "U"
+            )}
           </div>
           <div className="max-w-40 text-right">
             <p className="truncate text-xs font-semibold text-[#0B1F3A] dark:text-slate-100">

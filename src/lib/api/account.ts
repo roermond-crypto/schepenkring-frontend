@@ -6,12 +6,14 @@ export type MeUserStatus = "ACTIVE" | "DISABLED" | "BLOCKED";
 export type MeUser = {
   id: number;
   type: MeUserType;
+  role: string;
   status: MeUserStatus;
   name: string;
   first_name: string | null;
   last_name: string | null;
   date_of_birth: string | null;
   email: string;
+  avatar: string | null;
   phone: string | null;
   client_location_id: number | null;
   timezone: string | null;
@@ -49,6 +51,13 @@ export async function updateMeProfile(payload: {
   locale?: string | null;
 }) {
   const { data } = await api.patch<{ data: MeUser }>("/me/profile", payload);
+  return data;
+}
+
+export async function updateAvatar(formData: FormData) {
+  const { data } = await api.post<{ data: MeUser }>("/me/avatar", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return data;
 }
 

@@ -22,6 +22,7 @@ type DashboardShellProps = {
   role: UserRole;
   userName: string;
   userEmail: string;
+  userAvatar?: string;
   children: React.ReactNode;
 };
 
@@ -30,6 +31,7 @@ export function DashboardShell({
   role,
   userName,
   userEmail,
+  userAvatar,
   children,
 }: DashboardShellProps) {
   const router = useRouter();
@@ -91,7 +93,7 @@ export function DashboardShell({
   }
 
   return (
-    <LockscreenOverlay locale={locale} userName={userName}>
+    <LockscreenOverlay locale={locale} userName={userName} userAvatar={userAvatar}>
       <NetworkStatusBar />
       <div className="min-h-screen bg-[#f5f8fc] dark:bg-slate-950">
         <DashboardHeader
@@ -99,6 +101,7 @@ export function DashboardShell({
           role={role}
           userName={userName}
           userEmail={userEmail}
+          userAvatar={userAvatar}
           onOpenMobileNav={() => setMobileOpen(true)}
           onLogout={handleLogout}
         />
