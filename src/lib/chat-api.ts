@@ -47,7 +47,11 @@ interface BackendMessage {
   conversation_id: string;
   sender_type: string;
   employee_id: number | null;
-  body: string;
+  body: string | null;
+  text?: string | null;
+  message_type?: "text" | "call" | string;
+  channel?: string;
+  metadata?: Record<string, unknown>;
   client_message_id: string | null;
   delivery_state: string;
   created_at: string;
@@ -107,7 +111,15 @@ function mapBackendMessage(msg: BackendMessage): SupportMessage {
     sender_type: senderType as "guest" | "user" | "admin" | "system",
     sender_name: senderName,
     sender_avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(senderName)}`,
-    text: msg.body,
+    text:
+      msg.body ??
+      msg.text ??
+      (msg.message_type === "call"
+        ? `Started support call${typeof msg.metadata?.to_number === "string" ? ` to ${msg.metadata.to_number}` : ""}`
+        : ""),
+    message_type:
+      msg.message_type === "call" ? "call" : "text",
+    metadata: msg.metadata ?? undefined,
     created_at: new Date(msg.created_at),
     attachments: [],
   };
@@ -231,10 +243,19 @@ export async function startSupportCall(
   conversationId: string,
   phoneNumber?: string
 ): Promise<SupportMessage> {
-  return sendSupportMessage(
-    conversationId,
-    `Started support call to ${phoneNumber || "primary phone"}`
-  );
+  const response = await apiRequest<BackendMessage>({
+    method: "POST",
+    url: `/chat/conversations/${conversationId}/messages`,
+    data: {
+      message_type: "call",
+      channel: "phone",
+      metadata: {
+        ...(phoneNumber ? { to_number: phoneNumber } : {}),
+      },
+    },
+  });
+
+  return mapBackendMessage(response);
 }
 
 export async function createConversation(): Promise<Conversation> {

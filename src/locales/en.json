@@ -424,6 +424,58 @@
       }
     }
   },
+  "DashboardAdminLocations": {
+    "header": {
+      "kicker": "Location Management",
+      "title": "Harbors & Locations",
+      "subtitle": "Create and manage locations used for signup, scoping, and operations."
+    },
+    "filters": {
+      "search": "Search by location name or code",
+      "allStatus": "All statuses"
+    },
+    "form": {
+      "createTitle": "Create new location",
+      "editTitle": "Edit location",
+      "name": "Location name",
+      "code": "Code (e.g. AMS)"
+    },
+    "table": {
+      "name": "Name",
+      "code": "Code",
+      "status": "Status",
+      "updated": "Updated",
+      "actions": "Actions",
+      "empty": "No locations found."
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "create": "Create location",
+      "update": "Update location",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "cancelEdit": "Cancel edit"
+    },
+    "confirm": {
+      "deleteTitle": "Delete location",
+      "deleteBody": "Are you sure you want to delete \"{name}\"?"
+    },
+    "toasts": {
+      "loadFailed": "Failed to load locations.",
+      "created": "Location created.",
+      "createFailed": "Could not create location.",
+      "updated": "Location updated.",
+      "updateFailed": "Could not update location.",
+      "deleted": "Location deleted.",
+      "deleteFailed": "Could not delete location.",
+      "deleteConflict": "Location cannot be deleted because linked records still exist."
+    }
+  },
   "DashboardAdminUsers": {
     "header": {
       "title": "Users Administration",
