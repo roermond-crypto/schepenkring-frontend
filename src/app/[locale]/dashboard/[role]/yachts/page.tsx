@@ -420,8 +420,7 @@ export default function FleetManagementPage() {
   };
 
   const getPublicUrl = (yacht: any): string => {
-    const slug = yacht.slug || slugify(yacht.boat_name || "yacht");
-    return `/${locale}/yachts/${yacht.id}/${slug}`;
+    return yacht.external_url || "";
   };
 
   return (
@@ -684,13 +683,15 @@ export default function FleetManagementPage() {
                     {t?.actions?.editManifest || "Edit Manifest"}
                   </button>
 
-                  <button
-                    onClick={() => window.open(getPublicUrl(yacht), "_blank")}
-                    className="w-full max-w-[200px] bg-blue-600 text-white px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Eye size={12} />
-                    {t?.actions?.viewDetails || "View Details"}
-                  </button>
+                  {getPublicUrl(yacht) && (
+                    <button
+                      onClick={() => window.open(getPublicUrl(yacht), "_blank")}
+                      className="w-full max-w-[200px] bg-blue-600 text-white px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Eye size={12} />
+                      {t?.actions?.viewDetails || "View Details"}
+                    </button>
+                  )}
 
                   <button
                     onClick={() => handleDelete(yacht)}
@@ -875,15 +876,17 @@ export default function FleetManagementPage() {
                 >
                   <Edit3 size={16} />
                 </button>
-                <button
-                  onClick={() =>
-                    router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
-                  }
-                  className="p-2 text-emerald-600 hover:text-emerald-800 transition-colors"
-                  title="View"
-                >
-                  <Eye size={16} />
-                </button>
+                {getPublicUrl(yacht) && (
+                  <button
+                    onClick={() =>
+                      window.open(getPublicUrl(yacht), "_blank")
+                    }
+                    className="p-2 text-emerald-600 hover:text-emerald-800 transition-colors"
+                    title="View"
+                  >
+                    <Eye size={16} />
+                  </button>
+                )}
                 <button
                   onClick={() => handleDelete(yacht)}
                   disabled={isSubmitting}

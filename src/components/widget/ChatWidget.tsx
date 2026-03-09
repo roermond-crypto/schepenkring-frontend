@@ -36,6 +36,8 @@ interface ChatWidgetProps {
   accentColor?: string;
   themePreset?: ThemePreset;
   colorSettings?: Partial<WidgetColors>;
+  sourceUrl?: string;
+  welcomeText?: string;
   isEmbedded?: boolean;
 }
 
@@ -302,6 +304,8 @@ export function ChatWidget({
   accentColor,
   themePreset = "ocean",
   colorSettings,
+  welcomeText,
+  sourceUrl,
   isEmbedded,
 }: ChatWidgetProps) {
   const { isOnline } = useNetworkStatus();
@@ -313,7 +317,7 @@ export function ChatWidget({
     {
       id: "init",
       isUser: false,
-      text: "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
+      text: welcomeText || "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
       timestamp: new Date(),
     },
   ]);
@@ -359,7 +363,7 @@ export function ChatWidget({
       {
         id: "init",
         isUser: false,
-        text: "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
+        text: welcomeText || "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
         timestamp: new Date(),
       },
     ]);
@@ -387,8 +391,7 @@ export function ChatWidget({
           message: { id: string };
         }>("POST", "/public/leads", {
           location_id: locationId ?? 1,
-          source_url:
-            typeof window !== "undefined" ? window.location.href : undefined,
+          source_url: sourceUrl || (typeof window !== "undefined" ? window.location.href : undefined),
           message: text,
           client_message_id: clientMessageId,
         });

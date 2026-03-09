@@ -58,6 +58,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { useYachtDraft } from "@/hooks/useYachtDraft";
 import { convertBatchToWebP } from "@/lib/convertToWebP";
 import { CatalogAutocomplete } from "@/components/ui/CatalogAutocomplete";
+import { BoatCreationAssistant } from "@/components/yachts/BoatCreationAssistant";
 import { useUser } from "@/hooks/useUser";
 import { useImagePipeline, PipelineImage } from "@/hooks/useImagePipeline";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -68,6 +69,12 @@ import {
   getLocalBoat,
 } from "@/lib/offline-db";
 import { storeImage } from "@/hooks/useImageStore";
+import {
+  createOrReplaceYachtDraft,
+  patchYachtDraft,
+  getYachtDraft,
+  commitYachtDraft,
+} from "@/lib/api/yacht-drafts";
 
 // ALi
 // Wizard step config
@@ -81,6 +88,8 @@ const WIZARD_STEP_IDS = [
 
 const DRAFT_KEY_PREFIX = "yacht_draft_";
 const MAX_IMAGES_UPLOAD = 30;
+const UPLOAD_BATCH_SIZE = 6;
+const UPLOAD_MAX_PARALLEL_BATCHES = 2;
 
 // Configuration
 const STORAGE_URL = "https://app.schepen-kring.nl/storage/";
@@ -101,6 +110,29 @@ type AvailabilityRule = {
   start_time: string;
   end_time: string;
 };
+
+declare global {
+  interface Window {
+    __flushYachtDraftNow?: () => Promise<void> | void;
+  }
+}
+
+function toObjectRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return value as Record<string, unknown>;
+}
+
+function hasObjectValues(value: unknown): boolean {
+  return Object.keys(toObjectRecord(value)).length > 0;
+}
+
+function clampWizardStep(value: unknown, fallback = 1): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(5, Math.max(1, Math.trunc(parsed)));
+}
 
 export default function YachtEditorPage() {
   const params = useParams<{ id: string; role?: string }>();
@@ -155,10 +187,13 @@ export default function YachtEditorPage() {
     draft,
     isLoaded: isDraftLoaded,
     saveStepData,
+    debouncedSave,
+    setActiveStep: setDraftStep,
     getStepData,
     markStepComplete,
     markStepIncomplete,
     clearDraft,
+    flushDraft,
     isStepComplete,
   } = useYachtDraft(yachtId as string);
 
@@ -212,6 +247,10 @@ export default function YachtEditorPage() {
     stages_run: string[];
     warnings: string[];
   } | null>(null);
+  const canProceedFromStep1 =
+    !isNewMode ||
+    (!isOnline && offlineImages.length > 0) ||
+    (imagesApproved && geminiExtracted);
 
   // AI Text State (Tab 3)
   const [aiTexts, setAiTexts] = useState({ nl: "", en: "", de: "" });
@@ -335,26 +374,477 @@ export default function YachtEditorPage() {
 
 
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
+  const restoredDraftRef = useRef(false);
+  const serverDraftVersionRef = useRef<number | null>(null);
+  const syncingServerDraftRef = useRef(false);
+  const serverSyncTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const serverDraftInitializedRef = useRef(false);
+  const serverDraftBootstrapInFlightRef = useRef(false);
+
+  // Restore draft payload for new-yacht flow once.
+  useEffect(() => {
+    if (!isDraftLoaded || !isNewMode || restoredDraftRef.current) return;
+
+    const step1 = getStepData(1);
+    const step2 = getStepData(2);
+    const step3 = getStepData(3);
+    const step4 = getStepData(4);
+    const step1Obj = toObjectRecord(step1);
+    const step2Obj = toObjectRecord(step2);
+    const step3Obj = toObjectRecord(step3);
+    const step4Obj = toObjectRecord(step4);
+    const hasRestorableData =
+      hasObjectValues(step1Obj) ||
+      hasObjectValues(step2Obj) ||
+      hasObjectValues(step3Obj) ||
+      hasObjectValues(step4Obj);
+
+    if (!hasRestorableData) return;
+
+    const restoredCreatedYachtId = Number(step1Obj.createdYachtId);
+    if (Number.isInteger(restoredCreatedYachtId) && restoredCreatedYachtId > 0) {
+      setCreatedYachtId(restoredCreatedYachtId);
+    }
+    if (typeof step1Obj.boatHint === "string") setBoatHint(step1Obj.boatHint);
+    if (typeof step1Obj.geminiExtracted === "boolean") setGeminiExtracted(step1Obj.geminiExtracted);
+    if (step1Obj.extractionResult !== undefined) setExtractionResult(step1Obj.extractionResult);
+    if (step1Obj.confidenceMeta && typeof step1Obj.confidenceMeta === "object") {
+      setConfidenceMeta(step1Obj.confidenceMeta as {
+        overall_confidence: number;
+        field_confidence: Record<string, number>;
+        needs_user_confirmation: string[];
+        enrichment_used: boolean;
+        stages_run: string[];
+        warnings: string[];
+      });
+    }
+
+    if (step2Obj.selectedYacht && typeof step2Obj.selectedYacht === "object") {
+      setSelectedYacht(step2Obj.selectedYacht);
+      setFormKey((k) => k + 1);
+    }
+
+    if (step3Obj.aiTexts && typeof step3Obj.aiTexts === "object") {
+      const aiTextObj = step3Obj.aiTexts as Record<string, unknown>;
+      setAiTexts({
+        nl: typeof aiTextObj.nl === "string" ? aiTextObj.nl : "",
+        en: typeof aiTextObj.en === "string" ? aiTextObj.en : "",
+        de: typeof aiTextObj.de === "string" ? aiTextObj.de : "",
+      });
+    }
+
+    if (
+      step3Obj.selectedLang === "nl" ||
+      step3Obj.selectedLang === "en" ||
+      step3Obj.selectedLang === "de"
+    ) {
+      setSelectedLang(step3Obj.selectedLang);
+    }
+    if (typeof step3Obj.aiTone === "string") setAiTone(step3Obj.aiTone);
+    if (typeof step3Obj.aiMinWords === "number" || step3Obj.aiMinWords === "") {
+      setAiMinWords(step3Obj.aiMinWords);
+    }
+    if (typeof step3Obj.aiMaxWords === "number" || step3Obj.aiMaxWords === "") {
+      setAiMaxWords(step3Obj.aiMaxWords);
+    }
+
+    if (Array.isArray(step4Obj.availabilityRules)) {
+      setAvailabilityRules(step4Obj.availabilityRules as AvailabilityRule[]);
+    }
+
+    restoredDraftRef.current = true;
+  }, [isDraftLoaded, isNewMode, getStepData]);
 
   // Restore draft step on mount (but respect approval gate)
   useEffect(() => {
     if (isDraftLoaded && draft.currentStep > 1 && isNewMode) {
-      if (!geminiExtracted && !imagesApproved) return;
+      if (!canProceedFromStep1) return;
       setActiveStep(draft.currentStep);
     }
   }, [
     isDraftLoaded,
     draft.currentStep,
     isNewMode,
-    geminiExtracted,
-    imagesApproved,
+    canProceedFromStep1,
   ]);
+
+  // Keep current wizard step synced to draft metadata.
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+    setDraftStep(activeStep);
+  }, [activeStep, isDraftLoaded, setDraftStep]);
+
+  // Persist key slices to draft in the background.
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+    debouncedSave(1, {
+      createdYachtId,
+      boatHint,
+      geminiExtracted,
+      extractionResult,
+      confidenceMeta,
+    });
+  }, [
+    isDraftLoaded,
+    createdYachtId,
+    boatHint,
+    geminiExtracted,
+    extractionResult,
+    confidenceMeta,
+    debouncedSave,
+  ]);
+
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+    debouncedSave(2, { selectedYacht: selectedYacht || {} });
+  }, [isDraftLoaded, selectedYacht, debouncedSave]);
+
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+    debouncedSave(3, {
+      aiTexts,
+      selectedLang,
+      aiTone,
+      aiMinWords,
+      aiMaxWords,
+    });
+  }, [isDraftLoaded, aiTexts, selectedLang, aiTone, aiMinWords, aiMaxWords, debouncedSave]);
+
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+    debouncedSave(4, { availabilityRules });
+  }, [isDraftLoaded, availabilityRules, debouncedSave]);
+
+  const buildServerDraftSnapshot = useCallback(() => {
+    const serverDraftId = String(draft.id || yachtId || "new");
+    const linkedYachtId = activeYachtId ? Number(activeYachtId) : null;
+
+    return {
+      draftId: serverDraftId,
+      linkedYachtId,
+      payloadPatch: {
+        step1: {
+          createdYachtId,
+          boatHint,
+          geminiExtracted,
+          extractionResult,
+          confidenceMeta,
+        },
+        step2: {
+          selectedYacht: selectedYacht || {},
+        },
+        step3: {
+          aiTexts,
+          selectedLang,
+          aiTone,
+          aiMinWords,
+          aiMaxWords,
+        },
+        step4: {
+          availabilityRules,
+        },
+      } as Record<string, unknown>,
+      uiStatePatch: {
+        currentStep: activeStep,
+        completedSteps: draft.completedSteps,
+        isOnline,
+      } as Record<string, unknown>,
+      imagesManifestPatch: {
+        pipeline: {
+          total: pipeline.stats.total,
+          approved: pipeline.stats.approved,
+          processing: pipeline.stats.processing,
+          ready: pipeline.stats.ready,
+          imageIds: pipeline.images.map((img) => img.id),
+        },
+        offline: offlineImages.map((img) => img.key),
+      } as Record<string, unknown>,
+      aiStatePatch: {
+        extracted: geminiExtracted,
+        extracting: isExtracting,
+      } as Record<string, unknown>,
+    };
+  }, [
+    draft.id,
+    draft.completedSteps,
+    yachtId,
+    activeYachtId,
+    createdYachtId,
+    boatHint,
+    geminiExtracted,
+    extractionResult,
+    confidenceMeta,
+    selectedYacht,
+    aiTexts,
+    selectedLang,
+    aiTone,
+    aiMinWords,
+    aiMaxWords,
+    availabilityRules,
+    activeStep,
+    isOnline,
+    pipeline.stats.total,
+    pipeline.stats.approved,
+    pipeline.stats.processing,
+    pipeline.stats.ready,
+    pipeline.images,
+    offlineImages,
+    isExtracting,
+  ]);
+
+  const syncDraftToServer = useCallback(
+    async (mode: "upsert" | "patch" = "patch") => {
+      if (!isDraftLoaded || !isOnline || syncingServerDraftRef.current) return;
+      if (typeof window === "undefined" || !localStorage.getItem("auth_token")) return;
+
+      const snapshot = buildServerDraftSnapshot();
+      syncingServerDraftRef.current = true;
+
+      try {
+        if (mode === "upsert" || serverDraftVersionRef.current === null) {
+          const saved = await createOrReplaceYachtDraft({
+            draft_id: snapshot.draftId,
+            yacht_id: snapshot.linkedYachtId,
+            wizard_step: activeStep,
+            payload_json: snapshot.payloadPatch,
+            ui_state_json: snapshot.uiStatePatch,
+            images_manifest_json: snapshot.imagesManifestPatch,
+            ai_state_json: snapshot.aiStatePatch,
+            version: serverDraftVersionRef.current ?? undefined,
+            client_saved_at: new Date().toISOString(),
+          });
+          serverDraftVersionRef.current = saved.version;
+          return;
+        }
+
+        const patched = await patchYachtDraft(snapshot.draftId, {
+          version: serverDraftVersionRef.current,
+          wizard_step: activeStep,
+          payload_patch: snapshot.payloadPatch,
+          ui_state_patch: snapshot.uiStatePatch,
+          images_manifest_patch: snapshot.imagesManifestPatch,
+          ai_state_patch: snapshot.aiStatePatch,
+          client_saved_at: new Date().toISOString(),
+        });
+        serverDraftVersionRef.current = patched.version;
+      } catch (error: unknown) {
+        const err = error as {
+          response?: {
+            status?: number;
+            data?: {
+              server?: {
+                version?: number;
+              };
+            };
+          };
+        };
+        const conflictVersion = err?.response?.data?.server?.version;
+        if (err?.response?.status === 409 && typeof conflictVersion === "number") {
+          serverDraftVersionRef.current = conflictVersion;
+          try {
+            const snapshotRetry = buildServerDraftSnapshot();
+            const retried = await patchYachtDraft(snapshotRetry.draftId, {
+              version: serverDraftVersionRef.current,
+              wizard_step: activeStep,
+              payload_patch: snapshotRetry.payloadPatch,
+              ui_state_patch: snapshotRetry.uiStatePatch,
+              images_manifest_patch: snapshotRetry.imagesManifestPatch,
+              ai_state_patch: snapshotRetry.aiStatePatch,
+              client_saved_at: new Date().toISOString(),
+            });
+            serverDraftVersionRef.current = retried.version;
+          } catch (retryError) {
+            console.warn("[DraftSync] Patch retry failed:", retryError);
+          }
+        } else {
+          console.warn("[DraftSync] Sync failed:", error);
+        }
+      } finally {
+        syncingServerDraftRef.current = false;
+      }
+    },
+    [isDraftLoaded, isOnline, buildServerDraftSnapshot, activeStep],
+  );
+
+  // Bootstrap server draft safely:
+  // 1) fetch existing server draft if present
+  // 2) hydrate local when local is empty
+  // 3) otherwise patch server with current local state
+  useEffect(() => {
+    if (!isDraftLoaded || !isOnline) return;
+    if (serverDraftInitializedRef.current || serverDraftBootstrapInFlightRef.current) return;
+    if (typeof window === "undefined" || !localStorage.getItem("auth_token")) return;
+
+    let cancelled = false;
+    serverDraftBootstrapInFlightRef.current = true;
+
+    const bootstrapServerDraft = async () => {
+      const serverDraftId = String(draft.id || yachtId || "new");
+      const hasLocalDraftContent =
+        hasObjectValues(getStepData(1)) ||
+        hasObjectValues(getStepData(2)) ||
+        hasObjectValues(getStepData(3)) ||
+        hasObjectValues(getStepData(4)) ||
+        hasObjectValues(getStepData(5)) ||
+        draft.completedSteps.length > 0 ||
+        draft.currentStep > 1;
+
+      try {
+        const remoteDraft = await getYachtDraft(serverDraftId);
+        if (cancelled) return;
+
+        serverDraftVersionRef.current = remoteDraft.version;
+
+        if (!hasLocalDraftContent) {
+          const payload = toObjectRecord(remoteDraft.payload_json);
+          const uiState = toObjectRecord(remoteDraft.ui_state_json);
+          const serverCompletedSteps = Array.isArray(uiState.completedSteps)
+            ? uiState.completedSteps
+              .map((value) => Number(value))
+              .filter((value) => Number.isInteger(value) && value >= 1 && value <= 5)
+            : [];
+
+          flushDraft({
+            currentStep: clampWizardStep(uiState.currentStep ?? remoteDraft.wizard_step ?? 1),
+            completedSteps: serverCompletedSteps,
+            data: {
+              step1: toObjectRecord(payload.step1),
+              step2: toObjectRecord(payload.step2),
+              step3: toObjectRecord(payload.step3),
+              step4: toObjectRecord(payload.step4),
+              step5: hasObjectValues(payload.step5)
+                ? toObjectRecord(payload.step5)
+                : draft.data.step5,
+            },
+          });
+          restoredDraftRef.current = false;
+        } else {
+          await syncDraftToServer("patch");
+        }
+      } catch (error: unknown) {
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        if (status === 404) {
+          await syncDraftToServer("upsert");
+        } else {
+          console.warn("[DraftSync] Bootstrap failed:", error);
+        }
+      } finally {
+        if (!cancelled) {
+          serverDraftInitializedRef.current = true;
+        }
+        serverDraftBootstrapInFlightRef.current = false;
+      }
+    };
+
+    void bootstrapServerDraft();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isDraftLoaded,
+    isOnline,
+    draft.id,
+    draft.currentStep,
+    draft.completedSteps.length,
+    draft.data.step5,
+    yachtId,
+    getStepData,
+    flushDraft,
+    syncDraftToServer,
+  ]);
+
+  // Debounced server patch whenever local draft changes.
+  useEffect(() => {
+    if (!isDraftLoaded || !isOnline) return;
+    if (!serverDraftInitializedRef.current) return;
+    if (serverSyncTimerRef.current) {
+      clearTimeout(serverSyncTimerRef.current);
+    }
+    serverSyncTimerRef.current = setTimeout(() => {
+      void syncDraftToServer("patch");
+    }, 1800);
+
+    return () => {
+      if (serverSyncTimerRef.current) {
+        clearTimeout(serverSyncTimerRef.current);
+      }
+    };
+  }, [isDraftLoaded, isOnline, draft.lastSaved, activeStep, syncDraftToServer]);
+
+  // Expose a global best-effort flush hook for language switching/navigation.
+  const flushYachtDraftNow = useCallback(async () => {
+    if (!isDraftLoaded) return;
+    flushDraft({
+      currentStep: activeStep,
+      data: {
+        step1: {
+          ...toObjectRecord(draft.data.step1),
+          createdYachtId,
+          boatHint,
+          geminiExtracted,
+          extractionResult,
+          confidenceMeta,
+        },
+        step2: {
+          ...toObjectRecord(draft.data.step2),
+          selectedYacht: selectedYacht || {},
+        },
+        step3: {
+          ...toObjectRecord(draft.data.step3),
+          aiTexts,
+          selectedLang,
+          aiTone,
+          aiMinWords,
+          aiMaxWords,
+        },
+        step4: {
+          ...toObjectRecord(draft.data.step4),
+          availabilityRules,
+        },
+        step5: draft.data.step5,
+      },
+    });
+    await syncDraftToServer(serverDraftVersionRef.current === null ? "upsert" : "patch");
+  }, [
+    isDraftLoaded,
+    draft.data.step1,
+    draft.data.step2,
+    draft.data.step3,
+    draft.data.step4,
+    draft.data.step5,
+    createdYachtId,
+    boatHint,
+    geminiExtracted,
+    extractionResult,
+    confidenceMeta,
+    selectedYacht,
+    aiTexts,
+    selectedLang,
+    aiTone,
+    aiMinWords,
+    aiMaxWords,
+    availabilityRules,
+    activeStep,
+    flushDraft,
+    syncDraftToServer,
+  ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.__flushYachtDraftNow = flushYachtDraftNow;
+    return () => {
+      if (window.__flushYachtDraftNow === flushYachtDraftNow) {
+        delete window.__flushYachtDraftNow;
+      }
+    };
+  }, [flushYachtDraftNow]);
 
   // Auto-save current step data when switching tabs
   const handleStepChange = useCallback(
     (newStep: number) => {
       // OFFLINE: allow skipping to any step (no server gating)
-      if (!navigator.onLine) {
+      if (!isOnline) {
         if (newStep > 1 && offlineImages.length === 0 && pipeline.images.length === 0) {
           toast.error("Please upload at least one image first (saved locally).");
           return;
@@ -362,21 +852,16 @@ export default function YachtEditorPage() {
         setActiveStep(newStep);
         return;
       }
-      // In new mode: block Step 2+ until images are approved (or Gemini extracted for legacy)
-      if (isNewMode && !geminiExtracted && !imagesApproved && newStep > 1) {
+      // In new mode: block Step 2+ until image gate is satisfied
+      if (isNewMode && !canProceedFromStep1 && newStep > 1) {
         toast.error(
-          "Please upload images, approve them, and run AI extraction first.",
+          "Please approve images and wait for AI extraction to complete.",
         );
-        return;
-      }
-      // In edit mode: block Step 2+ until images are approved
-      if (!isNewMode && !imagesApproved && newStep > 1) {
-        toast.error("Step 2 is available after images are approved.");
         return;
       }
       setActiveStep(newStep);
     },
-    [isNewMode, geminiExtracted, imagesApproved, offlineImages],
+    [isOnline, isNewMode, canProceedFromStep1, offlineImages, pipeline.images.length],
   );
 
   // --- 1. FETCH DATA (IF EDITING) ---
@@ -694,11 +1179,11 @@ export default function YachtEditorPage() {
     }
 
     setIsUploading(true);
-    let toastId = toast.loading(`Uploading ${files.length} image(s)...`);
+    const toastId = toast.loading(`Uploading ${files.length} image(s)...`);
 
     try {
       const fileArray = Array.from(files);
-      let filesToUpload = fileArray;
+      const filesToUpload = fileArray;
 
       // ── Skipped orientation/WebP conversion to match old project speeds ──
       // Backend ImageProcessingService now efficiently handles all WebP
@@ -719,13 +1204,45 @@ export default function YachtEditorPage() {
         setCreatedYachtId(targetId as number);
       }
 
-      toast.loading("Sending to optimization pipeline...", { id: toastId });
-      const uploadFd = new FormData();
-      filesToUpload.forEach((f) => uploadFd.append("images[]", f));
+      const batches: File[][] = [];
+      for (let i = 0; i < filesToUpload.length; i += UPLOAD_BATCH_SIZE) {
+        batches.push(filesToUpload.slice(i, i + UPLOAD_BATCH_SIZE));
+      }
 
-      const res = await api.post(`/yachts/${targetId}/images/upload`, uploadFd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      let uploadedCount = 0;
+      let failedBatches = 0;
+
+      for (let i = 0; i < batches.length; i += UPLOAD_MAX_PARALLEL_BATCHES) {
+        const chunk = batches.slice(i, i + UPLOAD_MAX_PARALLEL_BATCHES);
+        toast.loading(
+          `Uploading batch ${Math.min(i + chunk.length, batches.length)} of ${batches.length}...`,
+          { id: toastId },
+        );
+
+        const settled = await Promise.allSettled(
+          chunk.map(async (batchFiles) => {
+            const uploadFd = new FormData();
+            batchFiles.forEach((file) => uploadFd.append("images[]", file));
+            const res = await api.post(`/yachts/${targetId}/images/upload`, uploadFd, {
+              headers: { "Content-Type": "multipart/form-data" },
+            });
+            return Array.isArray(res.data?.images) ? res.data.images.length : batchFiles.length;
+          }),
+        );
+
+        settled.forEach((result) => {
+          if (result.status === "fulfilled") {
+            uploadedCount += result.value;
+          } else {
+            failedBatches += 1;
+            console.error("[Upload] Batch failed:", result.reason);
+          }
+        });
+      }
+
+      if (uploadedCount === 0) {
+        throw new Error("No images uploaded");
+      }
 
       // Auto-set the first uploaded file as main profile
       if (!mainFile && !mainPreview && filesToUpload.length > 0) {
@@ -733,9 +1250,14 @@ export default function YachtEditorPage() {
         setMainPreview(URL.createObjectURL(filesToUpload[0]));
       }
 
-      toast.success(`${files.length} images sent for processing!`, {
-        id: toastId,
-      });
+      toast.success(
+        failedBatches > 0
+          ? `${uploadedCount} images queued. ${failedBatches} batch(es) failed.`
+          : `${uploadedCount} images sent for processing!`,
+        {
+          id: toastId,
+        },
+      );
       // Force a direct fetch using targetId (avoids stale closure from useImagePipeline)
       // This is needed because in new mode, the hook's yachtId may still be null/stale
       try {
@@ -759,21 +1281,37 @@ export default function YachtEditorPage() {
     confidenceMeta?.needs_user_confirmation?.includes(fieldName) ?? false;
 
   // ── AI Fill Pipeline ──
-  const handleAiExtract = async () => {
+  const handleAiExtract = async (
+    options?: {
+      background?: boolean;
+      navigateToStep2?: boolean;
+      speedMode?: "fast" | "balanced" | "deep";
+    },
+  ): Promise<boolean> => {
+    const background = options?.background ?? false;
+    const navigateToStep2 = options?.navigateToStep2 ?? !background;
+    const speedMode = options?.speedMode ?? "balanced";
+
     // Block AI extraction when offline
     if (!navigator.onLine) {
       toast.error("AI extraction requires an internet connection. You can skip to Step 2 to fill in details manually.");
-      return;
+      return false;
     }
     if (pipeline.images.length === 0) {
       toast.error("Please upload at least one image first.");
-      return;
+      return false;
     }
 
     setExtractionType("gemini");
     setIsExtracting(true);
-    setShowExtractModal(true);
-    const toastId = toast.loading("🤖 AI Pipeline is analyzing your images...");
+    if (!background) {
+      setShowExtractModal(true);
+    }
+    const toastId = toast.loading(
+      background
+        ? "🤖 AI extraction started in background..."
+        : "🤖 AI Pipeline is analyzing your images...",
+    );
 
     try {
       const formData = new FormData();
@@ -781,6 +1319,7 @@ export default function YachtEditorPage() {
       // Always pass the actual or auto-created yacht ID
       const targetId = isNewMode ? createdYachtId : yachtId;
       formData.append("yacht_id", String(targetId));
+      formData.append("speed_mode", speedMode);
 
       if (boatHint.trim()) {
         formData.append("hint_text", boatHint.trim());
@@ -885,9 +1424,12 @@ export default function YachtEditorPage() {
         }
         toast.success(toastMsg, { id: toastId, duration: 5000 });
 
-        // Navigate to Step 2 immediately
-        console.log("🚀 [Pipeline] Navigating to Step 2...");
-        setActiveStep(2);
+        if (navigateToStep2) {
+          // Navigate to Step 2 immediately only for foreground/manual runs.
+          console.log("🚀 [Pipeline] Navigating to Step 2...");
+          setActiveStep(2);
+        }
+        return true;
       } else {
         console.error(
           "🔴 [Pipeline] Extraction failed — response:",
@@ -897,33 +1439,32 @@ export default function YachtEditorPage() {
           responseData?.error || "Extraction failed — no data returned",
           { id: toastId },
         );
+        return false;
       }
     } catch (err: any) {
       console.error("AI pipeline failed:", err);
       const errorMsg =
         err?.response?.data?.error || err?.message || "AI extraction failed";
       toast.error(errorMsg, { id: toastId });
+      return false;
     } finally {
       setIsExtracting(false);
-      setShowExtractModal(false);
+      if (!background) {
+        setShowExtractModal(false);
+      }
     }
   };
 
-  // Auto-trigger extraction when images transition to approved (manual or bulk)
-  // Triggers for: 1. Truly new mode, 2. Existing drafts that still have the default timestamp name
+  // Auto-trigger extraction only in new mode when images transition to approved.
   const prevImagesApprovedRef = useRef(imagesApproved);
   useEffect(() => {
     const wasApproved = prevImagesApprovedRef.current;
     prevImagesApprovedRef.current = imagesApproved;
 
-    const isDraftName = selectedYacht?.boat_name?.startsWith("Yacht 202");
-    const shouldAutoTrigger = isNewMode || isDraftName;
-
-    // Only trigger when transitioning from not-approved → approved AND (isNew OR isDraft)
-    if (shouldAutoTrigger && imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
-      handleAiExtract();
+    if (isNewMode && imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
+      void handleAiExtract({ background: true, navigateToStep2: true, speedMode: "fast" });
     }
-  }, [imagesApproved, geminiExtracted, isExtracting, isNewMode, selectedYacht?.boat_name]);
+  }, [imagesApproved, geminiExtracted, isExtracting, isNewMode]);
 
   const handleRegenerateDescription = async () => {
     const targetId = isNewMode ? createdYachtId : yachtId;
@@ -1364,6 +1905,35 @@ export default function YachtEditorPage() {
         // Ignore
       }
 
+      // Best-effort finalize/commit draft on backend.
+      if (typeof window !== "undefined" && localStorage.getItem("auth_token")) {
+        try {
+          const snapshot = buildServerDraftSnapshot();
+          const savedDraft = await createOrReplaceYachtDraft({
+            draft_id: snapshot.draftId,
+            yacht_id: Number(finalYachtId),
+            wizard_step: activeStep,
+            payload_json: snapshot.payloadPatch,
+            ui_state_json: snapshot.uiStatePatch,
+            images_manifest_json: snapshot.imagesManifestPatch,
+            ai_state_json: snapshot.aiStatePatch,
+            version: serverDraftVersionRef.current ?? undefined,
+            client_saved_at: new Date().toISOString(),
+          });
+          serverDraftVersionRef.current = savedDraft.version;
+
+          const committed = await commitYachtDraft(snapshot.draftId, {
+            version: serverDraftVersionRef.current,
+          });
+          serverDraftVersionRef.current = committed.version;
+        } catch (commitErr) {
+          console.warn("[DraftSync] Draft commit failed:", commitErr);
+        }
+      }
+
+      // Draft is now persisted server-side, clear local wizard draft.
+      await clearDraft();
+
       // (Legacy manual bulk image gallery submission removed; handled by Image Pipeline now)
 
       toast.success(
@@ -1428,17 +1998,14 @@ export default function YachtEditorPage() {
             const isActive = activeStep === step.id;
             const isCompleted = step.id < activeStep;
             const isPast = isActive || isCompleted;
-            const isLocked =
-              (isNewMode
-                ? !geminiExtracted && !imagesApproved
-                : !imagesApproved) && step.id > 1;
+            const isLocked = !canProceedFromStep1 && step.id > 1;
             return (
               <div key={step.id} className="flex items-center">
                 <button
                   type="button"
                   onClick={() => handleStepChange(step.id)}
                   disabled={isLocked}
-                  title={isLocked ? "Run AI extraction first" : step.label}
+                  title={isLocked ? "Approve images and complete AI extraction first" : step.label}
                   className={`
                     w-[54px] h-[54px] rounded-full flex items-center justify-center
                     text-[18px] font-bold border-[3px] transition-all duration-300
@@ -1839,13 +2406,17 @@ export default function YachtEditorPage() {
                               : "text-amber-700",
                           )}
                         >
-                          {imagesApproved
-                            ? "✅ Images approved — Step 2 is unlocked!"
-                            : `⏳ ${pipeline.stats.approved} of ${pipeline.stats.min_required} minimum images approved`}
+                          {isNewMode
+                            ? imagesApproved
+                              ? canProceedFromStep1
+                                ? "✅ AI extraction completed — Step 2 is unlocked!"
+                                : "🤖 Images approved. AI extraction in progress..."
+                              : `⏳ ${pipeline.stats.approved} of ${pipeline.stats.min_required} minimum images approved`
+                            : "ℹ️ Edit Manifest mode — Step 2 is unlocked with existing boat details."}
                         </p>
-                        {!imagesApproved && (
+                        {(isNewMode && (!imagesApproved || !canProceedFromStep1)) && (
                           <p className="text-xs text-amber-600 mt-1">
-                            Step 2 is available after images are approved.
+                            Step 2 opens only after image approval and successful AI extraction.
                             {pipeline.stats.processing > 0 &&
                               ` ${pipeline.stats.processing} still processing...`}
                           </p>
@@ -1858,11 +2429,16 @@ export default function YachtEditorPage() {
                             const result = await pipeline.approveAll();
                             if (result.step2_unlocked) {
                               if (isNewMode) {
-                                toast.success(
-                                  "All images approved! Running AI extraction...",
-                                );
-                                // Trigger AI pipeline to extract boat data from approved images ONLY for new boats
-                                handleAiExtract();
+                                const extractionOk = await handleAiExtract({
+                                  background: true,
+                                  navigateToStep2: true,
+                                  speedMode: "fast",
+                                });
+                                if (!extractionOk) {
+                                  toast.error(
+                                    "AI extraction failed. Step 2 remains locked until extraction succeeds.",
+                                  );
+                                }
                               } else {
                                 toast.success("Images approved. You can manually run AI autofill if needed.");
                               }
@@ -1872,7 +2448,7 @@ export default function YachtEditorPage() {
                           }}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-md"
                         >
-                          <CheckCircle size={16} /> {isNewMode ? "Approve All & Continue" : "Approve All"}
+                          <CheckCircle size={16} /> {isNewMode ? "Approve All" : "Approve All"}
                         </button>
                       )}
                     </div>
@@ -1880,10 +2456,10 @@ export default function YachtEditorPage() {
                 )}
 
                 {/* ── Extract with AI Area (Auto-triggered) ── */}
-                {(pipeline.stats.total > 0 || imagesApproved || (!navigator.onLine && offlineImages.length > 0)) && (
+                {(pipeline.stats.total > 0 || imagesApproved || (!isOnline && offlineImages.length > 0)) && (
                   <div className="flex flex-col items-center gap-4 py-4">
                     {/* Offline Skip Button */}
-                    {!navigator.onLine ? (
+                    {!isOnline ? (
                       <div className="flex flex-col items-center gap-3 w-full max-w-lg">
                         <div className="bg-amber-50 text-amber-700 border border-amber-200 rounded-lg p-4 text-sm w-full flex gap-3 shadow-sm mb-2">
                           <WifiOff className="shrink-0" size={18} />
@@ -1908,7 +2484,7 @@ export default function YachtEditorPage() {
                         </div>
                       )
                     )}
-                    {!geminiExtracted && !isExtracting && navigator.onLine && (
+                    {!geminiExtracted && !isExtracting && isOnline && (
                       <div className="flex flex-col items-center gap-3">
                         <p className="text-xs text-slate-400 text-center">
                           {imagesApproved
@@ -1922,7 +2498,7 @@ export default function YachtEditorPage() {
                             type="button"
                             onClick={() => {
                               toast("Extracting data from images...", { icon: "🪄" });
-                              handleAiExtract();
+                              void handleAiExtract();
                             }}
                             className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2"
                           >
@@ -2083,7 +2659,10 @@ export default function YachtEditorPage() {
                       defaultValue={selectedYacht?.manufacturer}
                       placeholder="e.g. Beneteau, Sunseeker"
                       needsConfirmation={needsConfirm("manufacturer")}
-                      onSelect={(id) => setSelectedBrandId(Number(id))}
+                      onSelect={(value, id) => {
+                        setSelectedBrandId(Number(id));
+                        setSelectedYacht((prev: any) => ({ ...prev, manufacturer: value }));
+                      }}
                     />
                   </div>
                   <div className="space-y-2 group">
@@ -2096,6 +2675,30 @@ export default function YachtEditorPage() {
                       dependsOn="brand_id"
                       dependsOnValue={selectedBrandId}
                       needsConfirmation={needsConfirm("model")}
+                      onSelect={(value) => {
+                        // When model changes, we update the state so the assistant picks it up
+                        setSelectedYacht((prev: any) => ({ ...prev, model: value }));
+                      }}
+                    />
+                  </div>
+
+                  {/* ── AI ASSISTANT ── */}
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <BoatCreationAssistant
+                      manufacturer={selectedYacht?.manufacturer || ""}
+                      model={selectedYacht?.model || ""}
+                      onApply={(specs) => {
+                        setSelectedYacht((prev: any) => ({
+                          ...prev,
+                          ...specs, // Merge suggested specs (loa, beam, draft, etc)
+                          // Mapping from assistant names to form names
+                          loa: specs.loa || specs.length_m || prev?.loa,
+                          beam: specs.beam || specs.beam_m || prev?.beam,
+                          draft: specs.draft || specs.draft_m || prev?.draft,
+                        }));
+                        setFormKey(k => k + 1); // Refresh form to show new defaultValues
+                        toast.success("AI suggestions applied to form!");
+                      }}
                     />
                   </div>
                   <div className="space-y-2 group">
@@ -3514,16 +4117,16 @@ export default function YachtEditorPage() {
                   markStepComplete(activeStep);
                   handleStepChange(activeStep + 1);
                 }}
-                disabled={isNewMode && !geminiExtracted && activeStep === 1}
+                disabled={isNewMode && !canProceedFromStep1 && activeStep === 1}
                 className={cn(
                   "h-11 px-6 text-xs font-bold uppercase tracking-wider",
-                  isNewMode && !geminiExtracted && activeStep === 1
+                  isNewMode && !canProceedFromStep1 && activeStep === 1
                     ? "bg-slate-300 text-slate-500 cursor-not-allowed"
                     : "bg-[#003566] text-white hover:bg-blue-800",
                 )}
               >
-                {isNewMode && !geminiExtracted && activeStep === 1 ? (
-                  <>{t?.wizard?.nav?.runExtractionFirst || "Run AI First"}</>
+                {isNewMode && !canProceedFromStep1 && activeStep === 1 ? (
+                  <>{t?.wizard?.nav?.runExtractionFirst || "Approve Images & Run AI First"}</>
                 ) : (
                   <>
                     {t?.wizard?.nav?.next || "Next"}{" "}

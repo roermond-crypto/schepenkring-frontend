@@ -37,6 +37,7 @@ export async function GET() {
   if (tenant) params.append('tenant', tenant);
   if (accentColor) params.append('accentColor', accentColor);
   if (themePreset) params.append('themePreset', themePreset);
+  params.append('sourceUrl', window.location.href);
   
   const iframeSrc = \`\${host}/en/widget?\${params.toString()}\`;
 

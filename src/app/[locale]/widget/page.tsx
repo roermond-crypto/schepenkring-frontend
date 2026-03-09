@@ -1,4 +1,4 @@
-import ChatWidget from "@/components/common/ChatWidget";
+import { ChatWidget } from "@/components/widget/ChatWidget";
 
 export default async function WidgetPage({
     searchParams,
@@ -9,10 +9,11 @@ export default async function WidgetPage({
 
     const harborId = params.harborId;
     const harborName = params.harborName;
-    const locationId = params.locationId;
+    const locationId = params.locationId ? parseInt(params.locationId, 10) : undefined;
     const accentColor = params.accentColor;
     const themePreset = (params.themePreset as "ocean" | "violet" | "sunset") || "ocean";
     const welcomeText = params.welcomeText;
+    const sourceUrl = params.sourceUrl;
 
     return (
         <main className="h-full w-full relative">
@@ -23,6 +24,7 @@ export default async function WidgetPage({
                 accentColor={accentColor}
                 themePreset={themePreset}
                 welcomeText={welcomeText}
+                sourceUrl={sourceUrl}
                 isEmbedded={true}
             />
         </main>
