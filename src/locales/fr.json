@@ -424,6 +424,58 @@
       }
     }
   },
+  "DashboardAdminLocations": {
+    "header": {
+      "kicker": "Gestion des sites",
+      "title": "Ports et sites",
+      "subtitle": "Créez et gérez les sites utilisés pour l’inscription, le périmètre d’accès et les opérations."
+    },
+    "filters": {
+      "search": "Rechercher par nom de site ou code",
+      "allStatus": "Tous les statuts"
+    },
+    "form": {
+      "createTitle": "Créer un nouveau site",
+      "editTitle": "Modifier le site",
+      "name": "Nom du site",
+      "code": "Code (ex. AMS)"
+    },
+    "table": {
+      "name": "Nom",
+      "code": "Code",
+      "status": "Statut",
+      "updated": "Mis à jour",
+      "actions": "Actions",
+      "empty": "Aucun site trouvé."
+    },
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "actions": {
+      "refresh": "Actualiser",
+      "create": "Créer un site",
+      "update": "Mettre à jour le site",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "cancel": "Annuler",
+      "cancelEdit": "Annuler la modification"
+    },
+    "confirm": {
+      "deleteTitle": "Supprimer le site",
+      "deleteBody": "Voulez-vous vraiment supprimer « {name} » ?"
+    },
+    "toasts": {
+      "loadFailed": "Impossible de charger les sites.",
+      "created": "Site créé.",
+      "createFailed": "Impossible de créer le site.",
+      "updated": "Site mis à jour.",
+      "updateFailed": "Impossible de mettre à jour le site.",
+      "deleted": "Site supprimé.",
+      "deleteFailed": "Impossible de supprimer le site.",
+      "deleteConflict": "Le site ne peut pas être supprimé car des enregistrements liés existent encore."
+    }
+  },
   "DashboardAdminUsers": {
     "header": {
       "title": "Administration des utilisateurs",
