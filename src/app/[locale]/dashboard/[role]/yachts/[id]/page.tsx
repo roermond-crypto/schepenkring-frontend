@@ -918,17 +918,21 @@ export default function YachtEditorPage() {
     }
   };
 
-  // Auto-trigger extraction when images transition to approved (manual or bulk) - ONLY in New Mode
+  // Auto-trigger extraction when images transition to approved (manual or bulk)
+  // Triggers for: 1. Truly new mode, 2. Existing drafts that still have the default timestamp name
   const prevImagesApprovedRef = useRef(imagesApproved);
   useEffect(() => {
     const wasApproved = prevImagesApprovedRef.current;
     prevImagesApprovedRef.current = imagesApproved;
 
-    // Only trigger when transitioning from not-approved → approved AND in new mode
-    if (isNewMode && imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
+    const isDraftName = selectedYacht?.boat_name?.startsWith("Yacht 202");
+    const shouldAutoTrigger = isNewMode || isDraftName;
+
+    // Only trigger when transitioning from not-approved → approved AND (isNew OR isDraft)
+    if (shouldAutoTrigger && imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
       handleAiExtract();
     }
-  }, [imagesApproved, geminiExtracted, isExtracting, isNewMode]);
+  }, [imagesApproved, geminiExtracted, isExtracting, isNewMode, selectedYacht?.boat_name]);
 
   const handleRegenerateDescription = async () => {
     const targetId = isNewMode ? createdYachtId : yachtId;
