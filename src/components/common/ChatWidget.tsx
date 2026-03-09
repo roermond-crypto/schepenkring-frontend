@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   MessageCircle,
@@ -5,17 +7,9 @@ import {
   X,
   Paperclip,
   ChevronDown,
-  Volume2,
-  VolumeX,
   ArrowLeft,
-  Mic, Anchor, Ship
+  Anchor, Ship
 } from "lucide-react";
-
-// --- VOICE IMPORTS ---
-import "regenerator-runtime/runtime";
-import SpeechRecognition, {
-  useSpeechRecognition,
-} from "react-speech-recognition";
 
 // --- Types ---
 interface Message {
@@ -51,28 +45,53 @@ const welcomeOptions = [
   { label: "Contact support", icon: "💬" },
 ];
 
-const ChatWidget: React.FC = () => {
+interface ChatWidgetProps {
+  harborId?: string;
+  harborName?: string;
+  locationId?: string;
+  accentColor?: string;
+  themePreset?: string;
+  welcomeText?: string;
+  isEmbedded?: boolean;
+}
+
+const ChatWidget: React.FC<ChatWidgetProps> = ({
+  welcomeText: propWelcomeText,
+  isEmbedded,
+  harborName,
+  harborId
+}) => {
   // --- State ---
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"home" | "chat">("home");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+
+  useEffect(() => {
+    if (propWelcomeText && messages.length === 0) {
+      setMessages([{ sender: "bot", text: propWelcomeText }]);
+    }
+  }, [propWelcomeText]);
+
+  useEffect(() => {
+    if (isEmbedded && typeof window !== "undefined") {
+      window.parent.postMessage(
+        {
+          type: "CHAT_WIDGET_STATE",
+          isOpen,
+          isMobile: window.innerWidth < 640,
+        },
+        "*"
+      );
+    }
+  }, [isOpen, isEmbedded]);
   const [isTyping, setIsTyping] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
   const [showNudge, setShowNudge] = useState(false);
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
 
-  // --- Voice Hooks & Refs ---
-  const {
-    transcript,
-    listening,
-    resetTranscript,
-    browserSupportsSpeechRecognition,
-  } = useSpeechRecognition();
-  const autoSendTimer = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const welcomeContentRef = useRef<HTMLDivElement>(null);
@@ -94,63 +113,6 @@ const ChatWidget: React.FC = () => {
     }
   }, [isOpen]);
 
-  // --- EMOTIONAL VOICE ENGINE ---
-  const playVoice = useCallback(
-    (text: string, force: boolean = false) => {
-      if (isMuted && !force) return;
-
-      const cleanText = text.replace(
-        /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g,
-        "",
-      );
-
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.pitch = text.includes("!") ? 1.15 : 1.0;
-        utterance.rate = 1.05;
-        utterance.lang = "en-US";
-        window.speechSynthesis.speak(utterance);
-      }
-    },
-    [isMuted],
-  );
-
-  // Handle Reading last message when unmuting
-  const toggleMute = () => {
-    const newMutedState = !isMuted;
-    setIsMuted(newMutedState);
-
-    // If unmuting, find the last bot message and read it
-    if (!newMutedState) {
-      const lastBotMsg = [...messages]
-        .reverse()
-        .find((m) => m.sender === "bot");
-      if (lastBotMsg) {
-        playVoice(lastBotMsg.text, true); // force reading since state might not have updated yet
-      }
-    } else {
-      window.speechSynthesis.cancel();
-    }
-  };
-
-  // --- VOICE SYNC & AUTO-SEND ---
-  useEffect(() => {
-    if (transcript) {
-      setInput(transcript);
-      if (autoSendTimer.current) clearTimeout(autoSendTimer.current);
-
-      autoSendTimer.current = setTimeout(() => {
-        if (transcript.trim() && listening) {
-          const finalTranscript = transcript;
-          SpeechRecognition.stopListening();
-          setInput("");
-          resetTranscript();
-          handleSend(finalTranscript);
-        }
-      }, 2000);
-    }
-  }, [transcript, listening]);
 
   // --- Handlers ---
 
@@ -178,14 +140,6 @@ const ChatWidget: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const toggleListening = () => {
-    if (listening) {
-      SpeechRecognition.stopListening();
-    } else {
-      resetTranscript();
-      SpeechRecognition.startListening({ continuous: true });
-    }
-  };
 
   const handleSend = async (overrideInput?: string) => {
     const textToSend =
@@ -262,7 +216,6 @@ const ChatWidget: React.FC = () => {
         "I'm sorry, I couldn't process that request right now.";
 
       setMessages((prev) => [...prev, { sender: "bot", text: botResponse }]);
-      playVoice(botResponse);
     } catch (error) {
       console.error("Gemini Error:", error);
       setMessages((prev) => [
@@ -283,7 +236,7 @@ const ChatWidget: React.FC = () => {
     setTimeout(() => handleSend(option), 200);
   };
 
-return (
+  return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -304,6 +257,13 @@ return (
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
         }
         
+        .nudge-popup {
+          animation: bounceIn 0.5s ease forwards;
+          background: #0d0d0d;
+          border: 1px solid #c5a572;
+          font-family: 'Inter', sans-serif;
+        }
+        
         .gradient-header { 
           background: #000000;
           border-bottom: 1px solid rgba(197, 165, 114, 0.2);
@@ -321,13 +281,40 @@ return (
           border: 1px solid rgba(255,255,255,0.05);
         }
         
-        .nudge-popup {
-          animation: bounceIn 0.5s ease forwards;
-          background: #0d0d0d;
-          border: 1px solid #c5a572;
+        .gold-text {
+          background: linear-gradient(135deg, #f3e2c7 0%, #c5a572 50%, #b38749 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
-        
+        .shimmer-btn {
+          position: relative;
+          overflow: hidden;
+        }
+        .shimmer-btn::after {
+          content: "";
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(
+            to bottom right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0) 40%,
+            rgba(255, 255, 255, 0.4) 50%,
+            rgba(255, 255, 255, 0) 60%,
+            rgba(255, 255, 255, 0) 100%
+          );
+          transform: rotate(45deg);
+          animation: shimmer 3s infinite;
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-150%) rotate(45deg); }
+          100% { transform: translateX(150%) rotate(45deg); }
+        }
+
         @keyframes bounceIn {
           0% { opacity: 0; transform: translateY(10px) scale(0.9); }
           70% { transform: translateY(-5px) scale(1.05); }
@@ -336,7 +323,7 @@ return (
       `}</style>
 
       {/* Launcher & Tiny Popup Container */}
-      <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
+      <div className={`${isEmbedded ? "absolute" : "fixed"} bottom-6 right-6 z-[9999] flex flex-col items-end gap-3`}>
         {showNudge && !isOpen && (
           <div className="nudge-popup px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 w-64">
             <div className="w-8 h-8 bg-[#c5a572] rounded-lg flex items-center justify-center shrink-0">
@@ -376,7 +363,7 @@ return (
       </div>
 
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-[90vw] max-w-[400px] h-[650px] max-h-[80vh] flex flex-col font-inter rounded-2xl overflow-hidden animate-enter glass-panel z-[9998]">
+        <div className={`${isEmbedded ? "absolute" : "fixed"} bottom-24 right-6 w-[95vw] max-w-[440px] h-[750px] max-h-[85vh] flex flex-col font-inter rounded-3xl overflow-hidden animate-enter glass-panel z-[9998]`}>
           <div className="relative p-5 gradient-header shrink-0">
             <div className="flex items-center justify-between text-white">
               <div className="flex items-center gap-3">
@@ -391,7 +378,7 @@ return (
                 <div className="flex items-center gap-4 group">
                   <div className="relative shrink-0">
                     <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center shadow-sm border border-[#c5a572]/30">
-                      <Ship size={20} className="text-[#c5a572]" />
+                      <MessageCircle size={20} className="text-[#c5a572]" />
                     </div>
                     <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-black rounded-full flex items-center justify-center border border-[#c5a572]/20">
                       <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
@@ -399,18 +386,14 @@ return (
                   </div>
                   <div className="flex flex-col items-start">
                     <h2 className="font-bold text-sm tracking-[0.2em] uppercase">
-                      Fleet AI
+                      {harborName || "Fleet AI"}
                     </h2>
-                    <span className="text-[9px] text-[#c5a572] font-black uppercase tracking-widest">Online Assistant</span>
+                    <span className="text-[9px] text-[#c5a572] font-black uppercase tracking-widest">
+                      {harborName ? "Harbor Support" : "Online Support"}
+                    </span>
                   </div>
                 </div>
               </div>
-              <button
-                onClick={toggleMute}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400"
-              >
-                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-              </button>
             </div>
           </div>
 
@@ -420,15 +403,16 @@ return (
                 ref={welcomeContentRef}
                 className="flex-1 overflow-y-auto p-6 scrollbar-hide"
               >
-                <div className="text-center mb-8 mt-4">
-                  <h3 className="text-xl font-serif italic text-white mb-2">
-                    Welcome to the Fleet
+                <div className="text-center mb-10 mt-10">
+                  <h3 className="text-3xl font-serif italic text-white mb-4 gold-text">
+                    {propWelcomeText || "Welcome to the Fleet"}
                   </h3>
-                  <p className="text-gray-500 text-[10px] uppercase tracking-widest leading-relaxed">
-                    Personalized sourcing for the world's finest vessels.
+                  <p className="text-gray-500 text-[11px] uppercase tracking-[0.2em] leading-relaxed max-w-[280px] mx-auto">
+                    Personalized sourcing for the world&apos;s finest vessels.
                   </p>
                 </div>
-                <div className="space-y-3">
+                {/* Quick Prompts Hidden as requested */}
+                {/* <div className="space-y-3">
                   {welcomeOptions.map((opt, i) => (
                     <button
                       key={i}
@@ -444,11 +428,11 @@ return (
                       <ChevronDown className="w-4 h-4 text-gray-700 -rotate-90 group-hover:text-[#c5a572] transition-colors" />
                     </button>
                   ))}
-                </div>
-                <div className="mt-8 pt-6 border-t border-white/5 text-center">
+                </div> */}
+                <div className="mt-10 pt-8 border-t border-white/5 text-center">
                   <button
                     onClick={() => setActiveTab("chat")}
-                    className="inline-flex items-center justify-center px-8 py-3 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-[#c5a572] transition-colors shadow-xl"
+                    className="shimmer-btn inline-flex items-center justify-center px-10 py-4 bg-white text-black text-[11px] font-black uppercase tracking-[0.25em] rounded-full hover:bg-[#c5a572] transition-all hover:scale-105 shadow-2xl"
                   >
                     Start Inquiry
                   </button>
@@ -471,7 +455,7 @@ return (
                             className={`mt-3 p-2 rounded-lg flex items-center gap-3 ${msg.sender === "user" ? "bg-black/20" : "bg-black/40 border border-white/10"}`}
                           >
                             {msg.file.type.startsWith("image/") &&
-                            msg.file.url ? (
+                              msg.file.url ? (
                               <img
                                 src={msg.file.url}
                                 alt="Uploaded"
@@ -510,7 +494,7 @@ return (
                     <div className="absolute bottom-full left-4 right-4 mb-2 p-3 bg-[#1a1a1a] rounded-xl shadow-2xl border border-[#c5a572]/30 flex items-center justify-between animate-enter">
                       <div className="flex items-center gap-3 overflow-hidden">
                         {filePreview &&
-                        selectedFile.type.startsWith("image/") ? (
+                          selectedFile.type.startsWith("image/") ? (
                           <img
                             src={filePreview}
                             alt="Preview"
@@ -563,11 +547,7 @@ return (
                             handleSend();
                           }
                         }}
-                        placeholder={
-                          listening
-                            ? "Listening..."
-                            : "Type your inquiry..."
-                        }
+                        placeholder="Type your inquiry..."
                         className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c5a572]/50 transition-all resize-none max-h-32 min-h-[46px] placeholder:text-gray-700"
                         rows={1}
                       />
@@ -581,8 +561,8 @@ return (
                     </button>
                   </div>
                   <div className="text-center mt-2">
-                    <span className="text-[8px] text-gray-700 font-black uppercase tracking-[0.3em]">
-                      Schepen-Kring Secure Terminal
+                    <span className="text-[8px] text-gray-700 font-black uppercase tracking-[0.4em]">
+                      SCHEPHEN-KRING SECURE TERMINAL
                     </span>
                   </div>
                 </div>

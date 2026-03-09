@@ -1,5 +1,6 @@
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import { getClientToken } from "@/lib/auth/client-session";
+import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 
 export class ApiError extends Error {
   status: number;
@@ -19,7 +20,7 @@ function resolveBackendBaseUrl() {
 
   let finalUrl = "https://app.schepen-kring.nl/api";
   if (configured) {
-    finalUrl = configured;
+    finalUrl = normalizeApiBaseUrl(configured);
   } else if (typeof window !== "undefined" && window.location.hostname === "localhost") {
     finalUrl = "http://localhost:8000/api";
   }

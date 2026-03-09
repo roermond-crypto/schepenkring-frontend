@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow, format, parseISO } from "date-fns";
+import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 
 // Types
 interface SystemLog {
@@ -92,8 +93,9 @@ interface PaginationMeta {
   to: number;
 }
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || "https://app.schepen-kring.nl/api";
+const API_BASE = normalizeApiBaseUrl(
+  process.env.NEXT_PUBLIC_BACKEND_API_URL || "https://app.schepen-kring.nl/api",
+);
 
 function getStoredToken() {
   if (typeof window === "undefined") return null;

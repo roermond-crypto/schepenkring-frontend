@@ -16,6 +16,7 @@ import {
   TriangleAlert,
   LogOut,
   MessageSquare,
+  LayoutTemplate,
   Ship,
   Settings,
   Share2,
@@ -99,6 +100,11 @@ export function Sidebar({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,
+      });
+      items.push({
+        title: (t as any).chatWidget || "Chat Widget",
+        href: `${root}/harbors/widget`,
+        icon: LayoutTemplate,
       });
       items.push({
         title: t.socialAutomation,

@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/session";
+import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 
 const ALLOWED_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 
 async function handleProxy(request: NextRequest, path: string[]) {
-  const backendUrl = process.env.BACKEND_API_URL;
+  const configuredBackendUrl = process.env.BACKEND_API_URL;
 
-  if (!backendUrl) {
+  if (!configuredBackendUrl) {
     return NextResponse.json(
       { message: "BACKEND_API_URL is not configured" },
       { status: 500 },
     );
   }
+
+  const backendUrl = normalizeApiBaseUrl(configuredBackendUrl);
 
   const method = request.method;
 

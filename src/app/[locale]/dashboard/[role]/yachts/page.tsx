@@ -146,10 +146,29 @@ export default function FleetManagementPage() {
     try {
       setLoading(true);
       const res = await api.get("/yachts");
+      const resolveFallbackImage = (yacht: any): string | null => {
+        const images = Array.isArray(yacht?.images) ? yacht.images : [];
+        const preferred =
+          images.find((img: any) => img?.status === "approved") ?? images[0];
+
+        const candidate =
+          preferred?.thumb_full_url ??
+          preferred?.optimized_url ??
+          preferred?.full_url ??
+          preferred?.url;
+
+        return candidate ? String(candidate) : null;
+      };
+
       // Normalize status on all yachts before using them
       const yachts = (res.data || []).map((y: any) => ({
         ...y,
         status: normalizeStatus(y.status),
+        main_image: y.main_image || resolveFallbackImage(y) || null,
+        price: y.price ?? y.sale_price ?? null,
+        loa: y.loa ?? y?.dimensions?.loa ?? null,
+        beam: y.beam ?? y?.dimensions?.beam ?? null,
+        where: y.where ?? y?.construction?.where ?? y.location_city ?? null,
       }));
       setFleet(yachts);
 
