@@ -1,4 +1,5 @@
 import axios from "axios";
+import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 
 function resolveBaseUrl() {
   const configured =
@@ -8,7 +9,7 @@ function resolveBaseUrl() {
 
   let finalUrl = "https://app.schepen-kring.nl/api";
   if (configured) {
-    finalUrl = configured;
+    finalUrl = normalizeApiBaseUrl(configured);
   } else if (typeof window !== "undefined" && window.location.hostname === "localhost") {
     finalUrl = "http://localhost:8000/api";
   }
@@ -49,5 +50,6 @@ api.interceptors.request.use((config) => {
 });
 
 if (typeof window !== "undefined") {
-  (window as any).debugApi = api;
+  const debugWindow = window as Window & { debugApi?: typeof api };
+  debugWindow.debugApi = api;
 }

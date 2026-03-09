@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 
 type ThemePreset = "ocean" | "violet" | "sunset";
 
@@ -94,9 +95,11 @@ const quickPrompts = [
 
 // ── Public API helper (no auth needed) ─────────────────────────────
 const PUBLIC_API_BASE =
-  (typeof window !== "undefined"
-    ? process.env.NEXT_PUBLIC_BACKEND_API_URL
-    : process.env.BACKEND_API_URL) ?? "";
+  normalizeApiBaseUrl(
+    (typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_BACKEND_API_URL
+      : process.env.BACKEND_API_URL) ?? "https://app.schepen-kring.nl/api",
+  );
 
 async function publicApi<T>(
   method: string,

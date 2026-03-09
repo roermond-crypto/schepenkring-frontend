@@ -1294,40 +1294,27 @@ export default function YachtEditorPage() {
     }
 
     try {
-      let finalYachtId = selectedYacht?.id;
+      let finalYachtId = selectedYacht?.id ?? createdYachtId ?? null;
 
-      if (!isNewMode && selectedYacht) {
-        // UPDATE
+      if (finalYachtId) {
+        // UPDATE existing yacht (including auto-created draft in "new" flow)
         formData.append("_method", "PUT");
-        await api.post(`/yachts/${selectedYacht.id}`, formData, {
+        await api.post(`/yachts/${finalYachtId}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       } else {
         // CREATE NEW
-        try {
-          const res = await api.post("/partner/yachts", formData, {
-            headers: {
-              "X-Offline-ID": offlineIdRef.current,
-              "Content-Type": "multipart/form-data",
-            }
-          });
-          finalYachtId = res.data.id;
-        } catch (partnerErr: any) {
-          if (
-            partnerErr.response?.status === 403 ||
-            partnerErr.response?.status === 404
-          ) {
-            const res = await api.post("/yachts", formData, {
-              headers: {
-                "X-Offline-ID": offlineIdRef.current,
-                "Content-Type": "multipart/form-data",
-              }
-            });
-            finalYachtId = res.data.id;
-          } else {
-            throw partnerErr;
+        const res = await api.post("/yachts", formData, {
+          headers: {
+            "X-Offline-ID": offlineIdRef.current,
+            "Content-Type": "multipart/form-data",
           }
-        }
+        });
+        finalYachtId = res.data.id;
+      }
+
+      if (finalYachtId && !selectedYacht?.id) {
+        setCreatedYachtId(Number(finalYachtId));
       }
 
       // Mark synced in local DB if we had one
