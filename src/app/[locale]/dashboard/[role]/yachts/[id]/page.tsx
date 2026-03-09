@@ -89,7 +89,7 @@ const WIZARD_STEP_IDS = [
 const DRAFT_KEY_PREFIX = "yacht_draft_";
 const MAX_IMAGES_UPLOAD = 30;
 const UPLOAD_BATCH_SIZE = 6;
-const UPLOAD_MAX_PARALLEL_BATCHES = 2;
+const UPLOAD_MAX_PARALLEL_BATCHES = 4;
 
 // Configuration
 const STORAGE_URL = "https://app.schepen-kring.nl/storage/";
@@ -110,6 +110,47 @@ type AvailabilityRule = {
   start_time: string;
   end_time: string;
 };
+
+type CorrectionLabel =
+  | "wrong_image_detection"
+  | "wrong_text_interpretation"
+  | "guessed_too_much"
+  | "duplicate_data_issue"
+  | "import_mismatch"
+  | "other";
+
+type ConfidenceMeta = {
+  overall_confidence: number;
+  field_confidence: Record<string, number>;
+  needs_user_confirmation: string[];
+  enrichment_used?: boolean;
+  stages_run: string[];
+  warnings: string[];
+  field_sources?: Record<string, string>;
+  ai_session_id?: string | null;
+  model_name?: string | null;
+};
+
+const OPTIONAL_TRI_STATE_FIELDS = [
+  "life_jackets",
+  "bimini",
+  "anchor",
+  "fishfinder",
+  "bow_thruster",
+  "trailer",
+  "heating",
+  "toilet",
+  "fridge",
+] as const;
+
+const CORRECTION_BUTTONS: Array<{ value: CorrectionLabel; label: string }> = [
+  { value: "wrong_image_detection", label: "Wrong image detection" },
+  { value: "wrong_text_interpretation", label: "Wrong text interpretation" },
+  { value: "guessed_too_much", label: "Guessed too much" },
+  { value: "duplicate_data_issue", label: "Duplicate data issue" },
+  { value: "import_mismatch", label: "Import mismatch" },
+  { value: "other", label: "Other" },
+];
 
 declare global {
   interface Window {
@@ -132,6 +173,21 @@ function clampWizardStep(value: unknown, fallback = 1): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(5, Math.max(1, Math.trunc(parsed)));
+}
+
+function normalizeTriStateValue(value: unknown): "yes" | "no" | "unknown" {
+  if (typeof value === "boolean") return value ? "yes" : "no";
+  if (typeof value === "number") return value > 0 ? "yes" : "no";
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return "unknown";
+  if (["unknown", "unsure", "uncertain", "n/a", "na", "null"].includes(normalized)) return "unknown";
+  if (["no", "n", "false", "0", "absent", "none"].includes(normalized)) return "no";
+  if (["yes", "y", "true", "1", "present", "included"].includes(normalized)) return "yes";
+  if (/\b(without|not visible|not present|missing)\b/.test(normalized)) return "no";
+  if (/\b(with|equipped|installed|available)\b/.test(normalized)) return "yes";
+  if (/\d+/.test(normalized)) return "yes";
+  // Legacy free-text values should keep "present" semantics.
+  return "yes";
 }
 
 export default function YachtEditorPage() {
@@ -239,18 +295,12 @@ export default function YachtEditorPage() {
   const [extractionType, setExtractionType] = useState<"gemini" | "magic">("gemini");
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [formKey, setFormKey] = useState(0);
-  const [confidenceMeta, setConfidenceMeta] = useState<{
-    overall_confidence: number;
-    field_confidence: Record<string, number>;
-    needs_user_confirmation: string[];
-    enrichment_used: boolean;
-    stages_run: string[];
-    warnings: string[];
-  } | null>(null);
+  const [confidenceMeta, setConfidenceMeta] = useState<ConfidenceMeta | null>(null);
+  const [correctionLabel, setCorrectionLabel] = useState<CorrectionLabel | null>(null);
   const canProceedFromStep1 =
     !isNewMode ||
     (!isOnline && offlineImages.length > 0) ||
-    (imagesApproved && geminiExtracted);
+    imagesApproved;
 
   // AI Text State (Tab 3)
   const [aiTexts, setAiTexts] = useState({ nl: "", en: "", de: "" });
@@ -409,19 +459,15 @@ export default function YachtEditorPage() {
     if (typeof step1Obj.geminiExtracted === "boolean") setGeminiExtracted(step1Obj.geminiExtracted);
     if (step1Obj.extractionResult !== undefined) setExtractionResult(step1Obj.extractionResult);
     if (step1Obj.confidenceMeta && typeof step1Obj.confidenceMeta === "object") {
-      setConfidenceMeta(step1Obj.confidenceMeta as {
-        overall_confidence: number;
-        field_confidence: Record<string, number>;
-        needs_user_confirmation: string[];
-        enrichment_used: boolean;
-        stages_run: string[];
-        warnings: string[];
-      });
+      setConfidenceMeta(step1Obj.confidenceMeta as ConfidenceMeta);
     }
 
     if (step2Obj.selectedYacht && typeof step2Obj.selectedYacht === "object") {
       setSelectedYacht(step2Obj.selectedYacht);
       setFormKey((k) => k + 1);
+    }
+    if (typeof step2Obj.correctionLabel === "string") {
+      setCorrectionLabel(step2Obj.correctionLabel as CorrectionLabel);
     }
 
     if (step3Obj.aiTexts && typeof step3Obj.aiTexts === "object") {
@@ -496,8 +542,11 @@ export default function YachtEditorPage() {
 
   useEffect(() => {
     if (!isDraftLoaded) return;
-    debouncedSave(2, { selectedYacht: selectedYacht || {} });
-  }, [isDraftLoaded, selectedYacht, debouncedSave]);
+    debouncedSave(2, {
+      selectedYacht: selectedYacht || {},
+      correctionLabel,
+    });
+  }, [isDraftLoaded, selectedYacht, correctionLabel, debouncedSave]);
 
   useEffect(() => {
     if (!isDraftLoaded) return;
@@ -532,6 +581,7 @@ export default function YachtEditorPage() {
         },
         step2: {
           selectedYacht: selectedYacht || {},
+          correctionLabel,
         },
         step3: {
           aiTexts,
@@ -574,6 +624,7 @@ export default function YachtEditorPage() {
     geminiExtracted,
     extractionResult,
     confidenceMeta,
+    correctionLabel,
     selectedYacht,
     aiTexts,
     selectedLang,
@@ -789,6 +840,7 @@ export default function YachtEditorPage() {
         step2: {
           ...toObjectRecord(draft.data.step2),
           selectedYacht: selectedYacht || {},
+          correctionLabel,
         },
         step3: {
           ...toObjectRecord(draft.data.step3),
@@ -818,6 +870,7 @@ export default function YachtEditorPage() {
     geminiExtracted,
     extractionResult,
     confidenceMeta,
+    correctionLabel,
     selectedYacht,
     aiTexts,
     selectedLang,
@@ -855,7 +908,7 @@ export default function YachtEditorPage() {
       // In new mode: block Step 2+ until image gate is satisfied
       if (isNewMode && !canProceedFromStep1 && newStep > 1) {
         toast.error(
-          "Please approve images and wait for AI extraction to complete.",
+          "Please approve images first. You can continue manually even if AI extraction fails.",
         );
         return;
       }
@@ -1180,17 +1233,74 @@ export default function YachtEditorPage() {
 
     setIsUploading(true);
     const toastId = toast.loading(`Uploading ${files.length} image(s)...`);
+    const optimisticUrls: string[] = [];
+    const previousImages = pipeline.images;
+    const previousStats = pipeline.stats;
+    const previousStep2Unlocked = pipeline.isStep2Unlocked;
 
     try {
       const fileArray = Array.from(files);
       const filesToUpload = fileArray;
+      let targetId = isNewMode ? createdYachtId : yachtId;
+      let shouldSetCreatedYachtId = false;
+
+      const optimisticBaseId = -Date.now();
+      const optimisticImages: PipelineImage[] = fileArray.map((file, index) => {
+        const previewUrl = URL.createObjectURL(file);
+        optimisticUrls.push(previewUrl);
+        return {
+          id: optimisticBaseId - index,
+          yacht_id: Number(targetId || 0),
+          url: previewUrl,
+          original_temp_url: previewUrl,
+          optimized_master_url: previewUrl,
+          thumb_url: previewUrl,
+          original_kept_url: null,
+          status: "processing",
+          keep_original: false,
+          quality_score: null,
+          quality_flags: null,
+          quality_label: "Uploading...",
+          category: "general",
+          original_name: file.name,
+          sort_order: pipeline.images.length + index,
+          optimized_url: previewUrl,
+          thumb_full_url: previewUrl,
+          full_url: previewUrl,
+          enhancement_method: "pending",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      });
+
+      // Render instant previews while upload/process is still running.
+      pipeline.setImagesDirectly?.({
+        images: [...pipeline.images, ...optimisticImages],
+        stats: {
+          ...pipeline.stats,
+          total: pipeline.stats.total + optimisticImages.length,
+          processing: pipeline.stats.processing + optimisticImages.length,
+        },
+        step2_unlocked: pipeline.isStep2Unlocked,
+      });
 
       // ── Skipped orientation/WebP conversion to match old project speeds ──
       // Backend ImageProcessingService now efficiently handles all WebP
       // encoding, EXIF rotation, and thumbnail generation in a background job.
       // ---------------------------------------------------------------------
 
-      let targetId = isNewMode ? createdYachtId : yachtId;
+      // Recover from stale draft yacht IDs restored from local draft state.
+      if (isNewMode && targetId) {
+        try {
+          await api.get(`/yachts/${targetId}`);
+        } catch (err: any) {
+          if (err?.response?.status === 404) {
+            targetId = null;
+          } else {
+            throw err;
+          }
+        }
+      }
 
       // Auto-create draft yacht upon first image drop in new mode
       if (isNewMode && !targetId) {
@@ -1201,7 +1311,11 @@ export default function YachtEditorPage() {
           headers: { "Content-Type": "multipart/form-data" },
         });
         targetId = createRes.data.id;
-        setCreatedYachtId(targetId as number);
+        shouldSetCreatedYachtId = true;
+      }
+
+      if (!targetId) {
+        throw new Error("Unable to resolve yacht id for upload");
       }
 
       const batches: File[][] = [];
@@ -1267,10 +1381,21 @@ export default function YachtEditorPage() {
         }
       } catch { }
       if (pipeline.refreshImages) await pipeline.refreshImages();
+      if (shouldSetCreatedYachtId) {
+        setCreatedYachtId(Number(targetId));
+      }
     } catch (err) {
       console.error("Upload failed:", err);
       toast.error("Failed to upload images", { id: toastId });
+      pipeline.setImagesDirectly?.({
+        images: previousImages,
+        stats: previousStats,
+        step2_unlocked: previousStep2Unlocked,
+      });
+      // Reset to backend truth if optimistic previews were shown.
+      if (pipeline.refreshImages) await pipeline.refreshImages();
     } finally {
+      optimisticUrls.forEach((url) => URL.revokeObjectURL(url));
       setIsUploading(false);
       e.target.value = "";
     }
@@ -1279,6 +1404,8 @@ export default function YachtEditorPage() {
   // Helper: check if a field needs user confirmation
   const needsConfirm = (fieldName: string) =>
     confidenceMeta?.needs_user_confirmation?.includes(fieldName) ?? false;
+  const isOptionalTriStateField = (fieldName: string) =>
+    (OPTIONAL_TRI_STATE_FIELDS as readonly string[]).includes(fieldName);
 
   // ── AI Fill Pipeline ──
   const handleAiExtract = async (
@@ -1291,6 +1418,16 @@ export default function YachtEditorPage() {
     const background = options?.background ?? false;
     const navigateToStep2 = options?.navigateToStep2 ?? !background;
     const speedMode = options?.speedMode ?? "balanced";
+    const isTimeoutLike = (message: string) => {
+      const lower = message.toLowerCase();
+      return (
+        lower.includes("timeout") ||
+        lower.includes("timed out") ||
+        lower.includes("abort") ||
+        lower.includes("gateway timeout") ||
+        lower.includes("504")
+      );
+    };
 
     // Block AI extraction when offline
     if (!navigator.onLine) {
@@ -1316,8 +1453,31 @@ export default function YachtEditorPage() {
     try {
       const formData = new FormData();
 
-      // Always pass the actual or auto-created yacht ID
-      const targetId = isNewMode ? createdYachtId : yachtId;
+      // Always pass a valid yacht ID; recover if restored draft ID was deleted server-side.
+      let targetId: number | string | null = isNewMode ? createdYachtId : yachtId;
+      if (isNewMode && targetId) {
+        try {
+          await api.get(`/yachts/${targetId}`);
+        } catch (err: any) {
+          if (err?.response?.status === 404) {
+            targetId = null;
+          } else {
+            throw err;
+          }
+        }
+      }
+      if (!targetId || targetId === "new") {
+        const fd = new FormData();
+        fd.append("status", "draft");
+        const createRes = await api.post("/yachts", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        targetId = createRes.data.id;
+        if (isNewMode) {
+          setCreatedYachtId(Number(targetId));
+        }
+      }
+
       formData.append("yacht_id", String(targetId));
       formData.append("speed_mode", speedMode);
 
@@ -1332,7 +1492,7 @@ export default function YachtEditorPage() {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
-        signal: AbortSignal.timeout(120000), // 2 mins
+        signal: AbortSignal.timeout(180000), // 3 mins
       });
 
       const responseText = await res.text();
@@ -1354,15 +1514,135 @@ export default function YachtEditorPage() {
         }
       }
 
+      if (!res.ok) {
+        throw new Error(
+          responseData?.error ||
+          responseData?.message ||
+          `AI extraction request failed (HTTP ${res.status})`,
+        );
+      }
+
       console.log("🔵 [Pipeline] Parsed API response:", responseData);
 
       if (responseData?.success && responseData?.step2_form_values) {
         const formValues = responseData.step2_form_values;
         const meta = responseData.meta;
 
+        const normalizedFormValues: Record<string, unknown> = {
+          ...(toObjectRecord(formValues)),
+        };
+
+        const currentYear = new Date().getFullYear();
+        const parseNum = (value: unknown): number | null => {
+          if (value === null || value === undefined || value === "") return null;
+          const raw = String(value).replace(",", ".").trim();
+          const parsed = Number(raw);
+          return Number.isFinite(parsed) ? parsed : null;
+        };
+
+        const sanitizeDimension = (value: unknown, field: "loa" | "beam" | "draft"): number | null => {
+          let num = parseNum(value);
+          if (num === null) return null;
+
+          // Most feeds use meters; convert obvious centimeter values for draft.
+          if (field === "draft" && num > 20 && num <= 500) {
+            num = num / 100;
+          }
+
+          if (num <= 0) return null;
+          if (field === "loa" && num > 120) return null;
+          if (field === "beam" && num > 30) return null;
+          if (field === "draft" && num > 10) return null;
+          return Number(num.toFixed(2));
+        };
+
+        // Normalize frequent alias keys from AI/feed outputs into our Step 2 schema keys.
+        const aliasMap: Record<string, string> = {
+          brand_name: "manufacturer",
+          make: "manufacturer",
+          model_name: "model",
+          type_name: "boat_type",
+          vessel_type: "boat_type",
+          year_built: "year",
+          length_m: "loa",
+          length_overall: "loa",
+          beam_m: "beam",
+          width: "beam",
+          draft_m: "draft",
+          draught: "draft",
+          hp: "horse_power",
+          engine_brand: "engine_manufacturer",
+          fuel_type: "fuel",
+        };
+        Object.entries(aliasMap).forEach(([from, to]) => {
+          const sourceValue = normalizedFormValues[from];
+          const targetValue = normalizedFormValues[to];
+          if ((targetValue === null || targetValue === undefined || targetValue === "") && sourceValue !== null && sourceValue !== undefined && sourceValue !== "") {
+            normalizedFormValues[to] = sourceValue;
+          }
+        });
+
+        // Normalize suspicious values from feed/LLM fallback before filling Step 2.
+        if (typeof normalizedFormValues.model === "number") {
+          normalizedFormValues.model = String(normalizedFormValues.model);
+        }
+        if (parseNum(normalizedFormValues.price) !== null && (parseNum(normalizedFormValues.price) as number) <= 0) {
+          normalizedFormValues.price = null;
+        }
+        const yearNum = parseNum(normalizedFormValues.year);
+        if (yearNum !== null) {
+          normalizedFormValues.year =
+            yearNum >= 1950 && yearNum <= currentYear + 1
+              ? Math.round(yearNum)
+              : null;
+        }
+        normalizedFormValues.loa = sanitizeDimension(normalizedFormValues.loa, "loa");
+        normalizedFormValues.beam = sanitizeDimension(normalizedFormValues.beam, "beam");
+        normalizedFormValues.draft = sanitizeDimension(normalizedFormValues.draft, "draft");
+
+        // Enrich missing Step 2 specs from historical suggestions (brand+model based).
+        try {
+          const query = [
+            String(normalizedFormValues.manufacturer ?? "").trim(),
+            String(normalizedFormValues.model ?? "").trim(),
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+
+          if (query.length >= 3) {
+            const suggestionsRes = await api.post("/ai/suggestions", { query });
+            const consensusValues = toObjectRecord(suggestionsRes.data?.consensus_values);
+
+            Object.entries(consensusValues).forEach(([field, value]) => {
+              const current = normalizedFormValues[field];
+              const isEmptyCurrent =
+                current === null ||
+                current === undefined ||
+                current === "" ||
+                current === "unknown";
+
+              if (isEmptyCurrent && value !== null && value !== undefined && value !== "") {
+                normalizedFormValues[field] = value;
+              }
+            });
+          }
+        } catch (suggestionError) {
+          console.warn("[AI Extraction] Suggestions enrichment failed:", suggestionError);
+        }
+
+        // Keep optional equipment conservative and always explicit in the form.
+        OPTIONAL_TRI_STATE_FIELDS.forEach((field) => {
+          const raw = normalizedFormValues[field];
+          normalizedFormValues[field] =
+            raw === null || raw === undefined || raw === ""
+              ? "unknown"
+              : normalizeTriStateValue(raw);
+        });
+
         // Build the merged object (filter nulls)
         const fieldsToMerge = Object.fromEntries(
-          Object.entries(formValues).filter(([, val]) => val !== null),
+          Object.entries(normalizedFormValues).filter(([, val]) => val !== null && val !== undefined),
         );
 
         console.log("🟢 [Pipeline] Fields to merge:", fieldsToMerge);
@@ -1379,9 +1659,10 @@ export default function YachtEditorPage() {
         console.log("⚠️ [Pipeline] Anomalies:", meta?.anomalies);
         console.log("📝 [Pipeline] Validation notes:", meta?.validation_notes);
 
-        setExtractionResult(formValues);
+        setExtractionResult(normalizedFormValues);
         setGeminiExtracted(true);
         setConfidenceMeta(meta || null);
+        setCorrectionLabel(null);
 
         // Prefill form: merge into selectedYacht
         setSelectedYacht((prev: any) => ({
@@ -1445,6 +1726,18 @@ export default function YachtEditorPage() {
       console.error("AI pipeline failed:", err);
       const errorMsg =
         err?.response?.data?.error || err?.message || "AI extraction failed";
+
+      if (speedMode === "deep" && isTimeoutLike(String(errorMsg))) {
+        toast.loading("Deep extraction timed out. Retrying with balanced mode...", {
+          id: toastId,
+        });
+        return await handleAiExtract({
+          background,
+          navigateToStep2,
+          speedMode: "balanced",
+        });
+      }
+
       toast.error(errorMsg, { id: toastId });
       return false;
     } finally {
@@ -1462,7 +1755,7 @@ export default function YachtEditorPage() {
     prevImagesApprovedRef.current = imagesApproved;
 
     if (isNewMode && imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
-      void handleAiExtract({ background: true, navigateToStep2: true, speedMode: "fast" });
+      void handleAiExtract({ background: true, navigateToStep2: true, speedMode: "balanced" });
     }
   }, [imagesApproved, geminiExtracted, isExtracting, isNewMode]);
 
@@ -1694,6 +1987,14 @@ export default function YachtEditorPage() {
       return toFormValue(selectedYacht?.[field]);
     };
 
+    const normalizeComparableValue = (field: string, value: unknown): string => {
+      if (isOptionalTriStateField(field)) {
+        return normalizeTriStateValue(value);
+      }
+      if (typeof value === "boolean") return value ? "true" : "false";
+      return String(value ?? "").trim().toLowerCase();
+    };
+
     // Add primary fields first (from visible inputs OR persisted form state)
     const boatName = getFieldValue("boat_name");
     const price = getFieldValue("price");
@@ -1777,6 +2078,7 @@ export default function YachtEditorPage() {
       "teak_deck",
       "cockpit_table",
       "dinghy",
+      "trailer",
       "covers",
       "spinnaker",
       "fenders",
@@ -1794,6 +2096,7 @@ export default function YachtEditorPage() {
       "compass",
       "gps",
       "radar",
+      "fishfinder",
       "autopilot",
       "vhf",
       "plotter",
@@ -1868,15 +2171,96 @@ export default function YachtEditorPage() {
       formData.append("availability_rules", JSON.stringify(expandedRules));
     }
 
+    // Attach AI correction context so backend can log proposal-vs-final deltas.
+    const extractionValues = toObjectRecord(extractionResult);
+    const aiSessionId = confidenceMeta?.ai_session_id || null;
+    const modelName = confidenceMeta?.model_name || null;
+    const fieldConfidence = confidenceMeta?.field_confidence || {};
+    const aiSuggestedFields = Object.entries(extractionValues).filter(([, value]) => value !== null);
+
+    if (aiSessionId) {
+      formData.append("ai_session_id", aiSessionId);
+    }
+    if (modelName) {
+      formData.append("model_name", modelName);
+    }
+    if (Object.keys(fieldConfidence).length > 0) {
+      formData.append("field_confidence", JSON.stringify(fieldConfidence));
+    }
+    formData.append("changed_by_type", role === "admin" ? "admin" : "user");
+
+    let changedAiFieldCount = 0;
+    let guessedTooMuchCount = 0;
+    for (const [field, aiValue] of aiSuggestedFields) {
+      const currentValue = getFieldValue(field) ?? selectedYacht?.[field] ?? null;
+      const aiNormalized = normalizeComparableValue(field, aiValue);
+      const currentNormalized = normalizeComparableValue(field, currentValue);
+      if (aiNormalized !== currentNormalized) {
+        changedAiFieldCount++;
+        if (isOptionalTriStateField(field) && aiNormalized === "yes" && currentNormalized !== "yes") {
+          guessedTooMuchCount++;
+        }
+      }
+    }
+
+    if (aiSessionId && changedAiFieldCount > 0) {
+      const autoLabel: CorrectionLabel =
+        guessedTooMuchCount > 0 ? "guessed_too_much" : "wrong_text_interpretation";
+      formData.append("correction_label", correctionLabel ?? autoLabel);
+      formData.append("source_type", "manual");
+      formData.append(
+        "change_reason",
+        guessedTooMuchCount > 0
+          ? `Reviewer downgraded ${guessedTooMuchCount} optional AI equipment guess(es).`
+          : `Reviewer adjusted ${changedAiFieldCount} AI-suggested field(s) before save.`,
+      );
+    } else if (correctionLabel) {
+      formData.append("correction_label", correctionLabel);
+      formData.append("source_type", "manual");
+    }
+
     try {
       let finalYachtId = selectedYacht?.id ?? createdYachtId ?? null;
+
+      // Recover from stale draft yacht IDs restored from local draft state.
+      if (isNewMode && finalYachtId) {
+        try {
+          await api.get(`/yachts/${finalYachtId}`);
+        } catch (err: any) {
+          if (err?.response?.status === 404) {
+            finalYachtId = null;
+            setCreatedYachtId(null);
+          } else {
+            throw err;
+          }
+        }
+      }
 
       if (finalYachtId) {
         // UPDATE existing yacht (including auto-created draft in "new" flow)
         formData.append("_method", "PUT");
-        await api.post(`/yachts/${finalYachtId}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        try {
+          await api.post(`/yachts/${finalYachtId}`, formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              "X-Allow-Create-If-Missing": "1",
+            },
+          });
+        } catch (updateErr: any) {
+          // If the draft yacht was deleted server-side, transparently create a new draft yacht.
+          if (isNewMode && updateErr?.response?.status === 404) {
+            formData.delete("_method");
+            const res = await api.post("/yachts", formData, {
+              headers: {
+                "X-Offline-ID": offlineIdRef.current,
+                "Content-Type": "multipart/form-data",
+              },
+            });
+            finalYachtId = res.data.id;
+          } else {
+            throw updateErr;
+          }
+        }
       } else {
         // CREATE NEW
         const res = await api.post("/yachts", formData, {
@@ -2005,7 +2389,7 @@ export default function YachtEditorPage() {
                   type="button"
                   onClick={() => handleStepChange(step.id)}
                   disabled={isLocked}
-                  title={isLocked ? "Approve images and complete AI extraction first" : step.label}
+                  title={isLocked ? "Approve images first" : step.label}
                   className={`
                     w-[54px] h-[54px] rounded-full flex items-center justify-center
                     text-[18px] font-bold border-[3px] transition-all duration-300
@@ -2233,44 +2617,42 @@ export default function YachtEditorPage() {
                           >
                             {/* Image */}
                             <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
-                              {img.status === "processing" ? (
-                                <div className="absolute inset-0 flex items-center justify-center text-slate-400">
-                                  <Loader2 size={30} className="animate-spin" />
+                              <img
+                                src={
+                                  img.thumb_full_url ||
+                                  img.optimized_url ||
+                                  img.full_url
+                                }
+                                className={cn(
+                                  "w-full h-full object-cover transition-opacity",
+                                  //@ts-ignore
+                                  img.enhancement_method === "pending" &&
+                                  "opacity-80 grayscale-[0.2]",
+                                  img.status === "processing" && "opacity-60"
+                                )}
+                                onError={handleImageError}
+                              />
+
+                              {/* Loading Overlay for Processing */}
+                              {img.status === "processing" && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
+                                  <Loader2 size={24} className="animate-spin text-blue-600" />
                                 </div>
-                              ) : (
-                                <>
-                                  <img
-                                    src={
-                                      img.thumb_full_url ||
-                                      img.optimized_url ||
-                                      img.full_url
-                                    }
-                                    className={cn(
-                                      "w-full h-full object-cover transition-opacity",
-                                      //@ts-ignore
-                                      img.enhancement_method === "pending" &&
-                                      "opacity-40 blur-sm scale-110",
-                                    )}
-                                    onError={handleImageError}
-                                  />
-                                  {/*  @ts-ignore */}
-                                  {img.enhancement_method === "pending" && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/60 backdrop-blur-[2px] z-10">
-                                      <div className="bg-white/20 p-3 rounded-full mb-3 backdrop-blur-md">
-                                        <Loader2
-                                          size={24}
-                                          className="animate-spin text-white"
-                                        />
-                                      </div>
-                                      <span className="text-sm tracking-wider uppercase text-white shadow-sm">
-                                        Enhancing...
-                                      </span>
-                                      <span className="text-[10px] text-white/80 mt-1 font-medium">
-                                        Fixing quality & rotation
-                                      </span>
-                                    </div>
-                                  )}
-                                </>
+                              )}
+
+                              {/*  @ts-ignore */}
+                              {img.enhancement_method === "pending" && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/30 backdrop-blur-[1px] z-10">
+                                  <div className="bg-white/40 p-2 rounded-full mb-2 backdrop-blur-md">
+                                    <Loader2
+                                      size={18}
+                                      className="animate-spin text-white"
+                                    />
+                                  </div>
+                                  <span className="text-[10px] tracking-wider uppercase text-white drop-shadow-md">
+                                    Optimizing...
+                                  </span>
+                                </div>
                               )}
 
                               {/* Status badge */}
@@ -2409,14 +2791,14 @@ export default function YachtEditorPage() {
                           {isNewMode
                             ? imagesApproved
                               ? canProceedFromStep1
-                                ? "✅ AI extraction completed — Step 2 is unlocked!"
-                                : "🤖 Images approved. AI extraction in progress..."
+                                ? "✅ Images approved — Step 2 is unlocked!"
+                                : "🤖 Images approved. AI extraction is still running..."
                               : `⏳ ${pipeline.stats.approved} of ${pipeline.stats.min_required} minimum images approved`
                             : "ℹ️ Edit Manifest mode — Step 2 is unlocked with existing boat details."}
                         </p>
-                        {(isNewMode && (!imagesApproved || !canProceedFromStep1)) && (
+                        {(isNewMode && !imagesApproved) && (
                           <p className="text-xs text-amber-600 mt-1">
-                            Step 2 opens only after image approval and successful AI extraction.
+                            Step 2 opens after image approval. AI extraction continues in background and fills fields when ready.
                             {pipeline.stats.processing > 0 &&
                               ` ${pipeline.stats.processing} still processing...`}
                           </p>
@@ -2432,12 +2814,14 @@ export default function YachtEditorPage() {
                                 const extractionOk = await handleAiExtract({
                                   background: true,
                                   navigateToStep2: true,
-                                  speedMode: "fast",
+                                  speedMode: "balanced",
                                 });
                                 if (!extractionOk) {
-                                  toast.error(
-                                    "AI extraction failed. Step 2 remains locked until extraction succeeds.",
+                                  toast(
+                                    "AI extraction timed out. Step 2 is unlocked; you can continue manually and retry AI later.",
+                                    { icon: "⚠️" },
                                   );
+                                  setActiveStep(2);
                                 }
                               } else {
                                 toast.success("Images approved. You can manually run AI autofill if needed.");
@@ -2630,6 +3014,35 @@ export default function YachtEditorPage() {
               className="space-y-6 lg:space-y-8 pt-2"
             >
               {/* AI extraction summary intentionally hidden in Step 2 */}
+              {confidenceMeta?.ai_session_id && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-800">
+                    AI Correction Feedback
+                  </p>
+                  <p className="mt-1 text-xs text-amber-700">
+                    Session: <span className="font-semibold">{confidenceMeta.ai_session_id}</span>
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {CORRECTION_BUTTONS.map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() =>
+                          setCorrectionLabel((prev) => (prev === item.value ? null : item.value))
+                        }
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors",
+                          correctionLabel === item.value
+                            ? "border-amber-600 bg-amber-600 text-white"
+                            : "border-amber-300 bg-white text-amber-800 hover:bg-amber-100",
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* --- SECTION 2: CORE SPECS --- */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
@@ -2659,9 +3072,9 @@ export default function YachtEditorPage() {
                       defaultValue={selectedYacht?.manufacturer}
                       placeholder="e.g. Beneteau, Sunseeker"
                       needsConfirmation={needsConfirm("manufacturer")}
-                      onSelect={(value, id) => {
+                      onSelect={(id, name) => {
                         setSelectedBrandId(Number(id));
-                        setSelectedYacht((prev: any) => ({ ...prev, manufacturer: value }));
+                        setSelectedYacht((prev: any) => ({ ...prev, manufacturer: name }));
                       }}
                     />
                   </div>
@@ -2675,9 +3088,9 @@ export default function YachtEditorPage() {
                       dependsOn="brand_id"
                       dependsOnValue={selectedBrandId}
                       needsConfirmation={needsConfirm("model")}
-                      onSelect={(value) => {
+                      onSelect={(_id, name) => {
                         // When model changes, we update the state so the assistant picks it up
-                        setSelectedYacht((prev: any) => ({ ...prev, model: value }));
+                        setSelectedYacht((prev: any) => ({ ...prev, model: name }));
                       }}
                     />
                   </div>
@@ -2687,17 +3100,36 @@ export default function YachtEditorPage() {
                     <BoatCreationAssistant
                       manufacturer={selectedYacht?.manufacturer || ""}
                       model={selectedYacht?.model || ""}
-                      onApply={(specs) => {
-                        setSelectedYacht((prev: any) => ({
-                          ...prev,
-                          ...specs, // Merge suggested specs (loa, beam, draft, etc)
-                          // Mapping from assistant names to form names
-                          loa: specs.loa || specs.length_m || prev?.loa,
-                          beam: specs.beam || specs.beam_m || prev?.beam,
-                          draft: specs.draft || specs.draft_m || prev?.draft,
-                        }));
+                      autoApply
+                      onApply={(specs, mode = "manual") => {
+                        const isAuto = mode === "auto";
+                        const isEmpty = (value: unknown) =>
+                          value === null ||
+                          value === undefined ||
+                          value === "" ||
+                          value === "unknown";
+
+                        setSelectedYacht((prev: any) => {
+                          const base = { ...(prev || {}) };
+                          const normalizedSpecs = {
+                            ...specs,
+                            loa: specs.loa ?? specs.length_m,
+                            beam: specs.beam ?? specs.beam_m ?? specs.width,
+                            draft: specs.draft ?? specs.draft_m ?? specs.draught,
+                          };
+
+                          Object.entries(normalizedSpecs).forEach(([field, value]) => {
+                            if (value === null || value === undefined || value === "") return;
+                            if (isAuto && !isEmpty(base[field])) return;
+                            base[field] = value;
+                          });
+
+                          return base;
+                        });
                         setFormKey(k => k + 1); // Refresh form to show new defaultValues
-                        toast.success("AI suggestions applied to form!");
+                        if (!isAuto) {
+                          toast.success("AI suggestions applied to form!");
+                        }
                       }}
                     />
                   </div>
@@ -3167,10 +3599,10 @@ export default function YachtEditorPage() {
                     </div>
                     <div className="space-y-1 group">
                       <Label>Toilet</Label>
-                      <Input
+                      <TriStateSelect
                         name="toilet"
                         defaultValue={selectedYacht?.toilet}
-                        placeholder="2"
+                        needsConfirmation={needsConfirm("toilet")}
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -3191,10 +3623,10 @@ export default function YachtEditorPage() {
                     </div>
                     <div className="space-y-1 group">
                       <Label>Heating</Label>
-                      <Input
+                      <TriStateSelect
                         name="heating"
                         defaultValue={selectedYacht?.heating}
-                        placeholder="e.g. Central heating"
+                        needsConfirmation={needsConfirm("heating")}
                       />
                     </div>
                     <div className="space-y-1 group flex items-center gap-3 pt-5">
@@ -3310,12 +3742,20 @@ export default function YachtEditorPage() {
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
                       <Label>{f.label}</Label>
-                      <Input
-                        name={f.name}
-                        defaultValue={selectedYacht?.[f.name]}
-                        placeholder={f.ph}
-                        needsConfirmation={needsConfirm(f.name)}
-                      />
+                      {isOptionalTriStateField(f.name) ? (
+                        <TriStateSelect
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      ) : (
+                        <Input
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          placeholder={f.ph}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -3368,12 +3808,20 @@ export default function YachtEditorPage() {
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
                       <Label>{f.label}</Label>
-                      <Input
-                        name={f.name}
-                        defaultValue={selectedYacht?.[f.name]}
-                        placeholder={f.ph}
-                        needsConfirmation={needsConfirm(f.name)}
-                      />
+                      {isOptionalTriStateField(f.name) ? (
+                        <TriStateSelect
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      ) : (
+                        <Input
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          placeholder={f.ph}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -3429,12 +3877,20 @@ export default function YachtEditorPage() {
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
                       <Label>{f.label}</Label>
-                      <Input
-                        name={f.name}
-                        defaultValue={selectedYacht?.[f.name]}
-                        placeholder={f.ph}
-                        needsConfirmation={needsConfirm(f.name)}
-                      />
+                      {isOptionalTriStateField(f.name) ? (
+                        <TriStateSelect
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      ) : (
+                        <Input
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          placeholder={f.ph}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -3519,6 +3975,11 @@ export default function YachtEditorPage() {
                       ph: "e.g. 2x Bruce 25kg + 50m chain",
                     },
                     {
+                      name: "bow_thruster",
+                      label: "Bow Thruster",
+                      ph: "yes / no / unknown",
+                    },
+                    {
                       name: "anchor_winch",
                       label: "Anchor Winch",
                       ph: "e.g. Lofrans Tigres 1500W",
@@ -3559,6 +4020,11 @@ export default function YachtEditorPage() {
                       ph: "e.g. Highfield CL310 RIB",
                     },
                     {
+                      name: "trailer",
+                      label: "Trailer",
+                      ph: "yes / no / unknown",
+                    },
+                    {
                       name: "covers",
                       label: "Covers",
                       ph: "e.g. Full winter cover",
@@ -3576,12 +4042,20 @@ export default function YachtEditorPage() {
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
                       <Label>{f.label}</Label>
-                      <Input
-                        name={f.name}
-                        defaultValue={selectedYacht?.[f.name]}
-                        placeholder={f.ph}
-                        needsConfirmation={needsConfirm(f.name)}
-                      />
+                      {isOptionalTriStateField(f.name) ? (
+                        <TriStateSelect
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      ) : (
+                        <Input
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          placeholder={f.ph}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -4126,7 +4600,7 @@ export default function YachtEditorPage() {
                 )}
               >
                 {isNewMode && !canProceedFromStep1 && activeStep === 1 ? (
-                  <>{t?.wizard?.nav?.runExtractionFirst || "Approve Images & Run AI First"}</>
+                  <>{t?.wizard?.nav?.runExtractionFirst || "Approve Images First"}</>
                 ) : (
                   <>
                     {t?.wizard?.nav?.next || "Next"}{" "}
@@ -4238,6 +4712,40 @@ function Input(
           inputProps.className,
         )}
       />
+      {needsConfirmation && (
+        <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+          ⚠ confirm
+        </span>
+      )}
+    </div>
+  );
+}
+
+function TriStateSelect(
+  props: React.SelectHTMLAttributes<HTMLSelectElement> & {
+    needsConfirmation?: boolean;
+  },
+) {
+  const { needsConfirmation, defaultValue, ...selectProps } = props;
+  const normalizedDefault = normalizeTriStateValue(defaultValue);
+
+  return (
+    <div className="relative">
+      <select
+        {...selectProps}
+        defaultValue={normalizedDefault}
+        className={cn(
+          "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
+          "hover:border-slate-300",
+          "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
+          needsConfirmation ? "border-amber-300 bg-amber-50/50" : "border-slate-200",
+          selectProps.className,
+        )}
+      >
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+        <option value="unknown">Unknown</option>
+      </select>
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
           ⚠ confirm

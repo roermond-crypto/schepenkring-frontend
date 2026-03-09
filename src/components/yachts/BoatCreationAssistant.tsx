@@ -1,35 +1,71 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, Loader2, ChevronRight, Check } from "lucide-react";
+import { Sparkles, Loader2, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { toast } from "react-hot-toast";
+
+type SuggestionResponse = {
+    consensus_values?: Record<string, unknown>;
+    field_confidence?: Record<string, number>;
+    field_sources?: Record<string, string>;
+    top_matches?: unknown[];
+    warnings?: string[];
+};
+
+const suggestionCache = new Map<string, SuggestionResponse>();
+const suggestionInFlight = new Map<string, Promise<SuggestionResponse>>();
+const autoAppliedSignatures = new Set<string>();
 
 interface BoatCreationAssistantProps {
     manufacturer: string;
     model: string;
-    onApply: (specs: Record<string, any>) => void;
+    onApply: (specs: Record<string, unknown>, mode?: "manual" | "auto") => void;
+    autoApply?: boolean;
 }
 
-export function BoatCreationAssistant({ manufacturer, model, onApply }: BoatCreationAssistantProps) {
-    const [suggestions, setSuggestions] = useState<any>(null);
+export function BoatCreationAssistant({
+    manufacturer,
+    model,
+    onApply,
+    autoApply = false,
+}: BoatCreationAssistantProps) {
+    const [suggestions, setSuggestions] = useState<SuggestionResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [lastQuery, setLastQuery] = useState("");
 
-    const query = `${manufacturer} ${model}`.trim();
+    const query = `${manufacturer} ${model}`.replace(/\s+/g, " ").trim();
+    const queryKey = query.toLowerCase();
 
     useEffect(() => {
-        if (query.length < 5 || query === lastQuery) return;
+        if (query.length < 5 || queryKey === lastQuery) return;
+
+        const cached = suggestionCache.get(queryKey);
+        if (cached) {
+            setSuggestions(cached);
+            setLastQuery(queryKey);
+            return;
+        }
 
         const timer = setTimeout(async () => {
             setIsLoading(true);
             try {
-                const res = await api.post("/ai/suggestions", { query });
-                if (res.data && res.data.consensus_values) {
-                    setSuggestions(res.data);
-                    setLastQuery(query);
+                let pending = suggestionInFlight.get(queryKey);
+                if (!pending) {
+                    pending = api
+                        .post("/ai/suggestions", { query })
+                        .then((res) => res.data)
+                        .finally(() => {
+                            suggestionInFlight.delete(queryKey);
+                        });
+                    suggestionInFlight.set(queryKey, pending);
+                }
+
+                const data = await pending;
+                if (data && data.consensus_values) {
+                    suggestionCache.set(queryKey, data);
+                    setSuggestions(data);
+                    setLastQuery(queryKey);
                 }
             } catch (e) {
                 console.error("AI Suggestions failed", e);
@@ -39,7 +75,19 @@ export function BoatCreationAssistant({ manufacturer, model, onApply }: BoatCrea
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, [query, lastQuery]);
+    }, [query, queryKey, lastQuery]);
+
+    useEffect(() => {
+        const consensus = suggestions?.consensus_values || {};
+        const hasSuggestions = Object.keys(consensus).length > 0;
+
+        if (!autoApply || !hasSuggestions || isLoading) return;
+
+        const signature = `${queryKey}::${JSON.stringify(consensus)}`;
+        if (autoAppliedSignatures.has(signature)) return;
+        autoAppliedSignatures.add(signature);
+        onApply(consensus, "auto");
+    }, [autoApply, isLoading, onApply, queryKey, suggestions]);
 
     if (!suggestions && !isLoading) return null;
 
@@ -95,7 +143,7 @@ export function BoatCreationAssistant({ manufacturer, model, onApply }: BoatCrea
                         size="sm"
                         variant="outline"
                         className="w-full bg-white border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 transition-all group"
-                        onClick={() => onApply(consensus)}
+                        onClick={() => onApply(consensus, "manual")}
                     >
                         Apply Suggestions <ChevronRight size={14} className="ml-1 group-hover:translate-x-0.5 transition-transform" />
                     </Button>
