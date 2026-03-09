@@ -700,19 +700,10 @@ export default function YachtEditorPage() {
       const fileArray = Array.from(files);
       let filesToUpload = fileArray;
 
-      // Normalize orientation by re-encoding through canvas before upload.
-      try {
-        toast.loading("Fixing image orientation...", { id: toastId });
-        const converted = await convertBatchToWebP(fileArray, 0.86, 2560);
-        if (converted.length > 0) {
-          filesToUpload = converted.map((item) => item.file);
-        }
-      } catch (conversionError) {
-        console.warn(
-          "Image orientation normalization failed, using original files:",
-          conversionError,
-        );
-      }
+      // ── Skipped orientation/WebP conversion to match old project speeds ──
+      // Backend ImageProcessingService now efficiently handles all WebP
+      // encoding, EXIF rotation, and thumbnail generation in a background job.
+      // ---------------------------------------------------------------------
 
       let targetId = isNewMode ? createdYachtId : yachtId;
 
@@ -1110,6 +1101,27 @@ export default function YachtEditorPage() {
     setAvailabilityRules(newRules);
   };
 
+  const handleFormChange = (e: React.FormEvent<HTMLFormElement>) => {
+    const target = e.target as
+      | HTMLInputElement
+      | HTMLSelectElement
+      | HTMLTextAreaElement
+      | null;
+
+    if (!target?.name) return;
+    if (target instanceof HTMLInputElement && target.type === "file") return;
+
+    const value =
+      target instanceof HTMLInputElement && target.type === "checkbox"
+        ? target.checked
+        : target.value;
+
+    setSelectedYacht((prev: any) => ({
+      ...(prev || {}),
+      [target.name]: value,
+    }));
+  };
+
   // --- 3. SIMPLIFIED SUBMIT LOGIC ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -1119,23 +1131,36 @@ export default function YachtEditorPage() {
     // Create form data directly without validation
     const formData = new FormData();
 
-    // Collect all form data
-    const formElements = e.currentTarget.elements;
+    const toFormValue = (value: unknown): string | null => {
+      if (value === null || value === undefined) return null;
+      if (typeof value === "boolean") return value ? "true" : "false";
+      const stringValue = String(value);
+      return stringValue.trim() === "" ? null : stringValue;
+    };
 
-    // Add boat name and price first
-    const boatName = (
-      document.querySelector('input[name="boat_name"]') as HTMLInputElement
-    )?.value;
-    const price = (
-      document.querySelector('input[name="price"]') as HTMLInputElement
-    )?.value;
-    const minBidAmount = (
-      document.querySelector('input[name="min_bid_amount"]') as HTMLInputElement
-    )?.value;
+    const getFieldValue = (field: string): string | null => {
+      const element = document.querySelector(
+        `[name="${field}"]`,
+      ) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
 
-    if (boatName) formData.append("boat_name", boatName);
-    if (price) formData.append("price", price);
-    if (minBidAmount) formData.append("min_bid_amount", minBidAmount);
+      if (element) {
+        if (element instanceof HTMLInputElement && element.type === "checkbox") {
+          return element.checked ? "true" : "false";
+        }
+        return toFormValue(element.value);
+      }
+
+      return toFormValue(selectedYacht?.[field]);
+    };
+
+    // Add primary fields first (from visible inputs OR persisted form state)
+    const boatName = getFieldValue("boat_name");
+    const price = getFieldValue("price");
+    const minBidAmount = getFieldValue("min_bid_amount");
+
+    if (boatName !== null) formData.append("boat_name", boatName);
+    if (price !== null) formData.append("price", price);
+    if (minBidAmount !== null) formData.append("min_bid_amount", minBidAmount);
 
     // Add main image if exists
     if (mainFile) {
@@ -1255,27 +1280,36 @@ export default function YachtEditorPage() {
     ];
 
     fields.forEach((field) => {
-      const element = document.querySelector(
-        `[name="${field}"]`,
-      ) as HTMLInputElement;
-      if (element && element.value !== undefined && element.value !== "") {
-        formData.append(field, element.value);
+      const value = getFieldValue(field);
+      if (value !== null) {
+        formData.append(field, value);
       }
     });
 
+    if (!formData.has("status")) {
+      formData.append("status", toFormValue(selectedYacht?.status) ?? "Draft");
+    }
+
     // Handle boolean fields - SIMPLIFIED
     const booleanFields = ["allow_bidding", "flybridge", "air_conditioning"];
+    const truthySet = new Set([true, "true", 1, "1"]);
 
     booleanFields.forEach((field) => {
       const checkbox = document.querySelector(
         `[name="${field}"]`,
       ) as HTMLInputElement;
-      if (checkbox) {
+      if (checkbox && checkbox.type === "checkbox") {
         formData.append(field, checkbox.checked ? "true" : "false");
       } else {
-        formData.append(field, "false");
+        const fallback = selectedYacht?.[field];
+        formData.append(field, truthySet.has(fallback) ? "true" : "false");
       }
     });
+
+    // Ensure rich-text descriptions are included even when user submits from Step 5.
+    if (aiTexts.en?.trim()) formData.set("short_description_en", aiTexts.en.trim());
+    if (aiTexts.nl?.trim()) formData.set("short_description_nl", aiTexts.nl.trim());
+    if (aiTexts.de?.trim()) formData.set("short_description_de", aiTexts.de.trim());
 
     // Add availability rules
     if (availabilityRules.length > 0) {
@@ -1453,7 +1487,7 @@ export default function YachtEditorPage() {
         </div>
       </div>
       <div className="max-w-7xl mx-auto p-6 lg:p-12 pt-16">
-        <form onSubmit={handleSubmit} className="space-y-16">
+        <form onSubmit={handleSubmit} onChange={handleFormChange} className="space-y-16">
           {/* ERROR SUMMARY */}
           {errors && (
             <div className="p-6 bg-red-50 border-l-4 border-red-500 text-red-700">

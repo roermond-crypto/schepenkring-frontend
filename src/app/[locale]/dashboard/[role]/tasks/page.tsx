@@ -115,6 +115,7 @@ type TaskSubmitData = {
   assigned_to: string | number | null;
   due_date: string;
   type: "assigned" | "personal";
+  pendingAttachments?: File[];
 };
 
 type ViewMode = "list" | "calendar" | "board";
@@ -148,6 +149,44 @@ function getStoredToken() {
   }
 
   return null;
+}
+
+function getLocalUserId(): string | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const rawSession = document.cookie
+      .split("; ")
+      .find((part) => part.startsWith("schepenkring_session="))
+      ?.split("=")[1];
+
+    if (rawSession) {
+      let b64 = decodeURIComponent(rawSession).replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4) {
+        b64 += "=";
+      }
+      const binStr = atob(b64);
+      const bytes = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) {
+        bytes[i] = binStr.charCodeAt(i);
+      }
+      const jsonStr = new TextDecoder().decode(bytes);
+      const session = JSON.parse(jsonStr);
+      if (session?.id != null) return String(session.id);
+    }
+  } catch (e) {
+    // Ignore cookie parse failures
+  }
+
+  const ud = localStorage.getItem("user_data");
+  if (!ud) return null;
+  try {
+    const u = JSON.parse(ud);
+    const id = u.id ?? u.mainId;
+    return id != null ? String(id) : null;
+  } catch {
+    return null;
+  }
 }
 
 function getCurrentLocationId() {
@@ -545,21 +584,24 @@ function TaskModal({
           ? new Date(task.reminder_at).toISOString().slice(0, 16)
           : "",
       );
+      setPendingAttachments([]);
     } else {
+      const currentId = getLocalUserId();
       setFormData({
         title: "",
         description: "",
         priority: "Medium",
         status: "To Do",
         column_id: preSelectedColId,
-        assigned_to: "",
+        assigned_to: currentId || "",
         due_date: new Date().toISOString().split("T")[0],
         type: "assigned",
       });
       setReminderAt("");
+      setPendingAttachments([]);
     }
     setErrors({});
-  }, [task, isOpen]);
+  }, [task, isOpen, preSelectedColId]);
 
   const API_BASE =
     typeof window !== "undefined" && window.location.hostname == "localhost"
@@ -578,6 +620,7 @@ function TaskModal({
   const [reminderAt, setReminderAt] = useState("");
   const [savingReminder, setSavingReminder] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
   useEffect(() => {
     if (task && isOpen) {
@@ -615,7 +658,16 @@ function TaskModal({
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !task) return;
+    if (!file) return;
+
+    if (!task) {
+      setPendingAttachments((prev) => [...prev, file]);
+      toast.success(t("toasts.fileAdded") || "Attachment staged for upload");
+      // Reset input so the same file could be selected again if needed
+      if (e.target) e.target.value = '';
+      return;
+    }
+
     setUploading(true);
     try {
       const formData = new FormData();
@@ -642,6 +694,8 @@ function TaskModal({
       toast.error(t("toasts.uploadFailed") || "Failed to upload file");
     } finally {
       setUploading(false);
+      // Reset input
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -680,13 +734,20 @@ function TaskModal({
   };
 
   const handlePasteImage = async (e: React.ClipboardEvent) => {
-    if (!task) return;
     const items = Array.from(e.clipboardData.items);
     const imageItem = items.find((item) => item.type.startsWith("image/"));
     if (!imageItem) return;
     e.preventDefault();
     const file = imageItem.getAsFile();
     if (!file) return;
+
+    if (!task) {
+      const newFile = new File([file], `pasted-image-${Date.now()}.png`, { type: file.type });
+      setPendingAttachments((prev) => [newFile, ...prev]);
+      toast.success(t("toasts.fileAdded") || "Image staged for upload");
+      return;
+    }
+
     setUploading(true);
     try {
       const fd = new FormData();
@@ -739,6 +800,7 @@ function TaskModal({
       ...formData,
       title: titleForApi,
       assigned_to: formData.assigned_to ? parseInt(formData.assigned_to) : null,
+      pendingAttachments: pendingAttachments,
     };
     onSubmit(apiData);
   };
@@ -1014,22 +1076,20 @@ function TaskModal({
                 ))}
               </select>
             )}
-            {task && (
-              <label
-                htmlFor={`file-upload-${task.id}`}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#282e33] border border-slate-200 dark:border-slate-700 rounded-md shadow-sm hover:bg-slate-50 dark:hover:bg-[#333b44] transition-colors text-slate-700 dark:text-slate-300 cursor-pointer",
-                  uploading && "opacity-50 cursor-not-allowed",
-                )}
-              >
-                {uploading ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Paperclip size={14} />
-                )}
-                {t("modal.attachments")}
-              </label>
-            )}
+            <label
+              htmlFor={`file-upload-${task?.id || "new"}`}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#282e33] border border-slate-200 dark:border-slate-700 rounded-md shadow-sm hover:bg-slate-50 dark:hover:bg-[#333b44] transition-colors text-slate-700 dark:text-slate-300 cursor-pointer",
+                uploading && "opacity-50 cursor-not-allowed",
+              )}
+            >
+              {uploading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Paperclip size={14} />
+              )}
+              {t("modal.attachments")}
+            </label>
             <input
               type="file"
               id={`file-upload-${task?.id || "new"}`}
@@ -1157,11 +1217,9 @@ function TaskModal({
                     placeholder={t("placeholders.description")}
                     rows={5}
                   />
-                  {task && (
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
-                      <ImageIcon size={10} /> Paste images here (Ctrl+V / ⌘V)
-                    </p>
-                  )}
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                    <ImageIcon size={10} /> Paste images here (Ctrl+V / ⌘V)
+                  </p>
                 </div>
                 {errors.description && (
                   <p className="text-red-500 text-xs mt-1">
@@ -1170,87 +1228,124 @@ function TaskModal({
                 )}
               </div>
 
-              {/* Attachments (only when editing) */}
-              {task && (
-                <div>
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
-                    <Paperclip size={14} /> {t("modal.attachments")}
-                  </h4>
-                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">
-                    Files
-                  </p>
-                  {attachments.length > 0 ? (
-                    <div className="space-y-2.5">
-                      {attachments.map((att) => (
-                        <div
-                          key={att.id}
-                          className="flex items-center gap-3 bg-white dark:bg-[#22272b] border border-slate-200 dark:border-slate-600 rounded-lg group hover:border-slate-300 dark:hover:border-slate-500 transition-colors overflow-hidden"
-                        >
-                          {/* Thumbnail Preview */}
-                          <div className="w-[88px] h-[64px] shrink-0 bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                            {isImageFile(att.file_name) ? (
-                              <img
-                                src={getStorageUrl(att.file_path)}
-                                alt={att.file_name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
-                                <FileText size={24} />
-                              </div>
-                            )}
-                          </div>
-                          {/* File Info */}
-                          <div className="flex-1 min-w-0 py-2">
-                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
-                              {att.file_name}
-                            </p>
-                            <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                              Added{" "}
-                              {new Date(att.created_at).toLocaleString(
-                                undefined,
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                },
-                              )}
-                              {att.user?.name ? ` by ${att.user.name}` : ""}
-                            </p>
-                          </div>
-                          {/* Actions */}
-                          <div className="flex items-center gap-1 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <a
-                              href={getStorageUrl(att.file_path)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
-                              title="Open"
-                            >
-                              <Maximize2 size={15} />
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteAttachment(att.id)}
-                              className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
-                              title="More"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
+              {/* Attachments */}
+              <div>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+                  <Paperclip size={14} /> {t("modal.attachments")}
+                </h4>
+                <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">
+                  Files
+                </p>
+                {attachments.length > 0 || pendingAttachments.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {/* Render existing attachments */}
+                    {attachments.map((att) => (
+                      <div
+                        key={att.id}
+                        className="flex items-center gap-3 bg-white dark:bg-[#22272b] border border-slate-200 dark:border-slate-600 rounded-lg group hover:border-slate-300 dark:hover:border-slate-500 transition-colors overflow-hidden"
+                      >
+                        {/* Thumbnail Preview */}
+                        <div className="w-[88px] h-[64px] shrink-0 bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                          {isImageFile(att.file_name) ? (
+                            <img
+                              src={getStorageUrl(att.file_path)}
+                              alt={att.file_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
+                              <FileText size={24} />
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-400 dark:text-slate-500 italic py-2">
-                      No attachments yet. Click &quot;Attachment&quot; above or
-                      paste images to add files.
-                    </p>
-                  )}
-                </div>
-              )}
+                        {/* File Info */}
+                        <div className="flex-1 min-w-0 py-2">
+                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
+                            {att.file_name}
+                          </p>
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                            Added{" "}
+                            {new Date(att.created_at).toLocaleString(
+                              undefined,
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              },
+                            )}
+                            {att.user?.name ? ` by ${att.user.name}` : ""}
+                          </p>
+                        </div>
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <a
+                            href={getStorageUrl(att.file_path)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                            title="Open"
+                          >
+                            <Maximize2 size={15} />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAttachment(att.id)}
+                            className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                            title="More"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Render pending attachments */}
+                    {pendingAttachments.map((att, idx) => (
+                      <div
+                        key={`pending-${idx}`}
+                        className="flex items-center gap-3 bg-white dark:bg-[#22272b] border border-sky-300 dark:border-sky-600 rounded-lg group hover:border-sky-400 dark:hover:border-sky-500 transition-colors overflow-hidden relative"
+                      >
+                        <div className="w-[88px] h-[64px] shrink-0 bg-sky-50 dark:bg-sky-900/30 overflow-hidden flex items-center justify-center">
+                          {isImageFile(att.name) ? (
+                            <img
+                              src={URL.createObjectURL(att)}
+                              alt={att.name}
+                              className="w-full h-full object-cover opacity-80"
+                            />
+                          ) : (
+                            <FileText size={24} className="text-sky-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 py-2">
+                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
+                            {att.name}
+                          </p>
+                          <p className="text-[11px] text-amber-500 font-medium">
+                            Pending Upload upon saving...
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => setPendingAttachments(prev => prev.filter((_, i) => i !== idx))}
+                            className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                            title="Remove pending file"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                        <div className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full m-2"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 dark:text-slate-500 italic py-2">
+                    No attachments yet. Click &quot;Attachment&quot; above or
+                    paste images to add files.
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* RIGHT COLUMN — Comments and Activity */}
@@ -1609,9 +1704,38 @@ export default function AdminTaskBoardPage() {
           headers,
         });
         toast.success(t("toasts.taskUpdated"));
+
+        // Upload pending attachments sequentially
+        if (taskData.pendingAttachments && taskData.pendingAttachments.length > 0) {
+          for (const file of taskData.pendingAttachments) {
+            try {
+              const formData = new FormData();
+              formData.append("file", file);
+              await axios.post(`${API_BASE}/tasks/${editingTask.id}/attachments`, formData, { headers: { ...headers, "Content-Type": "multipart/form-data" } });
+            } catch (e) {
+              console.error("Failed to upload pending attachment:", e);
+              toast.error("Failed to upload some attachments");
+            }
+          }
+        }
       } else {
-        await axios.post(`${API_BASE}/tasks`, dataToSend, { headers });
+        const response = await axios.post(`${API_BASE}/tasks`, dataToSend, { headers });
         toast.success(t("toasts.taskCreated"));
+
+        // Upload pending attachments sequentially
+        const newTaskId = response.data?.id;
+        if (newTaskId && taskData.pendingAttachments && taskData.pendingAttachments.length > 0) {
+          for (const file of taskData.pendingAttachments) {
+            try {
+              const formData = new FormData();
+              formData.append("file", file);
+              await axios.post(`${API_BASE}/tasks/${newTaskId}/attachments`, formData, { headers: { ...headers, "Content-Type": "multipart/form-data" } });
+            } catch (e) {
+              console.error("Failed to upload pending attachment:", e);
+              toast.error("Failed to upload some attachments");
+            }
+          }
+        }
       }
       await fetchData();
       setIsModalOpen(false);
@@ -1790,16 +1914,10 @@ export default function AdminTaskBoardPage() {
   };
 
   const getCurrentUserId = (): number | null => {
-    if (typeof window === "undefined") return null;
-    const ud = localStorage.getItem("user_data");
-    if (!ud) return null;
-    try {
-      const u = JSON.parse(ud);
-      const id = u.id ?? u.mainId;
-      return id != null ? Number(id) : null;
-    } catch {
-      return null;
-    }
+    const idStr = getLocalUserId();
+    if (!idStr) return null;
+    const num = Number(idStr);
+    return isNaN(num) ? null : num;
   };
 
   const getPriorityIcon = (priority: Task["priority"]) => {
@@ -1959,11 +2077,10 @@ export default function AdminTaskBoardPage() {
             {/* Active Tasks */}
             <button
               onClick={() => handleStatBlockClick("active")}
-              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${
-                activeStatBlock === "active"
-                  ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200"
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}
+              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${activeStatBlock === "active"
+                ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200"
+                : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
             >
               <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
                 <ClipboardList size={18} className="text-blue-600" />
@@ -1981,11 +2098,10 @@ export default function AdminTaskBoardPage() {
             {/* Critical Priority */}
             <button
               onClick={() => handleStatBlockClick("priority")}
-              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${
-                activeStatBlock === "priority"
-                  ? "border-red-500 bg-red-50 shadow-md ring-2 ring-red-200"
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}
+              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${activeStatBlock === "priority"
+                ? "border-red-500 bg-red-50 shadow-md ring-2 ring-red-200"
+                : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
             >
               <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
                 <AlertTriangle size={18} className="text-red-500" />
@@ -2006,11 +2122,10 @@ export default function AdminTaskBoardPage() {
             {/* Completed Tasks */}
             <button
               onClick={() => handleStatBlockClick("completed")}
-              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${
-                activeStatBlock === "completed"
-                  ? "border-emerald-500 bg-emerald-50 shadow-md ring-2 ring-emerald-200"
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}
+              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${activeStatBlock === "completed"
+                ? "border-emerald-500 bg-emerald-50 shadow-md ring-2 ring-emerald-200"
+                : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
             >
               <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center">
                 <CheckCircle2 size={18} className="text-emerald-500" />
@@ -2159,8 +2274,8 @@ export default function AdminTaskBoardPage() {
                     <p className="text-slate-400">{t("empty.noTasks")}</p>
                     <p className="text-sm text-slate-300 mt-2">
                       {filters.search ||
-                      filters.status !== "all" ||
-                      filters.priority !== "all"
+                        filters.status !== "all" ||
+                        filters.priority !== "all"
                         ? t("empty.changeFilters")
                         : t("empty.createFirst")}
                     </p>
@@ -2177,8 +2292,8 @@ export default function AdminTaskBoardPage() {
                         "flex flex-col md:flex-row items-start md:items-center justify-between p-6 gap-6 border shadow-sm rounded-lg transition-all hover:shadow-md cursor-pointer",
                         task.status === "Done" && "opacity-70",
                         task.priority === "High" &&
-                          task.status !== "Done" &&
-                          "border-l-4 border-l-red-600",
+                        task.status !== "Done" &&
+                        "border-l-4 border-l-red-600",
                       )}
                       onClick={() => {
                         setEditingTask(task);
@@ -2266,7 +2381,7 @@ export default function AdminTaskBoardPage() {
                               className={cn(
                                 "flex items-center gap-1.5",
                                 isOverdue(task.due_date) &&
-                                  "text-red-600 font-bold",
+                                "text-red-600 font-bold",
                               )}
                             >
                               <CalendarIcon size={14} /> {t("labels.due")}:{" "}
