@@ -6,10 +6,10 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 type SuggestionResponse = {
-    consensus_values?: Record<string, unknown>;
+    consensus_values?: Record<string, any>;
     field_confidence?: Record<string, number>;
     field_sources?: Record<string, string>;
-    top_matches?: unknown[];
+    top_matches?: any[];
     warnings?: string[];
 };
 
@@ -20,7 +20,7 @@ const autoAppliedSignatures = new Set<string>();
 interface BoatCreationAssistantProps {
     manufacturer: string;
     model: string;
-    onApply: (specs: Record<string, unknown>, mode?: "manual" | "auto") => void;
+    onApply: (specs: Record<string, any>, mode?: "manual" | "auto") => void;
     autoApply?: boolean;
 }
 
