@@ -11,7 +11,7 @@ import {
 // ─── Types ───────────────────────────────────────────────────────
 
 export interface StepData {
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface YachtDraft {
@@ -29,6 +29,10 @@ export interface YachtDraft {
     pendingSync: boolean;
 }
 
+type DraftOverride = Partial<Omit<YachtDraft, "data">> & {
+    data?: Partial<YachtDraft["data"]>;
+};
+
 const EMPTY_DRAFT: YachtDraft = {
     id: "new",
     currentStep: 1,
@@ -44,6 +48,32 @@ const EMPTY_DRAFT: YachtDraft = {
     pendingSync: false,
 };
 
+function readDraftFromStorage(yachtId: string): YachtDraft {
+    if (typeof window === "undefined") {
+        return { ...EMPTY_DRAFT, id: yachtId };
+    }
+
+    const stored = localStorage.getItem(draftKey(yachtId));
+    if (!stored) {
+        return { ...EMPTY_DRAFT, id: yachtId };
+    }
+
+    try {
+        const parsed = JSON.parse(stored) as YachtDraft;
+        return {
+            ...EMPTY_DRAFT,
+            ...parsed,
+            id: yachtId,
+            data: {
+                ...EMPTY_DRAFT.data,
+                ...(parsed.data || {}),
+            },
+        };
+    } catch {
+        return { ...EMPTY_DRAFT, id: yachtId };
+    }
+}
+
 // ─── Key helpers ─────────────────────────────────────────────────
 
 function draftKey(yachtId: string) {
@@ -57,40 +87,36 @@ function imageDraftPrefix(yachtId: string) {
 // ─── Hook ────────────────────────────────────────────────────────
 
 export function useYachtDraft(yachtId: string) {
-    const [draft, setDraft] = useState<YachtDraft>({
-        ...EMPTY_DRAFT,
-        id: yachtId,
-    });
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [draft, setDraft] = useState<YachtDraft>(() => readDraftFromStorage(yachtId));
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    // ── Load draft on mount ──────────────────────────────────────
-    useEffect(() => {
-        const stored = localStorage.getItem(draftKey(yachtId));
-        if (stored) {
-            try {
-                const parsed: YachtDraft = JSON.parse(stored);
-                setDraft(parsed);
-            } catch {
-                // corrupted data, start fresh
-            }
-        }
-        setIsLoaded(true);
-    }, [yachtId]);
+    const isLoaded = true;
 
     // ── Persist to localStorage ──────────────────────────────────
     const persistDraft = useCallback(
-        (updated: YachtDraft) => {
-            const withTimestamp = {
+        (updated: YachtDraft): YachtDraft => {
+            const withTimestamp: YachtDraft = {
                 ...updated,
                 lastSaved: new Date().toISOString(),
                 pendingSync: true,
             };
             localStorage.setItem(draftKey(yachtId), JSON.stringify(withTimestamp));
-            setDraft(withTimestamp);
+            return withTimestamp;
         },
         [yachtId]
     );
+
+    const mergeDraft = useCallback((base: YachtDraft, override?: DraftOverride): YachtDraft => {
+        if (!override) return base;
+
+        return {
+            ...base,
+            ...override,
+            data: {
+                ...base.data,
+                ...(override.data || {}),
+            },
+        };
+    }, []);
 
     // ── Save step data ──────────────────────────────────────────
     const saveStepData = useCallback(
@@ -105,8 +131,7 @@ export function useYachtDraft(yachtId: string) {
                         [stepKey]: { ...prev.data[stepKey], ...data },
                     },
                 };
-                persistDraft(updated);
-                return updated;
+                return persistDraft(updated);
             });
         },
         [persistDraft]
@@ -120,8 +145,7 @@ export function useYachtDraft(yachtId: string) {
                     ? prev.completedSteps
                     : [...prev.completedSteps, step].sort();
                 const updated: YachtDraft = { ...prev, completedSteps };
-                persistDraft(updated);
-                return updated;
+                return persistDraft(updated);
             });
         },
         [persistDraft]
@@ -133,8 +157,7 @@ export function useYachtDraft(yachtId: string) {
             setDraft((prev) => {
                 const completedSteps = prev.completedSteps.filter((s) => s !== step);
                 const updated: YachtDraft = { ...prev, completedSteps };
-                persistDraft(updated);
-                return updated;
+                return persistDraft(updated);
             });
         },
         [persistDraft]
@@ -145,8 +168,7 @@ export function useYachtDraft(yachtId: string) {
         (step: number) => {
             setDraft((prev) => {
                 const updated: YachtDraft = { ...prev, currentStep: step };
-                persistDraft(updated);
-                return updated;
+                return persistDraft(updated);
             });
         },
         [persistDraft]
@@ -215,13 +237,29 @@ export function useYachtDraft(yachtId: string) {
         setDraft({ ...EMPTY_DRAFT, id: yachtId });
     }, [yachtId]);
 
+    // ── Force an immediate draft flush ──────────────────────────
+    const flushDraft = useCallback(
+        (override?: DraftOverride) => {
+            setDraft((prev) => {
+                const merged = mergeDraft(prev, override);
+                return persistDraft(merged);
+            });
+        },
+        [mergeDraft, persistDraft]
+    );
+
     // ── Save on page close / visibility change ──────────────────
     useEffect(() => {
         const handleBeforeUnload = () => {
             // Synchronous save to localStorage
-            const current = draft;
-            current.lastSaved = new Date().toISOString();
-            localStorage.setItem(draftKey(yachtId), JSON.stringify(current));
+            localStorage.setItem(
+                draftKey(yachtId),
+                JSON.stringify({
+                    ...draft,
+                    lastSaved: new Date().toISOString(),
+                    pendingSync: true,
+                })
+            );
         };
 
         const handleVisibilityChange = () => {
@@ -260,6 +298,7 @@ export function useYachtDraft(yachtId: string) {
         setActiveStep,
         debouncedSave,
         clearDraft,
+        flushDraft,
         isStepComplete,
         saveMainImage,
         loadMainImage,

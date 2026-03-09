@@ -24,6 +24,12 @@ type LanguageSwitcherProps = {
   locale: AppLocale;
 };
 
+declare global {
+  interface Window {
+    __flushYachtDraftNow?: () => Promise<void> | void;
+  }
+}
+
 const META: Record<AppLocale, { name: string; icon: StaticImageData }> = {
   en: { name: "English", icon: enFlag },
   nl: { name: "Nederlands", icon: nlFlag },
@@ -35,7 +41,10 @@ function hasUnsavedYachtDraftProgress(pathname: string): boolean {
   if (typeof window === "undefined") return false;
 
   // Protect any yacht creation/edit flow from accidental language switches
-  if (pathname.includes("/yachts/add") || pathname.match(/\/yachts\/\d+/)) {
+  if (
+    pathname.includes("/yachts/add") ||
+    pathname.match(/\/yachts\/(new|\d+)(?:\/|$)/)
+  ) {
     return true; // Always warn if actively in the form view
   }
 
@@ -74,7 +83,20 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const navigateToLocale = (nextLocale: AppLocale) => {
+  const flushDraftBeforeNavigate = async () => {
+    if (typeof window === "undefined") return;
+    const flushFn = window.__flushYachtDraftNow;
+    if (typeof flushFn !== "function") return;
+
+    // Keep language switch responsive even if flush work stalls.
+    await Promise.race([
+      Promise.resolve(flushFn()),
+      new Promise((resolve) => setTimeout(resolve, 600)),
+    ]);
+  };
+
+  const navigateToLocale = async (nextLocale: AppLocale) => {
+    await flushDraftBeforeNavigate();
     const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
     const query = searchParams.toString();
     const nextPath = `/${nextLocale}${pathWithoutLocale === "/" ? "" : pathWithoutLocale}${query ? `?${query}` : ""}`;
@@ -95,7 +117,7 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
       return;
     }
 
-    navigateToLocale(nextLocale);
+    void navigateToLocale(nextLocale);
   };
 
   return (
@@ -162,7 +184,7 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
             <AlertDialogAction
               onClick={() => {
                 if (pendingLocale) {
-                  navigateToLocale(pendingLocale);
+                  void navigateToLocale(pendingLocale);
                 }
                 setPendingLocale(null);
                 setConfirmOpen(false);
