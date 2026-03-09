@@ -918,17 +918,17 @@ export default function YachtEditorPage() {
     }
   };
 
-  // Auto-trigger extraction when images transition to approved (manual or bulk)
+  // Auto-trigger extraction when images transition to approved (manual or bulk) - ONLY in New Mode
   const prevImagesApprovedRef = useRef(imagesApproved);
   useEffect(() => {
     const wasApproved = prevImagesApprovedRef.current;
     prevImagesApprovedRef.current = imagesApproved;
 
-    // Only trigger when transitioning from not-approved → approved
-    if (imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
+    // Only trigger when transitioning from not-approved → approved AND in new mode
+    if (isNewMode && imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
       handleAiExtract();
     }
-  }, [imagesApproved, geminiExtracted, isExtracting]);
+  }, [imagesApproved, geminiExtracted, isExtracting, isNewMode]);
 
   const handleRegenerateDescription = async () => {
     const targetId = isNewMode ? createdYachtId : yachtId;
@@ -1832,18 +1832,22 @@ export default function YachtEditorPage() {
                           onClick={async () => {
                             const result = await pipeline.approveAll();
                             if (result.step2_unlocked) {
-                              toast.success(
-                                "All images approved! Running AI extraction...",
-                              );
-                              // Trigger AI pipeline to extract boat data from approved images
-                              handleAiExtract();
+                              if (isNewMode) {
+                                toast.success(
+                                  "All images approved! Running AI extraction...",
+                                );
+                                // Trigger AI pipeline to extract boat data from approved images ONLY for new boats
+                                handleAiExtract();
+                              } else {
+                                toast.success("Images approved. You can manually run AI autofill if needed.");
+                              }
                             } else {
                               toast.success("Images approved.");
                             }
                           }}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-md"
                         >
-                          <CheckCircle size={16} /> Approve All & Continue
+                          <CheckCircle size={16} /> {isNewMode ? "Approve All & Continue" : "Approve All"}
                         </button>
                       )}
                     </div>
@@ -1880,13 +1884,30 @@ export default function YachtEditorPage() {
                       )
                     )}
                     {!geminiExtracted && !isExtracting && navigator.onLine && (
-                      <p className="text-xs text-slate-400 text-center">
-                        {imagesApproved
-                          ? `AI will analyze ${pipeline.stats.approved} approved optimized images`
-                          : `Upload and approve images first, then AI will analyze them`}
-                      </p>
+                      <div className="flex flex-col items-center gap-3">
+                        <p className="text-xs text-slate-400 text-center">
+                          {imagesApproved
+                            ? `AI is ready to analyze ${pipeline.stats.approved} approved optimized images`
+                            : `Upload and approve images first, then AI will analyze them`}
+                        </p>
+
+                        {/* Manual Trigger for Edit Mode or Retries */}
+                        {imagesApproved && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              toast.info("Extracting data from images...");
+                              handleAiExtract();
+                            }}
+                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+                          >
+                            <Sparkles size={16} /> Run AI Extraction Manually
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
+
                 )}
 
                 {/* Extracted Fields Preview intentionally hidden */}

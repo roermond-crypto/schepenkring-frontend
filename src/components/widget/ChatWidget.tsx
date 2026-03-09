@@ -153,8 +153,11 @@ function ChatBody({
   };
 
   return (
-    <div className="flex h-full flex-col bg-gradient-to-b from-slate-50 to-white">
-      <div className="border-b border-slate-200/80 px-4 py-3">
+    <div className="flex h-full flex-col bg-white font-sans" style={{ fontFamily: '"Inter", sans-serif' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+      `}</style>
+      <div className="border-b border-slate-200/80 px-4 py-4">
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
           Quick prompts
         </div>
@@ -202,8 +205,8 @@ function ChatBody({
               style={
                 msg.isUser
                   ? {
-                      background: `linear-gradient(140deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
-                    }
+                    background: `linear-gradient(140deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                  }
                   : undefined
               }
             >
@@ -270,8 +273,8 @@ function ChatBody({
             style={
               input.trim() && !sending
                 ? {
-                    background: `linear-gradient(130deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
-                  }
+                  background: `linear-gradient(130deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                }
                 : undefined
             }
           >
@@ -329,10 +332,10 @@ export function ChatWidget({
     const base = THEME_PRESETS[themePreset];
     const fromAccent = accentColor
       ? {
-          launcherStart: accentColor,
-          headerStart: accentColor,
-          userBubbleStart: accentColor,
-        }
+        launcherStart: accentColor,
+        headerStart: accentColor,
+        userBubbleStart: accentColor,
+      }
       : {};
     return { ...base, ...fromAccent, ...colorSettings };
   }, [accentColor, colorSettings, themePreset]);
@@ -468,9 +471,9 @@ export function ChatWidget({
             aria-label="Close chat backdrop"
           />
 
-          <div className="fixed inset-x-3 bottom-3 top-16 z-50 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-24 sm:w-[390px] sm:rounded-2xl">
+          <div className="fixed inset-x-3 bottom-3 top-16 z-50 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-[120px] sm:w-[440px] sm:h-[750px] sm:rounded-[32px]">
             <div
-              className="relative flex items-center justify-between overflow-hidden px-4 py-3 text-white"
+              className="relative flex items-center justify-between overflow-hidden px-6 py-5 text-white"
               style={{
                 background: `linear-gradient(140deg, ${colors.headerStart}, ${colors.headerEnd})`,
               }}
@@ -490,13 +493,6 @@ export function ChatWidget({
               </div>
 
               <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 transition hover:bg-white/25"
-                  aria-label="Minimize chat"
-                >
-                  <Minimize2 size={15} />
-                </button>
                 <button
                   onClick={() => {
                     setIsOpen(false);

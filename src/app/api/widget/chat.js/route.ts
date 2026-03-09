@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-    const jsContent = `
+  const jsContent = `
 (function() {
   // Prevent multiple injections
   if (window.__nauticsecureChatWidgetLoaded) return;
@@ -11,6 +11,7 @@ export async function GET() {
   const harborId = script.getAttribute('data-harbor-id') || '';
   const harborName = script.getAttribute('data-harbor-name') || '';
   const locationId = script.getAttribute('data-location-id') || '';
+  const tenant = script.getAttribute('data-tenant') || 'schepenkring';
   const accentColor = script.getAttribute('data-accent-color') || '';
   const themePreset = script.getAttribute('data-theme') || 'ocean';
   
@@ -33,10 +34,10 @@ export async function GET() {
   if (harborId) params.append('harborId', harborId);
   if (harborName) params.append('harborName', harborName);
   if (locationId) params.append('locationId', locationId);
+  if (tenant) params.append('tenant', tenant);
   if (accentColor) params.append('accentColor', accentColor);
   if (themePreset) params.append('themePreset', themePreset);
   
-  // Assuming default locale is English ('en') for the widget interface
   const iframeSrc = \`\${host}/en/widget?\${params.toString()}\`;
 
   const iframe = document.createElement('iframe');
@@ -64,8 +65,8 @@ export async function GET() {
             container.style.bottom = '0';
             container.style.right = '0';
         } else {
-            container.style.width = '420px';
-            container.style.height = '700px';
+            container.style.width = '460px';
+            container.style.height = '850px';
             container.style.bottom = '0';
             container.style.right = '0';
         }
@@ -85,10 +86,10 @@ export async function GET() {
 })();
 `;
 
-    return new NextResponse(jsContent, {
-        headers: {
-            "Content-Type": "application/javascript",
-            "Cache-Control": "public, max-age=3600",
-        },
-    });
+  return new NextResponse(jsContent, {
+    headers: {
+      "Content-Type": "application/javascript",
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
 }

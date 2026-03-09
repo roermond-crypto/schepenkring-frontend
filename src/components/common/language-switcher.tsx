@@ -33,6 +33,12 @@ const META: Record<AppLocale, { name: string; icon: StaticImageData }> = {
 
 function hasUnsavedYachtDraftProgress(pathname: string): boolean {
   if (typeof window === "undefined") return false;
+
+  // Protect any yacht creation/edit flow from accidental language switches
+  if (pathname.includes("/yachts/add") || pathname.match(/\/yachts\/\d+/)) {
+    return true; // Always warn if actively in the form view
+  }
+
   if (!pathname.includes("/yachts")) return false;
 
   try {
