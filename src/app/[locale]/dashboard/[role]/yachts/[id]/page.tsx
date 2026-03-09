@@ -1900,7 +1900,7 @@ export default function YachtEditorPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              toast.info("Extracting data from images...");
+                              toast("Extracting data from images...", { icon: "🪄" });
                               handleAiExtract();
                             }}
                             className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2"
