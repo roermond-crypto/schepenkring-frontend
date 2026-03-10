@@ -426,6 +426,58 @@
       }
     }
   },
+  "DashboardAdminLocations": {
+    "header": {
+      "kicker": "Locatiebeheer",
+      "title": "Havens en locaties",
+      "subtitle": "Maak en beheer locaties voor registratie, scope en operationeel gebruik."
+    },
+    "filters": {
+      "search": "Zoek op locatienaam of code",
+      "allStatus": "Alle statussen"
+    },
+    "form": {
+      "createTitle": "Nieuwe locatie aanmaken",
+      "editTitle": "Locatie bewerken",
+      "name": "Locatienaam",
+      "code": "Code (bijv. AMS)"
+    },
+    "table": {
+      "name": "Naam",
+      "code": "Code",
+      "status": "Status",
+      "updated": "Bijgewerkt",
+      "actions": "Acties",
+      "empty": "Geen locaties gevonden."
+    },
+    "status": {
+      "active": "Actief",
+      "inactive": "Inactief"
+    },
+    "actions": {
+      "refresh": "Verversen",
+      "create": "Locatie aanmaken",
+      "update": "Locatie bijwerken",
+      "edit": "Bewerken",
+      "delete": "Verwijderen",
+      "cancel": "Annuleren",
+      "cancelEdit": "Bewerken annuleren"
+    },
+    "confirm": {
+      "deleteTitle": "Locatie verwijderen",
+      "deleteBody": "Weet je zeker dat je \"{name}\" wilt verwijderen?"
+    },
+    "toasts": {
+      "loadFailed": "Locaties laden mislukt.",
+      "created": "Locatie aangemaakt.",
+      "createFailed": "Locatie aanmaken mislukt.",
+      "updated": "Locatie bijgewerkt.",
+      "updateFailed": "Locatie bijwerken mislukt.",
+      "deleted": "Locatie verwijderd.",
+      "deleteFailed": "Locatie verwijderen mislukt.",
+      "deleteConflict": "Locatie kan niet worden verwijderd omdat er nog gekoppelde gegevens bestaan."
+    }
+  },
   "DashboardAdminUsers": {
     "header": {
       "title": "Gebruikersbeheer",

@@ -95,6 +95,7 @@ export function Sidebar({
 
     if (role === "admin") {
       items.push({ title: t.users, href: `${root}/users`, icon: Users });
+      items.push({ title: t.harbor, href: `${root}/harbors`, icon: Anchor });
       items.push({ title: t.copilot, href: `${root}/copilot`, icon: Bot });
       items.push({
         title: t.locations,

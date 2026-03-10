@@ -425,6 +425,58 @@
       }
     }
   },
+  "DashboardAdminLocations": {
+    "header": {
+      "kicker": "Standortverwaltung",
+      "title": "Häfen und Standorte",
+      "subtitle": "Erstellen und verwalten Sie Standorte für Registrierung, Scoping und Betrieb."
+    },
+    "filters": {
+      "search": "Nach Standortname oder Code suchen",
+      "allStatus": "Alle Status"
+    },
+    "form": {
+      "createTitle": "Neuen Standort erstellen",
+      "editTitle": "Standort bearbeiten",
+      "name": "Standortname",
+      "code": "Code (z. B. AMS)"
+    },
+    "table": {
+      "name": "Name",
+      "code": "Code",
+      "status": "Status",
+      "updated": "Aktualisiert",
+      "actions": "Aktionen",
+      "empty": "Keine Standorte gefunden."
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "actions": {
+      "refresh": "Aktualisieren",
+      "create": "Standort erstellen",
+      "update": "Standort aktualisieren",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "cancel": "Abbrechen",
+      "cancelEdit": "Bearbeitung abbrechen"
+    },
+    "confirm": {
+      "deleteTitle": "Standort löschen",
+      "deleteBody": "Möchten Sie \"{name}\" wirklich löschen?"
+    },
+    "toasts": {
+      "loadFailed": "Standorte konnten nicht geladen werden.",
+      "created": "Standort erstellt.",
+      "createFailed": "Standort konnte nicht erstellt werden.",
+      "updated": "Standort aktualisiert.",
+      "updateFailed": "Standort konnte nicht aktualisiert werden.",
+      "deleted": "Standort gelöscht.",
+      "deleteFailed": "Standort konnte nicht gelöscht werden.",
+      "deleteConflict": "Standort kann nicht gelöscht werden, da noch verknüpfte Datensätze vorhanden sind."
+    }
+  },
   "DashboardAdminUsers": {
     "header": {
       "title": "Benutzerverwaltung",
