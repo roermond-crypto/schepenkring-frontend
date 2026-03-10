@@ -2057,50 +2057,6 @@ export default function YachtEditorPage() {
     }
   };
 
-  // Auto-trigger extraction when images transition to approved (only for NEW yachts on Step 1).
-  const prevImagesApprovedRef = useRef(imagesApproved);
-  useEffect(() => {
-    const wasApproved = prevImagesApprovedRef.current;
-    prevImagesApprovedRef.current = imagesApproved;
-
-    // Guard: Only auto-trigger if we just reached approval on Step 1 of a NEW boat
-    // AND we haven't already extracted or have data filled.
-    // AND we have finished restoring the draft or loading initial data.
-    const hasData =
-      selectedYacht && (selectedYacht.manufacturer || selectedYacht.model);
-    const isRestoring = isNewMode
-      ? !isDraftLoaded || !restoredDraftRef.current
-      : loading;
-    const isPipelineLoading = pipeline.isLoading;
-
-    if (
-      !isRestoring &&
-      !isPipelineLoading &&
-      isNewMode &&
-      activeStep === 1 &&
-      imagesApproved &&
-      !wasApproved &&
-      !geminiExtracted &&
-      !isExtracting &&
-      !hasData
-    ) {
-      void handleAiExtract({
-        background: false,
-        navigateToStep2: true,
-        speedMode: "balanced",
-      });
-    }
-  }, [
-    imagesApproved,
-    geminiExtracted,
-    isExtracting,
-    activeStep,
-    isNewMode,
-    selectedYacht,
-    isDraftLoaded,
-    loading,
-    pipeline.isLoading,
-  ]);
 
   const handleRegenerateDescription = async () => {
     const targetId = isNewMode ? createdYachtId : yachtId;
