@@ -2733,7 +2733,7 @@ export default function YachtEditorPage() {
         <div className="max-w-2xl mx-auto flex items-center justify-center py-7 px-6">
           {wizardSteps.map((step, index) => {
             const isActive = activeStep === step.id;
-            const isCompleted = step.id < activeStep;
+            const isCompleted = step.id < activeStep || (activeStep === wizardSteps.length && step.id === wizardSteps.length);
             const isPast = isActive || isCompleted;
             const isLocked = (!canProceedFromStep1 && step.id > 1) || (isExtracting && step.id > 1);
             return (
