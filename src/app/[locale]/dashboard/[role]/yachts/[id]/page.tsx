@@ -3617,35 +3617,6 @@ export default function YachtEditorPage() {
               className="space-y-6 lg:space-y-8 pt-2"
             >
               {/* AI extraction summary intentionally hidden in Step 2 */}
-              {confidenceMeta?.ai_session_id && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-800">
-                    AI Correction Feedback
-                  </p>
-                  <p className="mt-1 text-xs text-amber-700">
-                    Session: <span className="font-semibold">{confidenceMeta.ai_session_id}</span>
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {CORRECTION_BUTTONS.map((item) => (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() =>
-                          setCorrectionLabel((prev) => (prev === item.value ? null : item.value))
-                        }
-                        className={cn(
-                          "rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors",
-                          correctionLabel === item.value
-                            ? "border-amber-600 bg-amber-600 text-white"
-                            : "border-amber-300 bg-white text-amber-800 hover:bg-amber-100",
-                        )}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* --- SECTION 2: CORE SPECS --- */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
