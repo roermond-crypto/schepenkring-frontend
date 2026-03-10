@@ -183,19 +183,19 @@ function clampWizardStep(value: unknown, fallback = 1): number {
   return Math.min(5, Math.max(1, Math.trunc(parsed)));
 }
 
-function normalizeTriStateValue(value: unknown): "yes" | "no" | "unknown" {
+function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
   if (typeof value === "boolean") return value ? "yes" : "no";
   if (typeof value === "number") return value > 0 ? "yes" : "no";
   const normalized = String(value ?? "").trim().toLowerCase();
-  if (!normalized) return "unknown";
-  if (["unknown", "unsure", "uncertain", "n/a", "na", "null"].includes(normalized)) return "unknown";
-  if (["no", "n", "false", "0", "absent", "none"].includes(normalized)) return "no";
+  if (!normalized) return null;
+  if (["unknown", "unsure", "uncertain", "n/a", "na", "null", "none"].includes(normalized)) return null;
+  if (["no", "n", "false", "0", "absent"].includes(normalized)) return "no";
   if (["yes", "y", "true", "1", "present", "included"].includes(normalized)) return "yes";
   if (/\b(without|not visible|not present|missing)\b/.test(normalized)) return "no";
   if (/\b(with|equipped|installed|available)\b/.test(normalized)) return "yes";
   if (/\d+/.test(normalized)) return "yes";
-  // Legacy free-text values should keep "present" semantics.
-  return "yes";
+  // If it's something else not matching the above, return null to be safe
+  return null;
 }
 
 export default function YachtEditorPage() {
@@ -1520,6 +1520,9 @@ export default function YachtEditorPage() {
         formData.append("hint_text", boatHint.trim());
       }
 
+      // Images are NOT sent from frontend — backend fetches them from DB
+      // using yacht_id (matching old project behavior for reliability).
+
       // We use fetch directly here to bypass Axios JSON parser,
       // which fails if PHP outputs warnings before the JSON
       const token = localStorage.getItem("auth_token");
@@ -1607,7 +1610,20 @@ export default function YachtEditorPage() {
           draught: "draft",
           hp: "horse_power",
           engine_brand: "engine_manufacturer",
+          engine_make: "engine_manufacturer",
           fuel_type: "fuel",
+          engine_hp: "horse_power",
+          engine_hours: "hours",
+          engine_count: "engine_quantity",
+          hull_material: "hull_construction",
+          construction_material: "hull_construction",
+          cabins_count: "cabins",
+          berths_count: "berths",
+          vessel_lying: "where",
+          asking_price: "price",
+          speed_max: "max_speed",
+          speed_cruising: "cruising_speed",
+          air_draf: "air_draft",
         };
         Object.entries(aliasMap).forEach(([from, to]) => {
           const sourceValue = normalizedFormValues[from];
@@ -1675,9 +1691,9 @@ export default function YachtEditorPage() {
               : normalizeTriStateValue(raw);
         });
 
-        // Build the merged object (filter nulls)
+        // Build the merged object (filter nulls only — match old project)
         const fieldsToMerge = Object.fromEntries(
-          Object.entries(normalizedFormValues).filter(([, val]) => val !== null && val !== undefined),
+          Object.entries(normalizedFormValues).filter(([, val]) => val !== null),
         );
 
         console.log("🟢 [Pipeline] Fields to merge:", fieldsToMerge);
@@ -1783,16 +1799,16 @@ export default function YachtEditorPage() {
     }
   };
 
-  // Auto-trigger extraction only in new mode when images transition to approved.
+  // Auto-trigger extraction when images transition to approved (any mode — matches old project).
   const prevImagesApprovedRef = useRef(imagesApproved);
   useEffect(() => {
     const wasApproved = prevImagesApprovedRef.current;
     prevImagesApprovedRef.current = imagesApproved;
 
-    if (isNewMode && imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
+    if (imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
       void handleAiExtract({ background: true, navigateToStep2: true, speedMode: "balanced" });
     }
-  }, [imagesApproved, geminiExtracted, isExtracting, isNewMode]);
+  }, [imagesApproved, geminiExtracted, isExtracting]);
 
   const handleRegenerateDescription = async () => {
     const targetId = isNewMode ? createdYachtId : yachtId;

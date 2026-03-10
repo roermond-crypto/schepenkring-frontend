@@ -44,6 +44,18 @@ type DashboardData = {
   };
 };
 
+type DashboardAuditItem = {
+  id: number;
+  action?: string;
+  entity_type?: string;
+  entity_id?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  status?: string;
+  description?: string;
+  title?: string;
+};
+
 function CountUpNumber({
   value,
   duration = 700,
@@ -173,7 +185,7 @@ export default function AdminDashboardHome() {
           api.get("/yachts"),
           api.get("/tasks"),
           api.get("/bids?page=1"),
-          api.get("/system-logs?per_page=5"),
+          api.get("/audit?per_page=5&sort_by=created_at&sort_dir=desc"),
           api.get("/dashboard/summary"),
         ]);
 
@@ -185,7 +197,7 @@ export default function AdminDashboardHome() {
         bidsRes.status === "fulfilled"
           ? bidsRes.value.data?.data || bidsRes.value.data || []
           : [];
-      const systemLogs =
+      const auditLogs =
         logsRes.status === "fulfilled"
           ? logsRes.value.data?.data || logsRes.value.data?.logs || []
           : [];
@@ -255,8 +267,7 @@ export default function AdminDashboardHome() {
               new Date(a.updated_at).getTime(),
           )
           .slice(0, 3),
-        auditLogs:
-          systemLogs.length > 0 ? systemLogs.slice(0, 5) : tasks.slice(0, 5),
+        auditLogs: auditLogs.slice(0, 5),
         trends:
           summaryRes.status === "fulfilled" && summaryRes.value.data
             ? summaryRes.value.data
@@ -707,13 +718,15 @@ export default function AdminDashboardHome() {
                 ))}
 
               {!loading &&
-                data.auditLogs.slice(0, 5).map((task: any) => {
+                data.auditLogs.slice(0, 5).map((task: DashboardAuditItem) => {
                   const status = auditStatus(task);
+                  const auditHref = `${dashboardBase}/audit?logId=${task.id}`;
                   const StatusIcon = status.icon;
                   return (
-                    <div
+                    <Link
                       key={task.id}
-                      className="rounded-xl border border-slate-200 p-3 transition hover:border-[#BBD0F2] dark:border-slate-700 dark:hover:border-slate-600"
+                      href={auditHref}
+                      className="block rounded-xl border border-slate-200 p-3 transition hover:border-[#BBD0F2] hover:bg-slate-50 dark:border-slate-700 dark:hover:border-slate-600"
                     >
                       <div className="flex items-start gap-3">
                         <div
@@ -761,7 +774,7 @@ export default function AdminDashboardHome() {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
 
