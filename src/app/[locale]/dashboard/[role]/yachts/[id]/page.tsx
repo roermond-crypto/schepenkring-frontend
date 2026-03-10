@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, SyntheticEvent } from "react";
+import { useState, useEffect, useCallback, useRef, SyntheticEvent, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
@@ -35,7 +35,7 @@ import {
   Shield,
   Anchor,
   WifiOff,
-  Filter, HelpCircle, Info, Languages, Star, Users, Video, Wifi, Plus, X, UploadCloud, Edit3, Anchor as MooringIcon, CalendarDays, Key, Sun, ShieldCheck, Play
+  Filter, HelpCircle, Info, Languages, Star, Users, Video, Wifi, Plus, X, UploadCloud, Edit3, Anchor as MooringIcon, CalendarDays, Key, Sun, ShieldCheck, Play, GripVertical, Wand2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,6 +52,15 @@ import { useLocale } from "next-intl";
 import { getDictionary } from "@/lib/i18n";
 import { normalizeRole } from "@/lib/auth/roles";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 
 const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
   ssr: false,
@@ -111,6 +120,8 @@ type AiStagedImage = {
   originalName: string;
 };
 type GalleryState = { [key: string]: any[] };
+
+type ImageGridDensity = "regular" | "compact" | "dense";
 
 // Availability Rule Type
 type AvailabilityRule = {
@@ -283,6 +294,14 @@ export default function YachtEditorPage() {
     : (yachtId as string);
   const pipeline = useImagePipeline(activeYachtId);
   const imagesApproved = pipeline.isStep2Unlocked;
+  const [reviewImages, setReviewImages] = useState<PipelineImage[]>([]);
+  const [imageGridDensity, setImageGridDensity] =
+    useState<ImageGridDensity>("regular");
+  const [selectedLightboxImageId, setSelectedLightboxImageId] = useState<number | null>(null);
+  const [isAutoSortingImages, setIsAutoSortingImages] = useState(false);
+  const [isReorderingImages, setIsReorderingImages] = useState(false);
+  const [deleteAllImagesDialogOpen, setDeleteAllImagesDialogOpen] = useState(false);
+  const [isDeletingAllImages, setIsDeletingAllImages] = useState(false);
 
   // Legacy staging for non-image features (Main Profile etc)
   const [aiStaging, setAiStaging] = useState<AiStagedImage[]>([]);
@@ -353,6 +372,10 @@ export default function YachtEditorPage() {
       }
     }
   }, [selectedLang]);
+
+  useEffect(() => {
+    setReviewImages(pipeline.images);
+  }, [pipeline.images]);
 
 
 
@@ -1172,6 +1195,137 @@ export default function YachtEditorPage() {
       setIsPublishingVideo(null);
     }
   };
+
+  const gridClassName = useMemo(() => {
+    switch (imageGridDensity) {
+      case "dense":
+        return "grid-cols-2 lg:grid-cols-8";
+      case "compact":
+        return "grid-cols-2 lg:grid-cols-6";
+      default:
+        return "grid-cols-2 lg:grid-cols-4";
+    }
+  }, [imageGridDensity]);
+
+  const selectedLightboxImage = useMemo(
+    () =>
+      selectedLightboxImageId === null
+        ? null
+        : reviewImages.find((image) => image.id === selectedLightboxImageId) ?? null,
+    [reviewImages, selectedLightboxImageId],
+  );
+
+  const selectedLightboxIndex = useMemo(
+    () =>
+      selectedLightboxImageId === null
+        ? -1
+        : reviewImages.findIndex((image) => image.id === selectedLightboxImageId),
+    [reviewImages, selectedLightboxImageId],
+  );
+
+  const buildImageAiNotes = useCallback((image: PipelineImage) => {
+    const notes: string[] = [];
+    const adjustments = Array.isArray(image.quality_flags?.ai_adjustments)
+      ? image.quality_flags.ai_adjustments
+      : [];
+    notes.push(...adjustments);
+
+    if (image.quality_flags?.too_dark) {
+      notes.push("Source image was detected as dark before enhancement.");
+    }
+    if (image.quality_flags?.too_bright) {
+      notes.push("Source image had strong highlights before enhancement.");
+    }
+    if (image.quality_flags?.blurry) {
+      notes.push("Source image was soft, so clarity recovery was attempted.");
+    }
+    if (image.quality_flags?.low_res) {
+      notes.push("Source image resolution was low, so upscale logic was considered.");
+    }
+    if (
+      typeof image.quality_flags?.ai_rotation_angle === "number" &&
+      image.quality_flags.ai_rotation_angle > 0
+    ) {
+      notes.push(`Image orientation was corrected by ${image.quality_flags.ai_rotation_angle} degrees.`);
+    }
+    if (notes.length === 0) {
+      notes.push("AI marked this image as gallery-ready without major corrections.");
+    }
+
+    return Array.from(new Set(notes));
+  }, []);
+
+  const handlePipelineDragEnd = useCallback(
+    async (result: DropResult) => {
+      if (!result.destination) return;
+      if (result.destination.index === result.source.index) return;
+
+      const reordered = Array.from(reviewImages);
+      const [moved] = reordered.splice(result.source.index, 1);
+      reordered.splice(result.destination.index, 0, moved);
+      setReviewImages(reordered);
+
+      try {
+        setIsReorderingImages(true);
+        await pipeline.reorderImages(reordered.map((image) => image.id));
+      } catch (error) {
+        setReviewImages(pipeline.images);
+        toast.error("Failed to save image order");
+        console.error(error);
+      } finally {
+        setIsReorderingImages(false);
+      }
+    },
+    [pipeline, reviewImages],
+  );
+
+  const handleAutoSortImages = useCallback(async () => {
+    try {
+      setIsAutoSortingImages(true);
+      await pipeline.autoClassifyImages();
+      toast.success("AI sorted images into better categories.");
+    } catch (error) {
+      toast.error("AI image sorting failed.");
+      console.error(error);
+    } finally {
+      setIsAutoSortingImages(false);
+    }
+  }, [pipeline]);
+
+  const handleDeleteAllImages = useCallback(async () => {
+    if (reviewImages.length === 0) return;
+
+    try {
+      setIsDeletingAllImages(true);
+      setSelectedLightboxImageId(null);
+
+      const result = await pipeline.deleteImages(reviewImages.map((image) => image.id));
+
+      if (result.failed > 0) {
+        toast.error(`Deleted ${result.deleted} images, ${result.failed} failed.`);
+      } else {
+        toast.success(`Deleted ${result.deleted} images.`);
+      }
+    } catch (error) {
+      toast.error("Failed to delete images.");
+      console.error(error);
+    } finally {
+      setDeleteAllImagesDialogOpen(false);
+      setIsDeletingAllImages(false);
+    }
+  }, [pipeline, reviewImages]);
+
+  const moveLightboxImage = useCallback(
+    (direction: "next" | "prev") => {
+      if (selectedLightboxIndex < 0 || reviewImages.length === 0) return;
+
+      const delta = direction === "next" ? 1 : -1;
+      const nextIndex =
+        (selectedLightboxIndex + delta + reviewImages.length) % reviewImages.length;
+      setSelectedLightboxImageId(reviewImages[nextIndex]?.id ?? null);
+    },
+    [reviewImages, selectedLightboxIndex],
+  );
 
 
   const handleImageError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
@@ -2580,8 +2734,8 @@ export default function YachtEditorPage() {
                 ) : (
                   <div className="space-y-4">
                     {/* Stats bar */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
+                      <div className="flex flex-wrap items-center gap-4">
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                           {`${pipeline.stats.total} image${pipeline.stats.total !== 1 ? "s" : ""}`}
                         </p>
@@ -2603,220 +2757,512 @@ export default function YachtEditorPage() {
                                 ✓ {pipeline.stats.approved} approved
                               </span>
                             )}
+                            {isReorderingImages && (
+                              <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                Saving order...
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
-                      <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
-                        <Upload size={12} /> Add More
-                        <input
-                          type="file"
-                          multiple
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          disabled={isUploading || pipeline.isUploading}
-                        />
-                      </label>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
+                          <button
+                            type="button"
+                            onClick={() => setImageGridDensity("regular")}
+                            className={cn(
+                              "rounded-lg px-3 py-1 text-xs font-bold transition-colors",
+                              imageGridDensity === "regular"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            )}
+                            title="4 images per row"
+                          >
+                            4
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImageGridDensity("compact")}
+                            className={cn(
+                              "rounded-lg px-3 py-1 text-xs font-bold transition-colors",
+                              imageGridDensity === "compact"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            )}
+                            title="6 images per row"
+                          >
+                            6
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImageGridDensity("dense")}
+                            className={cn(
+                              "rounded-lg px-3 py-1 text-xs font-bold transition-colors",
+                              imageGridDensity === "dense"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            )}
+                            title="8 images per row"
+                          >
+                            8
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => void handleAutoSortImages()}
+                          disabled={isAutoSortingImages || reviewImages.length === 0}
+                          className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-bold text-violet-700 transition-colors hover:bg-violet-100 disabled:opacity-60"
+                        >
+                          {isAutoSortingImages ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Wand2 size={12} />
+                          )}
+                          AI auto-sort
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setDeleteAllImagesDialogOpen(true)}
+                          disabled={reviewImages.length === 0 || isDeletingAllImages}
+                          className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-60"
+                          title="Delete all images"
+                        >
+                          {isDeletingAllImages ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Trash size={12} />
+                          )}
+                        </button>
+
+                        <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                          <Upload size={12} /> Add More
+                          <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={isUploading || pipeline.isUploading}
+                          />
+                        </label>
+                      </div>
                     </div>
 
                     {/* ── Pipeline Image Grid ── */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {pipeline.images.map((img: PipelineImage) => {
-                        const isMain =
-                          mainPreview === img.optimized_url ||
-                          mainPreview === img.thumb_full_url;
-                        const statusConfig: Record<
-                          string,
-                          { bg: string; text: string; label: string }
-                        > = {
-                          processing: {
-                            bg: "bg-blue-500",
-                            text: "text-white",
-                            label: "⏳ Processing...",
-                          },
-                          ready_for_review: {
-                            bg: "bg-amber-500",
-                            text: "text-white",
-                            label: "👁 Ready for Review",
-                          },
-                          approved: {
-                            bg: "bg-emerald-500",
-                            text: "text-white",
-                            label: "✓ Approved",
-                          },
-                          processing_failed: {
-                            bg: "bg-red-500",
-                            text: "text-white",
-                            label: "✕ Failed",
-                          },
-                        };
-                        const sc =
-                          statusConfig[img.status] || statusConfig.processing;
-
-                        return (
+                    <DragDropContext onDragEnd={handlePipelineDragEnd}>
+                      <Droppable droppableId="pipeline-image-grid" direction="horizontal">
+                        {(provided) => (
                           <div
-                            key={img.id}
-                            className={cn(
-                              "relative group bg-white border shadow-sm overflow-hidden rounded-xl",
-                              img.status === "approved"
-                                ? "border-emerald-300 ring-1 ring-emerald-200"
-                                : img.status === "ready_for_review"
-                                  ? "border-amber-300"
-                                  : img.status === "processing"
-                                    ? "border-blue-200"
-                                    : "border-red-300",
-                            )}
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={cn("grid gap-4", gridClassName)}
                           >
-                            {/* Image */}
-                            <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
-                              <img
-                                src={
-                                  img.thumb_full_url ||
-                                  img.optimized_url ||
-                                  img.full_url
-                                }
-                                className={cn(
-                                  "w-full h-full object-cover transition-opacity",
-                                  //@ts-ignore
-                                  img.enhancement_method === "pending" &&
-                                  "opacity-80 grayscale-[0.2]",
-                                  img.status === "processing" && "opacity-60"
-                                )}
-                                onError={handleImageError}
-                              />
+                            {reviewImages.map((img: PipelineImage, index: number) => {
+                              const statusConfig: Record<
+                                string,
+                                { bg: string; text: string; label: string }
+                              > = {
+                                processing: {
+                                  bg: "bg-blue-500",
+                                  text: "text-white",
+                                  label: "⏳ Processing...",
+                                },
+                                ready_for_review: {
+                                  bg: "bg-amber-500",
+                                  text: "text-white",
+                                  label: "👁 Ready for Review",
+                                },
+                                approved: {
+                                  bg: "bg-emerald-500",
+                                  text: "text-white",
+                                  label: "✓ Approved",
+                                },
+                                processing_failed: {
+                                  bg: "bg-red-500",
+                                  text: "text-white",
+                                  label: "✕ Failed",
+                                },
+                              };
+                              const sc =
+                                statusConfig[img.status] || statusConfig.processing;
 
-                              {/* Loading Overlay for Processing */}
-                              {img.status === "processing" && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
-                                  <Loader2 size={24} className="animate-spin text-blue-600" />
+                              return (
+                                <Draggable key={img.id} draggableId={`pipeline-image-${img.id}`} index={index}>
+                                  {(dragProvided) => (
+                                    <div
+                                      ref={dragProvided.innerRef}
+                                      {...dragProvided.draggableProps}
+                                      className={cn(
+                                        "relative group bg-white border shadow-sm overflow-hidden rounded-xl",
+                                        img.status === "approved"
+                                          ? "border-emerald-300 ring-1 ring-emerald-200"
+                                          : img.status === "ready_for_review"
+                                            ? "border-amber-300"
+                                            : img.status === "processing"
+                                              ? "border-blue-200"
+                                              : "border-red-300",
+                                      )}
+                                    >
+                                      {/* Image */}
+                                      <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
+                                        <img
+                                          src={
+                                            img.thumb_full_url ||
+                                            img.optimized_url ||
+                                            img.full_url
+                                          }
+                                          alt={img.original_name || `Yacht image ${index + 1}`}
+                                          onClick={() => setSelectedLightboxImageId(img.id)}
+                                          className={cn(
+                                            "w-full h-full cursor-zoom-in object-cover transition-opacity",
+                                            img.enhancement_method === "pending" &&
+                                            "opacity-80 grayscale-[0.2]",
+                                            img.status === "processing" && "opacity-60"
+                                          )}
+                                          onError={handleImageError}
+                                        />
+
+                                        {/* Loading Overlay for Processing */}
+                                        {img.status === "processing" && (
+                                          <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
+                                            <Loader2 size={24} className="animate-spin text-blue-600" />
+                                          </div>
+                                        )}
+
+                                        {img.enhancement_method === "pending" && (
+                                          <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/30 backdrop-blur-[1px] z-10">
+                                            <div className="bg-white/40 p-2 rounded-full mb-2 backdrop-blur-md">
+                                              <Loader2
+                                                size={18}
+                                                className="animate-spin text-white"
+                                              />
+                                            </div>
+                                            <span className="text-[10px] tracking-wider uppercase text-white drop-shadow-md">
+                                              Optimizing...
+                                            </span>
+                                          </div>
+                                        )}
+
+                                        {/* Status badge */}
+                                        <div
+                                          className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
+                                        >
+                                          {sc.label}
+                                        </div>
+
+                                        <div
+                                          {...dragProvided.dragHandleProps}
+                                          className="absolute right-2 bottom-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur active:cursor-grabbing"
+                                          title="Drag to reorder"
+                                        >
+                                          <GripVertical size={14} />
+                                        </div>
+
+                                        {/* Quality label */}
+                                        {img.quality_label &&
+                                          img.status !== "processing" && (
+                                            <div
+                                              className={cn(
+                                                "absolute top-2 right-2 text-white text-[9px] font-bold px-2 py-1 rounded-md backdrop-blur-sm z-20 shadow-md",
+                                                img.quality_score &&
+                                                  img.quality_score < 70
+                                                  ? "bg-red-500/90"
+                                                  : "bg-black/60",
+                                              )}
+                                            >
+                                              {img.quality_label}
+                                            </div>
+                                          )}
+
+                                        {img.category && (
+                                          <div className="absolute bottom-2 right-12 z-20 rounded-md bg-[#0B1F3A]/80 px-2 py-1 text-[9px] font-bold text-white shadow-md backdrop-blur-sm">
+                                            {img.category}
+                                          </div>
+                                        )}
+
+                                        {/* AI Enhanced badge */}
+                                        {img.enhancement_method === "cloudinary" &&
+                                          img.status !== "processing" && (
+                                            <div className="absolute bottom-2 left-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-md shadow-md flex items-center gap-1.5 z-20">
+                                              <Sparkles size={10} /> AI Enhanced
+                                            </div>
+                                          )}
+                                      </div>
+
+                                      {/* Controls */}
+                                      <div className="p-3 space-y-2">
+                                        {/* Quality score bar */}
+                                        {img.quality_score !== null && (
+                                          <div className="space-y-1">
+                                            <div className="flex items-center justify-between gap-2">
+                                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                AI review score
+                                              </span>
+                                              <span className="text-[10px] font-bold text-slate-400">
+                                                {img.quality_score}/100
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                <div
+                                                  className={cn(
+                                                    "h-full rounded-full transition-all",
+                                                    img.quality_score >= 70
+                                                      ? "bg-emerald-500"
+                                                      : img.quality_score >= 40
+                                                        ? "bg-amber-500"
+                                                        : "bg-red-500",
+                                                  )}
+                                                  style={{ width: `${img.quality_score}%` }}
+                                                />
+                                              </div>
+                                            </div>
+                                            <p className="text-[10px] text-slate-400">
+                                              Measures gallery readiness after AI cleanup.
+                                            </p>
+                                          </div>
+                                        )}
+
+                                        {/* Keep original toggle */}
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[10px] text-slate-500 font-medium">
+                                            Keep original
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              pipeline.toggleKeepOriginal(img.id)
+                                            }
+                                            className={cn(
+                                              "w-8 h-4 rounded-full transition-colors relative",
+                                              img.keep_original
+                                                ? "bg-blue-500"
+                                                : "bg-slate-200",
+                                            )}
+                                          >
+                                            <div
+                                              className={cn(
+                                                "w-3 h-3 bg-white rounded-full shadow absolute top-0.5 transition-transform",
+                                                img.keep_original
+                                                  ? "translate-x-4"
+                                                  : "translate-x-0.5",
+                                              )}
+                                            />
+                                          </button>
+                                        </div>
+
+                                        <div className="rounded-lg bg-slate-50 px-2.5 py-2 text-[10px] text-slate-500">
+                                          <p className="font-semibold text-slate-700">AI comments</p>
+                                          <p className="mt-1 line-clamp-2">
+                                            {buildImageAiNotes(img)[0]}
+                                          </p>
+                                        </div>
+
+                                        {/* Action buttons */}
+                                        <div className="flex gap-2">
+                                          {img.status === "ready_for_review" && (
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                pipeline.approveImage(img.id)
+                                              }
+                                              className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
+                                            >
+                                              <Check size={12} /> Approve
+                                            </button>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => pipeline.deleteImage(img.id)}
+                                            className="bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold py-1.5 px-3 rounded-md transition-colors flex items-center gap-1"
+                                          >
+                                            <Trash size={12} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              );
+                            })}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+
+                    <Dialog
+                      open={selectedLightboxImage !== null}
+                      onOpenChange={(open) => {
+                        if (!open) {
+                          setSelectedLightboxImageId(null);
+                        }
+                      }}
+                    >
+                      <DialogContent
+                        showCloseButton={false}
+                        className="max-w-[min(96vw,1240px)] overflow-hidden rounded-[32px] border border-slate-800/80 bg-[#020817] p-0 shadow-[0_40px_120px_rgba(2,6,23,0.78)]"
+                      >
+                        {selectedLightboxImage && (
+                          <div className="max-h-[92vh] overflow-y-auto">
+                            <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_28%),linear-gradient(180deg,_#0f172a_0%,_#020617_100%)]">
+                              <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 p-4 sm:p-6">
+                                <div className="rounded-full border border-white/10 bg-slate-950/55 px-4 py-2 backdrop-blur-xl">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-200/70">
+                                    AI Gallery Review
+                                  </p>
                                 </div>
-                              )}
 
-                              {/*  @ts-ignore */}
-                              {img.enhancement_method === "pending" && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/30 backdrop-blur-[1px] z-10">
-                                  <div className="bg-white/40 p-2 rounded-full mb-2 backdrop-blur-md">
-                                    <Loader2
-                                      size={18}
-                                      className="animate-spin text-white"
-                                    />
-                                  </div>
-                                  <span className="text-[10px] tracking-wider uppercase text-white drop-shadow-md">
-                                    Optimizing...
+                                <div className="flex items-center gap-2">
+                                  <span className="rounded-full border border-white/10 bg-slate-950/60 px-3 py-1 text-xs font-semibold text-slate-100 backdrop-blur-xl">
+                                    {selectedLightboxIndex + 1} / {reviewImages.length}
                                   </span>
+                                  <DialogClose asChild>
+                                    <button
+                                      type="button"
+                                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-slate-950/60 text-white transition-colors hover:bg-white/10"
+                                      aria-label="Close image review"
+                                    >
+                                      <X size={18} />
+                                    </button>
+                                  </DialogClose>
                                 </div>
-                              )}
-
-                              {/* Status badge */}
-                              <div
-                                className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
-                              >
-                                {sc.label}
                               </div>
 
-                              {/* Quality label */}
-                              {img.quality_label &&
-                                img.status !== "processing" && (
-                                  <div
-                                    className={cn(
-                                      "absolute top-2 right-2 text-white text-[9px] font-bold px-2 py-1 rounded-md backdrop-blur-sm z-20 shadow-md",
-                                      img.quality_score &&
-                                        img.quality_score < 70
-                                        ? "bg-red-500/90"
-                                        : "bg-black/60",
-                                    )}
-                                  >
-                                    {img.quality_label}
-                                  </div>
-                                )}
+                              <div className="relative flex min-h-[54vh] items-center justify-center px-4 pb-24 pt-24 sm:px-8 lg:px-10">
+                                <img
+                                  src={
+                                    selectedLightboxImage.optimized_url ||
+                                    selectedLightboxImage.full_url
+                                  }
+                                  alt={
+                                    selectedLightboxImage.original_name ||
+                                    "Selected yacht image"
+                                  }
+                                  className="max-h-[62vh] w-auto max-w-full rounded-[28px] border border-white/10 bg-slate-950/70 object-contain shadow-[0_30px_100px_rgba(15,23,42,0.65)]"
+                                  onError={handleImageError}
+                                />
+                              </div>
 
-                              {/* AI Enhanced badge */}
-                              {img.enhancement_method === "cloudinary" &&
-                                img.status !== "processing" && (
-                                  <div className="absolute bottom-2 left-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-md shadow-md flex items-center gap-1.5 z-20">
-                                    <Sparkles size={10} /> AI Enhanced
-                                  </div>
-                                )}
+                              <button
+                                type="button"
+                                onClick={() => moveLightboxImage("prev")}
+                                className="absolute bottom-6 left-6 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-slate-950/65 text-white shadow-[0_12px_40px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-colors hover:bg-white/10"
+                              >
+                                <ChevronLeft size={20} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveLightboxImage("next")}
+                                className="absolute bottom-6 left-24 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-slate-950/65 text-white shadow-[0_12px_40px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-colors hover:bg-white/10"
+                              >
+                                <ChevronRight size={20} />
+                              </button>
                             </div>
 
-                            {/* Controls */}
-                            <div className="p-3 space-y-2">
-                              {/* Quality score bar */}
-                              {img.quality_score !== null && (
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                    <div
-                                      className={cn(
-                                        "h-full rounded-full transition-all",
-                                        img.quality_score >= 70
-                                          ? "bg-emerald-500"
-                                          : img.quality_score >= 40
-                                            ? "bg-amber-500"
-                                            : "bg-red-500",
-                                      )}
-                                      style={{ width: `${img.quality_score}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-[10px] font-bold text-slate-400">
-                                    {img.quality_score}
-                                  </span>
+                            <div className="border-t border-white/10 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(248,250,252,0.96)_100%)] p-6 sm:p-8 lg:p-10">
+                              <DialogHeader className="text-left">
+                                <div className="inline-flex w-fit items-center rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700">
+                                  Review Details
                                 </div>
-                              )}
+                                <DialogTitle className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                                  {selectedLightboxImage.original_name || "Image review"}
+                                </DialogTitle>
+                                <DialogDescription className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                                  Review the full image, the AI quality score, and the applied corrections before approving it for the final gallery.
+                                </DialogDescription>
+                              </DialogHeader>
 
-                              {/* Keep original toggle */}
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] text-slate-500 font-medium">
-                                  Keep original
+                              <div className="mt-6 flex flex-wrap gap-2">
+                                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm">
+                                  {selectedLightboxImage.category || "General"}
                                 </span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    pipeline.toggleKeepOriginal(img.id)
-                                  }
-                                  className={cn(
-                                    "w-8 h-4 rounded-full transition-colors relative",
-                                    img.keep_original
-                                      ? "bg-blue-500"
-                                      : "bg-slate-200",
-                                  )}
-                                >
-                                  <div
-                                    className={cn(
-                                      "w-3 h-3 bg-white rounded-full shadow absolute top-0.5 transition-transform",
-                                      img.keep_original
-                                        ? "translate-x-4"
-                                        : "translate-x-0.5",
-                                    )}
-                                  />
-                                </button>
+                                <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold capitalize text-violet-700 shadow-sm">
+                                  {(selectedLightboxImage.enhancement_method || "none").replace(/_/g, " ")}
+                                </span>
+                                {selectedLightboxImage.keep_original && (
+                                  <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-sm">
+                                    Keep original
+                                  </span>
+                                )}
                               </div>
 
-                              {/* Action buttons */}
-                              <div className="flex gap-2">
-                                {img.status === "ready_for_review" && (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      pipeline.approveImage(img.id)
-                                    }
-                                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
+                              <div className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
+                                      AI review score
+                                    </p>
+                                    <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
+                                      {selectedLightboxImage.quality_score ?? "—"}
+                                      <span className="text-lg text-slate-400">/100</span>
+                                    </p>
+                                  </div>
+                                  <span
+                                    className={cn(
+                                      "rounded-full px-3 py-1 text-xs font-bold",
+                                      (selectedLightboxImage.quality_score ?? 0) >= 70
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : (selectedLightboxImage.quality_score ?? 0) >= 40
+                                          ? "bg-amber-50 text-amber-700"
+                                          : "bg-red-50 text-red-700",
+                                    )}
                                   >
-                                    <Check size={12} /> Approve
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => pipeline.deleteImage(img.id)}
-                                  className="bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold py-1.5 px-3 rounded-md transition-colors flex items-center gap-1"
-                                >
-                                  <Trash size={12} />
-                                </button>
+                                    {(selectedLightboxImage.quality_score ?? 0) >= 70
+                                      ? "Gallery ready"
+                                      : (selectedLightboxImage.quality_score ?? 0) >= 40
+                                        ? "Needs review"
+                                        : "Needs correction"}
+                                  </span>
+                                </div>
+
+                                <p className="mt-4 text-sm leading-6 text-slate-500">
+                                  This score reflects how suitable the image is for the public gallery after AI cleanup and classification.
+                                </p>
+
+                                <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
+                                  AI review score
+                                </p>
+                                <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full bg-gradient-to-r",
+                                      (selectedLightboxImage.quality_score ?? 0) >= 70
+                                        ? "from-emerald-400 to-emerald-500"
+                                        : (selectedLightboxImage.quality_score ?? 0) >= 40
+                                          ? "from-amber-400 to-orange-500"
+                                          : "from-rose-400 to-red-500",
+                                    )}
+                                    style={{
+                                      width: `${selectedLightboxImage.quality_score ?? 0}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="mt-6 space-y-3">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
+                                  AI comments
+                                </p>
+                                <div className="space-y-2">
+                                  {buildImageAiNotes(selectedLightboxImage).map((note) => (
+                                    <div
+                                      key={note}
+                                      className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm leading-6 text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
+                                    >
+                                      {note}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 )}
 
@@ -3679,6 +4125,33 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
+                      <Label>Berths (Fixed)</Label>
+                      <Input
+                        name="berths_fixed"
+                        type="number"
+                        defaultValue={selectedYacht?.berths_fixed}
+                        placeholder="4"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Berths (Extra)</Label>
+                      <Input
+                        name="berths_extra"
+                        type="number"
+                        defaultValue={selectedYacht?.berths_extra}
+                        placeholder="2"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Berths (Crew)</Label>
+                      <Input
+                        name="berths_crew"
+                        type="number"
+                        defaultValue={selectedYacht?.berths_crew}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
                       <Label>Shower</Label>
                       <Input
                         name="shower"
@@ -3692,6 +4165,86 @@ export default function YachtEditorPage() {
                         name="bath"
                         defaultValue={selectedYacht?.bath}
                         placeholder="1"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Interior Type</Label>
+                      <Input
+                        name="interior_type"
+                        defaultValue={selectedYacht?.interior_type}
+                        placeholder="Classic, wood"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Saloon</Label>
+                      <Input
+                        name="saloon"
+                        defaultValue={selectedYacht?.saloon}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Headroom</Label>
+                      <Input
+                        name="headroom"
+                        defaultValue={selectedYacht?.headroom}
+                        placeholder="1.95m"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Separate Dining Area</Label>
+                      <Input
+                        name="separate_dining_area"
+                        defaultValue={selectedYacht?.separate_dining_area}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Engine Room</Label>
+                      <Input
+                        name="engine_room"
+                        defaultValue={selectedYacht?.engine_room}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Spaces Inside</Label>
+                      <Input
+                        name="spaces_inside"
+                        defaultValue={selectedYacht?.spaces_inside}
+                        placeholder="3"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Upholstery Color</Label>
+                      <Input
+                        name="upholstery_color"
+                        defaultValue={selectedYacht?.upholstery_color}
+                        placeholder="Blue"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Matrasses</Label>
+                      <Input
+                        name="matrasses"
+                        defaultValue={selectedYacht?.matrasses}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Cushions</Label>
+                      <Input
+                        name="cushions"
+                        defaultValue={selectedYacht?.cushions}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Curtains</Label>
+                      <Input
+                        name="curtains"
+                        defaultValue={selectedYacht?.curtains}
+                        placeholder="White"
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -4759,6 +5312,17 @@ export default function YachtEditorPage() {
         cancelText="Cancel"
         variant="destructive"
         onConfirm={executeVideoDelete}
+      />
+
+      <ConfirmDialog
+        open={deleteAllImagesDialogOpen}
+        onOpenChange={setDeleteAllImagesDialogOpen}
+        title="Delete all images"
+        description="Are you sure you want to remove all uploaded images from this yacht? This action cannot be undone."
+        confirmText={isDeletingAllImages ? "Deleting..." : "Delete all"}
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={handleDeleteAllImages}
       />
     </div>
   );

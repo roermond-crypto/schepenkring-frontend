@@ -19,6 +19,9 @@ export interface PipelineImage {
         too_bright?: boolean;
         blurry?: boolean;
         low_res?: boolean;
+        ai_rotation_angle?: number;
+        ai_adjustments?: string[];
+        ai_category_source?: string;
     } | null;
     quality_label: string;
     category: string;
@@ -50,7 +53,10 @@ interface UseImagePipelineReturn {
     uploadImages: (files: File[]) => Promise<void>;
     approveImage: (imageId: number) => Promise<void>;
     deleteImage: (imageId: number) => Promise<void>;
+    deleteImages: (imageIds: number[]) => Promise<{ deleted: number; failed: number }>;
     toggleKeepOriginal: (imageId: number) => Promise<void>;
+    reorderImages: (imageIds: number[]) => Promise<void>;
+    autoClassifyImages: () => Promise<PipelineImage[]>;
     approveAll: () => Promise<{ step2_unlocked: boolean }>;
     refreshImages: () => Promise<void>;
     setImagesDirectly?: (data: { images: PipelineImage[]; stats: PipelineStats; step2_unlocked: boolean }) => void;
@@ -169,6 +175,29 @@ export function useImagePipeline(yachtId: string | number | null): UseImagePipel
         [yachtId, refreshImages]
     );
 
+    const deleteImages = useCallback(
+        async (imageIds: number[]) => {
+            if (!yachtId || imageIds.length === 0) {
+                return { deleted: 0, failed: 0 };
+            }
+
+            const results = await Promise.allSettled(
+                imageIds.map((imageId) =>
+                    api.post(`/yachts/${yachtId}/images/${imageId}/delete`)
+                )
+            );
+
+            const failed = results.filter((result) => result.status === "rejected").length;
+            await refreshImages();
+
+            return {
+                deleted: imageIds.length - failed,
+                failed,
+            };
+        },
+        [yachtId, refreshImages]
+    );
+
     // Toggle keep original
     const toggleKeepOriginal = useCallback(
         async (imageId: number) => {
@@ -179,6 +208,26 @@ export function useImagePipeline(yachtId: string | number | null): UseImagePipel
         },
         [yachtId, refreshImages]
     );
+
+    const reorderImages = useCallback(
+        async (imageIds: number[]) => {
+            if (!yachtId) return;
+
+            await api.post(`/yachts/${yachtId}/images/reorder`, {
+                image_ids: imageIds,
+            });
+            await refreshImages();
+        },
+        [yachtId, refreshImages]
+    );
+
+    const autoClassifyImages = useCallback(async () => {
+        if (!yachtId) return [];
+
+        const res = await api.post(`/yachts/${yachtId}/images/auto-classify`);
+        await refreshImages();
+        return res.data?.images || [];
+    }, [yachtId, refreshImages]);
 
     // Approve all ready images
     const approveAll = useCallback(async () => {
@@ -206,7 +255,10 @@ export function useImagePipeline(yachtId: string | number | null): UseImagePipel
         uploadImages,
         approveImage,
         deleteImage,
+        deleteImages,
         toggleKeepOriginal,
+        reorderImages,
+        autoClassifyImages,
         approveAll,
         refreshImages,
         setImagesDirectly,
