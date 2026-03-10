@@ -40,6 +40,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { getDictionary } from "@/lib/i18n";
@@ -59,6 +66,7 @@ import { useYachtDraft } from "@/hooks/useYachtDraft";
 import { convertBatchToWebP } from "@/lib/convertToWebP";
 import { CatalogAutocomplete } from "@/components/ui/CatalogAutocomplete";
 import { BoatCreationAssistant } from "@/components/yachts/BoatCreationAssistant";
+import { SignhostFlow } from "@/components/yachts/SignhostFlow";
 import { useUser } from "@/hooks/useUser";
 import { useImagePipeline, PipelineImage } from "@/hooks/useImagePipeline";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -87,7 +95,7 @@ const WIZARD_STEP_IDS = [
 ] as const;
 
 const DRAFT_KEY_PREFIX = "yacht_draft_";
-const MAX_IMAGES_UPLOAD = 30;
+const MAX_IMAGES_UPLOAD = 50;
 const UPLOAD_BATCH_SIZE = 6;
 const UPLOAD_MAX_PARALLEL_BATCHES = 4;
 
@@ -297,6 +305,10 @@ export default function YachtEditorPage() {
   const [formKey, setFormKey] = useState(0);
   const [confidenceMeta, setConfidenceMeta] = useState<ConfidenceMeta | null>(null);
   const [correctionLabel, setCorrectionLabel] = useState<CorrectionLabel | null>(null);
+
+  // Harbors
+  const [harbors, setHarbors] = useState<any[]>([]);
+  const [isHarborsLoading, setIsHarborsLoading] = useState(false);
   const canProceedFromStep1 =
     !isNewMode ||
     (!isOnline && offlineImages.length > 0) ||
@@ -369,7 +381,7 @@ export default function YachtEditorPage() {
       const fetchComplianceData = async () => {
         setFetchingChecklist(true);
         try {
-          const typeId = selectedYacht?.boat_type_id || (draft?.data as any)?.boat_type_id || "";
+          const typeId = selectedYacht?.boat_type_id || (draft?.data as any)?.step2?.selectedYacht?.boat_type_id || "";
           const templatesRes = await api.get(`/checklists/templates?boat_type_id=${typeId}`);
           setChecklistTemplates(templatesRes.data);
 
@@ -388,6 +400,7 @@ export default function YachtEditorPage() {
     }
   }, [activeStep, selectedYacht?.boat_type_id, (draft?.data as any)?.boat_type_id, isNewMode, createdYachtId, yachtId]);
 
+  /* 
   useEffect(() => {
     const fetchDefaults = async () => {
       if (!user?.id) return;
@@ -408,6 +421,28 @@ export default function YachtEditorPage() {
     };
     fetchDefaults();
   }, [user?.id]);
+  */
+
+  useEffect(() => {
+    const fetchHarbors = async () => {
+      try {
+        setIsHarborsLoading(true);
+        const res = await api.get("/public/locations");
+        const list = res.data || [];
+        setHarbors(list);
+
+        // Auto-select if only one harbor exists and none selected
+        if (list.length === 1 && !selectedYacht?.ref_harbor_id) {
+          setSelectedYacht((prev: any) => ({ ...prev, ref_harbor_id: list[0].id }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch harbors", err);
+      } finally {
+        setIsHarborsLoading(false);
+      }
+    };
+    fetchHarbors();
+  }, [selectedYacht?.ref_harbor_id]);
 
   // Initial Empty State Population for Step 4
   useEffect(() => {
@@ -1226,8 +1261,8 @@ export default function YachtEditorPage() {
 
     // ── ONLINE PATH: original server upload flow ──
     // Check max limit (30)
-    if (pipeline.stats.total + files.length > 30) {
-      toast.error("Maximum 30 images allowed per batch.");
+    if (pipeline.stats.total + files.length > MAX_IMAGES_UPLOAD) {
+      toast.error(`Maximum ${MAX_IMAGES_UPLOAD} images allowed per batch.`);
       return;
     }
 
@@ -2069,6 +2104,7 @@ export default function YachtEditorPage() {
       "boat_category",
       "new_or_used",
       "ce_category",
+      "ref_harbor_id",
       "anchor",
       "anchor_winch",
       "bimini",
@@ -2508,7 +2544,7 @@ export default function YachtEditorPage() {
                       className="text-slate-200 group-hover:text-blue-400 mb-4 transition-colors"
                     />
                     <p className="text-sm font-semibold text-slate-400 group-hover:text-blue-600 transition-colors">
-                      Click to add up to 30 images
+                      Click to add up to {MAX_IMAGES_UPLOAD} images
                     </p>
                     <p className="text-xs text-slate-400 mt-2">
                       JPEG, PNG, HEIC auto-optimized by AI
@@ -3093,6 +3129,27 @@ export default function YachtEditorPage() {
                         setSelectedYacht((prev: any) => ({ ...prev, model: name }));
                       }}
                     />
+                  </div>
+
+                  <div className="space-y-2 group">
+                    <Label>Verkooplocatie (Haven) *</Label>
+                    <Select
+                      value={selectedYacht?.ref_harbor_id?.toString() || ""}
+                      onValueChange={(val) => {
+                        setSelectedYacht((prev: any) => ({ ...prev, ref_harbor_id: Number(val) }));
+                      }}
+                    >
+                      <SelectTrigger className="h-11 border-slate-200">
+                        <SelectValue placeholder="Selecteer locatie..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {harbors.map((h) => (
+                          <SelectItem key={h.id} value={h.id.toString()}>
+                            {h.name} ({h.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* ── AI ASSISTANT ── */}
@@ -4552,6 +4609,17 @@ export default function YachtEditorPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* ── SIGNHOST INTEGRATION ── */}
+                {activeYachtId && (
+                  <div className="mb-8">
+                    <SignhostFlow
+                      yachtId={Number(activeYachtId)}
+                      yachtName={selectedYacht?.boat_name || (draft?.data as any)?.step2?.selectedYacht?.boat_name || "Unnamed Vessel"}
+                      locationId={selectedYacht?.ref_harbor_id || (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id || null}
+                    />
+                  </div>
+                )}
 
                 <Button
                   type="submit"
