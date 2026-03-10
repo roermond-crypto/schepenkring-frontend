@@ -35,6 +35,7 @@ import {
   Shield,
   Anchor,
   WifiOff,
+  Wind,
   Filter, HelpCircle, Info, Languages, Star, Users, Video, Wifi, Plus, X, UploadCloud, Edit3, Anchor as MooringIcon, CalendarDays, Key, Sun, ShieldCheck, Play, GripVertical, Wand2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -160,6 +161,47 @@ const OPTIONAL_TRI_STATE_FIELDS = [
   "heating",
   "toilet",
   "fridge",
+  "shower",
+  "bath",
+  "oven",
+  "microwave",
+  "freezer",
+  "television",
+  "ais",
+  "radar",
+  "autopilot",
+  "life_raft",
+  "epirb",
+  "bilge_pump",
+  "fire_extinguisher",
+  "mob_system",
+  "radar_reflector",
+  "flares",
+  "life_buoy",
+  "watertight_door",
+  "gas_bottle_locker",
+  "self_draining_cockpit",
+  "solar_panel",
+  "wind_generator",
+  "stern_anchor",
+  "spud_pole",
+  "cockpit_tent",
+  "outdoor_cushions",
+  "teak_deck",
+  "swimming_platform",
+  "swimming_ladder",
+  "shorepower",
+  "bowsprit",
+  "main_sail",
+  "furling_mainsail",
+  "genoa",
+  "jib",
+  "spinnaker",
+  "gennaker",
+  "mizzen",
+  "furling_mizzen",
+  "winches",
+  "electric_winches",
 ] as const;
 
 const CORRECTION_BUTTONS: Array<{ value: CorrectionLabel; label: string }> = [
@@ -332,6 +374,9 @@ export default function YachtEditorPage() {
     !isNewMode ||
     (!isOnline && offlineImages.length > 0) ||
     imagesApproved;
+  const areReviewPrerequisitesComplete = [1, 2, 3, 4].every((stepId) =>
+    isStepComplete(stepId),
+  );
 
   // AI Text State (Tab 3)
   const [aiTexts, setAiTexts] = useState({ nl: "", en: "", de: "" });
@@ -376,6 +421,28 @@ export default function YachtEditorPage() {
   useEffect(() => {
     setReviewImages(pipeline.images);
   }, [pipeline.images]);
+
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+
+    if (!areReviewPrerequisitesComplete) {
+      if (isStepComplete(5)) {
+        markStepIncomplete(5);
+      }
+      return;
+    }
+
+    if (activeStep === 5 && !isStepComplete(5)) {
+      markStepComplete(5);
+    }
+  }, [
+    activeStep,
+    areReviewPrerequisitesComplete,
+    isDraftLoaded,
+    isStepComplete,
+    markStepComplete,
+    markStepIncomplete,
+  ]);
 
 
 
@@ -4286,7 +4353,209 @@ export default function YachtEditorPage() {
                       <Input
                         name="cockpit_type"
                         defaultValue={selectedYacht?.cockpit_type}
-                        placeholder="e.g. Open / Closed"
+                        placeholder="Aft cockpit"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water Tank</Label>
+                      <Input
+                        name="water_tank"
+                        defaultValue={selectedYacht?.water_tank}
+                        placeholder="200L"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water Tank Gauge</Label>
+                      <Input
+                        name="water_tank_gauge"
+                        defaultValue={selectedYacht?.water_tank_gauge}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water Maker</Label>
+                      <Input
+                        name="water_maker"
+                        defaultValue={selectedYacht?.water_maker}
+                        placeholder="60 L/h"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Waste Water Tank</Label>
+                      <Input
+                        name="waste_water_tank"
+                        defaultValue={selectedYacht?.waste_water_tank}
+                        placeholder="80L"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Waste Water Gauge</Label>
+                      <Input
+                        name="waste_water_tank_gauge"
+                        defaultValue={selectedYacht?.waste_water_tank_gauge}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Waste Tank Drain Pump</Label>
+                      <Input
+                        name="waste_water_tank_drainpump"
+                        defaultValue={selectedYacht?.waste_water_tank_drainpump}
+                        placeholder="Electric"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Deck Suction</Label>
+                      <Input
+                        name="deck_suction"
+                        defaultValue={selectedYacht?.deck_suction}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water System</Label>
+                      <Input
+                        name="water_system"
+                        defaultValue={selectedYacht?.water_system}
+                        placeholder="Pressurized"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Hot Water</Label>
+                      <Input
+                        name="hot_water"
+                        defaultValue={selectedYacht?.hot_water}
+                        placeholder="Boiler"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Sea Water Pump</Label>
+                      <Input
+                        name="sea_water_pump"
+                        defaultValue={selectedYacht?.sea_water_pump}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group flex items-center gap-3 pt-5">
+                      <input
+                        type="checkbox"
+                        name="deck_wash_pump"
+                        defaultChecked={
+                          selectedYacht?.deck_wash_pump === true ||
+                          selectedYacht?.deck_wash_pump === "true" ||
+                          selectedYacht?.deck_wash_pump === 1
+                        }
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label>Deck Wash Pump</Label>
+                    </div>
+                    <div className="space-y-1 group flex items-center gap-3 pt-5">
+                      <input
+                        type="checkbox"
+                        name="deck_shower"
+                        defaultChecked={
+                          selectedYacht?.deck_shower === true ||
+                          selectedYacht?.deck_shower === "true" ||
+                          selectedYacht?.deck_shower === 1
+                        }
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label>Deck Shower</Label>
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Television</Label>
+                      <TriStateSelect
+                        name="television"
+                        defaultValue={selectedYacht?.television}
+                        needsConfirmation={needsConfirm("television")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Radio / CD Player</Label>
+                      <Input
+                        name="cd_player"
+                        defaultValue={selectedYacht?.cd_player}
+                        placeholder="Pioneer"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Satellite Reception</Label>
+                      <Input
+                        name="satellite_reception"
+                        defaultValue={selectedYacht?.satellite_reception}
+                        placeholder="KVH TracVision"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Cooker</Label>
+                      <Input
+                        name="cooker"
+                        defaultValue={selectedYacht?.cooker}
+                        placeholder="3-burner"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Cooking Fuel</Label>
+                      <Input
+                        name="cooking_fuel"
+                        defaultValue={selectedYacht?.cooking_fuel}
+                        placeholder="Gas"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Oven</Label>
+                      <TriStateSelect
+                        name="oven"
+                        defaultValue={selectedYacht?.oven}
+                        needsConfirmation={needsConfirm("oven")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Microwave</Label>
+                      <TriStateSelect
+                        name="microwave"
+                        defaultValue={selectedYacht?.microwave}
+                        needsConfirmation={needsConfirm("microwave")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Fridge</Label>
+                      <TriStateSelect
+                        name="fridge"
+                        defaultValue={selectedYacht?.fridge}
+                        needsConfirmation={needsConfirm("fridge")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Freezer</Label>
+                      <TriStateSelect
+                        name="freezer"
+                        defaultValue={selectedYacht?.freezer}
+                        needsConfirmation={needsConfirm("freezer")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Hot Air Heating</Label>
+                      <Input
+                        name="hot_air"
+                        defaultValue={selectedYacht?.hot_air}
+                        placeholder="Webasto"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Stove Heating</Label>
+                      <Input
+                        name="stove"
+                        defaultValue={selectedYacht?.stove}
+                        placeholder="Refleks"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Central Heating</Label>
+                      <Input
+                        name="central_heating"
+                        defaultValue={selectedYacht?.central_heating}
+                        placeholder="Kabola"
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -4365,6 +4634,51 @@ export default function YachtEditorPage() {
                       ph: "e.g. Garmin Striker 7sv",
                     },
                     { name: "ais", label: "AIS", ph: "e.g. em-trak B954" },
+                    {
+                      name: "log_speed",
+                      label: "Log / Speed",
+                      ph: "e.g. Simrad IS42",
+                    },
+                    {
+                      name: "rudder_position_indicator",
+                      label: "Rudder Position Indicator",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "turn_indicator",
+                      label: "Turn Indicator",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "ssb_receiver",
+                      label: "SSB Receiver",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "shortwave_radio",
+                      label: "Shortwave Radio",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "short_band_transmitter",
+                      label: "Short Band Transmitter",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "satellite_communication",
+                      label: "Satellite Communication",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "weatherfax_navtex",
+                      label: "Weatherfax / Navtex",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "charts_guides",
+                      label: "Charts / Guides",
+                      ph: "Yes",
+                    },
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
                       <Label>{f.label}</Label>
@@ -4390,8 +4704,7 @@ export default function YachtEditorPage() {
               {/* Sub-Section: Safety Equipment */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-                  <Shield size={20} className="text-blue-600" /> Safety
-                  Equipment
+                  <Shield size={20} className="text-blue-600" /> Safety Equipment
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[
@@ -4409,6 +4722,16 @@ export default function YachtEditorPage() {
                       name: "bilge_pump",
                       label: "Bilge Pump",
                       ph: "e.g. Rule 2000 GPH",
+                    },
+                    {
+                      name: "bilge_pump_manual",
+                      label: "Bilge Pump (Manual)",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "bilge_pump_electric",
+                      label: "Bilge Pump (Electric)",
+                      ph: "Yes",
                     },
                     {
                       name: "fire_extinguisher",
@@ -4431,6 +4754,26 @@ export default function YachtEditorPage() {
                       ph: "e.g. Echomax EM230",
                     },
                     { name: "flares", label: "Flares", ph: "e.g. Ikaros set" },
+                    {
+                      name: "life_buoy",
+                      label: "Life Buoy",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "watertight_door",
+                      label: "Watertight Door",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "gas_bottle_locker",
+                      label: "Gas Bottle Locker",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "self_draining_cockpit",
+                      label: "Self Draining Cockpit",
+                      ph: "Yes",
+                    },
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
                       <Label>{f.label}</Label>
@@ -4499,6 +4842,56 @@ export default function YachtEditorPage() {
                       name: "voltage",
                       label: "Voltage",
                       ph: "e.g. 12V / 230V",
+                    },
+                    {
+                      name: "dynamo",
+                      label: "Dynamo",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "accumonitor",
+                      label: "Accumonitor",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "voltmeter",
+                      label: "Voltmeter",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "shore_power_cable",
+                      label: "Shore Power Cable",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "consumption_monitor",
+                      label: "Consumption Monitor",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "control_panel",
+                      label: "Control Panel",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "fuel_tank_gauge",
+                      label: "Fuel Tank Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "tachometer",
+                      label: "Tachometer",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "oil_pressure_gauge",
+                      label: "Oil Pressure Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "temperature_gauge",
+                      label: "Temperature Gauge",
+                      ph: "Yes",
                     },
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
@@ -4573,6 +4966,81 @@ export default function YachtEditorPage() {
                       name: "satellite_reception",
                       label: "Satellite Reception",
                       ph: "e.g. KVH TracVision TV5",
+                    },
+                    {
+                      name: "water_tank",
+                      label: "Water Tank",
+                      ph: "200L",
+                    },
+                    {
+                      name: "water_tank_gauge",
+                      label: "Water Tank Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "water_maker",
+                      label: "Water Maker",
+                      ph: "60 L/h",
+                    },
+                    {
+                      name: "waste_water_tank",
+                      label: "Waste Water Tank",
+                      ph: "80L",
+                    },
+                    {
+                      name: "waste_water_tank_gauge",
+                      label: "Waste Water Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "waste_water_tank_drainpump",
+                      label: "Waste Tank Drain Pump",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "deck_suction",
+                      label: "Deck Suction",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "water_system",
+                      label: "Water System",
+                      ph: "Pressurized",
+                    },
+                    {
+                      name: "hot_water",
+                      label: "Hot Water",
+                      ph: "Boiler",
+                    },
+                    {
+                      name: "sea_water_pump",
+                      label: "Sea Water Pump",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "deck_wash_pump",
+                      label: "Deck Wash Pump",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "deck_shower",
+                      label: "Deck Shower",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "hot_air",
+                      label: "Hot Air Heating",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "stove",
+                      label: "Stove Heating",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "central_heating",
+                      label: "Central Heating",
+                      ph: "Yes",
                     },
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
@@ -4656,14 +5124,146 @@ export default function YachtEditorPage() {
                       ph: "e.g. Full winter cover",
                     },
                     {
-                      name: "spinnaker",
-                      label: "Spinnaker",
-                      ph: "e.g. Asymmetric 85m²",
-                    },
-                    {
                       name: "fenders",
                       label: "Fenders & Lines",
                       ph: "e.g. 6x Polyform F4",
+                    },
+                    {
+                      name: "anchor_connection",
+                      label: "Anchor Connection",
+                      ph: "Chain / Rope",
+                    },
+                    {
+                      name: "stern_anchor",
+                      label: "Stern Anchor",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "spud_pole",
+                      label: "Spud Pole",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "cockpit_tent",
+                      label: "Cockpit Tent",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "outdoor_cushions",
+                      label: "Outdoor Cushions",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "sea_rails",
+                      label: "Sea Rails",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "pushpit_pullpit",
+                      label: "Pushpit / Pullpit",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "sail_lowering_system",
+                      label: "Sail Lowering System",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "crutch",
+                      label: "Crutch (Schaar)",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "dinghy_brand",
+                      label: "Dinghy Brand",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "outboard_engine",
+                      label: "Outboard Engine",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "crane",
+                      label: "Crane",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "davits",
+                      label: "Davits",
+                      ph: "Yes",
+                    },
+                  ].map((f) => (
+                    <div key={f.name} className="space-y-1 group">
+                      <Label>{f.label}</Label>
+                      {isOptionalTriStateField(f.name) ? (
+                        <TriStateSelect
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      ) : (
+                        <Input
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          placeholder={f.ph}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sub-Section: Rigging & Sails */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
+                <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
+                  <Wind size={20} className="text-blue-600" /> Rigging & Sails
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                  {[
+                    {
+                      name: "sailplan_type",
+                      label: "Sailplan Type",
+                      ph: "e.g. Sloop / Cutter / Ketch",
+                    },
+                    {
+                      name: "number_of_masts",
+                      label: "Number of Masts",
+                      ph: "e.g. 1 / 2",
+                    },
+                    {
+                      name: "spars_material",
+                      label: "Spars Material",
+                      ph: "e.g. Aluminum / Carbon",
+                    },
+                    { name: "bowsprit", label: "Bowsprit", ph: "Yes / No" },
+                    {
+                      name: "standing_rig",
+                      label: "Standing Rig",
+                      ph: "e.g. SS Wire / Rod",
+                    },
+                    { name: "main_sail", label: "Main Sail", ph: "Yes / No" },
+                    {
+                      name: "furling_mainsail",
+                      label: "Furling Mainsail",
+                      ph: "Yes / No",
+                    },
+                    { name: "jib", label: "Jib", ph: "Yes / No" },
+                    { name: "genoa", label: "Genoa", ph: "Yes / No" },
+                    { name: "spinnaker", label: "Spinnaker", ph: "Yes / No" },
+                    { name: "gennaker", label: "Gennaker", ph: "Yes / No" },
+                    { name: "mizzen", label: "Mizzen", ph: "Yes / No" },
+                    { name: "winches", label: "Winches", ph: "Yes" },
+                    {
+                      name: "electric_winches",
+                      label: "Electric Winches",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "manual_winches",
+                      label: "Manual Winches",
+                      ph: "Yes",
                     },
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
@@ -4736,477 +5336,483 @@ export default function YachtEditorPage() {
           )}
 
           {/* ── STEP 3: TEXT (AI Generated) ──────────────── */}
-          {activeStep === 3 && (
-            <>
-              <div className="bg-white rounded-lg border border-slate-200 p-8 space-y-8">
-                <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-                  <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                    <Globe size={18} className="text-blue-500" /> Vessel
-                    Description
-                  </h3>
+          {
+            activeStep === 3 && (
+              <>
+                <div className="bg-white rounded-lg border border-slate-200 p-8 space-y-8">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                    <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                      <Globe size={18} className="text-blue-500" /> Vessel
+                      Description
+                    </h3>
 
-                  {/* Language Tabs */}
-                  <div className="flex bg-slate-100 p-1 rounded-sm gap-1">
-                    {(["nl", "en", "de"] as const).map((lang) => (
-                      <button
-                        key={lang}
+                    {/* Language Tabs */}
+                    <div className="flex bg-slate-100 p-1 rounded-sm gap-1">
+                      {(["nl", "en", "de"] as const).map((lang) => (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => setSelectedLang(lang)}
+                          className={cn(
+                            "px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all",
+                            selectedLang === lang
+                              ? "bg-white text-[#003566] shadow-sm"
+                              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200",
+                          )}
+                        >
+                          {lang === "nl"
+                            ? "🇳🇱 NL"
+                            : lang === "en"
+                              ? "🇬🇧 EN"
+                              : "🇩🇪 DE"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-wrap items-end gap-5">
+                      <div className="flex-1 min-w-[150px]">
+                        <label className="text-xs font-bold text-slate-500 uppercase block">AI Tone</label>
+                        <select
+                          className="w-full bg-white border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 shadow-sm mt-1 focus:border-blue-500 focus:outline-none"
+                          value={aiTone}
+                          onChange={(e) => setAiTone(e.target.value)}
+                        >
+                          <option value="professional">Professional</option>
+                          <option value="enthusiastic">Enthusiastic</option>
+                          <option value="luxurious">Luxurious</option>
+                          <option value="concise">Concise & Direct</option>
+                          <option value="storytelling">Storytelling</option>
+                        </select>
+                      </div>
+                      <div className="w-24">
+                        <label className="text-xs font-bold text-slate-500 uppercase block">Min Words</label>
+                        <Input
+                          type="number"
+                          className="mt-1"
+                          value={aiMinWords}
+                          onChange={(e) => setAiMinWords(parseInt(e.target.value) || 200)}
+                        />
+                      </div>
+                      <div className="w-24">
+                        <label className="text-xs font-bold text-slate-500 uppercase block">Max Words</label>
+                        <Input
+                          type="number"
+                          className="mt-1"
+                          value={aiMaxWords}
+                          onChange={(e) => setAiMaxWords(parseInt(e.target.value) || 500)}
+                        />
+                      </div>
+                      <Button
                         type="button"
-                        onClick={() => setSelectedLang(lang)}
-                        className={cn(
-                          "px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all",
-                          selectedLang === lang
-                            ? "bg-white text-[#003566] shadow-sm"
-                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-200",
-                        )}
+                        onClick={handleRegenerateDescription}
+                        disabled={isRegenerating}
+                        className="bg-blue-600 hover:bg-blue-700 text-white gap-2 mt-1 h-9"
                       >
-                        {lang === "nl"
-                          ? "🇳🇱 NL"
-                          : lang === "en"
-                            ? "🇬🇧 EN"
-                            : "🇩🇪 DE"}
-                      </button>
-                    ))}
+                        {isRegenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                        Regenerate
+                      </Button>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-2">
+                      <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">
+                        {selectedLang === "nl"
+                          ? "Nederlandse Beschrijving"
+                          : selectedLang === "en"
+                            ? "English Description"
+                            : "Deutsche Beschreibung"}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={toggleDictation}
+                          className={cn("flex items-center justify-center w-8 h-8 rounded-full transition-colors", isDictating ? "bg-red-100 text-red-600 animate-pulse" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}
+                          title={isDictating ? "Stop recording" : "Start dictation"}
+                        >
+                          <div className={cn("w-3 h-3 rounded-full", isDictating ? "bg-red-600" : "bg-slate-600")} />
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-1 max-w-[150px] truncate"
+                            value={selectedVoice}
+                            onChange={(e) => setSelectedVoice(e.target.value)}
+                          >
+                            <option value="">Default Voice</option>
+                            {voices.map(v => (
+                              <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if ('speechSynthesis' in window) {
+                                if (window.speechSynthesis.speaking) {
+                                  window.speechSynthesis.cancel();
+                                  setIsPlayingAudio(false);
+                                  return;
+                                }
+
+                                const utterance = new SpeechSynthesisUtterance(aiTexts[selectedLang]);
+                                if (selectedVoice) {
+                                  const voice = voices.find(v => v.name === selectedVoice);
+                                  if (voice) utterance.voice = voice;
+                                } else {
+                                  utterance.lang = selectedLang === 'nl' ? 'nl-NL' : selectedLang === 'en' ? 'en-US' : 'de-DE';
+                                }
+
+                                utterance.onend = () => setIsPlayingAudio(false);
+                                utterance.onerror = () => setIsPlayingAudio(false);
+
+                                window.speechSynthesis.speak(utterance);
+                                setIsPlayingAudio(true);
+                              } else {
+                                toast.error("Text-to-speech not supported in this browser.");
+                              }
+                            }}
+                            className={cn(
+                              "flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-colors",
+                              isPlayingAudio
+                                ? "text-red-700 bg-red-50 hover:bg-red-100"
+                                : "text-[#003566] bg-blue-50 hover:bg-blue-100"
+                            )}
+                          >
+                            {isPlayingAudio ? (
+                              <>
+                                <div className="w-2 h-2 bg-red-600 rounded-sm animate-pulse" /> Stop Audio
+                              </>
+                            ) : (
+                              <>
+                                <Volume2 size={12} /> Play Audio
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <RichTextEditor
+                      content={aiTexts[selectedLang]}
+                      onChange={(html) =>
+                        setAiTexts((prev) => ({ ...prev, [selectedLang]: html }))
+                      }
+                      placeholder="Review and edit the AI-generated description here..."
+                    />
                   </div>
                 </div>
+              </>
+            )
+          }
 
-                <div className="space-y-4">
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-wrap items-end gap-5">
-                    <div className="flex-1 min-w-[150px]">
-                      <label className="text-xs font-bold text-slate-500 uppercase block">AI Tone</label>
-                      <select
-                        className="w-full bg-white border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 shadow-sm mt-1 focus:border-blue-500 focus:outline-none"
-                        value={aiTone}
-                        onChange={(e) => setAiTone(e.target.value)}
-                      >
-                        <option value="professional">Professional</option>
-                        <option value="enthusiastic">Enthusiastic</option>
-                        <option value="luxurious">Luxurious</option>
-                        <option value="concise">Concise & Direct</option>
-                        <option value="storytelling">Storytelling</option>
-                      </select>
-                    </div>
-                    <div className="w-24">
-                      <label className="text-xs font-bold text-slate-500 uppercase block">Min Words</label>
-                      <Input
-                        type="number"
-                        className="mt-1"
-                        value={aiMinWords}
-                        onChange={(e) => setAiMinWords(parseInt(e.target.value) || 200)}
-                      />
-                    </div>
-                    <div className="w-24">
-                      <label className="text-xs font-bold text-slate-500 uppercase block">Max Words</label>
-                      <Input
-                        type="number"
-                        className="mt-1"
-                        value={aiMaxWords}
-                        onChange={(e) => setAiMaxWords(parseInt(e.target.value) || 500)}
-                      />
-                    </div>
+          {/* ── STEP 4: DISPLAY SETTINGS ─────────────────── */}
+          {
+            activeStep === 4 && (
+              <>
+                {/* NEW SECTION: SCHEDULING AUTHORITY */}
+                <div className="space-y-8 bg-slate-50 p-10 border border-slate-200 shadow-sm">
+                  <div className="flex justify-between items-center border-b border-slate-200 pb-4">
+                    <h3 className="text-[12px] font-black uppercase text-[#003566] tracking-[0.4em] flex items-center gap-3 italic">
+                      <Calendar size={20} className="text-blue-600" /> 04.
+                      Scheduling Authority
+                    </h3>
                     <Button
                       type="button"
-                      onClick={handleRegenerateDescription}
-                      disabled={isRegenerating}
-                      className="bg-blue-600 hover:bg-blue-700 text-white gap-2 mt-1 h-9"
+                      onClick={addAvailabilityRule}
+                      className="bg-[#003566] text-white text-[8px] font-black uppercase tracking-widest px-6 h-8"
                     >
-                      {isRegenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                      Regenerate
+                      {t?.scheduling?.addWindow || "Add Scheduling Window"}
                     </Button>
                   </div>
 
-                  <div className="flex justify-between items-center pt-2">
-                    <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">
-                      {selectedLang === "nl"
-                        ? "Nederlandse Beschrijving"
-                        : selectedLang === "en"
-                          ? "English Description"
-                          : "Deutsche Beschreibung"}
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={toggleDictation}
-                        className={cn("flex items-center justify-center w-8 h-8 rounded-full transition-colors", isDictating ? "bg-red-100 text-red-600 animate-pulse" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}
-                        title={isDictating ? "Stop recording" : "Start dictation"}
+                  <div className="space-y-4">
+                    {availabilityRules.map((rule, idx) => (
+                      <div
+                        key={idx}
+                        className="flex flex-wrap items-center gap-6 bg-white p-4 border border-slate-100 shadow-sm relative group"
                       >
-                        <div className={cn("w-3 h-3 rounded-full", isDictating ? "bg-red-600" : "bg-slate-600")} />
-                      </button>
+                        <div className="flex-1 min-w-[300px]">
+                          <Label>Days of Week</Label>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {[
+                              { val: 1, label: "Mon" },
+                              { val: 2, label: "Tue" },
+                              { val: 3, label: "Wed" },
+                              { val: 4, label: "Thu" },
+                              { val: 5, label: "Fri" },
+                              { val: 6, label: "Sat" },
+                              { val: 0, label: "Sun" },
+                            ].map((day) => {
+                              const isSelected = rule.days_of_week.includes(day.val);
+                              return (
+                                <button
+                                  key={day.val}
+                                  type="button"
+                                  onClick={() => {
+                                    const newDays = isSelected
+                                      ? rule.days_of_week.filter(d => d !== day.val)
+                                      : [...rule.days_of_week, day.val].sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
+                                    updateAvailabilityRule(idx, "days_of_week", newDays);
+                                  }}
+                                  className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${isSelected
+                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                                    }`}
+                                >
+                                  {day.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
 
-                      <div className="flex items-center gap-2">
-                        <select
-                          className="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-1 max-w-[150px] truncate"
-                          value={selectedVoice}
-                          onChange={(e) => setSelectedVoice(e.target.value)}
-                        >
-                          <option value="">Default Voice</option>
-                          {voices.map(v => (
-                            <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
-                          ))}
-                        </select>
+                        <div className="flex-1 min-w-[120px]">
+                          <Label>{t?.scheduling?.startTime || "Start Time"}</Label>
+                          <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
+                            <Clock size={12} className="text-slate-400" />
+                            <input
+                              type="time"
+                              step="900"
+                              value={rule.start_time}
+                              onChange={(e) =>
+                                updateAvailabilityRule(
+                                  idx,
+                                  "start_time",
+                                  e.target.value,
+                                )
+                              }
+                              className="bg-transparent text-xs font-bold text-[#003566] outline-none w-full"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex-1 min-w-[120px]">
+                          <Label>{t?.scheduling?.endTime || "End Time"}</Label>
+                          <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
+                            <Clock size={12} className="text-slate-400" />
+                            <input
+                              type="time"
+                              step="900"
+                              value={rule.end_time}
+                              onChange={(e) =>
+                                updateAvailabilityRule(
+                                  idx,
+                                  "end_time",
+                                  e.target.value,
+                                )
+                              }
+                              className="bg-transparent text-xs font-bold text-[#003566] outline-none w-full"
+                            />
+                          </div>
+                        </div>
+
                         <button
                           type="button"
-                          onClick={() => {
-                            if ('speechSynthesis' in window) {
-                              if (window.speechSynthesis.speaking) {
-                                window.speechSynthesis.cancel();
-                                setIsPlayingAudio(false);
-                                return;
-                              }
-
-                              const utterance = new SpeechSynthesisUtterance(aiTexts[selectedLang]);
-                              if (selectedVoice) {
-                                const voice = voices.find(v => v.name === selectedVoice);
-                                if (voice) utterance.voice = voice;
-                              } else {
-                                utterance.lang = selectedLang === 'nl' ? 'nl-NL' : selectedLang === 'en' ? 'en-US' : 'de-DE';
-                              }
-
-                              utterance.onend = () => setIsPlayingAudio(false);
-                              utterance.onerror = () => setIsPlayingAudio(false);
-
-                              window.speechSynthesis.speak(utterance);
-                              setIsPlayingAudio(true);
-                            } else {
-                              toast.error("Text-to-speech not supported in this browser.");
-                            }
-                          }}
-                          className={cn(
-                            "flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-colors",
-                            isPlayingAudio
-                              ? "text-red-700 bg-red-50 hover:bg-red-100"
-                              : "text-[#003566] bg-blue-50 hover:bg-blue-100"
-                          )}
+                          onClick={() => removeAvailabilityRule(idx)}
+                          className="p-2 text-red-400 hover:text-red-600 transition-colors"
                         >
-                          {isPlayingAudio ? (
-                            <>
-                              <div className="w-2 h-2 bg-red-600 rounded-sm animate-pulse" /> Stop Audio
-                            </>
-                          ) : (
-                            <>
-                              <Volume2 size={12} /> Play Audio
-                            </>
-                          )}
+                          <Trash size={16} />
                         </button>
                       </div>
-                    </div>
+                    ))}
+
+                    {availabilityRules.length === 0 && (
+                      <div className="text-center py-12 border-2 border-dashed border-slate-200 bg-white">
+                        <Calendar
+                          size={32}
+                          className="mx-auto text-slate-200 mb-2"
+                        />
+                        <p className="text-sm font-semibold text-slate-500">
+                          {t?.scheduling?.empty || "No scheduling rules defined yet."}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <RichTextEditor
-                    content={aiTexts[selectedLang]}
-                    onChange={(html) =>
-                      setAiTexts((prev) => ({ ...prev, [selectedLang]: html }))
-                    }
-                    placeholder="Review and edit the AI-generated description here..."
-                  />
                 </div>
-              </div>
-            </>
-          )}
-
-          {/* ── STEP 4: DISPLAY SETTINGS ─────────────────── */}
-          {activeStep === 4 && (
-            <>
-              {/* NEW SECTION: SCHEDULING AUTHORITY */}
-              <div className="space-y-8 bg-slate-50 p-10 border border-slate-200 shadow-sm">
-                <div className="flex justify-between items-center border-b border-slate-200 pb-4">
-                  <h3 className="text-[12px] font-black uppercase text-[#003566] tracking-[0.4em] flex items-center gap-3 italic">
-                    <Calendar size={20} className="text-blue-600" /> 04.
-                    Scheduling Authority
-                  </h3>
-                  <Button
-                    type="button"
-                    onClick={addAvailabilityRule}
-                    className="bg-[#003566] text-white text-[8px] font-black uppercase tracking-widest px-6 h-8"
-                  >
-                    {t?.scheduling?.addWindow || "Add Scheduling Window"}
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  {availabilityRules.map((rule, idx) => (
-                    <div
-                      key={idx}
-                      className="flex flex-wrap items-center gap-6 bg-white p-4 border border-slate-100 shadow-sm relative group"
-                    >
-                      <div className="flex-1 min-w-[300px]">
-                        <Label>Days of Week</Label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {[
-                            { val: 1, label: "Mon" },
-                            { val: 2, label: "Tue" },
-                            { val: 3, label: "Wed" },
-                            { val: 4, label: "Thu" },
-                            { val: 5, label: "Fri" },
-                            { val: 6, label: "Sat" },
-                            { val: 0, label: "Sun" },
-                          ].map((day) => {
-                            const isSelected = rule.days_of_week.includes(day.val);
-                            return (
-                              <button
-                                key={day.val}
-                                type="button"
-                                onClick={() => {
-                                  const newDays = isSelected
-                                    ? rule.days_of_week.filter(d => d !== day.val)
-                                    : [...rule.days_of_week, day.val].sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
-                                  updateAvailabilityRule(idx, "days_of_week", newDays);
-                                }}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${isSelected
-                                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                  }`}
-                              >
-                                {day.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="flex-1 min-w-[120px]">
-                        <Label>{t?.scheduling?.startTime || "Start Time"}</Label>
-                        <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
-                          <Clock size={12} className="text-slate-400" />
-                          <input
-                            type="time"
-                            step="900"
-                            value={rule.start_time}
-                            onChange={(e) =>
-                              updateAvailabilityRule(
-                                idx,
-                                "start_time",
-                                e.target.value,
-                              )
-                            }
-                            className="bg-transparent text-xs font-bold text-[#003566] outline-none w-full"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex-1 min-w-[120px]">
-                        <Label>{t?.scheduling?.endTime || "End Time"}</Label>
-                        <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
-                          <Clock size={12} className="text-slate-400" />
-                          <input
-                            type="time"
-                            step="900"
-                            value={rule.end_time}
-                            onChange={(e) =>
-                              updateAvailabilityRule(
-                                idx,
-                                "end_time",
-                                e.target.value,
-                              )
-                            }
-                            className="bg-transparent text-xs font-bold text-[#003566] outline-none w-full"
-                          />
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => removeAvailabilityRule(idx)}
-                        className="p-2 text-red-400 hover:text-red-600 transition-colors"
-                      >
-                        <Trash size={16} />
-                      </button>
-                    </div>
-                  ))}
-
-                  {availabilityRules.length === 0 && (
-                    <div className="text-center py-12 border-2 border-dashed border-slate-200 bg-white">
-                      <Calendar
-                        size={32}
-                        className="mx-auto text-slate-200 mb-2"
-                      />
-                      <p className="text-sm font-semibold text-slate-500">
-                        {t?.scheduling?.empty || "No scheduling rules defined yet."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
+              </>
+            )
+          }
 
           {/* ── STEP 5: REVIEW & SAVE ────────────────────── */}
-          {activeStep === 5 && (
-            <div className="space-y-8">
-              <div className="bg-white border border-slate-200 p-8 shadow-sm">
-                <h3 className="text-[12px] font-black text-[#003566] uppercase tracking-[0.3em] flex items-center gap-3 border-b-2 border-[#003566] pb-4 mb-6">
-                  <FileText size={18} /> {t?.wizard?.review?.title || "Review"}
-                </h3>
-                <p className="text-sm text-slate-600 mb-6">
-                  Review all steps before submitting. Completed steps are marked
-                  with a blue checkmark in the tab bar above.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                  {wizardSteps.slice(0, 4).map((step) => (
-                    <div
-                      key={step.id}
-                      className={cn(
-                        "p-4 border flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors",
-                        isStepComplete(step.id)
-                          ? "border-blue-300 bg-blue-50/50"
-                          : "border-orange-300 bg-orange-50/50",
-                      )}
-                      onClick={() => handleStepChange(step.id)}
-                    >
-                      <span
-                        className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black",
-                          isStepComplete(step.id)
-                            ? "bg-blue-500 text-white"
-                            : "bg-orange-400 text-white",
-                        )}
-                      >
-                        {isStepComplete(step.id) ? (
-                          <Check size={14} strokeWidth={3} />
-                        ) : (
-                          step.id
-                        )}
-                      </span>
-                      <div>
-                        <p className="text-sm font-bold text-slate-700">
-                          {step.label}
-                        </p>
-                        <p className="text-[9px] text-slate-500">
-                          {isStepComplete(step.id)
-                            ? t?.wizard?.review?.completed || "Completed"
-                            : t?.wizard?.review?.notCompleted || "Pending"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* ── CHECKLIST & COMPLIANCE ── */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-8">
-                  <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
-                    <CheckSquare size={16} className="text-blue-600" />
-                    Compliance & Documenten
-                  </h4>
-                  <p className="text-xs text-slate-500 mb-6 max-w-2xl">
-                    Hieronder ziet u de benodigde documenten voor dit type schip. U kunt deze nu alvast uploaden, of wachten tot het contract door de klant is getekend.
+          {
+            activeStep === 5 && (
+              <div className="space-y-8">
+                <div className="bg-white border border-slate-200 p-8 shadow-sm">
+                  <h3 className="text-[12px] font-black text-[#003566] uppercase tracking-[0.3em] flex items-center gap-3 border-b-2 border-[#003566] pb-4 mb-6">
+                    <FileText size={18} /> {t?.wizard?.review?.title || "Review"}
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-6">
+                    Review all steps before submitting. Completed steps are marked
+                    with a blue checkmark in the tab bar above.
                   </p>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Checklist Requirements Preview */}
-                    <div className="space-y-3">
-                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Benodigde Documenten</h5>
-                      {fetchingChecklist ? (
-                        <div className="flex items-center gap-2 text-sm text-slate-400 py-4"><Loader2 size={16} className="animate-spin" /> Laden...</div>
-                      ) : checklistTemplates.length > 0 ? (
-                        <div className="space-y-2">
-                          {checklistTemplates.map(template => (
-                            <div key={template.id} className="mb-4">
-                              <p className="font-semibold text-sm text-slate-800 bg-white border border-slate-200 p-2 rounded-md mb-2">{template.name}</p>
-                              <div className="space-y-2 pl-4">
-                                {template.items?.map((item: any) => (
-                                  <div key={item.id} className="flex gap-3 text-sm text-slate-600 bg-white p-2 rounded-md border border-slate-100 shadow-sm">
-                                    <div className="mt-0.5"><div className="w-4 h-4 rounded border-2 border-slate-300" /></div>
-                                    <div>
-                                      <p className="font-medium text-slate-700">{item.title}</p>
-                                      {item.description && <p className="text-xs text-slate-500">{item.description}</p>}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-slate-500 italic py-4">Geen specifieke documenten vereist voor dit type.</p>
-                      )}
-                    </div>
-
-                    {/* Document Upload Area */}
-                    <div className="space-y-4">
-                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Upload Documenten</h5>
-
-                      {/* Upload Dropzone */}
-                      <label className={cn(
-                        "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors bg-white",
-                        isUploadingDocument ? "border-slate-300 opacity-70" : "border-slate-300 hover:bg-slate-50 hover:border-blue-400"
-                      )}>
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          {isUploadingDocument ? (
-                            <Loader2 size={24} className="text-blue-500 animate-spin mb-2" />
-                          ) : (
-                            <UploadCloud size={24} className="text-slate-400 mb-2" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    {wizardSteps.slice(0, 4).map((step) => (
+                      <div
+                        key={step.id}
+                        className={cn(
+                          "p-4 border flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors",
+                          isStepComplete(step.id)
+                            ? "border-blue-300 bg-blue-50/50"
+                            : "border-orange-300 bg-orange-50/50",
+                        )}
+                        onClick={() => handleStepChange(step.id)}
+                      >
+                        <span
+                          className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black",
+                            isStepComplete(step.id)
+                              ? "bg-blue-500 text-white"
+                              : "bg-orange-400 text-white",
                           )}
-                          <p className="text-sm font-medium text-slate-600">
-                            {isUploadingDocument ? "Bezig met uploaden..." : "Klik of sleep een document"}
+                        >
+                          {isStepComplete(step.id) ? (
+                            <Check size={14} strokeWidth={3} />
+                          ) : (
+                            step.id
+                          )}
+                        </span>
+                        <div>
+                          <p className="text-sm font-bold text-slate-700">
+                            {step.label}
                           </p>
-                          <p className="text-xs text-slate-500 mt-1">PDF, DOCX, JPG (Max 10MB)</p>
+                          <p className="text-[9px] text-slate-500">
+                            {isStepComplete(step.id)
+                              ? t?.wizard?.review?.completed || "Completed"
+                              : t?.wizard?.review?.notCompleted || "Pending"}
+                          </p>
                         </div>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.doc,.docx,image/jpeg,image/png"
-                          onChange={handleDocumentUpload}
-                          disabled={isUploadingDocument}
-                        />
-                      </label>
+                      </div>
+                    ))}
+                  </div>
 
-                      {/* Uploaded Documents List */}
-                      {boatDocuments.length > 0 && (
-                        <div className="space-y-2 mt-4">
-                          <h6 className="text-xs font-semibold text-slate-700">Reeds Geüpload ({boatDocuments.length})</h6>
+                  {/* ── CHECKLIST & COMPLIANCE ── */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-8">
+                    <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
+                      <CheckSquare size={16} className="text-blue-600" />
+                      Compliance & Documenten
+                    </h4>
+                    <p className="text-xs text-slate-500 mb-6 max-w-2xl">
+                      Hieronder ziet u de benodigde documenten voor dit type schip. U kunt deze nu alvast uploaden, of wachten tot het contract door de klant is getekend.
+                    </p>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      {/* Checklist Requirements Preview */}
+                      <div className="space-y-3">
+                        <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Benodigde Documenten</h5>
+                        {fetchingChecklist ? (
+                          <div className="flex items-center gap-2 text-sm text-slate-400 py-4"><Loader2 size={16} className="animate-spin" /> Laden...</div>
+                        ) : checklistTemplates.length > 0 ? (
                           <div className="space-y-2">
-                            {boatDocuments.map(doc => (
-                              <div key={doc.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                  <FileText size={16} className="text-blue-500 shrink-0" />
-                                  <div className="truncate">
-                                    <p className="text-sm font-medium text-slate-700 truncate">{doc.file_path.split('/').pop()}</p>
-                                    <p className="text-[10px] text-slate-400">{new Date(doc.uploaded_at).toLocaleDateString()} • {doc.file_type?.toUpperCase()}</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <a href={doc.file_path} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
-                                    <Eye size={14} />
-                                  </a>
-                                  <button type="button" onClick={() => handleDocumentDelete(doc.id)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                                    <Trash size={14} />
-                                  </button>
+                            {checklistTemplates.map(template => (
+                              <div key={template.id} className="mb-4">
+                                <p className="font-semibold text-sm text-slate-800 bg-white border border-slate-200 p-2 rounded-md mb-2">{template.name}</p>
+                                <div className="space-y-2 pl-4">
+                                  {template.items?.map((item: any) => (
+                                    <div key={item.id} className="flex gap-3 text-sm text-slate-600 bg-white p-2 rounded-md border border-slate-100 shadow-sm">
+                                      <div className="mt-0.5"><div className="w-4 h-4 rounded border-2 border-slate-300" /></div>
+                                      <div>
+                                        <p className="font-medium text-slate-700">{item.title}</p>
+                                        {item.description && <p className="text-xs text-slate-500">{item.description}</p>}
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             ))}
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <p className="text-sm text-slate-500 italic py-4">Geen specifieke documenten vereist voor dit type.</p>
+                        )}
+                      </div>
+
+                      {/* Document Upload Area */}
+                      <div className="space-y-4">
+                        <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Upload Documenten</h5>
+
+                        {/* Upload Dropzone */}
+                        <label className={cn(
+                          "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors bg-white",
+                          isUploadingDocument ? "border-slate-300 opacity-70" : "border-slate-300 hover:bg-slate-50 hover:border-blue-400"
+                        )}>
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            {isUploadingDocument ? (
+                              <Loader2 size={24} className="text-blue-500 animate-spin mb-2" />
+                            ) : (
+                              <UploadCloud size={24} className="text-slate-400 mb-2" />
+                            )}
+                            <p className="text-sm font-medium text-slate-600">
+                              {isUploadingDocument ? "Bezig met uploaden..." : "Klik of sleep een document"}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">PDF, DOCX, JPG (Max 10MB)</p>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,image/jpeg,image/png"
+                            onChange={handleDocumentUpload}
+                            disabled={isUploadingDocument}
+                          />
+                        </label>
+
+                        {/* Uploaded Documents List */}
+                        {boatDocuments.length > 0 && (
+                          <div className="space-y-2 mt-4">
+                            <h6 className="text-xs font-semibold text-slate-700">Reeds Geüpload ({boatDocuments.length})</h6>
+                            <div className="space-y-2">
+                              {boatDocuments.map(doc => (
+                                <div key={doc.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                  <div className="flex items-center gap-3 overflow-hidden">
+                                    <FileText size={16} className="text-blue-500 shrink-0" />
+                                    <div className="truncate">
+                                      <p className="text-sm font-medium text-slate-700 truncate">{doc.file_path.split('/').pop()}</p>
+                                      <p className="text-[10px] text-slate-400">{new Date(doc.uploaded_at).toLocaleDateString()} • {doc.file_type?.toUpperCase()}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <a href={doc.file_path} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
+                                      <Eye size={14} />
+                                    </a>
+                                    <button type="button" onClick={() => handleDocumentDelete(doc.id)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                                      <Trash size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* ── SIGNHOST INTEGRATION ── */}
-                {activeYachtId && (
-                  <div className="mb-8">
-                    <SignhostFlow
-                      yachtId={Number(activeYachtId)}
-                      yachtName={selectedYacht?.boat_name || (draft?.data as any)?.step2?.selectedYacht?.boat_name || "Unnamed Vessel"}
-                      locationId={selectedYacht?.ref_harbor_id || (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id || null}
-                    />
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#003566] text-white hover:bg-blue-800 h-14 font-black uppercase text-[11px] tracking-widest transition-all shadow-xl"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="animate-spin mr-2 w-5 h-5" />
-                  ) : (
-                    <Save className="mr-2 w-5 h-5" />
+                  {/* ── SIGNHOST INTEGRATION ── */}
+                  {activeYachtId && (
+                    <div className="mb-8">
+                      <SignhostFlow
+                        yachtId={Number(activeYachtId)}
+                        yachtName={selectedYacht?.boat_name || (draft?.data as any)?.step2?.selectedYacht?.boat_name || "Unnamed Vessel"}
+                        locationId={selectedYacht?.ref_harbor_id || (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id || null}
+                      />
+                    </div>
                   )}
-                  {isNewMode
-                    ? t?.wizard?.review?.create || "Create Vessel"
-                    : t?.wizard?.review?.update || "Update Vessel"}
-                </Button>
+
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#003566] text-white hover:bg-blue-800 h-14 font-black uppercase text-[11px] tracking-widest transition-all shadow-xl"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="animate-spin mr-2 w-5 h-5" />
+                    ) : (
+                      <Save className="mr-2 w-5 h-5" />
+                    )}
+                    {isNewMode
+                      ? t?.wizard?.review?.create || "Create Vessel"
+                      : t?.wizard?.review?.update || "Update Vessel"}
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* ── STEP NAVIGATION ───────────────────────────── */}
           <div className="flex justify-between items-center pt-6 border-t border-slate-200 mt-8">
@@ -5249,8 +5855,8 @@ export default function YachtEditorPage() {
               <div />
             )}
           </div>
-        </form>
-      </div>
+        </form >
+      </div >
 
       <style jsx global>{`
         .dark .yacht-editor-theme {
@@ -5324,7 +5930,7 @@ export default function YachtEditorPage() {
         variant="destructive"
         onConfirm={handleDeleteAllImages}
       />
-    </div>
+    </div >
   );
 }
 
