@@ -5732,7 +5732,7 @@ export default function YachtEditorPage() {
                         key={step.id}
                         className={cn(
                           "p-4 border flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors",
-                          isStepComplete(step.id)
+                          (!isNewMode || isStepComplete(step.id))
                             ? "border-blue-300 bg-blue-50/50"
                             : "border-orange-300 bg-orange-50/50",
                         )}
@@ -5741,12 +5741,12 @@ export default function YachtEditorPage() {
                         <span
                           className={cn(
                             "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black",
-                            isStepComplete(step.id)
+                            (!isNewMode || isStepComplete(step.id))
                               ? "bg-blue-500 text-white"
                               : "bg-orange-400 text-white",
                           )}
                         >
-                          {isStepComplete(step.id) ? (
+                          {(!isNewMode || isStepComplete(step.id)) ? (
                             <Check size={14} strokeWidth={3} />
                           ) : (
                             step.id
@@ -5757,7 +5757,7 @@ export default function YachtEditorPage() {
                             {step.label}
                           </p>
                           <p className="text-[9px] text-slate-500">
-                            {isStepComplete(step.id)
+                            {(!isNewMode || isStepComplete(step.id))
                               ? t?.wizard?.review?.completed || "Completed"
                               : t?.wizard?.review?.notCompleted || "Pending"}
                           </p>
