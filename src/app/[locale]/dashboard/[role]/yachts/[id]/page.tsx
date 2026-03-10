@@ -367,6 +367,13 @@ export default function YachtEditorPage() {
   const [confidenceMeta, setConfidenceMeta] = useState<ConfidenceMeta | null>(null);
   const [correctionLabel, setCorrectionLabel] = useState<CorrectionLabel | null>(null);
 
+  // New AI UI Feedback States
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const [extractionStatus, setExtractionStatus] = useState("");
+  const [extractionCountdown, setExtractionCountdown] = useState(60);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   // Harbors
   const [harbors, setHarbors] = useState<any[]>([]);
   const [isHarborsLoading, setIsHarborsLoading] = useState(false);
@@ -1706,6 +1713,32 @@ export default function YachtEditorPage() {
         : "🤖 AI Pipeline is analyzing your images...",
     );
 
+    // ── Start Progress & Countdown ──
+    setExtractionProgress(5);
+    setExtractionCountdown(60);
+    setExtractionStatus("Connecting to Gemini Vision API...");
+
+    progressIntervalRef.current = setInterval(() => {
+      setExtractionProgress((prev) => {
+        if (prev >= 95) return prev;
+        // Slow down as we approach the end
+        const step = prev < 40 ? 4 : prev < 70 ? 2 : 1;
+        const next = prev + step;
+
+        // Update status messages based on progress
+        if (next < 25) setExtractionStatus("Analyzing vessel images with Gemini Vision...");
+        else if (next < 50) setExtractionStatus("Searching Pinecone catalog for matching models...");
+        else if (next < 80) setExtractionStatus("Cross-referencing technical specifications...");
+        else setExtractionStatus("Finalizing data and validating results...");
+
+        return next;
+      });
+    }, 1500);
+
+    countdownIntervalRef.current = setInterval(() => {
+      setExtractionCountdown((prev) => (prev > 1 ? prev - 1 : 1));
+    }, 1000);
+
     try {
       const formData = new FormData();
 
@@ -1751,7 +1784,7 @@ export default function YachtEditorPage() {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
-        signal: AbortSignal.timeout(180000), // 3 mins
+        signal: AbortSignal.timeout(600000), // 10 mins
       });
 
       const responseText = await res.text();
@@ -2017,19 +2050,57 @@ export default function YachtEditorPage() {
       if (!background) {
         setShowExtractModal(false);
       }
+      // Clear intervals
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      setExtractionProgress(0);
     }
   };
 
-  // Auto-trigger extraction when images transition to approved (any mode — matches old project).
+  // Auto-trigger extraction when images transition to approved (only for NEW yachts on Step 1).
   const prevImagesApprovedRef = useRef(imagesApproved);
   useEffect(() => {
     const wasApproved = prevImagesApprovedRef.current;
     prevImagesApprovedRef.current = imagesApproved;
 
-    if (imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
-      void handleAiExtract({ background: true, navigateToStep2: true, speedMode: "balanced" });
+    // Guard: Only auto-trigger if we just reached approval on Step 1 of a NEW boat
+    // AND we haven't already extracted or have data filled.
+    // AND we have finished restoring the draft or loading initial data.
+    const hasData =
+      selectedYacht && (selectedYacht.manufacturer || selectedYacht.model);
+    const isRestoring = isNewMode
+      ? !isDraftLoaded || !restoredDraftRef.current
+      : loading;
+    const isPipelineLoading = pipeline.isLoading;
+
+    if (
+      !isRestoring &&
+      !isPipelineLoading &&
+      isNewMode &&
+      activeStep === 1 &&
+      imagesApproved &&
+      !wasApproved &&
+      !geminiExtracted &&
+      !isExtracting &&
+      !hasData
+    ) {
+      void handleAiExtract({
+        background: false,
+        navigateToStep2: true,
+        speedMode: "balanced",
+      });
     }
-  }, [imagesApproved, geminiExtracted, isExtracting]);
+  }, [
+    imagesApproved,
+    geminiExtracted,
+    isExtracting,
+    activeStep,
+    isNewMode,
+    selectedYacht,
+    isDraftLoaded,
+    loading,
+    pipeline.isLoading,
+  ]);
 
   const handleRegenerateDescription = async () => {
     const targetId = isNewMode ? createdYachtId : yachtId;
@@ -2635,14 +2706,23 @@ export default function YachtEditorPage() {
             <div className="mx-auto w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4">
               <Loader2 size={28} className="animate-spin text-blue-600" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Please wait</h3>
-            <p className="text-sm text-slate-500 mt-2">
-              {extractionType === "gemini"
+            <h3 className="text-lg font-bold text-slate-900">AI Extraction in Progress</h3>
+            <p className="text-sm text-slate-500 mt-2 min-h-[40px]">
+              {extractionStatus || (extractionType === "gemini"
                 ? "AI is analyzing your yacht photos and preparing fields."
-                : "🪄 RAG Engine is searching Pinecone to find consensus and auto-filling details..."}
+                : "🪄 RAG Engine is searching Pinecone to find consensus and auto-filling details...")}
             </p>
-            <div className="mt-5 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full w-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full animate-pulse" />
+            <div className="mt-5 space-y-3">
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(37,99,235,0.4)]"
+                  style={{ width: `${extractionProgress}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <span>{extractionProgress}% Complete</span>
+                <span>Approx. {extractionCountdown}s remaining</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2655,7 +2735,7 @@ export default function YachtEditorPage() {
             const isActive = activeStep === step.id;
             const isCompleted = step.id < activeStep;
             const isPast = isActive || isCompleted;
-            const isLocked = !canProceedFromStep1 && step.id > 1;
+            const isLocked = (!canProceedFromStep1 && step.id > 1) || (isExtracting && step.id > 1);
             return (
               <div key={step.id} className="flex items-center">
                 <button
@@ -3377,7 +3457,7 @@ export default function YachtEditorPage() {
                             if (result.step2_unlocked) {
                               if (isNewMode) {
                                 const extractionOk = await handleAiExtract({
-                                  background: true,
+                                  background: false,
                                   navigateToStep2: true,
                                   speedMode: "balanced",
                                 });
@@ -3395,6 +3475,7 @@ export default function YachtEditorPage() {
                               toast.success("Images approved.");
                             }
                           }}
+                          disabled={isExtracting}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-md"
                         >
                           <CheckCircle size={16} /> {isNewMode ? "Approve All" : "Approve All"}
@@ -3420,6 +3501,7 @@ export default function YachtEditorPage() {
                         <button
                           type="button"
                           onClick={() => setActiveStep(2)}
+                          disabled={isExtracting}
                           className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
                         >
                           Skip to Step 2 (Manual Fill) <ArrowRight size={20} />
@@ -3449,7 +3531,7 @@ export default function YachtEditorPage() {
                               toast("Extracting data from images...", { icon: "🪄" });
                               void handleAiExtract();
                             }}
-                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Sparkles size={16} /> Run AI Extraction Manually
                           </button>
