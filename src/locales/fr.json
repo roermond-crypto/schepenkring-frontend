@@ -592,11 +592,15 @@
       "yes": "Oui",
       "no": "Non",
       "confirmed": "Confirmé:",
-      "user": "Utilisateur"
+      "user": "Utilisateur",
+      "profilePicture": "Photo de profil",
+      "uploadHelp": "Téléversez un nouvel avatar (max. 5 Mo, WEBP/JPG/PNG)."
     },
     "actions": {
       "syncProfile": "Synchroniser le profil",
-      "saving": "Sauvegarde en cours..."
+      "saving": "Sauvegarde en cours...",
+      "uploadImage": "Téléverser une image",
+      "uploading": "Téléversement..."
     },
     "toasts": {
       "loadFailed": "Échec du chargement du profil du compte.",
@@ -880,14 +884,63 @@
       }
     },
     "detail": {
+      "contactRecord": "Fiche contact",
       "contactInfo": "Informations de contact",
+      "close": "Fermer le panneau contact",
+      "editContact": "Modifier le contact",
+      "updateContact": "Mettre à jour le profil visiteur pour ce chat",
+      "name": "Nom",
       "email": "E-mail",
       "phone": "Téléphone",
+      "whatsapp": "Identifiant utilisateur WhatsApp",
+      "language": "Langue préférée",
+      "doNotContact": "Ne pas contacter",
+      "doNotContactHelp": "Bloquer les relances pour ce contact.",
+      "consentMarketing": "Consentement marketing",
+      "consentMarketingHelp": "Autoriser les messages promotionnels et campagnes.",
+      "consentService": "Consentement messages de service",
+      "consentServiceHelp": "Autoriser les mises à jour essentielles de service.",
       "location": "Emplacement",
       "company": "Entreprise",
       "sourceUrl": "URL source",
       "sharedFiles": "Fichiers partagés ({count})",
-      "activity": "Activité"
+      "activity": "Activité",
+      "snapshot": "Vue d'ensemble",
+      "statusLabel": "Statut de la conversation",
+      "save": "Enregistrer les modifications",
+      "saving": "Enregistrement...",
+      "saved": "Coordonnées mises à jour.",
+      "saveFailed": "Impossible de mettre à jour le contact.",
+      "unknownVisitor": "Visiteur anonyme",
+      "noCompany": "Aucune entreprise",
+      "unknownLocation": "Emplacement inconnu",
+      "noActivity": "Aucune activité enregistrée pour le moment.",
+      "placeholders": {
+        "name": "John Visitor",
+        "email": "john@example.com",
+        "phone": "+31612345678",
+        "whatsapp": "31612345678"
+      },
+      "languages": {
+        "nl": "Néerlandais",
+        "en": "Anglais",
+        "de": "Allemand",
+        "fr": "Français"
+      },
+      "presence": {
+        "online": "En ligne",
+        "offline": "Hors ligne",
+        "away": "Absent"
+      }
+    }
+  },
+  "DashboardSignhostFlow": {
+    "agreement": {
+      "title": "Conditions de l'accord",
+      "description": "La pièce jointe affichée ici suit la langue de contrat sélectionnée.",
+      "activeLanguage": "Langue active : {language}",
+      "view": "Voir la pièce jointe",
+      "download": "Télécharger le PDF"
     }
   }
 }

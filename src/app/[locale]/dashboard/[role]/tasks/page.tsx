@@ -161,7 +161,9 @@ function getLocalUserId(): string | null {
       ?.split("=")[1];
 
     if (rawSession) {
-      let b64 = decodeURIComponent(rawSession).replace(/-/g, "+").replace(/_/g, "/");
+      let b64 = decodeURIComponent(rawSession)
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
       while (b64.length % 4) {
         b64 += "=";
       }
@@ -203,7 +205,11 @@ function getCurrentLocationId() {
 
     const locationValue =
       userData.location_id ?? userData.locationId ?? userData.location?.id;
-    if (locationValue === null || locationValue === undefined || locationValue === "") {
+    if (
+      locationValue === null ||
+      locationValue === undefined ||
+      locationValue === ""
+    ) {
       return null;
     }
 
@@ -664,7 +670,7 @@ function TaskModal({
       setPendingAttachments((prev) => [...prev, file]);
       toast.success(t("toasts.fileAdded") || "Attachment staged for upload");
       // Reset input so the same file could be selected again if needed
-      if (e.target) e.target.value = '';
+      if (e.target) e.target.value = "";
       return;
     }
 
@@ -695,7 +701,7 @@ function TaskModal({
     } finally {
       setUploading(false);
       // Reset input
-      if (e.target) e.target.value = '';
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -742,7 +748,9 @@ function TaskModal({
     if (!file) return;
 
     if (!task) {
-      const newFile = new File([file], `pasted-image-${Date.now()}.png`, { type: file.type });
+      const newFile = new File([file], `pasted-image-${Date.now()}.png`, {
+        type: file.type,
+      });
       setPendingAttachments((prev) => [newFile, ...prev]);
       toast.success(t("toasts.fileAdded") || "Image staged for upload");
       return;
@@ -1328,7 +1336,11 @@ function TaskModal({
                         <div className="flex items-center gap-1 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             type="button"
-                            onClick={() => setPendingAttachments(prev => prev.filter((_, i) => i !== idx))}
+                            onClick={() =>
+                              setPendingAttachments((prev) =>
+                                prev.filter((_, i) => i !== idx),
+                              )
+                            }
                             className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
                             title="Remove pending file"
                           >
@@ -1553,7 +1565,12 @@ export default function AdminTaskBoardPage() {
       });
 
       const nextTasks = Array.isArray(tasksRes.data) ? tasksRes.data : [];
-      setTasks(nextTasks.map((task: Task) => ({ ...task, status: fromApiStatus(task.status) })));
+      setTasks(
+        nextTasks.map((task: Task) => ({
+          ...task,
+          status: fromApiStatus(task.status),
+        })),
+      );
       if (boardsRes.data && boardsRes.data.columns) {
         setBoard(boardsRes.data);
         setColumns(boardsRes.data.columns);
@@ -1706,12 +1723,24 @@ export default function AdminTaskBoardPage() {
         toast.success(t("toasts.taskUpdated"));
 
         // Upload pending attachments sequentially
-        if (taskData.pendingAttachments && taskData.pendingAttachments.length > 0) {
+        if (
+          taskData.pendingAttachments &&
+          taskData.pendingAttachments.length > 0
+        ) {
           for (const file of taskData.pendingAttachments) {
             try {
               const formData = new FormData();
               formData.append("file", file);
-              await axios.post(`${API_BASE}/tasks/${editingTask.id}/attachments`, formData, { headers: { ...headers, "Content-Type": "multipart/form-data" } });
+              await axios.post(
+                `${API_BASE}/tasks/${editingTask.id}/attachments`,
+                formData,
+                {
+                  headers: {
+                    ...headers,
+                    "Content-Type": "multipart/form-data",
+                  },
+                },
+              );
             } catch (e) {
               console.error("Failed to upload pending attachment:", e);
               toast.error("Failed to upload some attachments");
@@ -1719,17 +1748,32 @@ export default function AdminTaskBoardPage() {
           }
         }
       } else {
-        const response = await axios.post(`${API_BASE}/tasks`, dataToSend, { headers });
+        const response = await axios.post(`${API_BASE}/tasks`, dataToSend, {
+          headers,
+        });
         toast.success(t("toasts.taskCreated"));
 
         // Upload pending attachments sequentially
         const newTaskId = response.data?.id;
-        if (newTaskId && taskData.pendingAttachments && taskData.pendingAttachments.length > 0) {
+        if (
+          newTaskId &&
+          taskData.pendingAttachments &&
+          taskData.pendingAttachments.length > 0
+        ) {
           for (const file of taskData.pendingAttachments) {
             try {
               const formData = new FormData();
               formData.append("file", file);
-              await axios.post(`${API_BASE}/tasks/${newTaskId}/attachments`, formData, { headers: { ...headers, "Content-Type": "multipart/form-data" } });
+              await axios.post(
+                `${API_BASE}/tasks/${newTaskId}/attachments`,
+                formData,
+                {
+                  headers: {
+                    ...headers,
+                    "Content-Type": "multipart/form-data",
+                  },
+                },
+              );
             } catch (e) {
               console.error("Failed to upload pending attachment:", e);
               toast.error("Failed to upload some attachments");
@@ -1857,7 +1901,11 @@ export default function AdminTaskBoardPage() {
     newPosition: number,
     tasksMap: Record<number, Task[]>,
   ) => {
-    const payloadTasks: Array<{ id: number; column_id: number; position: number }> = [];
+    const payloadTasks: Array<{
+      id: number;
+      column_id: number;
+      position: number;
+    }> = [];
     Object.keys(tasksMap).forEach((colId) => {
       tasksMap[Number(colId)].forEach((t) => {
         payloadTasks.push({
@@ -2038,7 +2086,7 @@ export default function AdminTaskBoardPage() {
                   <CalendarDays size={16} className="mr-2" />{" "}
                   {t("views.calendar")}
                 </Button>
-                {viewMode === "board" && (
+                {/* {viewMode === "board" && (
                   <Button
                     variant="outline"
                     onClick={() => setIsDarkMode(!isDarkMode)}
@@ -2051,7 +2099,7 @@ export default function AdminTaskBoardPage() {
                     )}
                     {isDarkMode ? "Light" : "Dark"}
                   </Button>
-                )}
+                )} */}
               </div>
 
               <button
@@ -2077,10 +2125,11 @@ export default function AdminTaskBoardPage() {
             {/* Active Tasks */}
             <button
               onClick={() => handleStatBlockClick("active")}
-              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${activeStatBlock === "active"
-                ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200"
-                : "border-slate-200 bg-white hover:border-slate-300"
-                }`}
+              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${
+                activeStatBlock === "active"
+                  ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200"
+                  : "border-slate-200 bg-white hover:border-slate-300"
+              }`}
             >
               <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
                 <ClipboardList size={18} className="text-blue-600" />
@@ -2098,10 +2147,11 @@ export default function AdminTaskBoardPage() {
             {/* Critical Priority */}
             <button
               onClick={() => handleStatBlockClick("priority")}
-              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${activeStatBlock === "priority"
-                ? "border-red-500 bg-red-50 shadow-md ring-2 ring-red-200"
-                : "border-slate-200 bg-white hover:border-slate-300"
-                }`}
+              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${
+                activeStatBlock === "priority"
+                  ? "border-red-500 bg-red-50 shadow-md ring-2 ring-red-200"
+                  : "border-slate-200 bg-white hover:border-slate-300"
+              }`}
             >
               <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
                 <AlertTriangle size={18} className="text-red-500" />
@@ -2122,10 +2172,11 @@ export default function AdminTaskBoardPage() {
             {/* Completed Tasks */}
             <button
               onClick={() => handleStatBlockClick("completed")}
-              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${activeStatBlock === "completed"
-                ? "border-emerald-500 bg-emerald-50 shadow-md ring-2 ring-emerald-200"
-                : "border-slate-200 bg-white hover:border-slate-300"
-                }`}
+              className={`flex items-center gap-4 p-5 border rounded-lg transition-all text-left hover:shadow-md ${
+                activeStatBlock === "completed"
+                  ? "border-emerald-500 bg-emerald-50 shadow-md ring-2 ring-emerald-200"
+                  : "border-slate-200 bg-white hover:border-slate-300"
+              }`}
             >
               <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center">
                 <CheckCircle2 size={18} className="text-emerald-500" />
@@ -2274,8 +2325,8 @@ export default function AdminTaskBoardPage() {
                     <p className="text-slate-400">{t("empty.noTasks")}</p>
                     <p className="text-sm text-slate-300 mt-2">
                       {filters.search ||
-                        filters.status !== "all" ||
-                        filters.priority !== "all"
+                      filters.status !== "all" ||
+                      filters.priority !== "all"
                         ? t("empty.changeFilters")
                         : t("empty.createFirst")}
                     </p>
@@ -2292,8 +2343,8 @@ export default function AdminTaskBoardPage() {
                         "flex flex-col md:flex-row items-start md:items-center justify-between p-6 gap-6 border shadow-sm rounded-lg transition-all hover:shadow-md cursor-pointer",
                         task.status === "Done" && "opacity-70",
                         task.priority === "High" &&
-                        task.status !== "Done" &&
-                        "border-l-4 border-l-red-600",
+                          task.status !== "Done" &&
+                          "border-l-4 border-l-red-600",
                       )}
                       onClick={() => {
                         setEditingTask(task);
@@ -2381,7 +2432,7 @@ export default function AdminTaskBoardPage() {
                               className={cn(
                                 "flex items-center gap-1.5",
                                 isOverdue(task.due_date) &&
-                                "text-red-600 font-bold",
+                                  "text-red-600 font-bold",
                               )}
                             >
                               <CalendarIcon size={14} /> {t("labels.due")}:{" "}

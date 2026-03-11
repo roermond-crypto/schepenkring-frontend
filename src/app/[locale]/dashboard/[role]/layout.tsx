@@ -2,12 +2,29 @@ import { notFound, redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { isUserRole } from "@/lib/auth/roles";
 import { getServerSession } from "@/lib/auth/session";
+import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 import { getLocaleOrDefault, isSupportedLocale } from "@/lib/i18n";
 
 type DashboardRoleLayoutProps = {
   children: React.ReactNode;
   params: Promise<{ locale: string; role: string }>;
 };
+
+function normalizeAvatarUrl(value?: string) {
+  if (!value) return undefined;
+  if (/^https?:\/\//i.test(value) || value.startsWith("data:")) {
+    return value;
+  }
+
+  const configured =
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ??
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    process.env.BACKEND_API_URL;
+  const apiBase = normalizeApiBaseUrl(configured || "https://app.schepen-kring.nl/api");
+  const origin = apiBase.replace(/\/api\/?$/, "");
+
+  return value.startsWith("/") ? `${origin}${value}` : `${origin}/${value}`;
+}
 
 export default async function DashboardRoleLayout({ children, params }: DashboardRoleLayoutProps) {
   const { locale, role } = await params;
@@ -33,6 +50,7 @@ export default async function DashboardRoleLayout({ children, params }: Dashboar
   }
 
   const currentLocale = getLocaleOrDefault(locale);
+  const userAvatar = normalizeAvatarUrl(session.user.avatar);
 
   return (
     <DashboardShell
@@ -40,7 +58,7 @@ export default async function DashboardRoleLayout({ children, params }: Dashboar
       role={session.user.role}
       userName={session.user.name}
       userEmail={session.user.email}
-      userAvatar={session.user.avatar}
+      userAvatar={userAvatar}
     >
       {children}
     </DashboardShell>

@@ -111,6 +111,11 @@ export interface ContactInfo {
   name: string
   email?: string
   phone?: string
+  whatsapp_user_id?: string
+  language_preferred?: string
+  do_not_contact?: boolean
+  consent_marketing?: boolean
+  consent_service_messages?: boolean
   company?: string
   avatar?: string
   status?: "online" | "offline" | "away"

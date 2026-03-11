@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "@/i18n/navigation";
 import { normalizeRole } from "@/lib/auth/roles";
+import { AUTH_SESSION_COOKIE } from "@/lib/auth/client-session";
 
 type DashboardData = {
   activeBidsCount: number;
@@ -152,6 +153,7 @@ export default function AdminDashboardHome() {
   const isAdminRole = role === "admin";
   const showAdminSalesInsights = role !== "client";
   const showAuditPanel = role !== "client";
+  const defaultUserName = t("defaults.userName");
   const overviewTitle =
     role === "admin"
       ? t("roleTitles.admin")
@@ -160,6 +162,7 @@ export default function AdminDashboardHome() {
         : t("roleTitles.team");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [welcomeName, setWelcomeName] = useState(defaultUserName);
   const [data, setData] = useState<DashboardData>({
     activeBidsCount: 0,
     pendingTasks: 0,
@@ -235,22 +238,22 @@ export default function AdminDashboardHome() {
       const avgDaysToSale =
         soldYachts.length > 0
           ? Math.round(
-            soldYachts.reduce((acc: number, y: any) => {
-              const created = y.created_at ? new Date(y.created_at) : null;
-              const updated = y.updated_at ? new Date(y.updated_at) : null;
-              if (!created || !updated) return acc;
-              return (
-                acc +
-                Math.max(
-                  1,
-                  Math.round(
-                    (updated.getTime() - created.getTime()) /
-                    (1000 * 60 * 60 * 24),
-                  ),
-                )
-              );
-            }, 0) / soldYachts.length,
-          )
+              soldYachts.reduce((acc: number, y: any) => {
+                const created = y.created_at ? new Date(y.created_at) : null;
+                const updated = y.updated_at ? new Date(y.updated_at) : null;
+                if (!created || !updated) return acc;
+                return (
+                  acc +
+                  Math.max(
+                    1,
+                    Math.round(
+                      (updated.getTime() - created.getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    ),
+                  )
+                );
+              }, 0) / soldYachts.length,
+            )
           : 0;
 
       setData({
@@ -274,11 +277,11 @@ export default function AdminDashboardHome() {
           summaryRes.status === "fulfilled" && summaryRes.value.data
             ? summaryRes.value.data
             : {
-              activeBids: { change: 0, sparkline: [] },
-              pendingTasks: { change: 0, sparkline: [] },
-              fleetIntake: { change: 0, sparkline: [] },
-              completedSales: { change: 0, sparkline: [] },
-            },
+                activeBids: { change: 0, sparkline: [] },
+                pendingTasks: { change: 0, sparkline: [] },
+                fleetIntake: { change: 0, sparkline: [] },
+                completedSales: { change: 0, sparkline: [] },
+              },
       });
     } catch (error) {
       console.error("Admin dashboard sync error:", error);
@@ -293,6 +296,53 @@ export default function AdminDashboardHome() {
     const interval = setInterval(() => fetchDashboardData(false), 300000);
     return () => clearInterval(interval);
   }, [fetchDashboardData]);
+
+  useEffect(() => {
+    const syncWelcomeName = () => {
+      try {
+        const rawUserData = localStorage.getItem("user_data");
+        if (rawUserData) {
+          const parsed = JSON.parse(rawUserData) as { name?: string };
+          if (parsed.name) {
+            setWelcomeName(parsed.name);
+            return;
+          }
+        }
+      } catch {
+        // Ignore malformed local user cache.
+      }
+
+      const encoded = document.cookie
+        .split("; ")
+        .find((part) => part.startsWith(`${AUTH_SESSION_COOKIE}=`))
+        ?.split("=")[1];
+
+      if (!encoded) {
+        setWelcomeName(defaultUserName);
+        return;
+      }
+
+      try {
+        const padded = encoded
+          .replace(/-/g, "+")
+          .replace(/_/g, "/")
+          .padEnd(Math.ceil(encoded.length / 4) * 4, "=");
+        const parsed = JSON.parse(atob(padded)) as { name?: string };
+        setWelcomeName(parsed.name || defaultUserName);
+      } catch {
+        setWelcomeName(defaultUserName);
+      }
+    };
+
+    syncWelcomeName();
+    window.addEventListener("focus", syncWelcomeName);
+    window.addEventListener("storage", syncWelcomeName);
+
+    return () => {
+      window.removeEventListener("focus", syncWelcomeName);
+      window.removeEventListener("storage", syncWelcomeName);
+    };
+  }, [defaultUserName]);
 
   const stats = [
     {
@@ -402,12 +452,6 @@ export default function AdminDashboardHome() {
       label: t("audit.ok"),
     };
   };
-
-  const welcomeName =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("user_data") || "{}")?.name ||
-      t("defaults.userName")
-      : t("defaults.userName");
 
   return (
     <div className="space-y-7 p-2 sm:p-4 lg:p-6">
@@ -568,10 +612,10 @@ export default function AdminDashboardHome() {
                   <p className="mt-1 text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
                     {item.isCurrency
                       ? new Intl.NumberFormat("de-DE", {
-                        style: "currency",
-                        currency: "EUR",
-                        minimumFractionDigits: 0,
-                      }).format(item.value)
+                          style: "currency",
+                          currency: "EUR",
+                          minimumFractionDigits: 0,
+                        }).format(item.value)
                       : `${item.value}${item.suffix}`}
                   </p>
                   <div className="mt-3 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700/50">
@@ -767,7 +811,11 @@ export default function AdminDashboardHome() {
                             </span>
                             <span className="text-xs text-slate-400 dark:text-slate-500">
                               {formatDistanceToNow(
-                                new Date(task.created_at || task.updated_at || Date.now()),
+                                new Date(
+                                  task.created_at ||
+                                    task.updated_at ||
+                                    Date.now(),
+                                ),
                                 {
                                   addSuffix: true,
                                 },

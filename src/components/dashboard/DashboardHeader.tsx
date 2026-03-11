@@ -11,6 +11,7 @@ import type { UserRole } from "@/lib/auth/roles";
 import { lockScreenNow } from "@/lib/lockscreen";
 import Link from "next/link";
 import { CopilotSurface } from "@/components/copilot/CopilotSurface";
+import { useClientSession } from "@/components/session/ClientSessionProvider";
 
 type DashboardHeaderProps = {
   locale: AppLocale;
@@ -32,6 +33,7 @@ export function DashboardHeader({
   onLogout,
 }: DashboardHeaderProps) {
   const { resolvedTheme, setTheme } = useTheme();
+  const { user } = useClientSession();
   const dictionary = getDictionary(locale);
   const tHeader = dictionary.dashboard.header;
   const tLock = dictionary.lockscreen;
@@ -44,7 +46,10 @@ export function DashboardHeader({
     toast.success(tLock.screenLocked);
   };
 
-  const initials = (userName || tHeader.userFallback)
+  const displayName = user.name || userName || tHeader.userFallback;
+  const displayEmail = user.email || userEmail;
+  const displayAvatar = user.avatar || userAvatar;
+  const initials = displayName
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
@@ -78,7 +83,11 @@ export function DashboardHeader({
               />
             </Link>
             <div className="hidden md:block">
-              <CopilotSurface source="header" variant="compact" className="w-[22rem] lg:w-[24rem]" />
+              <CopilotSurface
+                source="header"
+                variant="compact"
+                className="w-[22rem] lg:w-[24rem]"
+              />
             </div>
           </div>
         </div>
@@ -121,10 +130,10 @@ export function DashboardHeader({
             aria-label="Open account settings"
           >
             <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#E7F0FF] text-xs font-semibold text-[#0B1F3A] dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
-              {userAvatar ? (
+              {displayAvatar ? (
                 <Image
-                  src={userAvatar}
-                  alt={userName || "Avatar"}
+                  src={displayAvatar}
+                  alt={displayName || "Avatar"}
                   width={32}
                   height={32}
                   className="h-full w-full object-cover"
@@ -136,10 +145,10 @@ export function DashboardHeader({
             </div>
             <div className="max-w-40 text-right">
               <p className="truncate text-xs font-semibold text-[#0B1F3A] dark:text-slate-100">
-                {userName || tHeader.userFallback}
+                {displayName}
               </p>
               <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
-                {userEmail}
+                {displayEmail}
               </p>
             </div>
           </Link>
