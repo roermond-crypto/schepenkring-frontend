@@ -102,7 +102,7 @@ const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
     </div>
   ),
 });
-import { toast, Toaster } from "react-hot-toast";
+import { toast as hotToast, Toaster } from "react-hot-toast";
 import { useYachtDraft } from "@/hooks/useYachtDraft";
 import { convertBatchToWebP } from "@/lib/convertToWebP";
 import { CatalogAutocomplete } from "@/components/ui/CatalogAutocomplete";
@@ -149,6 +149,16 @@ const UPLOAD_MAX_PARALLEL_BATCHES = 4;
 const STORAGE_URL = "https://app.schepen-kring.nl/storage/";
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=600&q=80";
+
+const suppressedToast = Object.assign(
+  ((..._args: any[]) => "suppressed") as any,
+  {
+    success: ((..._args: any[]) => "suppressed") as any,
+    error: ((..._args: any[]) => "suppressed") as any,
+    loading: ((..._args: any[]) => "suppressed") as any,
+    dismiss: ((..._args: any[]) => undefined) as any,
+  },
+) as typeof hotToast;
 
 type AiStagedImage = {
   file: File;
@@ -339,6 +349,8 @@ export default function YachtEditorPage() {
 
   // Wizard State
   const [activeStep, setActiveStep] = useState<number>(1);
+  const suppressCreationToasts = isNewMode && activeStep <= 4;
+  const toast = suppressCreationToasts ? suppressedToast : hotToast;
   const {
     draft,
     isLoaded: isDraftLoaded,
@@ -378,7 +390,11 @@ export default function YachtEditorPage() {
       ? String(createdYachtId)
       : null
     : (yachtId as string);
-  const pipeline = useImagePipeline(activeYachtId);
+
+  // Gemini Extraction State (Step 1)
+  const [isExtracting, setIsExtracting] = useState(false);
+
+  const pipeline = useImagePipeline(activeYachtId, { pausePolling: isExtracting });
   const imagesApproved = pipeline.isStep2Unlocked;
   const [reviewImages, setReviewImages] = useState<PipelineImage[]>([]);
 
@@ -430,11 +446,16 @@ export default function YachtEditorPage() {
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
+  useEffect(() => {
+    if (suppressCreationToasts) {
+      hotToast.dismiss();
+    }
+  }, [suppressCreationToasts]);
+
   // Gemini Extraction State (Step 1)
   const [boatHint, setBoatHint] = useState("");
   const [geminiExtracted, setGeminiExtracted] = useState(false);
   const [extractionResult, setExtractionResult] = useState<any>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
   const [showExtractModal, setShowExtractModal] = useState(false);
   const [extractionType, setExtractionType] = useState<"gemini" | "magic">(
     "gemini",
@@ -2968,7 +2989,7 @@ export default function YachtEditorPage() {
 
   return (
     <div className="yacht-editor-theme bg-[#F8FAFC]">
-      <Toaster position="top-right" />
+      {!suppressCreationToasts && <Toaster position="top-right" />}
 
       {showExtractModal && (
         <div className="fixed inset-0 z-[120] bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4">
@@ -3333,100 +3354,68 @@ export default function YachtEditorPage() {
                                   statusConfig[img.status] ||
                                   statusConfig.processing;
 
-                                return (
-                                  <Draggable
-                                    key={img.id}
-                                    draggableId={`pipeline-image-${img.id}`}
-                                    index={index}
-                                  >
-                                    {(dragProvided) => (
-                                      <div
-                                        ref={dragProvided.innerRef}
-                                        {...dragProvided.draggableProps}
-                                        className={cn(
-                                          "relative group bg-white border shadow-sm overflow-hidden rounded-xl",
-                                          img.status === "approved"
-                                            ? "border-emerald-300 ring-1 ring-emerald-200"
-                                            : img.status === "ready_for_review"
-                                              ? "border-amber-300"
-                                              : img.status === "processing"
-                                                ? "border-blue-200"
-                                                : "border-red-300",
-                                        )}
-                                      >
-                                        {/* Image */}
-                                        <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
-                                          <img
-                                            src={
-                                              img.thumb_full_url ||
-                                              img.optimized_url ||
-                                              img.full_url
-                                            }
-                                            alt={
-                                              img.original_name ||
-                                              `Yacht image ${index + 1}`
-                                            }
-                                            onClick={() =>
-                                              setSelectedLightboxImageId(img.id)
-                                            }
-                                            className={cn(
-                                              "w-full h-full cursor-zoom-in object-cover transition-opacity",
-                                              img.enhancement_method ===
-                                                "pending" &&
-                                                "opacity-80 grayscale-[0.2]",
-                                              img.status === "processing" &&
-                                                "opacity-60",
-                                            )}
-                                            onError={handleImageError}
-                                          />
-
-
-
-                                        {/* Status badge */}
-                                        <div
-                                          className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
-                                        >
-                                          {sc.label}
-                                        </div>
-
-                                        <div
-                                          {...dragProvided.dragHandleProps}
-                                          className="absolute right-2 bottom-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur active:cursor-grabbing"
-                                          title="Drag to reorder"
-                                        >
-                                          <GripVertical size={14} />
-                                        </div>
-
-                                          {img.enhancement_method ===
-                                            "pending" && (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/30 backdrop-blur-[1px] z-10">
-                                              <div className="bg-white/40 p-2 rounded-full mb-2 backdrop-blur-md">
-                                                <Loader2
-                                                  size={18}
-                                                  className="animate-spin text-white"
-                                                />
-                                              </div>
-                                              <span className="text-[10px] tracking-wider uppercase text-white drop-shadow-md">
-                                                Optimizing...
-                                              </span>
-                                            </div>
+                              return (
+                                <Draggable key={img.id} draggableId={`pipeline-image-${img.id}`} index={index}>
+                                  {(dragProvided) => (
+                                    <div
+                                      ref={dragProvided.innerRef}
+                                      {...dragProvided.draggableProps}
+                                      className={cn(
+                                        "relative group bg-white border shadow-sm overflow-hidden rounded-xl",
+                                        img.status === "approved"
+                                          ? "border-emerald-300 ring-1 ring-emerald-200"
+                                          : img.status === "ready_for_review"
+                                            ? "border-amber-300"
+                                            : img.status === "processing"
+                                              ? "border-blue-200"
+                                              : "border-red-300"
+                                      )}
+                                    >
+                                      {/* Image */}
+                                      <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
+                                        <img
+                                          key={`img-${img.id}-${img.thumb_full_url || img.optimized_url || img.full_url || img.url || img.original_temp_url}`}
+                                          src={
+                                            img.thumb_full_url ||
+                                            img.optimized_url ||
+                                            img.full_url ||
+                                            img.url ||
+                                            img.original_temp_url ||
+                                            PLACEHOLDER_IMAGE
+                                          }
+                                          alt={img.original_name || `Yacht image ${index + 1}`}
+                                          onClick={() => setSelectedLightboxImageId(img.id)}
+                                          className={cn(
+                                            "w-full h-full cursor-zoom-in object-cover transition-opacity",
+                                            img.enhancement_method === "pending" &&
+                                            "opacity-80 grayscale-[0.2]",
+                                            img.status === "processing" && "opacity-60"
                                           )}
+                                          onError={handleImageError}
+                                        />
 
-                                          {/* Status badge */}
-                                          <div
-                                            className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
-                                          >
-                                            {sc.label}
+                                        {/* Loading Overlay for Processing */}
+                                        {img.status === "processing" && (
+                                          <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
+                                            <Loader2 size={24} className="animate-spin text-blue-600" />
                                           </div>
+                                        )}
+                                      </div>
 
-                                          <div
-                                            {...dragProvided.dragHandleProps}
-                                            className="absolute right-2 bottom-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur active:cursor-grabbing"
-                                            title="Drag to reorder"
-                                          >
-                                            <GripVertical size={14} />
-                                          </div>
+                                      {/* Status badge */}
+                                      <div
+                                        className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
+                                      >
+                                        {sc.label}
+                                      </div>
 
+                                      <div
+                                        {...dragProvided.dragHandleProps}
+                                        className="absolute right-2 bottom-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur active:cursor-grabbing"
+                                        title="Drag to reorder"
+                                      >
+                                        <GripVertical size={14} />
+                                      </div>
                                           {/* Quality label */}
                                           {img.quality_label &&
                                             img.status !== "processing" && (

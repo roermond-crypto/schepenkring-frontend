@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
     ShieldCheck,
@@ -57,6 +58,10 @@ interface PaginationMeta {
 }
 
 export default function BoatAuditPage() {
+    const router = useRouter();
+    const params = useParams<{ locale?: string; role?: string }>();
+    const locale = params?.locale ?? "en";
+    const role = params?.role ?? "admin";
     const [logs, setLogs] = useState<BoatFieldChange[]>([]);
     const [meta, setMeta] = useState<PaginationMeta | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -157,7 +162,14 @@ export default function BoatAuditPage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    {/* Action buttons could go here */}
+                    <button
+                        type="button"
+                        onClick={() => router.push(`/${locale}/dashboard/${role}/yachts`)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                        Back to Yachts
+                    </button>
                 </div>
             </div>
 

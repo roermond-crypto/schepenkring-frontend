@@ -64,7 +64,11 @@ interface UseImagePipelineReturn {
 
 const POLL_INTERVAL = 3000; // 3 seconds — fast feedback while processing
 
-export function useImagePipeline(yachtId: string | number | null): UseImagePipelineReturn {
+export function useImagePipeline(
+    yachtId: string | number | null,
+    options: { pausePolling?: boolean } = {}
+): UseImagePipelineReturn {
+    const { pausePolling = false } = options;
     const [images, setImages] = useState<PipelineImage[]>([]);
     const [stats, setStats] = useState<PipelineStats>({
         total: 0,
@@ -78,7 +82,7 @@ export function useImagePipeline(yachtId: string | number | null): UseImagePipel
     const [isLoading, setIsLoading] = useState(false);
     const pollRef = useRef<NodeJS.Timeout | null>(null);
 
-    const isProcessing = stats.processing > 0;
+    const isProcessing = stats.processing > 0 || images.some(img => !img.thumb_url || img.enhancement_method === 'pending');
 
     // Fetch images from backend
     const refreshImages = useCallback(async () => {
@@ -106,7 +110,7 @@ export function useImagePipeline(yachtId: string | number | null): UseImagePipel
 
     // Auto-poll while processing
     useEffect(() => {
-        if (isProcessing && yachtId && yachtId !== "new") {
+        if (isProcessing && yachtId && yachtId !== "new" && !pausePolling) {
             pollRef.current = setInterval(() => {
                 refreshImages();
             }, POLL_INTERVAL);
@@ -118,7 +122,7 @@ export function useImagePipeline(yachtId: string | number | null): UseImagePipel
                 pollRef.current = null;
             }
         };
-    }, [isProcessing, yachtId, refreshImages]);
+    }, [isProcessing, yachtId, refreshImages, pausePolling]);
 
     // Upload images
     const uploadImages = useCallback(
