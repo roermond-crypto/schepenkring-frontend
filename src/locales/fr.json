@@ -591,11 +591,15 @@
       "yes": "Oui",
       "no": "Non",
       "confirmed": "Confirmé:",
-      "user": "Utilisateur"
+      "user": "Utilisateur",
+      "profilePicture": "Photo de profil",
+      "uploadHelp": "Téléversez un nouvel avatar (max. 5 Mo, WEBP/JPG/PNG)."
     },
     "actions": {
       "syncProfile": "Synchroniser le profil",
-      "saving": "Sauvegarde en cours..."
+      "saving": "Sauvegarde en cours...",
+      "uploadImage": "Téléverser une image",
+      "uploading": "Téléversement..."
     },
     "toasts": {
       "loadFailed": "Échec du chargement du profil du compte.",
@@ -887,6 +891,15 @@
       "sourceUrl": "URL source",
       "sharedFiles": "Fichiers partagés ({count})",
       "activity": "Activité"
+    }
+  },
+  "DashboardSignhostFlow": {
+    "agreement": {
+      "title": "Conditions de l'accord",
+      "description": "La pièce jointe affichée ici suit la langue de contrat sélectionnée.",
+      "activeLanguage": "Langue active : {language}",
+      "view": "Voir la pièce jointe",
+      "download": "Télécharger le PDF"
     }
   }
 }

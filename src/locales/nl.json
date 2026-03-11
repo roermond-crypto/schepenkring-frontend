@@ -592,11 +592,15 @@
       "yes": "Ja",
       "no": "Nee",
       "confirmed": "Bevestigd:",
-      "user": "Gebruiker"
+      "user": "Gebruiker",
+      "profilePicture": "Profielfoto",
+      "uploadHelp": "Upload een nieuwe avatar (max 5MB, WEBP/JPG/PNG)."
     },
     "actions": {
       "syncProfile": "Profiel synchroniseren",
-      "saving": "Opslaan..."
+      "saving": "Opslaan...",
+      "uploadImage": "Afbeelding uploaden",
+      "uploading": "Uploaden..."
     },
     "toasts": {
       "loadFailed": "Laden van accountprofiel mislukt.",
@@ -888,6 +892,15 @@
       "sourceUrl": "Bron URL",
       "sharedFiles": "Gedeelde bestanden ({count})",
       "activity": "Activiteit"
+    }
+  },
+  "DashboardSignhostFlow": {
+    "agreement": {
+      "title": "Overeenkomstvoorwaarden",
+      "description": "De bijlage die hier wordt getoond volgt de geselecteerde contracttaal.",
+      "activeLanguage": "Actieve taal: {language}",
+      "view": "Bekijk bijlage",
+      "download": "Download PDF"
     }
   }
 }

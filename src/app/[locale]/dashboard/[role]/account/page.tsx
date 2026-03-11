@@ -30,6 +30,8 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { setClientSession, getClientToken } from "@/lib/auth/client-session";
+import { normalizeApiBaseUrl } from "@/lib/api/base-url";
+import { useClientSession } from "@/components/session/ClientSessionProvider";
 
 type AccountTab = "profile" | "personal" | "address" | "security" | "password";
 
@@ -45,9 +47,26 @@ function extractErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function normalizeAvatarUrl(value?: string | null) {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value) || value.startsWith("data:")) {
+    return value;
+  }
+
+  const configured =
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ??
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    process.env.BACKEND_API_URL;
+  const apiBase = normalizeApiBaseUrl(configured || "https://app.schepen-kring.nl/api");
+  const origin = apiBase.replace(/\/api\/?$/, "");
+
+  return value.startsWith("/") ? `${origin}${value}` : `${origin}/${value}`;
+}
+
 export default function DashboardAccountPage() {
   const t = useTranslations("DashboardAccount");
   const router = useRouter();
+  const { updateUser } = useClientSession();
 
   const placeInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,18 +89,45 @@ export default function DashboardAccountPage() {
 
     try {
       const response = await updateAvatar(formData);
-      setUser(response.data);
+      const normalizedUser = {
+        ...response.data,
+        avatar: normalizeAvatarUrl(response.data.avatar),
+      };
+      setUser(normalizedUser);
       setSuccess("Profile picture updated successfully!");
 
       const token = getClientToken();
-      if (token && response.data) {
+      if (token && normalizedUser) {
         setClientSession(token, {
-          id: String(response.data.id),
-          name: response.data.name,
-          email: response.data.email,
-          avatar: response.data.avatar || undefined,
-          role: response.data.role || response.data.type?.toLowerCase() || "client",
+          id: String(normalizedUser.id),
+          name: normalizedUser.name,
+          email: normalizedUser.email,
+          avatar: normalizedUser.avatar || undefined,
+          role: normalizedUser.role || normalizedUser.type?.toLowerCase() || "client",
         } as any);
+      }
+
+      updateUser({
+        id: String(normalizedUser.id),
+        name: normalizedUser.name,
+        email: normalizedUser.email,
+        avatar: normalizedUser.avatar || undefined,
+      });
+
+      try {
+        const rawUserData = localStorage.getItem("user_data");
+        if (rawUserData) {
+          const parsed = JSON.parse(rawUserData) as Record<string, unknown>;
+          localStorage.setItem(
+            "user_data",
+            JSON.stringify({
+              ...parsed,
+              avatar: normalizedUser.avatar,
+            }),
+          );
+        }
+      } catch {
+        // Ignore malformed local user cache.
       }
 
       router.refresh();
@@ -140,8 +186,17 @@ export default function DashboardAccountPage() {
         const response = await getMe();
         if (!active) return;
 
-        const nextUser = response.data;
+        const nextUser = {
+          ...response.data,
+          avatar: normalizeAvatarUrl(response.data.avatar),
+        };
         setUser(nextUser);
+        updateUser({
+          id: String(nextUser.id),
+          name: nextUser.name,
+          email: nextUser.email,
+          avatar: nextUser.avatar || undefined,
+        });
         setProfile({
           name: nextUser.name || "",
           timezone: nextUser.timezone || "",
@@ -175,7 +230,7 @@ export default function DashboardAccountPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [updateUser]);
 
   useEffect(() => {
     if (activeTab !== "address") return;
@@ -396,8 +451,19 @@ export default function DashboardAccountPage() {
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
             <div className="sticky top-24 overflow-hidden rounded-[2rem] border border-slate-200 bg-[#0B1F3A] p-8 text-center text-white shadow-[0_24px_48px_rgba(11,31,58,0.24)]">
-              <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-[1.75rem] border border-white/20 bg-white/10 text-3xl font-bold">
-                {initials}
+              <div className="mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-[1.75rem] border border-white/20 bg-white/10 text-3xl font-bold">
+                {user?.avatar ? (
+                  <Image
+                    src={user.avatar}
+                    alt={user?.name || "Avatar"}
+                    width={128}
+                    height={128}
+                    className="h-full w-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  initials
+                )}
               </div>
               <h2 className="mt-6 text-xs font-black uppercase tracking-[0.24em] text-white">{user?.name || t("labels.user")}</h2>
               <p className="mt-2 text-xs text-slate-300">{user?.email}</p>

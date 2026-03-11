@@ -8,6 +8,7 @@ import { logout } from "@/lib/api/auth";
 import {
   clearClientSession,
   setClientSession,
+  CLIENT_SESSION_UPDATED_EVENT,
 } from "@/lib/auth/client-session";
 import type { UserRole } from "@/lib/auth/roles";
 import type { AppLocale } from "@/lib/i18n";
@@ -16,6 +17,10 @@ import { stopImpersonation } from "@/lib/api/account";
 import { Button } from "@/components/ui/button";
 import LockscreenOverlay from "@/components/LockscreenOverlay";
 import { NetworkStatusBar } from "@/components/common/NetworkStatusBar";
+import {
+  ClientSessionProvider,
+  useClientSession,
+} from "@/components/session/ClientSessionProvider";
 
 type DashboardShellProps = {
   locale: AppLocale;
@@ -34,7 +39,33 @@ export function DashboardShell({
   userAvatar,
   children,
 }: DashboardShellProps) {
+  return (
+    <ClientSessionProvider
+      initialUser={{
+        name: userName,
+        email: userEmail,
+        avatar: userAvatar,
+        role,
+      }}
+    >
+      <DashboardShellInner locale={locale} role={role}>
+        {children}
+      </DashboardShellInner>
+    </ClientSessionProvider>
+  );
+}
+
+function DashboardShellInner({
+  locale,
+  role,
+  children,
+}: {
+  locale: AppLocale;
+  role: UserRole;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
+  const { user } = useClientSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [impersonatingName, setImpersonatingName] = useState<string | null>(
@@ -93,15 +124,19 @@ export function DashboardShell({
   }
 
   return (
-    <LockscreenOverlay locale={locale} userName={userName} userAvatar={userAvatar}>
+    <LockscreenOverlay
+      locale={locale}
+      userName={user.name}
+      userAvatar={user.avatar}
+    >
       <NetworkStatusBar />
       <div className="min-h-screen bg-[#f5f8fc] dark:bg-slate-950">
         <DashboardHeader
           locale={locale}
           role={role}
-          userName={userName}
-          userEmail={userEmail}
-          userAvatar={userAvatar}
+          userName={user.name}
+          userEmail={user.email}
+          userAvatar={user.avatar}
           onOpenMobileNav={() => setMobileOpen(true)}
           onLogout={handleLogout}
         />

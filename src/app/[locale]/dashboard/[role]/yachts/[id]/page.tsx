@@ -4617,6 +4617,8 @@ export default function YachtEditorPage() {
                       yachtId={Number(activeYachtId)}
                       yachtName={selectedYacht?.boat_name || (draft?.data as any)?.step2?.selectedYacht?.boat_name || "Unnamed Vessel"}
                       locationId={selectedYacht?.ref_harbor_id || (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id || null}
+                      yachtData={selectedYacht || (draft?.data as any)?.step2?.selectedYacht || null}
+                      locationOptions={harbors}
                     />
                   </div>
                 )}

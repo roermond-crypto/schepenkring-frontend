@@ -591,11 +591,15 @@
       "yes": "Ja",
       "no": "Nein",
       "confirmed": "Bestatigt:",
-      "user": "Benutzer"
+      "user": "Benutzer",
+      "profilePicture": "Profilbild",
+      "uploadHelp": "Laden Sie einen neuen Avatar hoch (max. 5MB, WEBP/JPG/PNG)."
     },
     "actions": {
       "syncProfile": "Profil synchronisieren",
-      "saving": "Speichern..."
+      "saving": "Speichern...",
+      "uploadImage": "Bild hochladen",
+      "uploading": "Wird hochgeladen..."
     },
     "toasts": {
       "loadFailed": "Kontoprofil konnte nicht geladen werden.",
@@ -887,6 +891,15 @@
       "sourceUrl": "Quell-URL",
       "sharedFiles": "Geteilte Dateien ({count})",
       "activity": "Aktivität"
+    }
+  },
+  "DashboardSignhostFlow": {
+    "agreement": {
+      "title": "Vereinbarungsbedingungen",
+      "description": "Der hier gezeigte Anhang folgt der ausgewählten Vertragssprache.",
+      "activeLanguage": "Aktive Sprache: {language}",
+      "view": "Anhang ansehen",
+      "download": "PDF herunterladen"
     }
   }
 }

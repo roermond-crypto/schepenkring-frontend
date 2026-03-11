@@ -591,11 +591,15 @@
       "yes": "Yes",
       "no": "No",
       "confirmed": "Confirmed:",
-      "user": "User"
+      "user": "User",
+      "profilePicture": "Profile picture",
+      "uploadHelp": "Upload a new avatar (max 5MB, WEBP/JPG/PNG)."
     },
     "actions": {
       "syncProfile": "Sync Profile",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "uploadImage": "Upload Image",
+      "uploading": "Uploading..."
     },
     "toasts": {
       "loadFailed": "Failed to load account profile.",
@@ -887,6 +891,15 @@
       "sourceUrl": "Source URL",
       "sharedFiles": "Shared files ({count})",
       "activity": "Activity"
+    }
+  },
+  "DashboardSignhostFlow": {
+    "agreement": {
+      "title": "Agreement Terms",
+      "description": "The agreement attachment shown here follows the selected contract language.",
+      "activeLanguage": "Active language: {language}",
+      "view": "View attachment",
+      "download": "Download PDF"
     }
   }
 }

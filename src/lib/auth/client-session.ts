@@ -5,6 +5,7 @@ import type { SessionUser } from "@/lib/auth/session";
 
 export const AUTH_TOKEN_COOKIE = "schepenkring_auth_token";
 export const AUTH_SESSION_COOKIE = "schepenkring_session";
+export const CLIENT_SESSION_UPDATED_EVENT = "client-session-updated";
 const MAX_AGE = 60 * 60 * 24 * 7;
 
 function toBase64Url(value: string) {
@@ -26,11 +27,36 @@ export function setClientSession(token: string, user: SessionUser) {
 
   Cookies.set(AUTH_TOKEN_COOKIE, token, options);
   Cookies.set(AUTH_SESSION_COOKIE, toBase64Url(JSON.stringify(user)), options);
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem("auth_token", token);
+    localStorage.setItem(
+      "user_data",
+      JSON.stringify({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar ?? null,
+        role: user.role,
+        token,
+      }),
+    );
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event(CLIENT_SESSION_UPDATED_EVENT));
+  }
 }
 
 export function clearClientSession() {
   Cookies.remove(AUTH_TOKEN_COOKIE, { path: "/" });
   Cookies.remove(AUTH_SESSION_COOKIE, { path: "/" });
+
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("user_data");
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event(CLIENT_SESSION_UPDATED_EVENT));
+  }
 }
 
 export function getClientToken() {

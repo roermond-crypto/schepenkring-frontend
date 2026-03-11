@@ -148,7 +148,7 @@ export function ChatPage() {
   return (
     <div className="chat-page-theme space-y-6">
 
-      <div className="flex h-[calc(100vh-24rem)] min-h-[38rem] bg-gradient-to-br from-slate-50 via-white to-blue-50/30 overflow-hidden rounded-2xl border border-slate-200/60 shadow-xl">
+      <div className="flex h-[calc(100vh-9rem)] min-h-[42rem] bg-gradient-to-br from-slate-50 via-white to-blue-50/30 overflow-hidden rounded-2xl border border-slate-200/60 shadow-xl">
         {/* Mobile nav bar */}
         <div className="lg:hidden fixed top-20 left-0 right-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-2 flex items-center gap-2">
           {mobilePanel !== "list" && (
