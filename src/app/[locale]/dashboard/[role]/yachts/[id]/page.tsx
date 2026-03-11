@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, SyntheticEvent } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  SyntheticEvent,
+  useMemo,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
@@ -35,7 +42,27 @@ import {
   Shield,
   Anchor,
   WifiOff,
-  Filter, HelpCircle, Info, Languages, Star, Users, Video, Wifi, Plus, X, UploadCloud, Edit3, Anchor as MooringIcon, CalendarDays, Key, Sun, ShieldCheck, Play
+  Wind,
+  Filter,
+  HelpCircle,
+  Info,
+  Languages,
+  Star,
+  Users,
+  Video,
+  Wifi,
+  Plus,
+  X,
+  UploadCloud,
+  Edit3,
+  Anchor as MooringIcon,
+  CalendarDays,
+  Key,
+  Sun,
+  ShieldCheck,
+  Play,
+  GripVertical,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,6 +79,20 @@ import { useLocale } from "next-intl";
 import { getDictionary } from "@/lib/i18n";
 import { normalizeRole } from "@/lib/auth/roles";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DragDropContext,
+  Draggable,
+  Droppable,
+  type DropResult,
+} from "@hello-pangea/dnd";
 
 const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
   ssr: false,
@@ -83,6 +124,11 @@ import {
   getYachtDraft,
   commitYachtDraft,
 } from "@/lib/api/yacht-drafts";
+import { FieldHistoryPopover } from "@/components/yachts/FieldHistoryPopover";
+import {
+  FieldCorrectionControls,
+  CorrectionLabel,
+} from "@/components/yachts/FieldCorrectionControls";
 
 // ALi
 // Wizard step config
@@ -112,6 +158,8 @@ type AiStagedImage = {
 };
 type GalleryState = { [key: string]: any[] };
 
+type ImageGridDensity = "regular" | "compact" | "dense";
+
 // Availability Rule Type
 type AvailabilityRule = {
   days_of_week: number[];
@@ -119,13 +167,7 @@ type AvailabilityRule = {
   end_time: string;
 };
 
-type CorrectionLabel =
-  | "wrong_image_detection"
-  | "wrong_text_interpretation"
-  | "guessed_too_much"
-  | "duplicate_data_issue"
-  | "import_mismatch"
-  | "other";
+// Available explicitly from FieldCorrectionControls import
 
 type ConfidenceMeta = {
   overall_confidence: number;
@@ -149,6 +191,47 @@ const OPTIONAL_TRI_STATE_FIELDS = [
   "heating",
   "toilet",
   "fridge",
+  "shower",
+  "bath",
+  "oven",
+  "microwave",
+  "freezer",
+  "television",
+  "ais",
+  "radar",
+  "autopilot",
+  "life_raft",
+  "epirb",
+  "bilge_pump",
+  "fire_extinguisher",
+  "mob_system",
+  "radar_reflector",
+  "flares",
+  "life_buoy",
+  "watertight_door",
+  "gas_bottle_locker",
+  "self_draining_cockpit",
+  "solar_panel",
+  "wind_generator",
+  "stern_anchor",
+  "spud_pole",
+  "cockpit_tent",
+  "outdoor_cushions",
+  "teak_deck",
+  "swimming_platform",
+  "swimming_ladder",
+  "shorepower",
+  "bowsprit",
+  "main_sail",
+  "furling_mainsail",
+  "genoa",
+  "jib",
+  "spinnaker",
+  "gennaker",
+  "mizzen",
+  "furling_mizzen",
+  "winches",
+  "electric_winches",
 ] as const;
 
 const CORRECTION_BUTTONS: Array<{ value: CorrectionLabel; label: string }> = [
@@ -183,19 +266,28 @@ function clampWizardStep(value: unknown, fallback = 1): number {
   return Math.min(5, Math.max(1, Math.trunc(parsed)));
 }
 
-function normalizeTriStateValue(value: unknown): "yes" | "no" | "unknown" {
+function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
   if (typeof value === "boolean") return value ? "yes" : "no";
   if (typeof value === "number") return value > 0 ? "yes" : "no";
-  const normalized = String(value ?? "").trim().toLowerCase();
-  if (!normalized) return "unknown";
-  if (["unknown", "unsure", "uncertain", "n/a", "na", "null"].includes(normalized)) return "unknown";
-  if (["no", "n", "false", "0", "absent", "none"].includes(normalized)) return "no";
-  if (["yes", "y", "true", "1", "present", "included"].includes(normalized)) return "yes";
-  if (/\b(without|not visible|not present|missing)\b/.test(normalized)) return "no";
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (!normalized) return null;
+  if (
+    ["unknown", "unsure", "uncertain", "n/a", "na", "null", "none"].includes(
+      normalized,
+    )
+  )
+    return null;
+  if (["no", "n", "false", "0", "absent"].includes(normalized)) return "no";
+  if (["yes", "y", "true", "1", "present", "included"].includes(normalized))
+    return "yes";
+  if (/\b(without|not visible|not present|missing)\b/.test(normalized))
+    return "no";
   if (/\b(with|equipped|installed|available)\b/.test(normalized)) return "yes";
   if (/\d+/.test(normalized)) return "yes";
-  // Legacy free-text values should keep "present" semantics.
-  return "yes";
+  // If it's something else not matching the above, return null to be safe
+  return null;
 }
 
 export default function YachtEditorPage() {
@@ -205,7 +297,7 @@ export default function YachtEditorPage() {
   const locale = useLocale();
   const role = normalizeRole(params?.role) ?? "admin";
   const dict = getDictionary(locale) as any;
-  const t = dict?.YachtWizard || {} as any;
+  const t = dict?.YachtWizard || ({} as any);
   const router = useRouter();
 
   const stepFallbacks: Record<string, string> = {
@@ -270,7 +362,9 @@ export default function YachtEditorPage() {
   // Video State
   const [boatVideos, setBoatVideos] = useState<any[]>([]);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
-  const [isPublishingVideo, setIsPublishingVideo] = useState<number | null>(null);
+  const [isPublishingVideo, setIsPublishingVideo] = useState<number | null>(
+    null,
+  );
   const [deleteVideoDialogOpen, setDeleteVideoDialogOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<number | null>(null);
 
@@ -283,6 +377,17 @@ export default function YachtEditorPage() {
     : (yachtId as string);
   const pipeline = useImagePipeline(activeYachtId);
   const imagesApproved = pipeline.isStep2Unlocked;
+  const [reviewImages, setReviewImages] = useState<PipelineImage[]>([]);
+  const [imageGridDensity, setImageGridDensity] =
+    useState<ImageGridDensity>("regular");
+  const [selectedLightboxImageId, setSelectedLightboxImageId] = useState<
+    number | null
+  >(null);
+  const [isAutoSortingImages, setIsAutoSortingImages] = useState(false);
+  const [isReorderingImages, setIsReorderingImages] = useState(false);
+  const [deleteAllImagesDialogOpen, setDeleteAllImagesDialogOpen] =
+    useState(false);
+  const [isDeletingAllImages, setIsDeletingAllImages] = useState(false);
 
   // Legacy staging for non-image features (Main Profile etc)
   const [aiStaging, setAiStaging] = useState<AiStagedImage[]>([]);
@@ -300,19 +405,37 @@ export default function YachtEditorPage() {
   const [extractionResult, setExtractionResult] = useState<any>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [showExtractModal, setShowExtractModal] = useState(false);
-  const [extractionType, setExtractionType] = useState<"gemini" | "magic">("gemini");
+  const [extractionType, setExtractionType] = useState<"gemini" | "magic">(
+    "gemini",
+  );
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [formKey, setFormKey] = useState(0);
-  const [confidenceMeta, setConfidenceMeta] = useState<ConfidenceMeta | null>(null);
-  const [correctionLabel, setCorrectionLabel] = useState<CorrectionLabel | null>(null);
+
+  // Correction feedback loop state
+  const [fieldCorrectionLabels, setFieldCorrectionLabels] = useState<
+    Record<string, CorrectionLabel | null>
+  >({});
+  const [confidenceMeta, setConfidenceMeta] = useState<ConfidenceMeta | null>(
+    null,
+  );
+  const [correctionLabel, setCorrectionLabel] =
+    useState<CorrectionLabel | null>(null);
+
+  // New AI UI Feedback States
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const [extractionStatus, setExtractionStatus] = useState("");
+  const [extractionCountdown, setExtractionCountdown] = useState(60);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Harbors
   const [harbors, setHarbors] = useState<any[]>([]);
   const [isHarborsLoading, setIsHarborsLoading] = useState(false);
   const canProceedFromStep1 =
-    !isNewMode ||
-    (!isOnline && offlineImages.length > 0) ||
-    imagesApproved;
+    !isNewMode || (!isOnline && offlineImages.length > 0) || imagesApproved;
+  const areReviewPrerequisitesComplete = [1, 2, 3, 4].every((stepId) =>
+    isStepComplete(stepId),
+  );
 
   // AI Text State (Tab 3)
   const [aiTexts, setAiTexts] = useState({ nl: "", en: "", de: "" });
@@ -336,13 +459,16 @@ export default function YachtEditorPage() {
     }
 
     if (typeof window !== "undefined") {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
         const recog = new SpeechRecognition();
         recog.continuous = true;
         recog.interimResults = false;
         recog.onresult = (event: any) => {
-          const transcript = event.results[event.results.length - 1][0].transcript;
+          const transcript =
+            event.results[event.results.length - 1][0].transcript;
           setAiTexts((prev) => ({
             ...prev,
             [selectedLang]: prev[selectedLang] + " " + transcript,
@@ -354,7 +480,31 @@ export default function YachtEditorPage() {
     }
   }, [selectedLang]);
 
+  useEffect(() => {
+    setReviewImages(pipeline.images);
+  }, [pipeline.images]);
 
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+
+    if (!areReviewPrerequisitesComplete) {
+      if (isStepComplete(5)) {
+        markStepIncomplete(5);
+      }
+      return;
+    }
+
+    if (activeStep === 5 && !isStepComplete(5)) {
+      markStepComplete(5);
+    }
+  }, [
+    activeStep,
+    areReviewPrerequisitesComplete,
+    isDraftLoaded,
+    isStepComplete,
+    markStepComplete,
+    markStepIncomplete,
+  ]);
 
   // Availability State
   const [availabilityRules, setAvailabilityRules] = useState<
@@ -372,7 +522,8 @@ export default function YachtEditorPage() {
   const [boatDocuments, setBoatDocuments] = useState<any[]>([]);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [fetchingChecklist, setFetchingChecklist] = useState(false);
-  const [deleteDocumentDialogOpen, setDeleteDocumentDialogOpen] = useState(false);
+  const [deleteDocumentDialogOpen, setDeleteDocumentDialogOpen] =
+    useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
 
   // Fetch Checklist Templates & Documents for Step 5
@@ -381,8 +532,13 @@ export default function YachtEditorPage() {
       const fetchComplianceData = async () => {
         setFetchingChecklist(true);
         try {
-          const typeId = selectedYacht?.boat_type_id || (draft?.data as any)?.step2?.selectedYacht?.boat_type_id || "";
-          const templatesRes = await api.get(`/checklists/templates?boat_type_id=${typeId}`);
+          const typeId =
+            selectedYacht?.boat_type_id ||
+            (draft?.data as any)?.step2?.selectedYacht?.boat_type_id ||
+            "";
+          const templatesRes = await api.get(
+            `/checklists/templates?boat_type_id=${typeId}`,
+          );
           setChecklistTemplates(templatesRes.data);
 
           const targetId = isNewMode ? createdYachtId : yachtId;
@@ -398,7 +554,14 @@ export default function YachtEditorPage() {
       };
       fetchComplianceData();
     }
-  }, [activeStep, selectedYacht?.boat_type_id, (draft?.data as any)?.boat_type_id, isNewMode, createdYachtId, yachtId]);
+  }, [
+    activeStep,
+    selectedYacht?.boat_type_id,
+    (draft?.data as any)?.boat_type_id,
+    isNewMode,
+    createdYachtId,
+    yachtId,
+  ]);
 
   /* 
   useEffect(() => {
@@ -433,7 +596,10 @@ export default function YachtEditorPage() {
 
         // Auto-select if only one harbor exists and none selected
         if (list.length === 1 && !selectedYacht?.ref_harbor_id) {
-          setSelectedYacht((prev: any) => ({ ...prev, ref_harbor_id: list[0].id }));
+          setSelectedYacht((prev: any) => ({
+            ...prev,
+            ref_harbor_id: list[0].id,
+          }));
         }
       } catch (err) {
         console.error("Failed to fetch harbors", err);
@@ -449,14 +615,13 @@ export default function YachtEditorPage() {
     if (activeStep === 4 && availabilityRules.length === 0 && harborDefaults) {
       setAvailabilityRules([
         {
-          days_of_week: [1, 2, 3, 4, 5], // Defaulting to Mon-Fri implicitly 
+          days_of_week: [1, 2, 3, 4, 5], // Defaulting to Mon-Fri implicitly
           start_time: harborDefaults.opening_hours_start || "09:00",
           end_time: harborDefaults.opening_hours_end || "17:00",
         },
       ]);
     }
   }, [activeStep, availabilityRules.length, harborDefaults]);
-
 
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
   const restoredDraftRef = useRef(false);
@@ -487,13 +652,21 @@ export default function YachtEditorPage() {
     if (!hasRestorableData) return;
 
     const restoredCreatedYachtId = Number(step1Obj.createdYachtId);
-    if (Number.isInteger(restoredCreatedYachtId) && restoredCreatedYachtId > 0) {
+    if (
+      Number.isInteger(restoredCreatedYachtId) &&
+      restoredCreatedYachtId > 0
+    ) {
       setCreatedYachtId(restoredCreatedYachtId);
     }
     if (typeof step1Obj.boatHint === "string") setBoatHint(step1Obj.boatHint);
-    if (typeof step1Obj.geminiExtracted === "boolean") setGeminiExtracted(step1Obj.geminiExtracted);
-    if (step1Obj.extractionResult !== undefined) setExtractionResult(step1Obj.extractionResult);
-    if (step1Obj.confidenceMeta && typeof step1Obj.confidenceMeta === "object") {
+    if (typeof step1Obj.geminiExtracted === "boolean")
+      setGeminiExtracted(step1Obj.geminiExtracted);
+    if (step1Obj.extractionResult !== undefined)
+      setExtractionResult(step1Obj.extractionResult);
+    if (
+      step1Obj.confidenceMeta &&
+      typeof step1Obj.confidenceMeta === "object"
+    ) {
       setConfidenceMeta(step1Obj.confidenceMeta as ConfidenceMeta);
     }
 
@@ -542,12 +715,7 @@ export default function YachtEditorPage() {
       if (!canProceedFromStep1) return;
       setActiveStep(draft.currentStep);
     }
-  }, [
-    isDraftLoaded,
-    draft.currentStep,
-    isNewMode,
-    canProceedFromStep1,
-  ]);
+  }, [isDraftLoaded, draft.currentStep, isNewMode, canProceedFromStep1]);
 
   // Keep current wizard step synced to draft metadata.
   useEffect(() => {
@@ -592,7 +760,15 @@ export default function YachtEditorPage() {
       aiMinWords,
       aiMaxWords,
     });
-  }, [isDraftLoaded, aiTexts, selectedLang, aiTone, aiMinWords, aiMaxWords, debouncedSave]);
+  }, [
+    isDraftLoaded,
+    aiTexts,
+    selectedLang,
+    aiTone,
+    aiMinWords,
+    aiMaxWords,
+    debouncedSave,
+  ]);
 
   useEffect(() => {
     if (!isDraftLoaded) return;
@@ -681,7 +857,8 @@ export default function YachtEditorPage() {
   const syncDraftToServer = useCallback(
     async (mode: "upsert" | "patch" = "patch") => {
       if (!isDraftLoaded || !isOnline || syncingServerDraftRef.current) return;
-      if (typeof window === "undefined" || !localStorage.getItem("auth_token")) return;
+      if (typeof window === "undefined" || !localStorage.getItem("auth_token"))
+        return;
 
       const snapshot = buildServerDraftSnapshot();
       syncingServerDraftRef.current = true;
@@ -725,7 +902,10 @@ export default function YachtEditorPage() {
           };
         };
         const conflictVersion = err?.response?.data?.server?.version;
-        if (err?.response?.status === 409 && typeof conflictVersion === "number") {
+        if (
+          err?.response?.status === 409 &&
+          typeof conflictVersion === "number"
+        ) {
           serverDraftVersionRef.current = conflictVersion;
           try {
             const snapshotRetry = buildServerDraftSnapshot();
@@ -758,8 +938,13 @@ export default function YachtEditorPage() {
   // 3) otherwise patch server with current local state
   useEffect(() => {
     if (!isDraftLoaded || !isOnline) return;
-    if (serverDraftInitializedRef.current || serverDraftBootstrapInFlightRef.current) return;
-    if (typeof window === "undefined" || !localStorage.getItem("auth_token")) return;
+    if (
+      serverDraftInitializedRef.current ||
+      serverDraftBootstrapInFlightRef.current
+    )
+      return;
+    if (typeof window === "undefined" || !localStorage.getItem("auth_token"))
+      return;
 
     let cancelled = false;
     serverDraftBootstrapInFlightRef.current = true;
@@ -786,12 +971,17 @@ export default function YachtEditorPage() {
           const uiState = toObjectRecord(remoteDraft.ui_state_json);
           const serverCompletedSteps = Array.isArray(uiState.completedSteps)
             ? uiState.completedSteps
-              .map((value) => Number(value))
-              .filter((value) => Number.isInteger(value) && value >= 1 && value <= 5)
+                .map((value) => Number(value))
+                .filter(
+                  (value) =>
+                    Number.isInteger(value) && value >= 1 && value <= 5,
+                )
             : [];
 
           flushDraft({
-            currentStep: clampWizardStep(uiState.currentStep ?? remoteDraft.wizard_step ?? 1),
+            currentStep: clampWizardStep(
+              uiState.currentStep ?? remoteDraft.wizard_step ?? 1,
+            ),
             completedSteps: serverCompletedSteps,
             data: {
               step1: toObjectRecord(payload.step1),
@@ -808,7 +998,8 @@ export default function YachtEditorPage() {
           await syncDraftToServer("patch");
         }
       } catch (error: unknown) {
-        const status = (error as { response?: { status?: number } })?.response?.status;
+        const status = (error as { response?: { status?: number } })?.response
+          ?.status;
         if (status === 404) {
           await syncDraftToServer("upsert");
         } else {
@@ -892,7 +1083,9 @@ export default function YachtEditorPage() {
         step5: draft.data.step5,
       },
     });
-    await syncDraftToServer(serverDraftVersionRef.current === null ? "upsert" : "patch");
+    await syncDraftToServer(
+      serverDraftVersionRef.current === null ? "upsert" : "patch",
+    );
   }, [
     isDraftLoaded,
     draft.data.step1,
@@ -933,8 +1126,14 @@ export default function YachtEditorPage() {
     (newStep: number) => {
       // OFFLINE: allow skipping to any step (no server gating)
       if (!isOnline) {
-        if (newStep > 1 && offlineImages.length === 0 && pipeline.images.length === 0) {
-          toast.error("Please upload at least one image first (saved locally).");
+        if (
+          newStep > 1 &&
+          offlineImages.length === 0 &&
+          pipeline.images.length === 0
+        ) {
+          toast.error(
+            "Please upload at least one image first (saved locally).",
+          );
           return;
         }
         setActiveStep(newStep);
@@ -949,7 +1148,13 @@ export default function YachtEditorPage() {
       }
       setActiveStep(newStep);
     },
-    [isOnline, isNewMode, canProceedFromStep1, offlineImages, pipeline.images.length],
+    [
+      isOnline,
+      isNewMode,
+      canProceedFromStep1,
+      offlineImages,
+      pipeline.images.length,
+    ],
   );
 
   // --- 1. FETCH DATA (IF EDITING) ---
@@ -1000,20 +1205,24 @@ export default function YachtEditorPage() {
 
           rawRules.forEach((rule: any) => {
             const existingGroup = groupedRules.find(
-              g => g.start_time === rule.start_time && g.end_time === rule.end_time
+              (g) =>
+                g.start_time === rule.start_time &&
+                g.end_time === rule.end_time,
             );
 
             if (existingGroup) {
               if (!existingGroup.days_of_week.includes(rule.day_of_week)) {
                 existingGroup.days_of_week.push(rule.day_of_week);
                 // Optional: Sort days 1=Mon, 0=Sun (placed at end)
-                existingGroup.days_of_week.sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
+                existingGroup.days_of_week.sort(
+                  (a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b),
+                );
               }
             } else {
               groupedRules.push({
                 days_of_week: [rule.day_of_week],
                 start_time: rule.start_time,
-                end_time: rule.end_time
+                end_time: rule.end_time,
               });
             }
           });
@@ -1046,7 +1255,7 @@ export default function YachtEditorPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Auto-create draft yacht if needed 
+    // Auto-create draft yacht if needed
     let targetId = isNewMode ? createdYachtId : yachtId;
     if (isNewMode && !targetId) {
       toast.loading("Creating vessel draft...");
@@ -1066,24 +1275,28 @@ export default function YachtEditorPage() {
       const res = await api.post(`/yachts/${targetId}/boat-videos`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setBoatVideos(prev => [res.data, ...prev]);
+      setBoatVideos((prev) => [res.data, ...prev]);
       toast.success(t?.video?.uploaded || "Video uploaded successfully");
     } catch (err) {
       toast.error(t?.video?.uploadFailed || "Video upload failed");
     } finally {
       setIsUploadingVideo(false);
-      if (e.target) e.target.value = '';
+      if (e.target) e.target.value = "";
     }
   };
 
   // Document Handlers (Step 5)
-  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocumentUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     let targetId = isNewMode ? createdYachtId : yachtId;
     if (isNewMode && !targetId) {
-      const loadingToastId = toast.loading("Creating vessel draft for document upload...");
+      const loadingToastId = toast.loading(
+        "Creating vessel draft for document upload...",
+      );
       try {
         const fd = new FormData();
         fd.append("status", "draft");
@@ -1108,13 +1321,13 @@ export default function YachtEditorPage() {
       const res = await api.post(`/yachts/${targetId}/documents`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setBoatDocuments(prev => [...prev, res.data]);
+      setBoatDocuments((prev) => [...prev, res.data]);
       toast.success("Document uploaded successfully");
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Document upload failed");
     } finally {
       setIsUploadingDocument(false);
-      if (e.target) e.target.value = '';
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -1128,7 +1341,9 @@ export default function YachtEditorPage() {
     const targetId = isNewMode ? createdYachtId : yachtId;
     try {
       await api.delete(`/yachts/${targetId}/documents/${documentToDelete}`);
-      setBoatDocuments(prev => prev.filter(doc => doc.id !== documentToDelete));
+      setBoatDocuments((prev) =>
+        prev.filter((doc) => doc.id !== documentToDelete),
+      );
       toast.success("Document removed");
     } catch (err) {
       toast.error("Failed to delete document");
@@ -1147,7 +1362,7 @@ export default function YachtEditorPage() {
     if (!videoToDelete) return;
     try {
       await api.delete(`/boat-videos/${videoToDelete}`);
-      setBoatVideos(prev => prev.filter(v => v.id !== videoToDelete));
+      setBoatVideos((prev) => prev.filter((v) => v.id !== videoToDelete));
       toast.success(t?.video?.removed || "Video removed");
     } catch (err) {
       toast.error(t?.video?.removeFailed || "Failed to remove video");
@@ -1161,7 +1376,9 @@ export default function YachtEditorPage() {
     setIsPublishingVideo(id);
     try {
       await api.post(`/boat-videos/${id}/publish`);
-      toast.success(t?.video?.publishSent || "Publish request sent to social API");
+      toast.success(
+        t?.video?.publishSent || "Publish request sent to social API",
+      );
 
       // Refresh videos to get the new 'publishing' status
       const res = await api.get(`/yachts/${yachtId}/boat-videos`);
@@ -1173,6 +1390,150 @@ export default function YachtEditorPage() {
     }
   };
 
+  const gridClassName = useMemo(() => {
+    switch (imageGridDensity) {
+      case "dense":
+        return "grid-cols-2 lg:grid-cols-8";
+      case "compact":
+        return "grid-cols-2 lg:grid-cols-6";
+      default:
+        return "grid-cols-2 lg:grid-cols-4";
+    }
+  }, [imageGridDensity]);
+
+  const selectedLightboxImage = useMemo(
+    () =>
+      selectedLightboxImageId === null
+        ? null
+        : (reviewImages.find((image) => image.id === selectedLightboxImageId) ??
+          null),
+    [reviewImages, selectedLightboxImageId],
+  );
+
+  const selectedLightboxIndex = useMemo(
+    () =>
+      selectedLightboxImageId === null
+        ? -1
+        : reviewImages.findIndex(
+            (image) => image.id === selectedLightboxImageId,
+          ),
+    [reviewImages, selectedLightboxImageId],
+  );
+
+  const buildImageAiNotes = useCallback((image: PipelineImage) => {
+    const notes: string[] = [];
+    const adjustments = Array.isArray(image.quality_flags?.ai_adjustments)
+      ? image.quality_flags.ai_adjustments
+      : [];
+    notes.push(...adjustments);
+
+    if (image.quality_flags?.too_dark) {
+      notes.push("Source image was detected as dark before enhancement.");
+    }
+    if (image.quality_flags?.too_bright) {
+      notes.push("Source image had strong highlights before enhancement.");
+    }
+    if (image.quality_flags?.blurry) {
+      notes.push("Source image was soft, so clarity recovery was attempted.");
+    }
+    if (image.quality_flags?.low_res) {
+      notes.push(
+        "Source image resolution was low, so upscale logic was considered.",
+      );
+    }
+    if (
+      typeof image.quality_flags?.ai_rotation_angle === "number" &&
+      image.quality_flags.ai_rotation_angle > 0
+    ) {
+      notes.push(
+        `Image orientation was corrected by ${image.quality_flags.ai_rotation_angle} degrees.`,
+      );
+    }
+    if (notes.length === 0) {
+      notes.push(
+        "AI marked this image as gallery-ready without major corrections.",
+      );
+    }
+
+    return Array.from(new Set(notes));
+  }, []);
+
+  const handlePipelineDragEnd = useCallback(
+    async (result: DropResult) => {
+      if (!result.destination) return;
+      if (result.destination.index === result.source.index) return;
+
+      const reordered = Array.from(reviewImages);
+      const [moved] = reordered.splice(result.source.index, 1);
+      reordered.splice(result.destination.index, 0, moved);
+      setReviewImages(reordered);
+
+      try {
+        setIsReorderingImages(true);
+        await pipeline.reorderImages(reordered.map((image) => image.id));
+      } catch (error) {
+        setReviewImages(pipeline.images);
+        toast.error("Failed to save image order");
+        console.error(error);
+      } finally {
+        setIsReorderingImages(false);
+      }
+    },
+    [pipeline, reviewImages],
+  );
+
+  const handleAutoSortImages = useCallback(async () => {
+    try {
+      setIsAutoSortingImages(true);
+      await pipeline.autoClassifyImages();
+      toast.success("AI sorted images into better categories.");
+    } catch (error) {
+      toast.error("AI image sorting failed.");
+      console.error(error);
+    } finally {
+      setIsAutoSortingImages(false);
+    }
+  }, [pipeline]);
+
+  const handleDeleteAllImages = useCallback(async () => {
+    if (reviewImages.length === 0) return;
+
+    try {
+      setIsDeletingAllImages(true);
+      setSelectedLightboxImageId(null);
+
+      const result = await pipeline.deleteImages(
+        reviewImages.map((image) => image.id),
+      );
+
+      if (result.failed > 0) {
+        toast.error(
+          `Deleted ${result.deleted} images, ${result.failed} failed.`,
+        );
+      } else {
+        toast.success(`Deleted ${result.deleted} images.`);
+      }
+    } catch (error) {
+      toast.error("Failed to delete images.");
+      console.error(error);
+    } finally {
+      setDeleteAllImagesDialogOpen(false);
+      setIsDeletingAllImages(false);
+    }
+  }, [pipeline, reviewImages]);
+
+  const moveLightboxImage = useCallback(
+    (direction: "next" | "prev") => {
+      if (selectedLightboxIndex < 0 || reviewImages.length === 0) return;
+
+      const delta = direction === "next" ? 1 : -1;
+      const nextIndex =
+        (selectedLightboxIndex + delta + reviewImages.length) %
+        reviewImages.length;
+      setSelectedLightboxImageId(reviewImages[nextIndex]?.id ?? null);
+    },
+    [reviewImages, selectedLightboxIndex],
+  );
 
   const handleImageError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = PLACEHOLDER_IMAGE;
@@ -1186,7 +1547,9 @@ export default function YachtEditorPage() {
     // ── OFFLINE PATH: store images locally in IndexedDB ──
     if (!navigator.onLine) {
       setIsUploading(true);
-      const toastId = toast.loading(`Saving ${files.length} image(s) locally...`);
+      const toastId = toast.loading(
+        `Saving ${files.length} image(s) locally...`,
+      );
 
       try {
         const fileArray = Array.from(files);
@@ -1209,20 +1572,20 @@ export default function YachtEditorPage() {
 
           // ── Inject a faked approved image into the pipeline so it renders instantly ──
           newPipelineImages.push({
-            id: Date.now() + i,     // fake ID
+            id: Date.now() + i, // fake ID
             yacht_id: 0,
             original_name: file.name,
             full_url: previewUrl,
             thumb_full_url: previewUrl,
             optimized_url: previewUrl,
             thumb_optimized_url: previewUrl,
-            status: "approved",     // Skip processing straight to approved
+            status: "approved", // Skip processing straight to approved
             enhancement_method: "none",
             quality_score: 99,
             quality_label: "Offline",
             auto_approved: true,
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           });
         }
 
@@ -1372,10 +1735,16 @@ export default function YachtEditorPage() {
           chunk.map(async (batchFiles) => {
             const uploadFd = new FormData();
             batchFiles.forEach((file) => uploadFd.append("images[]", file));
-            const res = await api.post(`/yachts/${targetId}/images/upload`, uploadFd, {
-              headers: { "Content-Type": "multipart/form-data" },
-            });
-            return Array.isArray(res.data?.images) ? res.data.images.length : batchFiles.length;
+            const res = await api.post(
+              `/yachts/${targetId}/images/upload`,
+              uploadFd,
+              {
+                headers: { "Content-Type": "multipart/form-data" },
+              },
+            );
+            return Array.isArray(res.data?.images)
+              ? res.data.images.length
+              : batchFiles.length;
           }),
         );
 
@@ -1414,7 +1783,7 @@ export default function YachtEditorPage() {
         if (refreshRes.data?.images) {
           pipeline.setImagesDirectly?.(refreshRes.data);
         }
-      } catch { }
+      } catch {}
       if (pipeline.refreshImages) await pipeline.refreshImages();
       if (shouldSetCreatedYachtId) {
         setCreatedYachtId(Number(targetId));
@@ -1443,13 +1812,11 @@ export default function YachtEditorPage() {
     (OPTIONAL_TRI_STATE_FIELDS as readonly string[]).includes(fieldName);
 
   // ── AI Fill Pipeline ──
-  const handleAiExtract = async (
-    options?: {
-      background?: boolean;
-      navigateToStep2?: boolean;
-      speedMode?: "fast" | "balanced" | "deep";
-    },
-  ): Promise<boolean> => {
+  const handleAiExtract = async (options?: {
+    background?: boolean;
+    navigateToStep2?: boolean;
+    speedMode?: "fast" | "balanced" | "deep";
+  }): Promise<boolean> => {
     const background = options?.background ?? false;
     const navigateToStep2 = options?.navigateToStep2 ?? !background;
     const speedMode = options?.speedMode ?? "balanced";
@@ -1466,7 +1833,9 @@ export default function YachtEditorPage() {
 
     // Block AI extraction when offline
     if (!navigator.onLine) {
-      toast.error("AI extraction requires an internet connection. You can skip to Step 2 to fill in details manually.");
+      toast.error(
+        "AI extraction requires an internet connection. You can skip to Step 2 to fill in details manually.",
+      );
       return false;
     }
     if (pipeline.images.length === 0) {
@@ -1485,11 +1854,44 @@ export default function YachtEditorPage() {
         : "🤖 AI Pipeline is analyzing your images...",
     );
 
+    // ── Start Progress & Countdown ──
+    setExtractionProgress(5);
+    setExtractionCountdown(60);
+    setExtractionStatus("Connecting to Gemini Vision API...");
+
+    progressIntervalRef.current = setInterval(() => {
+      setExtractionProgress((prev) => {
+        if (prev >= 95) return prev;
+        // Slow down as we approach the end
+        const step = prev < 40 ? 4 : prev < 70 ? 2 : 1;
+        const next = prev + step;
+
+        // Update status messages based on progress
+        if (next < 25)
+          setExtractionStatus("Analyzing vessel images with Gemini Vision...");
+        else if (next < 50)
+          setExtractionStatus(
+            "Searching Pinecone catalog for matching models...",
+          );
+        else if (next < 80)
+          setExtractionStatus("Cross-referencing technical specifications...");
+        else setExtractionStatus("Finalizing data and validating results...");
+
+        return next;
+      });
+    }, 1500);
+
+    countdownIntervalRef.current = setInterval(() => {
+      setExtractionCountdown((prev) => (prev > 1 ? prev - 1 : 1));
+    }, 1000);
+
     try {
       const formData = new FormData();
 
       // Always pass a valid yacht ID; recover if restored draft ID was deleted server-side.
-      let targetId: number | string | null = isNewMode ? createdYachtId : yachtId;
+      let targetId: number | string | null = isNewMode
+        ? createdYachtId
+        : yachtId;
       if (isNewMode && targetId) {
         try {
           await api.get(`/yachts/${targetId}`);
@@ -1520,6 +1922,9 @@ export default function YachtEditorPage() {
         formData.append("hint_text", boatHint.trim());
       }
 
+      // Images are NOT sent from frontend — backend fetches them from DB
+      // using yacht_id (matching old project behavior for reliability).
+
       // We use fetch directly here to bypass Axios JSON parser,
       // which fails if PHP outputs warnings before the JSON
       const token = localStorage.getItem("auth_token");
@@ -1527,7 +1932,7 @@ export default function YachtEditorPage() {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
-        signal: AbortSignal.timeout(180000), // 3 mins
+        signal: AbortSignal.timeout(600000), // 10 mins
       });
 
       const responseText = await res.text();
@@ -1552,8 +1957,8 @@ export default function YachtEditorPage() {
       if (!res.ok) {
         throw new Error(
           responseData?.error ||
-          responseData?.message ||
-          `AI extraction request failed (HTTP ${res.status})`,
+            responseData?.message ||
+            `AI extraction request failed (HTTP ${res.status})`,
         );
       }
 
@@ -1564,18 +1969,22 @@ export default function YachtEditorPage() {
         const meta = responseData.meta;
 
         const normalizedFormValues: Record<string, unknown> = {
-          ...(toObjectRecord(formValues)),
+          ...toObjectRecord(formValues),
         };
 
         const currentYear = new Date().getFullYear();
         const parseNum = (value: unknown): number | null => {
-          if (value === null || value === undefined || value === "") return null;
+          if (value === null || value === undefined || value === "")
+            return null;
           const raw = String(value).replace(",", ".").trim();
           const parsed = Number(raw);
           return Number.isFinite(parsed) ? parsed : null;
         };
 
-        const sanitizeDimension = (value: unknown, field: "loa" | "beam" | "draft"): number | null => {
+        const sanitizeDimension = (
+          value: unknown,
+          field: "loa" | "beam" | "draft",
+        ): number | null => {
           let num = parseNum(value);
           if (num === null) return null;
 
@@ -1607,12 +2016,32 @@ export default function YachtEditorPage() {
           draught: "draft",
           hp: "horse_power",
           engine_brand: "engine_manufacturer",
+          engine_make: "engine_manufacturer",
           fuel_type: "fuel",
+          engine_hp: "horse_power",
+          engine_hours: "hours",
+          engine_count: "engine_quantity",
+          hull_material: "hull_construction",
+          construction_material: "hull_construction",
+          cabins_count: "cabins",
+          berths_count: "berths",
+          vessel_lying: "where",
+          asking_price: "price",
+          speed_max: "max_speed",
+          speed_cruising: "cruising_speed",
+          air_draf: "air_draft",
         };
         Object.entries(aliasMap).forEach(([from, to]) => {
           const sourceValue = normalizedFormValues[from];
           const targetValue = normalizedFormValues[to];
-          if ((targetValue === null || targetValue === undefined || targetValue === "") && sourceValue !== null && sourceValue !== undefined && sourceValue !== "") {
+          if (
+            (targetValue === null ||
+              targetValue === undefined ||
+              targetValue === "") &&
+            sourceValue !== null &&
+            sourceValue !== undefined &&
+            sourceValue !== ""
+          ) {
             normalizedFormValues[to] = sourceValue;
           }
         });
@@ -1621,7 +2050,10 @@ export default function YachtEditorPage() {
         if (typeof normalizedFormValues.model === "number") {
           normalizedFormValues.model = String(normalizedFormValues.model);
         }
-        if (parseNum(normalizedFormValues.price) !== null && (parseNum(normalizedFormValues.price) as number) <= 0) {
+        if (
+          parseNum(normalizedFormValues.price) !== null &&
+          (parseNum(normalizedFormValues.price) as number) <= 0
+        ) {
           normalizedFormValues.price = null;
         }
         const yearNum = parseNum(normalizedFormValues.year);
@@ -1631,9 +2063,18 @@ export default function YachtEditorPage() {
               ? Math.round(yearNum)
               : null;
         }
-        normalizedFormValues.loa = sanitizeDimension(normalizedFormValues.loa, "loa");
-        normalizedFormValues.beam = sanitizeDimension(normalizedFormValues.beam, "beam");
-        normalizedFormValues.draft = sanitizeDimension(normalizedFormValues.draft, "draft");
+        normalizedFormValues.loa = sanitizeDimension(
+          normalizedFormValues.loa,
+          "loa",
+        );
+        normalizedFormValues.beam = sanitizeDimension(
+          normalizedFormValues.beam,
+          "beam",
+        );
+        normalizedFormValues.draft = sanitizeDimension(
+          normalizedFormValues.draft,
+          "draft",
+        );
 
         // Enrich missing Step 2 specs from historical suggestions (brand+model based).
         try {
@@ -1647,7 +2088,9 @@ export default function YachtEditorPage() {
 
           if (query.length >= 3) {
             const suggestionsRes = await api.post("/ai/suggestions", { query });
-            const consensusValues = toObjectRecord(suggestionsRes.data?.consensus_values);
+            const consensusValues = toObjectRecord(
+              suggestionsRes.data?.consensus_values,
+            );
 
             Object.entries(consensusValues).forEach(([field, value]) => {
               const current = normalizedFormValues[field];
@@ -1657,13 +2100,21 @@ export default function YachtEditorPage() {
                 current === "" ||
                 current === "unknown";
 
-              if (isEmptyCurrent && value !== null && value !== undefined && value !== "") {
+              if (
+                isEmptyCurrent &&
+                value !== null &&
+                value !== undefined &&
+                value !== ""
+              ) {
                 normalizedFormValues[field] = value;
               }
             });
           }
         } catch (suggestionError) {
-          console.warn("[AI Extraction] Suggestions enrichment failed:", suggestionError);
+          console.warn(
+            "[AI Extraction] Suggestions enrichment failed:",
+            suggestionError,
+          );
         }
 
         // Keep optional equipment conservative and always explicit in the form.
@@ -1675,9 +2126,11 @@ export default function YachtEditorPage() {
               : normalizeTriStateValue(raw);
         });
 
-        // Build the merged object (filter nulls)
+        // Build the merged object (filter nulls only — match old project)
         const fieldsToMerge = Object.fromEntries(
-          Object.entries(normalizedFormValues).filter(([, val]) => val !== null && val !== undefined),
+          Object.entries(normalizedFormValues).filter(
+            ([, val]) => val !== null,
+          ),
         );
 
         console.log("🟢 [Pipeline] Fields to merge:", fieldsToMerge);
@@ -1720,7 +2173,10 @@ export default function YachtEditorPage() {
           }));
         }
         if (formValues.short_description_de) {
-          setAiTexts((prev) => ({ ...prev, de: formValues.short_description_de }));
+          setAiTexts((prev) => ({
+            ...prev,
+            de: formValues.short_description_de,
+          }));
         }
 
         const fieldCount = Object.keys(fieldsToMerge).length;
@@ -1763,9 +2219,12 @@ export default function YachtEditorPage() {
         err?.response?.data?.error || err?.message || "AI extraction failed";
 
       if (speedMode === "deep" && isTimeoutLike(String(errorMsg))) {
-        toast.loading("Deep extraction timed out. Retrying with balanced mode...", {
-          id: toastId,
-        });
+        toast.loading(
+          "Deep extraction timed out. Retrying with balanced mode...",
+          {
+            id: toastId,
+          },
+        );
         return await handleAiExtract({
           background,
           navigateToStep2,
@@ -1780,19 +2239,14 @@ export default function YachtEditorPage() {
       if (!background) {
         setShowExtractModal(false);
       }
+      // Clear intervals
+      if (progressIntervalRef.current)
+        clearInterval(progressIntervalRef.current);
+      if (countdownIntervalRef.current)
+        clearInterval(countdownIntervalRef.current);
+      setExtractionProgress(0);
     }
   };
-
-  // Auto-trigger extraction only in new mode when images transition to approved.
-  const prevImagesApprovedRef = useRef(imagesApproved);
-  useEffect(() => {
-    const wasApproved = prevImagesApprovedRef.current;
-    prevImagesApprovedRef.current = imagesApproved;
-
-    if (isNewMode && imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
-      void handleAiExtract({ background: true, navigateToStep2: true, speedMode: "balanced" });
-    }
-  }, [imagesApproved, geminiExtracted, isExtracting, isNewMode]);
 
   const handleRegenerateDescription = async () => {
     const targetId = isNewMode ? createdYachtId : yachtId;
@@ -1824,7 +2278,9 @@ export default function YachtEditorPage() {
       }
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.response?.data?.error || "Failed to regenerate text.", { id: toastId });
+      toast.error(e?.response?.data?.error || "Failed to regenerate text.", {
+        id: toastId,
+      });
     } finally {
       setIsRegenerating(false);
     }
@@ -1840,7 +2296,12 @@ export default function YachtEditorPage() {
       recognition.stop();
       setIsDictating(false);
     } else {
-      recognition.lang = selectedLang === 'nl' ? 'nl-NL' : selectedLang === 'de' ? 'de-DE' : 'en-US';
+      recognition.lang =
+        selectedLang === "nl"
+          ? "nl-NL"
+          : selectedLang === "de"
+            ? "de-DE"
+            : "en-US";
       recognition.start();
       setIsDictating(true);
       toast.success("Listening... Speak now");
@@ -1849,7 +2310,9 @@ export default function YachtEditorPage() {
 
   const handleMagicAutoFill = async () => {
     if (!navigator.onLine) {
-      toast.error("Magic Auto-fill requires an internet connection. You can fill in details manually.");
+      toast.error(
+        "Magic Auto-fill requires an internet connection. You can fill in details manually.",
+      );
       return;
     }
 
@@ -1951,7 +2414,7 @@ export default function YachtEditorPage() {
       {
         days_of_week: [],
         start_time: harborDefaults?.opening_hours_start || "09:00",
-        end_time: harborDefaults?.opening_hours_end || "17:00"
+        end_time: harborDefaults?.opening_hours_end || "17:00",
       },
     ]);
   };
@@ -2008,12 +2471,17 @@ export default function YachtEditorPage() {
     };
 
     const getFieldValue = (field: string): string | null => {
-      const element = document.querySelector(
-        `[name="${field}"]`,
-      ) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+      const element = document.querySelector(`[name="${field}"]`) as
+        | HTMLInputElement
+        | HTMLSelectElement
+        | HTMLTextAreaElement
+        | null;
 
       if (element) {
-        if (element instanceof HTMLInputElement && element.type === "checkbox") {
+        if (
+          element instanceof HTMLInputElement &&
+          element.type === "checkbox"
+        ) {
           return element.checked ? "true" : "false";
         }
         return toFormValue(element.value);
@@ -2022,12 +2490,17 @@ export default function YachtEditorPage() {
       return toFormValue(selectedYacht?.[field]);
     };
 
-    const normalizeComparableValue = (field: string, value: unknown): string => {
+    const normalizeComparableValue = (
+      field: string,
+      value: unknown,
+    ): string => {
       if (isOptionalTriStateField(field)) {
-        return normalizeTriStateValue(value);
+        return normalizeTriStateValue(value) || "";
       }
       if (typeof value === "boolean") return value ? "true" : "false";
-      return String(value ?? "").trim().toLowerCase();
+      return String(value ?? "")
+        .trim()
+        .toLowerCase();
     };
 
     // Add primary fields first (from visible inputs OR persisted form state)
@@ -2187,20 +2660,23 @@ export default function YachtEditorPage() {
     });
 
     // Ensure rich-text descriptions are included even when user submits from Step 5.
-    if (aiTexts.en?.trim()) formData.set("short_description_en", aiTexts.en.trim());
-    if (aiTexts.nl?.trim()) formData.set("short_description_nl", aiTexts.nl.trim());
-    if (aiTexts.de?.trim()) formData.set("short_description_de", aiTexts.de.trim());
+    if (aiTexts.en?.trim())
+      formData.set("short_description_en", aiTexts.en.trim());
+    if (aiTexts.nl?.trim())
+      formData.set("short_description_nl", aiTexts.nl.trim());
+    if (aiTexts.de?.trim())
+      formData.set("short_description_de", aiTexts.de.trim());
 
     // Add availability rules
     if (availabilityRules.length > 0) {
       // Expand multiselect arrays back into individual daily rules for backend
       const expandedRules: any[] = [];
-      availabilityRules.forEach(ruleGroup => {
-        ruleGroup.days_of_week.forEach(day => {
+      availabilityRules.forEach((ruleGroup) => {
+        ruleGroup.days_of_week.forEach((day) => {
           expandedRules.push({
             day_of_week: day,
             start_time: ruleGroup.start_time,
-            end_time: ruleGroup.end_time
+            end_time: ruleGroup.end_time,
           });
         });
       });
@@ -2212,7 +2688,9 @@ export default function YachtEditorPage() {
     const aiSessionId = confidenceMeta?.ai_session_id || null;
     const modelName = confidenceMeta?.model_name || null;
     const fieldConfidence = confidenceMeta?.field_confidence || {};
-    const aiSuggestedFields = Object.entries(extractionValues).filter(([, value]) => value !== null);
+    const aiSuggestedFields = Object.entries(extractionValues).filter(
+      ([, value]) => value !== null,
+    );
 
     if (aiSessionId) {
       formData.append("ai_session_id", aiSessionId);
@@ -2223,17 +2701,31 @@ export default function YachtEditorPage() {
     if (Object.keys(fieldConfidence).length > 0) {
       formData.append("field_confidence", JSON.stringify(fieldConfidence));
     }
+
+    // Add Correction Feedback
+    if (Object.keys(fieldCorrectionLabels).length > 0) {
+      formData.append(
+        "field_correction_labels",
+        JSON.stringify(fieldCorrectionLabels),
+      );
+    }
+
     formData.append("changed_by_type", role === "admin" ? "admin" : "user");
 
     let changedAiFieldCount = 0;
     let guessedTooMuchCount = 0;
     for (const [field, aiValue] of aiSuggestedFields) {
-      const currentValue = getFieldValue(field) ?? selectedYacht?.[field] ?? null;
+      const currentValue =
+        getFieldValue(field) ?? selectedYacht?.[field] ?? null;
       const aiNormalized = normalizeComparableValue(field, aiValue);
       const currentNormalized = normalizeComparableValue(field, currentValue);
       if (aiNormalized !== currentNormalized) {
         changedAiFieldCount++;
-        if (isOptionalTriStateField(field) && aiNormalized === "yes" && currentNormalized !== "yes") {
+        if (
+          isOptionalTriStateField(field) &&
+          aiNormalized === "yes" &&
+          currentNormalized !== "yes"
+        ) {
           guessedTooMuchCount++;
         }
       }
@@ -2241,7 +2733,9 @@ export default function YachtEditorPage() {
 
     if (aiSessionId && changedAiFieldCount > 0) {
       const autoLabel: CorrectionLabel =
-        guessedTooMuchCount > 0 ? "guessed_too_much" : "wrong_text_interpretation";
+        guessedTooMuchCount > 0
+          ? "guessed_too_much"
+          : "wrong_text_interpretation";
       formData.append("correction_label", correctionLabel ?? autoLabel);
       formData.append("source_type", "manual");
       formData.append(
@@ -2303,7 +2797,7 @@ export default function YachtEditorPage() {
           headers: {
             "X-Offline-ID": offlineIdRef.current,
             "Content-Type": "multipart/form-data",
-          }
+          },
         });
         finalYachtId = res.data.id;
       }
@@ -2398,14 +2892,26 @@ export default function YachtEditorPage() {
             <div className="mx-auto w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4">
               <Loader2 size={28} className="animate-spin text-blue-600" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Please wait</h3>
-            <p className="text-sm text-slate-500 mt-2">
-              {extractionType === "gemini"
-                ? "AI is analyzing your yacht photos and preparing fields."
-                : "🪄 RAG Engine is searching Pinecone to find consensus and auto-filling details..."}
+            <h3 className="text-lg font-bold text-slate-900">
+              AI Extraction in Progress
+            </h3>
+            <p className="text-sm text-slate-500 mt-2 min-h-[40px]">
+              {extractionStatus ||
+                (extractionType === "gemini"
+                  ? "AI is analyzing your yacht photos and preparing fields."
+                  : "🪄 RAG Engine is searching Pinecone to find consensus and auto-filling details...")}
             </p>
-            <div className="mt-5 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full w-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full animate-pulse" />
+            <div className="mt-5 space-y-3">
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(37,99,235,0.4)]"
+                  style={{ width: `${extractionProgress}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <span>{extractionProgress}% Complete</span>
+                <span>Approx. {extractionCountdown}s remaining</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2416,9 +2922,15 @@ export default function YachtEditorPage() {
         <div className="max-w-2xl mx-auto flex items-center justify-center py-7 px-6">
           {wizardSteps.map((step, index) => {
             const isActive = activeStep === step.id;
-            const isCompleted = step.id < activeStep;
+            const isCompleted =
+              !isNewMode ||
+              step.id < activeStep ||
+              (activeStep === wizardSteps.length &&
+                step.id === wizardSteps.length);
             const isPast = isActive || isCompleted;
-            const isLocked = !canProceedFromStep1 && step.id > 1;
+            const isLocked =
+              (!canProceedFromStep1 && step.id > 1) ||
+              (isExtracting && step.id > 1);
             return (
               <div key={step.id} className="flex items-center">
                 <button
@@ -2429,11 +2941,12 @@ export default function YachtEditorPage() {
                   className={`
                     w-[54px] h-[54px] rounded-full flex items-center justify-center
                     text-[18px] font-bold border-[3px] transition-all duration-300
-                    ${isLocked
-                      ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
-                      : isPast
-                        ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
-                        : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
+                    ${
+                      isLocked
+                        ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
+                        : isPast
+                          ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
+                          : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
                     }
                   `}
                 >
@@ -2441,8 +2954,9 @@ export default function YachtEditorPage() {
                 </button>
                 {index < wizardSteps.length - 1 && (
                   <div
-                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${step.id < activeStep ? "bg-[#2563eb]" : "bg-[#d4d8de]"
-                      }`}
+                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${
+                      step.id < activeStep ? "bg-[#2563eb]" : "bg-[#d4d8de]"
+                    }`}
                   />
                 )}
               </div>
@@ -2464,17 +2978,24 @@ export default function YachtEditorPage() {
             <h1 className="text-xl lg:text-2xl font-serif italic text-white">
               {isNewMode
                 ? t?.header?.newTitle || "Register New Vessel"
-                : (t?.header?.editTitle || "Edit Vessel")?.replace("{name}", selectedYacht?.boat_name || "Loading...")
-              }
+                : (t?.header?.editTitle || "Edit Vessel")?.replace(
+                    "{name}",
+                    selectedYacht?.boat_name || "Loading...",
+                  )}
             </h1>
             <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider mt-0.5">
-              Step {activeStep} of {wizardSteps.length} &middot; {wizardSteps[activeStep - 1]?.label}
+              Step {activeStep} of {wizardSteps.length} &middot;{" "}
+              {wizardSteps[activeStep - 1]?.label}
             </p>
           </div>
         </div>
       </div>
       <div className="max-w-7xl mx-auto p-6 lg:p-12 pt-16">
-        <form onSubmit={handleSubmit} onChange={handleFormChange} className="space-y-16">
+        <form
+          onSubmit={handleSubmit}
+          onChange={handleFormChange}
+          className="space-y-16"
+        >
           {/* ERROR SUMMARY */}
           {errors && (
             <div className="p-6 bg-red-50 border-l-4 border-red-500 text-red-700">
@@ -2564,8 +3085,8 @@ export default function YachtEditorPage() {
                 ) : (
                   <div className="space-y-4">
                     {/* Stats bar */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
+                      <div className="flex flex-wrap items-center gap-4">
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                           {`${pipeline.stats.total} image${pipeline.stats.total !== 1 ? "s" : ""}`}
                         </p>
@@ -2587,220 +3108,570 @@ export default function YachtEditorPage() {
                                 ✓ {pipeline.stats.approved} approved
                               </span>
                             )}
+                            {isReorderingImages && (
+                              <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                Saving order...
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
-                      <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
-                        <Upload size={12} /> Add More
-                        <input
-                          type="file"
-                          multiple
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          disabled={isUploading || pipeline.isUploading}
-                        />
-                      </label>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
+                          <button
+                            type="button"
+                            onClick={() => setImageGridDensity("regular")}
+                            className={cn(
+                              "rounded-lg px-3 py-1 text-xs font-bold transition-colors",
+                              imageGridDensity === "regular"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            )}
+                            title="4 images per row"
+                          >
+                            4
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImageGridDensity("compact")}
+                            className={cn(
+                              "rounded-lg px-3 py-1 text-xs font-bold transition-colors",
+                              imageGridDensity === "compact"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            )}
+                            title="6 images per row"
+                          >
+                            6
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImageGridDensity("dense")}
+                            className={cn(
+                              "rounded-lg px-3 py-1 text-xs font-bold transition-colors",
+                              imageGridDensity === "dense"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            )}
+                            title="8 images per row"
+                          >
+                            8
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => void handleAutoSortImages()}
+                          disabled={
+                            isAutoSortingImages || reviewImages.length === 0
+                          }
+                          className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-bold text-violet-700 transition-colors hover:bg-violet-100 disabled:opacity-60"
+                        >
+                          {isAutoSortingImages ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Wand2 size={12} />
+                          )}
+                          AI auto-sort
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setDeleteAllImagesDialogOpen(true)}
+                          disabled={
+                            reviewImages.length === 0 || isDeletingAllImages
+                          }
+                          className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-60"
+                          title="Delete all images"
+                        >
+                          {isDeletingAllImages ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Trash size={12} />
+                          )}
+                        </button>
+
+                        <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                          <Upload size={12} /> Add More
+                          <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={isUploading || pipeline.isUploading}
+                          />
+                        </label>
+                      </div>
                     </div>
 
                     {/* ── Pipeline Image Grid ── */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {pipeline.images.map((img: PipelineImage) => {
-                        const isMain =
-                          mainPreview === img.optimized_url ||
-                          mainPreview === img.thumb_full_url;
-                        const statusConfig: Record<
-                          string,
-                          { bg: string; text: string; label: string }
-                        > = {
-                          processing: {
-                            bg: "bg-blue-500",
-                            text: "text-white",
-                            label: "⏳ Processing...",
-                          },
-                          ready_for_review: {
-                            bg: "bg-amber-500",
-                            text: "text-white",
-                            label: "👁 Ready for Review",
-                          },
-                          approved: {
-                            bg: "bg-emerald-500",
-                            text: "text-white",
-                            label: "✓ Approved",
-                          },
-                          processing_failed: {
-                            bg: "bg-red-500",
-                            text: "text-white",
-                            label: "✕ Failed",
-                          },
-                        };
-                        const sc =
-                          statusConfig[img.status] || statusConfig.processing;
-
-                        return (
+                    <DragDropContext onDragEnd={handlePipelineDragEnd}>
+                      <Droppable
+                        droppableId="pipeline-image-grid"
+                        direction="horizontal"
+                      >
+                        {(provided) => (
                           <div
-                            key={img.id}
-                            className={cn(
-                              "relative group bg-white border shadow-sm overflow-hidden rounded-xl",
-                              img.status === "approved"
-                                ? "border-emerald-300 ring-1 ring-emerald-200"
-                                : img.status === "ready_for_review"
-                                  ? "border-amber-300"
-                                  : img.status === "processing"
-                                    ? "border-blue-200"
-                                    : "border-red-300",
-                            )}
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={cn("grid gap-4", gridClassName)}
                           >
-                            {/* Image */}
-                            <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
-                              <img
-                                src={
-                                  img.thumb_full_url ||
-                                  img.optimized_url ||
-                                  img.full_url
-                                }
-                                className={cn(
-                                  "w-full h-full object-cover transition-opacity",
-                                  //@ts-ignore
-                                  img.enhancement_method === "pending" &&
-                                  "opacity-80 grayscale-[0.2]",
-                                  img.status === "processing" && "opacity-60"
-                                )}
-                                onError={handleImageError}
-                              />
+                            {reviewImages.map(
+                              (img: PipelineImage, index: number) => {
+                                const statusConfig: Record<
+                                  string,
+                                  { bg: string; text: string; label: string }
+                                > = {
+                                  processing: {
+                                    bg: "bg-blue-500",
+                                    text: "text-white",
+                                    label: "⏳ Processing...",
+                                  },
+                                  ready_for_review: {
+                                    bg: "bg-amber-500",
+                                    text: "text-white",
+                                    label: "👁 Ready for Review",
+                                  },
+                                  approved: {
+                                    bg: "bg-emerald-500",
+                                    text: "text-white",
+                                    label: "✓ Approved",
+                                  },
+                                  processing_failed: {
+                                    bg: "bg-red-500",
+                                    text: "text-white",
+                                    label: "✕ Failed",
+                                  },
+                                };
+                                const sc =
+                                  statusConfig[img.status] ||
+                                  statusConfig.processing;
 
-                              {/* Loading Overlay for Processing */}
-                              {img.status === "processing" && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
-                                  <Loader2 size={24} className="animate-spin text-blue-600" />
+                                return (
+                                  <Draggable
+                                    key={img.id}
+                                    draggableId={`pipeline-image-${img.id}`}
+                                    index={index}
+                                  >
+                                    {(dragProvided) => (
+                                      <div
+                                        ref={dragProvided.innerRef}
+                                        {...dragProvided.draggableProps}
+                                        className={cn(
+                                          "relative group bg-white border shadow-sm overflow-hidden rounded-xl",
+                                          img.status === "approved"
+                                            ? "border-emerald-300 ring-1 ring-emerald-200"
+                                            : img.status === "ready_for_review"
+                                              ? "border-amber-300"
+                                              : img.status === "processing"
+                                                ? "border-blue-200"
+                                                : "border-red-300",
+                                        )}
+                                      >
+                                        {/* Image */}
+                                        <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
+                                          <img
+                                            src={
+                                              img.thumb_full_url ||
+                                              img.optimized_url ||
+                                              img.full_url
+                                            }
+                                            alt={
+                                              img.original_name ||
+                                              `Yacht image ${index + 1}`
+                                            }
+                                            onClick={() =>
+                                              setSelectedLightboxImageId(img.id)
+                                            }
+                                            className={cn(
+                                              "w-full h-full cursor-zoom-in object-cover transition-opacity",
+                                              img.enhancement_method ===
+                                                "pending" &&
+                                                "opacity-80 grayscale-[0.2]",
+                                              img.status === "processing" &&
+                                                "opacity-60",
+                                            )}
+                                            onError={handleImageError}
+                                          />
+
+                                          {/* Loading Overlay for Processing */}
+                                          {img.status === "processing" && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
+                                              <Loader2
+                                                size={24}
+                                                className="animate-spin text-blue-600"
+                                              />
+                                            </div>
+                                          )}
+
+                                          {img.enhancement_method ===
+                                            "pending" && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/30 backdrop-blur-[1px] z-10">
+                                              <div className="bg-white/40 p-2 rounded-full mb-2 backdrop-blur-md">
+                                                <Loader2
+                                                  size={18}
+                                                  className="animate-spin text-white"
+                                                />
+                                              </div>
+                                              <span className="text-[10px] tracking-wider uppercase text-white drop-shadow-md">
+                                                Optimizing...
+                                              </span>
+                                            </div>
+                                          )}
+
+                                          {/* Status badge */}
+                                          <div
+                                            className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
+                                          >
+                                            {sc.label}
+                                          </div>
+
+                                          <div
+                                            {...dragProvided.dragHandleProps}
+                                            className="absolute right-2 bottom-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur active:cursor-grabbing"
+                                            title="Drag to reorder"
+                                          >
+                                            <GripVertical size={14} />
+                                          </div>
+
+                                          {/* Quality label */}
+                                          {img.quality_label &&
+                                            img.status !== "processing" && (
+                                              <div
+                                                className={cn(
+                                                  "absolute top-2 right-2 text-white text-[9px] font-bold px-2 py-1 rounded-md backdrop-blur-sm z-20 shadow-md",
+                                                  img.quality_score &&
+                                                    img.quality_score < 70
+                                                    ? "bg-red-500/90"
+                                                    : "bg-black/60",
+                                                )}
+                                              >
+                                                {img.quality_label}
+                                              </div>
+                                            )}
+
+                                          {img.category && (
+                                            <div className="absolute bottom-2 right-12 z-20 rounded-md bg-[#0B1F3A]/80 px-2 py-1 text-[9px] font-bold text-white shadow-md backdrop-blur-sm">
+                                              {img.category}
+                                            </div>
+                                          )}
+
+                                          {/* AI Enhanced badge */}
+                                          {img.enhancement_method ===
+                                            "cloudinary" &&
+                                            img.status !== "processing" && (
+                                              <div className="absolute bottom-2 left-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-md shadow-md flex items-center gap-1.5 z-20">
+                                                <Sparkles size={10} /> AI
+                                                Enhanced
+                                              </div>
+                                            )}
+                                        </div>
+
+                                        {/* Controls */}
+                                        <div className="p-3 space-y-2">
+                                          {/* Quality score bar */}
+                                          {img.quality_score !== null && (
+                                            <div className="space-y-1">
+                                              <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                  AI review score
+                                                </span>
+                                                <span className="text-[10px] font-bold text-slate-400">
+                                                  {img.quality_score}/100
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                  <div
+                                                    className={cn(
+                                                      "h-full rounded-full transition-all",
+                                                      img.quality_score >= 70
+                                                        ? "bg-emerald-500"
+                                                        : img.quality_score >=
+                                                            40
+                                                          ? "bg-amber-500"
+                                                          : "bg-red-500",
+                                                    )}
+                                                    style={{
+                                                      width: `${img.quality_score}%`,
+                                                    }}
+                                                  />
+                                                </div>
+                                              </div>
+                                              <p className="text-[10px] text-slate-400">
+                                                Measures gallery readiness after
+                                                AI cleanup.
+                                              </p>
+                                            </div>
+                                          )}
+
+                                          {/* Keep original toggle */}
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-[10px] text-slate-500 font-medium">
+                                              Keep original
+                                            </span>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                pipeline.toggleKeepOriginal(
+                                                  img.id,
+                                                )
+                                              }
+                                              className={cn(
+                                                "w-8 h-4 rounded-full transition-colors relative",
+                                                img.keep_original
+                                                  ? "bg-blue-500"
+                                                  : "bg-slate-200",
+                                              )}
+                                            >
+                                              <div
+                                                className={cn(
+                                                  "w-3 h-3 bg-white rounded-full shadow absolute top-0.5 transition-transform",
+                                                  img.keep_original
+                                                    ? "translate-x-4"
+                                                    : "translate-x-0.5",
+                                                )}
+                                              />
+                                            </button>
+                                          </div>
+
+                                          <div className="rounded-lg bg-slate-50 px-2.5 py-2 text-[10px] text-slate-500">
+                                            <p className="font-semibold text-slate-700">
+                                              AI comments
+                                            </p>
+                                            <p className="mt-1 line-clamp-2">
+                                              {buildImageAiNotes(img)[0]}
+                                            </p>
+                                          </div>
+
+                                          {/* Action buttons */}
+                                          <div className="flex gap-2">
+                                            {img.status ===
+                                              "ready_for_review" && (
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  pipeline.approveImage(img.id)
+                                                }
+                                                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
+                                              >
+                                                <Check size={12} /> Approve
+                                              </button>
+                                            )}
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                pipeline.deleteImage(img.id)
+                                              }
+                                              className="bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold py-1.5 px-3 rounded-md transition-colors flex items-center gap-1"
+                                            >
+                                              <Trash size={12} />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                );
+                              },
+                            )}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+
+                    <Dialog
+                      open={selectedLightboxImage !== null}
+                      onOpenChange={(open) => {
+                        if (!open) {
+                          setSelectedLightboxImageId(null);
+                        }
+                      }}
+                    >
+                      <DialogContent
+                        showCloseButton={false}
+                        className="max-w-[min(96vw,1240px)] overflow-hidden rounded-[32px] border border-slate-800/80 bg-[#020817] p-0 shadow-[0_40px_120px_rgba(2,6,23,0.78)]"
+                      >
+                        {selectedLightboxImage && (
+                          <div className="max-h-[92vh] overflow-y-auto">
+                            <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_28%),linear-gradient(180deg,_#0f172a_0%,_#020617_100%)]">
+                              <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 p-4 sm:p-6">
+                                <div className="rounded-full border border-white/10 bg-slate-950/55 px-4 py-2 backdrop-blur-xl">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-200/70">
+                                    AI Gallery Review
+                                  </p>
                                 </div>
-                              )}
 
-                              {/*  @ts-ignore */}
-                              {img.enhancement_method === "pending" && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/30 backdrop-blur-[1px] z-10">
-                                  <div className="bg-white/40 p-2 rounded-full mb-2 backdrop-blur-md">
-                                    <Loader2
-                                      size={18}
-                                      className="animate-spin text-white"
-                                    />
-                                  </div>
-                                  <span className="text-[10px] tracking-wider uppercase text-white drop-shadow-md">
-                                    Optimizing...
+                                <div className="flex items-center gap-2">
+                                  <span className="rounded-full border border-white/10 bg-slate-950/60 px-3 py-1 text-xs font-semibold text-slate-100 backdrop-blur-xl">
+                                    {selectedLightboxIndex + 1} /{" "}
+                                    {reviewImages.length}
                                   </span>
+                                  <DialogClose asChild>
+                                    <button
+                                      type="button"
+                                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-slate-950/60 text-white transition-colors hover:bg-white/10"
+                                      aria-label="Close image review"
+                                    >
+                                      <X size={18} />
+                                    </button>
+                                  </DialogClose>
                                 </div>
-                              )}
-
-                              {/* Status badge */}
-                              <div
-                                className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
-                              >
-                                {sc.label}
                               </div>
 
-                              {/* Quality label */}
-                              {img.quality_label &&
-                                img.status !== "processing" && (
-                                  <div
-                                    className={cn(
-                                      "absolute top-2 right-2 text-white text-[9px] font-bold px-2 py-1 rounded-md backdrop-blur-sm z-20 shadow-md",
-                                      img.quality_score &&
-                                        img.quality_score < 70
-                                        ? "bg-red-500/90"
-                                        : "bg-black/60",
-                                    )}
-                                  >
-                                    {img.quality_label}
-                                  </div>
-                                )}
+                              <div className="relative flex min-h-[54vh] items-center justify-center px-4 pb-24 pt-24 sm:px-8 lg:px-10">
+                                <img
+                                  src={
+                                    selectedLightboxImage.optimized_url ||
+                                    selectedLightboxImage.full_url
+                                  }
+                                  alt={
+                                    selectedLightboxImage.original_name ||
+                                    "Selected yacht image"
+                                  }
+                                  className="max-h-[62vh] w-auto max-w-full rounded-[28px] border border-white/10 bg-slate-950/70 object-contain shadow-[0_30px_100px_rgba(15,23,42,0.65)]"
+                                  onError={handleImageError}
+                                />
+                              </div>
 
-                              {/* AI Enhanced badge */}
-                              {img.enhancement_method === "cloudinary" &&
-                                img.status !== "processing" && (
-                                  <div className="absolute bottom-2 left-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-md shadow-md flex items-center gap-1.5 z-20">
-                                    <Sparkles size={10} /> AI Enhanced
-                                  </div>
-                                )}
+                              <button
+                                type="button"
+                                onClick={() => moveLightboxImage("prev")}
+                                className="absolute bottom-6 left-6 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-slate-950/65 text-white shadow-[0_12px_40px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-colors hover:bg-white/10"
+                              >
+                                <ChevronLeft size={20} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveLightboxImage("next")}
+                                className="absolute bottom-6 left-24 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-slate-950/65 text-white shadow-[0_12px_40px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-colors hover:bg-white/10"
+                              >
+                                <ChevronRight size={20} />
+                              </button>
                             </div>
 
-                            {/* Controls */}
-                            <div className="p-3 space-y-2">
-                              {/* Quality score bar */}
-                              {img.quality_score !== null && (
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                    <div
-                                      className={cn(
-                                        "h-full rounded-full transition-all",
-                                        img.quality_score >= 70
-                                          ? "bg-emerald-500"
-                                          : img.quality_score >= 40
-                                            ? "bg-amber-500"
-                                            : "bg-red-500",
-                                      )}
-                                      style={{ width: `${img.quality_score}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-[10px] font-bold text-slate-400">
-                                    {img.quality_score}
-                                  </span>
+                            <div className="border-t border-white/10 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(248,250,252,0.96)_100%)] p-6 sm:p-8 lg:p-10">
+                              <DialogHeader className="text-left">
+                                <div className="inline-flex w-fit items-center rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700">
+                                  Review Details
                                 </div>
-                              )}
+                                <DialogTitle className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                                  {selectedLightboxImage.original_name ||
+                                    "Image review"}
+                                </DialogTitle>
+                                <DialogDescription className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                                  Review the full image, the AI quality score,
+                                  and the applied corrections before approving
+                                  it for the final gallery.
+                                </DialogDescription>
+                              </DialogHeader>
 
-                              {/* Keep original toggle */}
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] text-slate-500 font-medium">
-                                  Keep original
+                              <div className="mt-6 flex flex-wrap gap-2">
+                                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm">
+                                  {selectedLightboxImage.category || "General"}
                                 </span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    pipeline.toggleKeepOriginal(img.id)
-                                  }
-                                  className={cn(
-                                    "w-8 h-4 rounded-full transition-colors relative",
-                                    img.keep_original
-                                      ? "bg-blue-500"
-                                      : "bg-slate-200",
-                                  )}
-                                >
-                                  <div
-                                    className={cn(
-                                      "w-3 h-3 bg-white rounded-full shadow absolute top-0.5 transition-transform",
-                                      img.keep_original
-                                        ? "translate-x-4"
-                                        : "translate-x-0.5",
-                                    )}
-                                  />
-                                </button>
+                                <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold capitalize text-violet-700 shadow-sm">
+                                  {(
+                                    selectedLightboxImage.enhancement_method ||
+                                    "none"
+                                  ).replace(/_/g, " ")}
+                                </span>
+                                {selectedLightboxImage.keep_original && (
+                                  <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-sm">
+                                    Keep original
+                                  </span>
+                                )}
                               </div>
 
-                              {/* Action buttons */}
-                              <div className="flex gap-2">
-                                {img.status === "ready_for_review" && (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      pipeline.approveImage(img.id)
-                                    }
-                                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
+                              <div className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
+                                      AI review score
+                                    </p>
+                                    <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
+                                      {selectedLightboxImage.quality_score ??
+                                        "—"}
+                                      <span className="text-lg text-slate-400">
+                                        /100
+                                      </span>
+                                    </p>
+                                  </div>
+                                  <span
+                                    className={cn(
+                                      "rounded-full px-3 py-1 text-xs font-bold",
+                                      (selectedLightboxImage.quality_score ??
+                                        0) >= 70
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : (selectedLightboxImage.quality_score ??
+                                              0) >= 40
+                                          ? "bg-amber-50 text-amber-700"
+                                          : "bg-red-50 text-red-700",
+                                    )}
                                   >
-                                    <Check size={12} /> Approve
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => pipeline.deleteImage(img.id)}
-                                  className="bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold py-1.5 px-3 rounded-md transition-colors flex items-center gap-1"
-                                >
-                                  <Trash size={12} />
-                                </button>
+                                    {(selectedLightboxImage.quality_score ??
+                                      0) >= 70
+                                      ? "Gallery ready"
+                                      : (selectedLightboxImage.quality_score ??
+                                            0) >= 40
+                                        ? "Needs review"
+                                        : "Needs correction"}
+                                  </span>
+                                </div>
+
+                                <p className="mt-4 text-sm leading-6 text-slate-500">
+                                  This score reflects how suitable the image is
+                                  for the public gallery after AI cleanup and
+                                  classification.
+                                </p>
+
+                                <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
+                                  AI review score
+                                </p>
+                                <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full bg-gradient-to-r",
+                                      (selectedLightboxImage.quality_score ??
+                                        0) >= 70
+                                        ? "from-emerald-400 to-emerald-500"
+                                        : (selectedLightboxImage.quality_score ??
+                                              0) >= 40
+                                          ? "from-amber-400 to-orange-500"
+                                          : "from-rose-400 to-red-500",
+                                    )}
+                                    style={{
+                                      width: `${selectedLightboxImage.quality_score ?? 0}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="mt-6 space-y-3">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
+                                  AI comments
+                                </p>
+                                <div className="space-y-2">
+                                  {buildImageAiNotes(selectedLightboxImage).map(
+                                    (note) => (
+                                      <div
+                                        key={note}
+                                        className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm leading-6 text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
+                                      >
+                                        {note}
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 )}
 
@@ -2832,9 +3703,10 @@ export default function YachtEditorPage() {
                               : `⏳ ${pipeline.stats.approved} of ${pipeline.stats.min_required} minimum images approved`
                             : "ℹ️ Edit Manifest mode — Step 2 is unlocked with existing boat details."}
                         </p>
-                        {(isNewMode && !imagesApproved) && (
+                        {isNewMode && !imagesApproved && (
                           <p className="text-xs text-amber-600 mt-1">
-                            Step 2 opens after image approval. AI extraction continues in background and fills fields when ready.
+                            Step 2 opens after image approval. AI extraction
+                            continues in background and fills fields when ready.
                             {pipeline.stats.processing > 0 &&
                               ` ${pipeline.stats.processing} still processing...`}
                           </p>
@@ -2848,7 +3720,7 @@ export default function YachtEditorPage() {
                             if (result.step2_unlocked) {
                               if (isNewMode) {
                                 const extractionOk = await handleAiExtract({
-                                  background: true,
+                                  background: false,
                                   navigateToStep2: true,
                                   speedMode: "balanced",
                                 });
@@ -2860,15 +3732,19 @@ export default function YachtEditorPage() {
                                   setActiveStep(2);
                                 }
                               } else {
-                                toast.success("Images approved. You can manually run AI autofill if needed.");
+                                toast.success(
+                                  "Images approved. You can manually run AI autofill if needed.",
+                                );
                               }
                             } else {
                               toast.success("Images approved.");
                             }
                           }}
+                          disabled={isExtracting}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-md"
                         >
-                          <CheckCircle size={16} /> {isNewMode ? "Approve All" : "Approve All"}
+                          <CheckCircle size={16} />{" "}
+                          {isNewMode ? "Approve All" : "Approve All"}
                         </button>
                       )}
                     </div>
@@ -2876,7 +3752,9 @@ export default function YachtEditorPage() {
                 )}
 
                 {/* ── Extract with AI Area (Auto-triggered) ── */}
-                {(pipeline.stats.total > 0 || imagesApproved || (!isOnline && offlineImages.length > 0)) && (
+                {(pipeline.stats.total > 0 ||
+                  imagesApproved ||
+                  (!isOnline && offlineImages.length > 0)) && (
                   <div className="flex flex-col items-center gap-4 py-4">
                     {/* Offline Skip Button */}
                     {!isOnline ? (
@@ -2884,13 +3762,19 @@ export default function YachtEditorPage() {
                         <div className="bg-amber-50 text-amber-700 border border-amber-200 rounded-lg p-4 text-sm w-full flex gap-3 shadow-sm mb-2">
                           <WifiOff className="shrink-0" size={18} />
                           <div>
-                            <p className="font-semibold mb-1">AI Extraction Not Available Offline</p>
-                            <p>You can skip this step and fill in the boat details manually. Images are saved locally.</p>
+                            <p className="font-semibold mb-1">
+                              AI Extraction Not Available Offline
+                            </p>
+                            <p>
+                              You can skip this step and fill in the boat
+                              details manually. Images are saved locally.
+                            </p>
                           </div>
                         </div>
                         <button
                           type="button"
                           onClick={() => setActiveStep(2)}
+                          disabled={isExtracting}
                           className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
                         >
                           Skip to Step 2 (Manual Fill) <ArrowRight size={20} />
@@ -2899,8 +3783,13 @@ export default function YachtEditorPage() {
                     ) : (
                       isExtracting && (
                         <div className="w-full max-w-lg flex flex-col items-center justify-center gap-3 py-6 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
-                          <Loader2 size={32} className="animate-spin text-blue-600" />
-                          <p className="text-blue-800 font-medium">Gemini is analyzing your images...</p>
+                          <Loader2
+                            size={32}
+                            className="animate-spin text-blue-600"
+                          />
+                          <p className="text-blue-800 font-medium">
+                            Gemini is analyzing your images...
+                          </p>
                         </div>
                       )
                     )}
@@ -2917,10 +3806,12 @@ export default function YachtEditorPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              toast("Extracting data from images...", { icon: "🪄" });
+                              toast("Extracting data from images...", {
+                                icon: "🪄",
+                              });
                               void handleAiExtract();
                             }}
-                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Sparkles size={16} /> Run AI Extraction Manually
                           </button>
@@ -2928,7 +3819,6 @@ export default function YachtEditorPage() {
                       </div>
                     )}
                   </div>
-
                 )}
 
                 {/* Extracted Fields Preview intentionally hidden */}
@@ -2942,14 +3832,19 @@ export default function YachtEditorPage() {
               <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <Video size={18} className="text-blue-500" /> Vessel Video Operations
+                    <Video size={18} className="text-blue-500" /> Vessel Video
+                    Operations
                   </h3>
                   <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">
                     {t?.video?.manage || "Manage Videos & Social Posting"}
                   </p>
                 </div>
                 <label className="cursor-pointer bg-[#003566] text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2">
-                  {isUploadingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload size={14} />}
+                  {isUploadingVideo ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload size={14} />
+                  )}
                   {t?.video?.upload || "Upload MP4"}
                   <input
                     type="file"
@@ -2972,10 +3867,16 @@ export default function YachtEditorPage() {
                 ) : (
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {boatVideos.map((video) => (
-                      <div key={video.id} className="border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row gap-5 shadow-sm bg-slate-50">
+                      <div
+                        key={video.id}
+                        className="border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row gap-5 shadow-sm bg-slate-50"
+                      >
                         <div className="w-full sm:w-40 h-40 bg-slate-200 rounded flex-shrink-0 relative overflow-hidden flex items-center justify-center text-slate-400 border border-slate-200">
                           {video.thumbnail_url ? (
-                            <img src={video.thumbnail_url} className="w-full h-full object-cover" />
+                            <img
+                              src={video.thumbnail_url}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             <Video size={32} />
                           )}
@@ -2989,19 +3890,30 @@ export default function YachtEditorPage() {
                           <div className="flex justify-between items-start">
                             <p className="text-[11px] font-black text-[#003566] uppercase tracking-wider">
                               Delivery Status:
-                              <span className={cn(
-                                "ml-2 px-2 py-0.5 rounded text-[9px] text-white",
-                                video.status === 'published' ? 'bg-emerald-500' :
-                                  video.status === 'processing' ? 'bg-amber-500' : 'bg-blue-500'
-                              )}>
+                              <span
+                                className={cn(
+                                  "ml-2 px-2 py-0.5 rounded text-[9px] text-white",
+                                  video.status === "published"
+                                    ? "bg-emerald-500"
+                                    : video.status === "processing"
+                                      ? "bg-amber-500"
+                                      : "bg-blue-500",
+                                )}
+                              >
                                 {video.status}
                               </span>
                             </p>
                           </div>
 
                           <div className="flex gap-4">
-                            {video.duration && <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider flex items-center gap-1.5"><Clock size={12} /> {video.duration}s</p>}
-                            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider flex items-center gap-1.5"><Box size={12} /> {video.format}</p>
+                            {video.duration && (
+                              <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                <Clock size={12} /> {video.duration}s
+                              </p>
+                            )}
+                            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                              <Box size={12} /> {video.format}
+                            </p>
                           </div>
 
                           <div className="pt-4 flex flex-wrap gap-2 mt-auto">
@@ -3009,7 +3921,11 @@ export default function YachtEditorPage() {
                               type="button"
                               variant="outline"
                               className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
-                              onClick={() => router.push(`/${locale}/dashboard/${role}/yachts/${yachtId}/video-settings`)}
+                              onClick={() =>
+                                router.push(
+                                  `/${locale}/dashboard/${role}/yachts/${yachtId}/video-settings`,
+                                )
+                              }
                               disabled={isNewMode && !createdYachtId}
                             >
                               Social Settings
@@ -3019,9 +3935,16 @@ export default function YachtEditorPage() {
                               variant="default"
                               className="text-[10px] h-8 px-4 font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white"
                               onClick={() => handleVideoPublish(video.id)}
-                              disabled={isPublishingVideo === video.id || (isNewMode && !createdYachtId)}
+                              disabled={
+                                isPublishingVideo === video.id ||
+                                (isNewMode && !createdYachtId)
+                              }
                             >
-                              {isPublishingVideo === video.id ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Sparkles size={12} className="mr-2" />}
+                              {isPublishingVideo === video.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                              ) : (
+                                <Sparkles size={12} className="mr-2" />
+                              )}
                               Publish
                             </Button>
                             <Button
@@ -3050,35 +3973,6 @@ export default function YachtEditorPage() {
               className="space-y-6 lg:space-y-8 pt-2"
             >
               {/* AI extraction summary intentionally hidden in Step 2 */}
-              {confidenceMeta?.ai_session_id && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-800">
-                    AI Correction Feedback
-                  </p>
-                  <p className="mt-1 text-xs text-amber-700">
-                    Session: <span className="font-semibold">{confidenceMeta.ai_session_id}</span>
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {CORRECTION_BUTTONS.map((item) => (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() =>
-                          setCorrectionLabel((prev) => (prev === item.value ? null : item.value))
-                        }
-                        className={cn(
-                          "rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors",
-                          correctionLabel === item.value
-                            ? "border-amber-600 bg-amber-600 text-white"
-                            : "border-amber-300 bg-white text-amber-800 hover:bg-amber-100",
-                        )}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* --- SECTION 2: CORE SPECS --- */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
@@ -3110,7 +4004,10 @@ export default function YachtEditorPage() {
                       needsConfirmation={needsConfirm("manufacturer")}
                       onSelect={(id, name) => {
                         setSelectedBrandId(Number(id));
-                        setSelectedYacht((prev: any) => ({ ...prev, manufacturer: name }));
+                        setSelectedYacht((prev: any) => ({
+                          ...prev,
+                          manufacturer: name,
+                        }));
                       }}
                     />
                   </div>
@@ -3126,7 +4023,10 @@ export default function YachtEditorPage() {
                       needsConfirmation={needsConfirm("model")}
                       onSelect={(_id, name) => {
                         // When model changes, we update the state so the assistant picks it up
-                        setSelectedYacht((prev: any) => ({ ...prev, model: name }));
+                        setSelectedYacht((prev: any) => ({
+                          ...prev,
+                          model: name,
+                        }));
                       }}
                     />
                   </div>
@@ -3136,7 +4036,10 @@ export default function YachtEditorPage() {
                     <Select
                       value={selectedYacht?.ref_harbor_id?.toString() || ""}
                       onValueChange={(val) => {
-                        setSelectedYacht((prev: any) => ({ ...prev, ref_harbor_id: Number(val) }));
+                        setSelectedYacht((prev: any) => ({
+                          ...prev,
+                          ref_harbor_id: Number(val),
+                        }));
                       }}
                     >
                       <SelectTrigger className="h-11 border-slate-200">
@@ -3172,18 +4075,26 @@ export default function YachtEditorPage() {
                             ...specs,
                             loa: specs.loa ?? specs.length_m,
                             beam: specs.beam ?? specs.beam_m ?? specs.width,
-                            draft: specs.draft ?? specs.draft_m ?? specs.draught,
+                            draft:
+                              specs.draft ?? specs.draft_m ?? specs.draught,
                           };
 
-                          Object.entries(normalizedSpecs).forEach(([field, value]) => {
-                            if (value === null || value === undefined || value === "") return;
-                            if (isAuto && !isEmpty(base[field])) return;
-                            base[field] = value;
-                          });
+                          Object.entries(normalizedSpecs).forEach(
+                            ([field, value]) => {
+                              if (
+                                value === null ||
+                                value === undefined ||
+                                value === ""
+                              )
+                                return;
+                              if (isAuto && !isEmpty(base[field])) return;
+                              base[field] = value;
+                            },
+                          );
 
                           return base;
                         });
-                        setFormKey(k => k + 1); // Refresh form to show new defaultValues
+                        setFormKey((k) => k + 1); // Refresh form to show new defaultValues
                         if (!isAuto) {
                           toast.success("AI suggestions applied to form!");
                         }
@@ -3663,6 +4574,33 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
+                      <Label>Berths (Fixed)</Label>
+                      <Input
+                        name="berths_fixed"
+                        type="number"
+                        defaultValue={selectedYacht?.berths_fixed}
+                        placeholder="4"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Berths (Extra)</Label>
+                      <Input
+                        name="berths_extra"
+                        type="number"
+                        defaultValue={selectedYacht?.berths_extra}
+                        placeholder="2"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Berths (Crew)</Label>
+                      <Input
+                        name="berths_crew"
+                        type="number"
+                        defaultValue={selectedYacht?.berths_crew}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
                       <Label>Shower</Label>
                       <Input
                         name="shower"
@@ -3676,6 +4614,86 @@ export default function YachtEditorPage() {
                         name="bath"
                         defaultValue={selectedYacht?.bath}
                         placeholder="1"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Interior Type</Label>
+                      <Input
+                        name="interior_type"
+                        defaultValue={selectedYacht?.interior_type}
+                        placeholder="Classic, wood"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Saloon</Label>
+                      <Input
+                        name="saloon"
+                        defaultValue={selectedYacht?.saloon}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Headroom</Label>
+                      <Input
+                        name="headroom"
+                        defaultValue={selectedYacht?.headroom}
+                        placeholder="1.95m"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Separate Dining Area</Label>
+                      <Input
+                        name="separate_dining_area"
+                        defaultValue={selectedYacht?.separate_dining_area}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Engine Room</Label>
+                      <Input
+                        name="engine_room"
+                        defaultValue={selectedYacht?.engine_room}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Spaces Inside</Label>
+                      <Input
+                        name="spaces_inside"
+                        defaultValue={selectedYacht?.spaces_inside}
+                        placeholder="3"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Upholstery Color</Label>
+                      <Input
+                        name="upholstery_color"
+                        defaultValue={selectedYacht?.upholstery_color}
+                        placeholder="Blue"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Matrasses</Label>
+                      <Input
+                        name="matrasses"
+                        defaultValue={selectedYacht?.matrasses}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Cushions</Label>
+                      <Input
+                        name="cushions"
+                        defaultValue={selectedYacht?.cushions}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Curtains</Label>
+                      <Input
+                        name="curtains"
+                        defaultValue={selectedYacht?.curtains}
+                        placeholder="White"
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -3717,7 +4735,209 @@ export default function YachtEditorPage() {
                       <Input
                         name="cockpit_type"
                         defaultValue={selectedYacht?.cockpit_type}
-                        placeholder="e.g. Open / Closed"
+                        placeholder="Aft cockpit"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water Tank</Label>
+                      <Input
+                        name="water_tank"
+                        defaultValue={selectedYacht?.water_tank}
+                        placeholder="200L"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water Tank Gauge</Label>
+                      <Input
+                        name="water_tank_gauge"
+                        defaultValue={selectedYacht?.water_tank_gauge}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water Maker</Label>
+                      <Input
+                        name="water_maker"
+                        defaultValue={selectedYacht?.water_maker}
+                        placeholder="60 L/h"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Waste Water Tank</Label>
+                      <Input
+                        name="waste_water_tank"
+                        defaultValue={selectedYacht?.waste_water_tank}
+                        placeholder="80L"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Waste Water Gauge</Label>
+                      <Input
+                        name="waste_water_tank_gauge"
+                        defaultValue={selectedYacht?.waste_water_tank_gauge}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Waste Tank Drain Pump</Label>
+                      <Input
+                        name="waste_water_tank_drainpump"
+                        defaultValue={selectedYacht?.waste_water_tank_drainpump}
+                        placeholder="Electric"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Deck Suction</Label>
+                      <Input
+                        name="deck_suction"
+                        defaultValue={selectedYacht?.deck_suction}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water System</Label>
+                      <Input
+                        name="water_system"
+                        defaultValue={selectedYacht?.water_system}
+                        placeholder="Pressurized"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Hot Water</Label>
+                      <Input
+                        name="hot_water"
+                        defaultValue={selectedYacht?.hot_water}
+                        placeholder="Boiler"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Sea Water Pump</Label>
+                      <Input
+                        name="sea_water_pump"
+                        defaultValue={selectedYacht?.sea_water_pump}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group flex items-center gap-3 pt-5">
+                      <input
+                        type="checkbox"
+                        name="deck_wash_pump"
+                        defaultChecked={
+                          selectedYacht?.deck_wash_pump === true ||
+                          selectedYacht?.deck_wash_pump === "true" ||
+                          selectedYacht?.deck_wash_pump === 1
+                        }
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label>Deck Wash Pump</Label>
+                    </div>
+                    <div className="space-y-1 group flex items-center gap-3 pt-5">
+                      <input
+                        type="checkbox"
+                        name="deck_shower"
+                        defaultChecked={
+                          selectedYacht?.deck_shower === true ||
+                          selectedYacht?.deck_shower === "true" ||
+                          selectedYacht?.deck_shower === 1
+                        }
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label>Deck Shower</Label>
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Television</Label>
+                      <TriStateSelect
+                        name="television"
+                        defaultValue={selectedYacht?.television}
+                        needsConfirmation={needsConfirm("television")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Radio / CD Player</Label>
+                      <Input
+                        name="cd_player"
+                        defaultValue={selectedYacht?.cd_player}
+                        placeholder="Pioneer"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Satellite Reception</Label>
+                      <Input
+                        name="satellite_reception"
+                        defaultValue={selectedYacht?.satellite_reception}
+                        placeholder="KVH TracVision"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Cooker</Label>
+                      <Input
+                        name="cooker"
+                        defaultValue={selectedYacht?.cooker}
+                        placeholder="3-burner"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Cooking Fuel</Label>
+                      <Input
+                        name="cooking_fuel"
+                        defaultValue={selectedYacht?.cooking_fuel}
+                        placeholder="Gas"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Oven</Label>
+                      <TriStateSelect
+                        name="oven"
+                        defaultValue={selectedYacht?.oven}
+                        needsConfirmation={needsConfirm("oven")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Microwave</Label>
+                      <TriStateSelect
+                        name="microwave"
+                        defaultValue={selectedYacht?.microwave}
+                        needsConfirmation={needsConfirm("microwave")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Fridge</Label>
+                      <TriStateSelect
+                        name="fridge"
+                        defaultValue={selectedYacht?.fridge}
+                        needsConfirmation={needsConfirm("fridge")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Freezer</Label>
+                      <TriStateSelect
+                        name="freezer"
+                        defaultValue={selectedYacht?.freezer}
+                        needsConfirmation={needsConfirm("freezer")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Hot Air Heating</Label>
+                      <Input
+                        name="hot_air"
+                        defaultValue={selectedYacht?.hot_air}
+                        placeholder="Webasto"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Stove Heating</Label>
+                      <Input
+                        name="stove"
+                        defaultValue={selectedYacht?.stove}
+                        placeholder="Refleks"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Central Heating</Label>
+                      <Input
+                        name="central_heating"
+                        defaultValue={selectedYacht?.central_heating}
+                        placeholder="Kabola"
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -3796,9 +5016,65 @@ export default function YachtEditorPage() {
                       ph: "e.g. Garmin Striker 7sv",
                     },
                     { name: "ais", label: "AIS", ph: "e.g. em-trak B954" },
+                    {
+                      name: "log_speed",
+                      label: "Log / Speed",
+                      ph: "e.g. Simrad IS42",
+                    },
+                    {
+                      name: "rudder_position_indicator",
+                      label: "Rudder Position Indicator",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "turn_indicator",
+                      label: "Turn Indicator",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "ssb_receiver",
+                      label: "SSB Receiver",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "shortwave_radio",
+                      label: "Shortwave Radio",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "short_band_transmitter",
+                      label: "Short Band Transmitter",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "satellite_communication",
+                      label: "Satellite Communication",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "weatherfax_navtex",
+                      label: "Weatherfax / Navtex",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "charts_guides",
+                      label: "Charts / Guides",
+                      ph: "Yes",
+                    },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) =>
+                        setFieldCorrectionLabels((p) => ({
+                          ...p,
+                          [f.name]: label,
+                        }))
+                      }
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -3813,7 +5089,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -3842,6 +5118,16 @@ export default function YachtEditorPage() {
                       ph: "e.g. Rule 2000 GPH",
                     },
                     {
+                      name: "bilge_pump_manual",
+                      label: "Bilge Pump (Manual)",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "bilge_pump_electric",
+                      label: "Bilge Pump (Electric)",
+                      ph: "Yes",
+                    },
+                    {
                       name: "fire_extinguisher",
                       label: "Fire Extinguisher",
                       ph: "e.g. 2x ABC 2kg",
@@ -3862,9 +5148,40 @@ export default function YachtEditorPage() {
                       ph: "e.g. Echomax EM230",
                     },
                     { name: "flares", label: "Flares", ph: "e.g. Ikaros set" },
+                    {
+                      name: "life_buoy",
+                      label: "Life Buoy",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "watertight_door",
+                      label: "Watertight Door",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "gas_bottle_locker",
+                      label: "Gas Bottle Locker",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "self_draining_cockpit",
+                      label: "Self Draining Cockpit",
+                      ph: "Yes",
+                    },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) =>
+                        setFieldCorrectionLabels((p) => ({
+                          ...p,
+                          [f.name]: label,
+                        }))
+                      }
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -3879,7 +5196,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -3931,9 +5248,70 @@ export default function YachtEditorPage() {
                       label: "Voltage",
                       ph: "e.g. 12V / 230V",
                     },
+                    {
+                      name: "dynamo",
+                      label: "Dynamo",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "accumonitor",
+                      label: "Accumonitor",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "voltmeter",
+                      label: "Voltmeter",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "shore_power_cable",
+                      label: "Shore Power Cable",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "consumption_monitor",
+                      label: "Consumption Monitor",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "control_panel",
+                      label: "Control Panel",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "fuel_tank_gauge",
+                      label: "Fuel Tank Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "tachometer",
+                      label: "Tachometer",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "oil_pressure_gauge",
+                      label: "Oil Pressure Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "temperature_gauge",
+                      label: "Temperature Gauge",
+                      ph: "Yes",
+                    },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) =>
+                        setFieldCorrectionLabels((p) => ({
+                          ...p,
+                          [f.name]: label,
+                        }))
+                      }
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -3948,7 +5326,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -4004,6 +5382,81 @@ export default function YachtEditorPage() {
                       name: "satellite_reception",
                       label: "Satellite Reception",
                       ph: "e.g. KVH TracVision TV5",
+                    },
+                    {
+                      name: "water_tank",
+                      label: "Water Tank",
+                      ph: "200L",
+                    },
+                    {
+                      name: "water_tank_gauge",
+                      label: "Water Tank Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "water_maker",
+                      label: "Water Maker",
+                      ph: "60 L/h",
+                    },
+                    {
+                      name: "waste_water_tank",
+                      label: "Waste Water Tank",
+                      ph: "80L",
+                    },
+                    {
+                      name: "waste_water_tank_gauge",
+                      label: "Waste Water Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "waste_water_tank_drainpump",
+                      label: "Waste Tank Drain Pump",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "deck_suction",
+                      label: "Deck Suction",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "water_system",
+                      label: "Water System",
+                      ph: "Pressurized",
+                    },
+                    {
+                      name: "hot_water",
+                      label: "Hot Water",
+                      ph: "Boiler",
+                    },
+                    {
+                      name: "sea_water_pump",
+                      label: "Sea Water Pump",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "deck_wash_pump",
+                      label: "Deck Wash Pump",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "deck_shower",
+                      label: "Deck Shower",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "hot_air",
+                      label: "Hot Air Heating",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "stove",
+                      label: "Stove Heating",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "central_heating",
+                      label: "Central Heating",
+                      ph: "Yes",
                     },
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
@@ -4087,18 +5540,89 @@ export default function YachtEditorPage() {
                       ph: "e.g. Full winter cover",
                     },
                     {
-                      name: "spinnaker",
-                      label: "Spinnaker",
-                      ph: "e.g. Asymmetric 85m²",
-                    },
-                    {
                       name: "fenders",
                       label: "Fenders & Lines",
                       ph: "e.g. 6x Polyform F4",
                     },
+                    {
+                      name: "anchor_connection",
+                      label: "Anchor Connection",
+                      ph: "Chain / Rope",
+                    },
+                    {
+                      name: "stern_anchor",
+                      label: "Stern Anchor",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "spud_pole",
+                      label: "Spud Pole",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "cockpit_tent",
+                      label: "Cockpit Tent",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "outdoor_cushions",
+                      label: "Outdoor Cushions",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "sea_rails",
+                      label: "Sea Rails",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "pushpit_pullpit",
+                      label: "Pushpit / Pullpit",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "sail_lowering_system",
+                      label: "Sail Lowering System",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "crutch",
+                      label: "Crutch (Schaar)",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "dinghy_brand",
+                      label: "Dinghy Brand",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "outboard_engine",
+                      label: "Outboard Engine",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "crane",
+                      label: "Crane",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "davits",
+                      label: "Davits",
+                      ph: "Yes",
+                    },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) =>
+                        setFieldCorrectionLabels((p) => ({
+                          ...p,
+                          [f.name]: label,
+                        }))
+                      }
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -4113,7 +5637,90 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sub-Section: Rigging & Sails */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
+                <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
+                  <Wind size={20} className="text-blue-600" /> Rigging & Sails
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                  {[
+                    {
+                      name: "sailplan_type",
+                      label: "Sailplan Type",
+                      ph: "e.g. Sloop / Cutter / Ketch",
+                    },
+                    {
+                      name: "number_of_masts",
+                      label: "Number of Masts",
+                      ph: "e.g. 1 / 2",
+                    },
+                    {
+                      name: "spars_material",
+                      label: "Spars Material",
+                      ph: "e.g. Aluminum / Carbon",
+                    },
+                    { name: "bowsprit", label: "Bowsprit", ph: "Yes / No" },
+                    {
+                      name: "standing_rig",
+                      label: "Standing Rig",
+                      ph: "e.g. SS Wire / Rod",
+                    },
+                    { name: "main_sail", label: "Main Sail", ph: "Yes / No" },
+                    {
+                      name: "furling_mainsail",
+                      label: "Furling Mainsail",
+                      ph: "Yes / No",
+                    },
+                    { name: "jib", label: "Jib", ph: "Yes / No" },
+                    { name: "genoa", label: "Genoa", ph: "Yes / No" },
+                    { name: "spinnaker", label: "Spinnaker", ph: "Yes / No" },
+                    { name: "gennaker", label: "Gennaker", ph: "Yes / No" },
+                    { name: "mizzen", label: "Mizzen", ph: "Yes / No" },
+                    { name: "winches", label: "Winches", ph: "Yes" },
+                    {
+                      name: "electric_winches",
+                      label: "Electric Winches",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "manual_winches",
+                      label: "Manual Winches",
+                      ph: "Yes",
+                    },
+                  ].map((f) => (
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) =>
+                        setFieldCorrectionLabels((p) => ({
+                          ...p,
+                          [f.name]: label,
+                        }))
+                      }
+                    >
+                      {isOptionalTriStateField(f.name) ? (
+                        <TriStateSelect
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      ) : (
+                        <Input
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          placeholder={f.ph}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      )}
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -4203,7 +5810,9 @@ export default function YachtEditorPage() {
                 <div className="space-y-4">
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-wrap items-end gap-5">
                     <div className="flex-1 min-w-[150px]">
-                      <label className="text-xs font-bold text-slate-500 uppercase block">AI Tone</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase block">
+                        AI Tone
+                      </label>
                       <select
                         className="w-full bg-white border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 shadow-sm mt-1 focus:border-blue-500 focus:outline-none"
                         value={aiTone}
@@ -4217,21 +5826,29 @@ export default function YachtEditorPage() {
                       </select>
                     </div>
                     <div className="w-24">
-                      <label className="text-xs font-bold text-slate-500 uppercase block">Min Words</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase block">
+                        Min Words
+                      </label>
                       <Input
                         type="number"
                         className="mt-1"
                         value={aiMinWords}
-                        onChange={(e) => setAiMinWords(parseInt(e.target.value) || 200)}
+                        onChange={(e) =>
+                          setAiMinWords(parseInt(e.target.value) || 200)
+                        }
                       />
                     </div>
                     <div className="w-24">
-                      <label className="text-xs font-bold text-slate-500 uppercase block">Max Words</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase block">
+                        Max Words
+                      </label>
                       <Input
                         type="number"
                         className="mt-1"
                         value={aiMaxWords}
-                        onChange={(e) => setAiMaxWords(parseInt(e.target.value) || 500)}
+                        onChange={(e) =>
+                          setAiMaxWords(parseInt(e.target.value) || 500)
+                        }
                       />
                     </div>
                     <Button
@@ -4240,7 +5857,11 @@ export default function YachtEditorPage() {
                       disabled={isRegenerating}
                       className="bg-blue-600 hover:bg-blue-700 text-white gap-2 mt-1 h-9"
                     >
-                      {isRegenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                      {isRegenerating ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Sparkles size={16} />
+                      )}
                       Regenerate
                     </Button>
                   </div>
@@ -4257,10 +5878,22 @@ export default function YachtEditorPage() {
                       <button
                         type="button"
                         onClick={toggleDictation}
-                        className={cn("flex items-center justify-center w-8 h-8 rounded-full transition-colors", isDictating ? "bg-red-100 text-red-600 animate-pulse" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}
-                        title={isDictating ? "Stop recording" : "Start dictation"}
+                        className={cn(
+                          "flex items-center justify-center w-8 h-8 rounded-full transition-colors",
+                          isDictating
+                            ? "bg-red-100 text-red-600 animate-pulse"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                        )}
+                        title={
+                          isDictating ? "Stop recording" : "Start dictation"
+                        }
                       >
-                        <div className={cn("w-3 h-3 rounded-full", isDictating ? "bg-red-600" : "bg-slate-600")} />
+                        <div
+                          className={cn(
+                            "w-3 h-3 rounded-full",
+                            isDictating ? "bg-red-600" : "bg-slate-600",
+                          )}
+                        />
                       </button>
 
                       <div className="flex items-center gap-2">
@@ -4270,47 +5903,62 @@ export default function YachtEditorPage() {
                           onChange={(e) => setSelectedVoice(e.target.value)}
                         >
                           <option value="">Default Voice</option>
-                          {voices.map(v => (
-                            <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+                          {voices.map((v) => (
+                            <option key={v.name} value={v.name}>
+                              {v.name} ({v.lang})
+                            </option>
                           ))}
                         </select>
                         <button
                           type="button"
                           onClick={() => {
-                            if ('speechSynthesis' in window) {
+                            if ("speechSynthesis" in window) {
                               if (window.speechSynthesis.speaking) {
                                 window.speechSynthesis.cancel();
                                 setIsPlayingAudio(false);
                                 return;
                               }
 
-                              const utterance = new SpeechSynthesisUtterance(aiTexts[selectedLang]);
+                              const utterance = new SpeechSynthesisUtterance(
+                                aiTexts[selectedLang],
+                              );
                               if (selectedVoice) {
-                                const voice = voices.find(v => v.name === selectedVoice);
+                                const voice = voices.find(
+                                  (v) => v.name === selectedVoice,
+                                );
                                 if (voice) utterance.voice = voice;
                               } else {
-                                utterance.lang = selectedLang === 'nl' ? 'nl-NL' : selectedLang === 'en' ? 'en-US' : 'de-DE';
+                                utterance.lang =
+                                  selectedLang === "nl"
+                                    ? "nl-NL"
+                                    : selectedLang === "en"
+                                      ? "en-US"
+                                      : "de-DE";
                               }
 
                               utterance.onend = () => setIsPlayingAudio(false);
-                              utterance.onerror = () => setIsPlayingAudio(false);
+                              utterance.onerror = () =>
+                                setIsPlayingAudio(false);
 
                               window.speechSynthesis.speak(utterance);
                               setIsPlayingAudio(true);
                             } else {
-                              toast.error("Text-to-speech not supported in this browser.");
+                              toast.error(
+                                "Text-to-speech not supported in this browser.",
+                              );
                             }
                           }}
                           className={cn(
                             "flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-colors",
                             isPlayingAudio
                               ? "text-red-700 bg-red-50 hover:bg-red-100"
-                              : "text-[#003566] bg-blue-50 hover:bg-blue-100"
+                              : "text-[#003566] bg-blue-50 hover:bg-blue-100",
                           )}
                         >
                           {isPlayingAudio ? (
                             <>
-                              <div className="w-2 h-2 bg-red-600 rounded-sm animate-pulse" /> Stop Audio
+                              <div className="w-2 h-2 bg-red-600 rounded-sm animate-pulse" />{" "}
+                              Stop Audio
                             </>
                           ) : (
                             <>
@@ -4370,21 +6018,33 @@ export default function YachtEditorPage() {
                             { val: 6, label: "Sat" },
                             { val: 0, label: "Sun" },
                           ].map((day) => {
-                            const isSelected = rule.days_of_week.includes(day.val);
+                            const isSelected = rule.days_of_week.includes(
+                              day.val,
+                            );
                             return (
                               <button
                                 key={day.val}
                                 type="button"
                                 onClick={() => {
                                   const newDays = isSelected
-                                    ? rule.days_of_week.filter(d => d !== day.val)
-                                    : [...rule.days_of_week, day.val].sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
-                                  updateAvailabilityRule(idx, "days_of_week", newDays);
+                                    ? rule.days_of_week.filter(
+                                        (d) => d !== day.val,
+                                      )
+                                    : [...rule.days_of_week, day.val].sort(
+                                        (a, b) =>
+                                          (a === 0 ? 7 : a) - (b === 0 ? 7 : b),
+                                      );
+                                  updateAvailabilityRule(
+                                    idx,
+                                    "days_of_week",
+                                    newDays,
+                                  );
                                 }}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${isSelected
-                                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                  }`}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${
+                                  isSelected
+                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                                }`}
                               >
                                 {day.label}
                               </button>
@@ -4394,7 +6054,9 @@ export default function YachtEditorPage() {
                       </div>
 
                       <div className="flex-1 min-w-[120px]">
-                        <Label>{t?.scheduling?.startTime || "Start Time"}</Label>
+                        <Label>
+                          {t?.scheduling?.startTime || "Start Time"}
+                        </Label>
                         <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
                           <Clock size={12} className="text-slate-400" />
                           <input
@@ -4450,7 +6112,8 @@ export default function YachtEditorPage() {
                         className="mx-auto text-slate-200 mb-2"
                       />
                       <p className="text-sm font-semibold text-slate-500">
-                        {t?.scheduling?.empty || "No scheduling rules defined yet."}
+                        {t?.scheduling?.empty ||
+                          "No scheduling rules defined yet."}
                       </p>
                     </div>
                   )}
@@ -4476,7 +6139,7 @@ export default function YachtEditorPage() {
                       key={step.id}
                       className={cn(
                         "p-4 border flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors",
-                        isStepComplete(step.id)
+                        !isNewMode || isStepComplete(step.id)
                           ? "border-blue-300 bg-blue-50/50"
                           : "border-orange-300 bg-orange-50/50",
                       )}
@@ -4485,12 +6148,12 @@ export default function YachtEditorPage() {
                       <span
                         className={cn(
                           "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black",
-                          isStepComplete(step.id)
+                          !isNewMode || isStepComplete(step.id)
                             ? "bg-blue-500 text-white"
                             : "bg-orange-400 text-white",
                         )}
                       >
-                        {isStepComplete(step.id) ? (
+                        {!isNewMode || isStepComplete(step.id) ? (
                           <Check size={14} strokeWidth={3} />
                         ) : (
                           step.id
@@ -4501,7 +6164,7 @@ export default function YachtEditorPage() {
                           {step.label}
                         </p>
                         <p className="text-[9px] text-slate-500">
-                          {isStepComplete(step.id)
+                          {!isNewMode || isStepComplete(step.id)
                             ? t?.wizard?.review?.completed || "Completed"
                             : t?.wizard?.review?.notCompleted || "Pending"}
                         </p>
@@ -4517,27 +6180,47 @@ export default function YachtEditorPage() {
                     Compliance & Documenten
                   </h4>
                   <p className="text-xs text-slate-500 mb-6 max-w-2xl">
-                    Hieronder ziet u de benodigde documenten voor dit type schip. U kunt deze nu alvast uploaden, of wachten tot het contract door de klant is getekend.
+                    Hieronder ziet u de benodigde documenten voor dit type
+                    schip. U kunt deze nu alvast uploaden, of wachten tot het
+                    contract door de klant is getekend.
                   </p>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Checklist Requirements Preview */}
                     <div className="space-y-3">
-                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Benodigde Documenten</h5>
+                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                        Benodigde Documenten
+                      </h5>
                       {fetchingChecklist ? (
-                        <div className="flex items-center gap-2 text-sm text-slate-400 py-4"><Loader2 size={16} className="animate-spin" /> Laden...</div>
+                        <div className="flex items-center gap-2 text-sm text-slate-400 py-4">
+                          <Loader2 size={16} className="animate-spin" />{" "}
+                          Laden...
+                        </div>
                       ) : checklistTemplates.length > 0 ? (
                         <div className="space-y-2">
-                          {checklistTemplates.map(template => (
+                          {checklistTemplates.map((template) => (
                             <div key={template.id} className="mb-4">
-                              <p className="font-semibold text-sm text-slate-800 bg-white border border-slate-200 p-2 rounded-md mb-2">{template.name}</p>
+                              <p className="font-semibold text-sm text-slate-800 bg-white border border-slate-200 p-2 rounded-md mb-2">
+                                {template.name}
+                              </p>
                               <div className="space-y-2 pl-4">
                                 {template.items?.map((item: any) => (
-                                  <div key={item.id} className="flex gap-3 text-sm text-slate-600 bg-white p-2 rounded-md border border-slate-100 shadow-sm">
-                                    <div className="mt-0.5"><div className="w-4 h-4 rounded border-2 border-slate-300" /></div>
+                                  <div
+                                    key={item.id}
+                                    className="flex gap-3 text-sm text-slate-600 bg-white p-2 rounded-md border border-slate-100 shadow-sm"
+                                  >
+                                    <div className="mt-0.5">
+                                      <div className="w-4 h-4 rounded border-2 border-slate-300" />
+                                    </div>
                                     <div>
-                                      <p className="font-medium text-slate-700">{item.title}</p>
-                                      {item.description && <p className="text-xs text-slate-500">{item.description}</p>}
+                                      <p className="font-medium text-slate-700">
+                                        {item.title}
+                                      </p>
+                                      {item.description && (
+                                        <p className="text-xs text-slate-500">
+                                          {item.description}
+                                        </p>
+                                      )}
                                     </div>
                                   </div>
                                 ))}
@@ -4546,29 +6229,47 @@ export default function YachtEditorPage() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-slate-500 italic py-4">Geen specifieke documenten vereist voor dit type.</p>
+                        <p className="text-sm text-slate-500 italic py-4">
+                          Geen specifieke documenten vereist voor dit type.
+                        </p>
                       )}
                     </div>
 
                     {/* Document Upload Area */}
                     <div className="space-y-4">
-                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Upload Documenten</h5>
+                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Upload Documenten
+                      </h5>
 
                       {/* Upload Dropzone */}
-                      <label className={cn(
-                        "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors bg-white",
-                        isUploadingDocument ? "border-slate-300 opacity-70" : "border-slate-300 hover:bg-slate-50 hover:border-blue-400"
-                      )}>
+                      <label
+                        className={cn(
+                          "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors bg-white",
+                          isUploadingDocument
+                            ? "border-slate-300 opacity-70"
+                            : "border-slate-300 hover:bg-slate-50 hover:border-blue-400",
+                        )}
+                      >
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                           {isUploadingDocument ? (
-                            <Loader2 size={24} className="text-blue-500 animate-spin mb-2" />
+                            <Loader2
+                              size={24}
+                              className="text-blue-500 animate-spin mb-2"
+                            />
                           ) : (
-                            <UploadCloud size={24} className="text-slate-400 mb-2" />
+                            <UploadCloud
+                              size={24}
+                              className="text-slate-400 mb-2"
+                            />
                           )}
                           <p className="text-sm font-medium text-slate-600">
-                            {isUploadingDocument ? "Bezig met uploaden..." : "Klik of sleep een document"}
+                            {isUploadingDocument
+                              ? "Bezig met uploaden..."
+                              : "Klik of sleep een document"}
                           </p>
-                          <p className="text-xs text-slate-500 mt-1">PDF, DOCX, JPG (Max 10MB)</p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            PDF, DOCX, JPG (Max 10MB)
+                          </p>
                         </div>
                         <input
                           type="file"
@@ -4582,22 +6283,46 @@ export default function YachtEditorPage() {
                       {/* Uploaded Documents List */}
                       {boatDocuments.length > 0 && (
                         <div className="space-y-2 mt-4">
-                          <h6 className="text-xs font-semibold text-slate-700">Reeds Geüpload ({boatDocuments.length})</h6>
+                          <h6 className="text-xs font-semibold text-slate-700">
+                            Reeds Geüpload ({boatDocuments.length})
+                          </h6>
                           <div className="space-y-2">
-                            {boatDocuments.map(doc => (
-                              <div key={doc.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
+                            {boatDocuments.map((doc) => (
+                              <div
+                                key={doc.id}
+                                className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm"
+                              >
                                 <div className="flex items-center gap-3 overflow-hidden">
-                                  <FileText size={16} className="text-blue-500 shrink-0" />
+                                  <FileText
+                                    size={16}
+                                    className="text-blue-500 shrink-0"
+                                  />
                                   <div className="truncate">
-                                    <p className="text-sm font-medium text-slate-700 truncate">{doc.file_path.split('/').pop()}</p>
-                                    <p className="text-[10px] text-slate-400">{new Date(doc.uploaded_at).toLocaleDateString()} • {doc.file_type?.toUpperCase()}</p>
+                                    <p className="text-sm font-medium text-slate-700 truncate">
+                                      {doc.file_path.split("/").pop()}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400">
+                                      {new Date(
+                                        doc.uploaded_at,
+                                      ).toLocaleDateString()}{" "}
+                                      • {doc.file_type?.toUpperCase()}
+                                    </p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <a href={doc.file_path} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
+                                  <a
+                                    href={doc.file_path}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                                  >
                                     <Eye size={14} />
                                   </a>
-                                  <button type="button" onClick={() => handleDocumentDelete(doc.id)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDocumentDelete(doc.id)}
+                                    className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                                  >
                                     <Trash size={14} />
                                   </button>
                                 </div>
@@ -4615,9 +6340,22 @@ export default function YachtEditorPage() {
                   <div className="mb-8">
                     <SignhostFlow
                       yachtId={Number(activeYachtId)}
-                      yachtName={selectedYacht?.boat_name || (draft?.data as any)?.step2?.selectedYacht?.boat_name || "Unnamed Vessel"}
-                      locationId={selectedYacht?.ref_harbor_id || (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id || null}
-                      yachtData={selectedYacht || (draft?.data as any)?.step2?.selectedYacht || null}
+                      yachtName={
+                        selectedYacht?.boat_name ||
+                        (draft?.data as any)?.step2?.selectedYacht?.boat_name ||
+                        "Unnamed Vessel"
+                      }
+                      locationId={
+                        selectedYacht?.ref_harbor_id ||
+                        (draft?.data as any)?.step2?.selectedYacht
+                          ?.ref_harbor_id ||
+                        null
+                      }
+                      yachtData={
+                        selectedYacht ||
+                        (draft?.data as any)?.step2?.selectedYacht ||
+                        null
+                      }
                       locationOptions={harbors}
                     />
                   </div>
@@ -4649,7 +6387,8 @@ export default function YachtEditorPage() {
               disabled={activeStep === 1}
               className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 h-11 px-6 text-xs font-bold uppercase tracking-wider disabled:opacity-30"
             >
-              <ChevronLeft size={16} className="mr-1" /> {t?.wizard?.nav?.previous || "Previous"}
+              <ChevronLeft size={16} className="mr-1" />{" "}
+              {t?.wizard?.nav?.previous || "Previous"}
             </Button>
             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
               Step {activeStep} of {wizardSteps.length}
@@ -4670,7 +6409,10 @@ export default function YachtEditorPage() {
                 )}
               >
                 {isNewMode && !canProceedFromStep1 && activeStep === 1 ? (
-                  <>{t?.wizard?.nav?.runExtractionFirst || "Approve Images First"}</>
+                  <>
+                    {t?.wizard?.nav?.runExtractionFirst ||
+                      "Approve Images First"}
+                  </>
                 ) : (
                   <>
                     {t?.wizard?.nav?.next || "Next"}{" "}
@@ -4740,11 +6482,25 @@ export default function YachtEditorPage() {
         open={deleteVideoDialogOpen}
         onOpenChange={setDeleteVideoDialogOpen}
         title={t?.video?.confirmDeleteTitle || "Remove Video"}
-        description={t?.video?.confirmDelete || "Are you sure you want to remove this video?"}
+        description={
+          t?.video?.confirmDelete ||
+          "Are you sure you want to remove this video?"
+        }
         confirmText="Remove"
         cancelText="Cancel"
         variant="destructive"
         onConfirm={executeVideoDelete}
+      />
+
+      <ConfirmDialog
+        open={deleteAllImagesDialogOpen}
+        onOpenChange={setDeleteAllImagesDialogOpen}
+        title="Delete all images"
+        description="Are you sure you want to remove all uploaded images from this yacht? This action cannot be undone."
+        confirmText={isDeletingAllImages ? "Deleting..." : "Delete all"}
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={handleDeleteAllImages}
       />
     </div>
   );
@@ -4752,9 +6508,20 @@ export default function YachtEditorPage() {
 
 // ---------------- Helper Components ---------------- //
 
-function Label({ children }: { children: React.ReactNode }) {
+function Label({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <label className="text-[13px] font-medium text-slate-700 mb-1.5 block group-hover:text-blue-600 transition-colors">
+    <label
+      className={cn(
+        "text-[13px] font-medium text-slate-700 mb-1.5 block group-hover:text-blue-600 transition-colors",
+        className,
+      )}
+    >
       {children}
     </label>
   );
@@ -4791,24 +6558,88 @@ function Input(
   );
 }
 
+function YachtFieldWrapper({
+  children,
+  label,
+  yachtId,
+  fieldName,
+  correctionLabel,
+  onCorrectionLabelChange,
+}: {
+  children: React.ReactNode;
+  label: string;
+  yachtId?: number;
+  fieldName: string;
+  correctionLabel?: CorrectionLabel | null;
+  onCorrectionLabelChange?: (label: CorrectionLabel | null) => void;
+}) {
+  const isCorrection = correctionLabel !== undefined;
+
+  return (
+    <div className="space-y-2 group">
+      <div className="flex items-center justify-between">
+        <Label className="flex items-center gap-1">
+          {label}
+          {yachtId && (
+            <FieldHistoryPopover
+              yachtId={yachtId}
+              fieldName={fieldName}
+              label={label}
+            />
+          )}
+        </Label>
+      </div>
+      {children}
+      {isCorrection && onCorrectionLabelChange && (
+        <FieldCorrectionControls
+          activeLabel={correctionLabel}
+          onSelect={(label) => onCorrectionLabelChange(label)}
+          onClear={() => onCorrectionLabelChange(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 function TriStateSelect(
   props: React.SelectHTMLAttributes<HTMLSelectElement> & {
     needsConfirmation?: boolean;
+    yachtId?: number;
+    fieldName?: string;
+    label?: string;
   },
 ) {
-  const { needsConfirmation, defaultValue, ...selectProps } = props;
+  const {
+    needsConfirmation,
+    defaultValue,
+    yachtId,
+    fieldName,
+    label,
+    ...selectProps
+  } = props;
   const normalizedDefault = normalizeTriStateValue(defaultValue);
 
   return (
     <div className="relative">
+      <div className="flex items-center gap-2 mb-1">
+        {yachtId && fieldName && label && !selectProps.children && (
+          <FieldHistoryPopover
+            yachtId={yachtId}
+            fieldName={fieldName}
+            label={label}
+          />
+        )}
+      </div>
       <select
         {...selectProps}
-        defaultValue={normalizedDefault}
+        defaultValue={normalizedDefault ?? undefined}
         className={cn(
           "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
           "hover:border-slate-300",
           "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
-          needsConfirmation ? "border-amber-300 bg-amber-50/50" : "border-slate-200",
+          needsConfirmation
+            ? "border-amber-300 bg-amber-50/50"
+            : "border-slate-200",
           selectProps.className,
         )}
       >

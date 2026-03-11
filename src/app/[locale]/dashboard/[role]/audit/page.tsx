@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -136,6 +137,7 @@ function getAuthHeaders() {
 
 export default function SystemAuditPage() {
   const t = useTranslations("DashboardAdminAudit");
+  const searchParams = useSearchParams();
   const loadLogsErrorText = t("errors.loadLogs");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -143,6 +145,7 @@ export default function SystemAuditPage() {
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<SystemLog[]>([]);
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null);
+  const [highlightedLogId, setHighlightedLogId] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [pagination, setPagination] = useState<PaginationMeta>({
     total: 0,
@@ -163,6 +166,13 @@ export default function SystemAuditPage() {
     search: "",
     page: 1,
   });
+  const deepLinkedLogId = useMemo(() => {
+    const rawLogId = searchParams.get("logId");
+    if (!rawLogId) return null;
+
+    const parsedLogId = Number.parseInt(rawLogId, 10);
+    return Number.isFinite(parsedLogId) ? parsedLogId : null;
+  }, [searchParams]);
 
   // ============================================
   // API CALLS
@@ -457,6 +467,36 @@ export default function SystemAuditPage() {
   useEffect(() => {
     void fetchSystemLogs();
   }, [fetchSystemLogs]);
+
+  useEffect(() => {
+    if (!deepLinkedLogId || loading || filteredLogs.length === 0) {
+      return;
+    }
+
+    const matchedLog = filteredLogs.find((log) => log.id === deepLinkedLogId);
+    if (!matchedLog) {
+      return;
+    }
+
+    setSelectedLog(matchedLog);
+    setHighlightedLogId(matchedLog.id);
+
+    const timeoutId = window.setTimeout(() => {
+      const element = document.getElementById(`audit-log-${matchedLog.id}`);
+      element?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+
+    const clearHighlightTimeout = window.setTimeout(() => {
+      setHighlightedLogId((current) =>
+        current === matchedLog.id ? null : current,
+      );
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearTimeout(clearHighlightTimeout);
+    };
+  }, [deepLinkedLogId, filteredLogs, loading]);
 
   // ============================================
   // PAGINATION HELPERS
@@ -836,12 +876,15 @@ export default function SystemAuditPage() {
                 return (
                   <motion.div
                     key={log.id}
+                    id={`audit-log-${log.id}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.02 }}
                     className={cn(
                       "hover:bg-slate-50 transition-all cursor-pointer",
                       isExpanded && "bg-blue-50 border-l-4 border-l-blue-600",
+                      highlightedLogId === log.id &&
+                        "bg-amber-50 ring-2 ring-amber-300 ring-inset",
                     )}
                     onClick={() => setSelectedLog(isExpanded ? null : log)}
                   >

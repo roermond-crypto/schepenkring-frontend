@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   Anchor,
   BarChart3,
-  Calendar,
   ClipboardList,
   Bot,
   Gauge,
@@ -14,15 +13,14 @@ import {
   ChevronRight,
   ShieldAlert,
   TriangleAlert,
-  LogOut,
   MessageSquare,
-  LayoutTemplate,
   Ship,
   Settings,
   Share2,
   Users,
   Wifi,
   WifiOff,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -47,7 +45,6 @@ export function Sidebar({
   locale,
   role,
   variant = "sidebar",
-  onLogout,
   onNavigate,
   onCollapse,
 }: SidebarProps) {
@@ -79,9 +76,18 @@ export function Sidebar({
   const root = `/${locale}/dashboard/${role}`;
 
   const menuItems = useMemo<MenuItem[]>(() => {
+    const overviewTitle =
+      role === "admin"
+        ? t.overview_admin
+        : role === "client"
+          ? t.overview_client
+          : role === "employee"
+            ? t.overview_employee
+            : t.overview;
+
     const items: MenuItem[] = [
       {
-        title: (t as any)[`overview_${role}`] || t.overview,
+        title: overviewTitle,
         href: root,
         icon: BarChart3,
       },
@@ -93,6 +99,11 @@ export function Sidebar({
       items.push({ title: t.harbor, href: `${root}/harbors`, icon: Anchor });
       items.push({ title: t.copilot, href: `${root}/copilot`, icon: Bot });
       items.push({
+        title: t.locations,
+        href: `${root}/locations`,
+        icon: Anchor,
+      });
+      items.push({
         title: t.harborPerformance,
         href: `${root}/performance`,
         icon: Gauge,
@@ -101,11 +112,6 @@ export function Sidebar({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,
-      });
-      items.push({
-        title: (t as any).chatWidget || "Chat Widget",
-        href: `${root}/harbors/widget`,
-        icon: LayoutTemplate,
       });
       items.push({
         title: t.socialAutomation,
@@ -118,6 +124,11 @@ export function Sidebar({
         href: `${root}/errors`,
         icon: TriangleAlert,
       });
+      items.push({
+        title: "Boat Audit",
+        href: `${root}/boat-audit`,
+        icon: ShieldCheck, // Reusing ShieldCheck or Bot for AI audit
+      });
     }
 
     items.push({ title: t.boats, href: `${root}/yachts`, icon: Ship });
@@ -125,23 +136,7 @@ export function Sidebar({
     items.push({ title: t.settings, href: `${root}/account`, icon: Settings });
 
     return items;
-  }, [
-    role,
-    root,
-    t.audit,
-    t.copilot,
-    t.boats,
-    t.errors,
-    t.harbor,
-    t.harborPerformance,
-    t.interaction,
-    t.overview,
-    t.schedule,
-    t.settings,
-    t.socialAutomation,
-    t.tasks,
-    t.users,
-  ]);
+  }, [role, root, t]);
 
   const navContent = (
     <>
@@ -171,7 +166,14 @@ export function Sidebar({
 
       <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pt-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {menuItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive =
+            item.href === root
+              ? pathname === item.href
+              : pathname === item.href ||
+              pathname.startsWith(`${item.href}/`) ||
+              (item.href === `${root}/locations` &&
+                (pathname === `${root}/harbors` ||
+                  pathname.startsWith(`${root}/harbors/`)));
 
           return (
             <Link
