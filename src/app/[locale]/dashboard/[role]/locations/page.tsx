@@ -1,12 +1,12 @@
 import { AdminLocationsManagerPage } from "@/components/dashboard/AdminLocationsManagerPage";
 
-type LegacyHarborsPageProps = {
+type AdminLocationsPageProps = {
   params: Promise<{ locale: string; role: string }>;
 };
 
-export default async function LegacyHarborsPage({
+export default async function AdminLocationsPage({
   params,
-}: LegacyHarborsPageProps) {
+}: AdminLocationsPageProps) {
   const { locale, role } = await params;
 
   return <AdminLocationsManagerPage locale={locale} role={role} />;

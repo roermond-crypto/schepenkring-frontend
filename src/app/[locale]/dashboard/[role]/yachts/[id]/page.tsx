@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, SyntheticEvent } from "react";
+import { useState, useEffect, useCallback, useRef, SyntheticEvent, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
@@ -35,7 +35,8 @@ import {
   Shield,
   Anchor,
   WifiOff,
-  Filter, HelpCircle, Info, Languages, Star, Users, Video, Wifi, Plus, X, UploadCloud, Edit3, Anchor as MooringIcon, CalendarDays, Key, Sun, ShieldCheck, Play
+  Wind,
+  Filter, HelpCircle, Info, Languages, Star, Users, Video, Wifi, Plus, X, UploadCloud, Edit3, Anchor as MooringIcon, CalendarDays, Key, Sun, ShieldCheck, Play, GripVertical, Wand2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,6 +53,15 @@ import { useLocale } from "next-intl";
 import { getDictionary } from "@/lib/i18n";
 import { normalizeRole } from "@/lib/auth/roles";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 
 const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
   ssr: false,
@@ -83,6 +93,8 @@ import {
   getYachtDraft,
   commitYachtDraft,
 } from "@/lib/api/yacht-drafts";
+import { FieldHistoryPopover } from "@/components/yachts/FieldHistoryPopover";
+import { FieldCorrectionControls, CorrectionLabel } from "@/components/yachts/FieldCorrectionControls";
 
 // ALi
 // Wizard step config
@@ -112,6 +124,8 @@ type AiStagedImage = {
 };
 type GalleryState = { [key: string]: any[] };
 
+type ImageGridDensity = "regular" | "compact" | "dense";
+
 // Availability Rule Type
 type AvailabilityRule = {
   days_of_week: number[];
@@ -119,13 +133,7 @@ type AvailabilityRule = {
   end_time: string;
 };
 
-type CorrectionLabel =
-  | "wrong_image_detection"
-  | "wrong_text_interpretation"
-  | "guessed_too_much"
-  | "duplicate_data_issue"
-  | "import_mismatch"
-  | "other";
+// Available explicitly from FieldCorrectionControls import
 
 type ConfidenceMeta = {
   overall_confidence: number;
@@ -149,6 +157,47 @@ const OPTIONAL_TRI_STATE_FIELDS = [
   "heating",
   "toilet",
   "fridge",
+  "shower",
+  "bath",
+  "oven",
+  "microwave",
+  "freezer",
+  "television",
+  "ais",
+  "radar",
+  "autopilot",
+  "life_raft",
+  "epirb",
+  "bilge_pump",
+  "fire_extinguisher",
+  "mob_system",
+  "radar_reflector",
+  "flares",
+  "life_buoy",
+  "watertight_door",
+  "gas_bottle_locker",
+  "self_draining_cockpit",
+  "solar_panel",
+  "wind_generator",
+  "stern_anchor",
+  "spud_pole",
+  "cockpit_tent",
+  "outdoor_cushions",
+  "teak_deck",
+  "swimming_platform",
+  "swimming_ladder",
+  "shorepower",
+  "bowsprit",
+  "main_sail",
+  "furling_mainsail",
+  "genoa",
+  "jib",
+  "spinnaker",
+  "gennaker",
+  "mizzen",
+  "furling_mizzen",
+  "winches",
+  "electric_winches",
 ] as const;
 
 const CORRECTION_BUTTONS: Array<{ value: CorrectionLabel; label: string }> = [
@@ -183,19 +232,19 @@ function clampWizardStep(value: unknown, fallback = 1): number {
   return Math.min(5, Math.max(1, Math.trunc(parsed)));
 }
 
-function normalizeTriStateValue(value: unknown): "yes" | "no" | "unknown" {
+function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
   if (typeof value === "boolean") return value ? "yes" : "no";
   if (typeof value === "number") return value > 0 ? "yes" : "no";
   const normalized = String(value ?? "").trim().toLowerCase();
-  if (!normalized) return "unknown";
-  if (["unknown", "unsure", "uncertain", "n/a", "na", "null"].includes(normalized)) return "unknown";
-  if (["no", "n", "false", "0", "absent", "none"].includes(normalized)) return "no";
+  if (!normalized) return null;
+  if (["unknown", "unsure", "uncertain", "n/a", "na", "null", "none"].includes(normalized)) return null;
+  if (["no", "n", "false", "0", "absent"].includes(normalized)) return "no";
   if (["yes", "y", "true", "1", "present", "included"].includes(normalized)) return "yes";
   if (/\b(without|not visible|not present|missing)\b/.test(normalized)) return "no";
   if (/\b(with|equipped|installed|available)\b/.test(normalized)) return "yes";
   if (/\d+/.test(normalized)) return "yes";
-  // Legacy free-text values should keep "present" semantics.
-  return "yes";
+  // If it's something else not matching the above, return null to be safe
+  return null;
 }
 
 export default function YachtEditorPage() {
@@ -283,6 +332,14 @@ export default function YachtEditorPage() {
     : (yachtId as string);
   const pipeline = useImagePipeline(activeYachtId);
   const imagesApproved = pipeline.isStep2Unlocked;
+  const [reviewImages, setReviewImages] = useState<PipelineImage[]>([]);
+  const [imageGridDensity, setImageGridDensity] =
+    useState<ImageGridDensity>("regular");
+  const [selectedLightboxImageId, setSelectedLightboxImageId] = useState<number | null>(null);
+  const [isAutoSortingImages, setIsAutoSortingImages] = useState(false);
+  const [isReorderingImages, setIsReorderingImages] = useState(false);
+  const [deleteAllImagesDialogOpen, setDeleteAllImagesDialogOpen] = useState(false);
+  const [isDeletingAllImages, setIsDeletingAllImages] = useState(false);
 
   // Legacy staging for non-image features (Main Profile etc)
   const [aiStaging, setAiStaging] = useState<AiStagedImage[]>([]);
@@ -303,8 +360,18 @@ export default function YachtEditorPage() {
   const [extractionType, setExtractionType] = useState<"gemini" | "magic">("gemini");
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [formKey, setFormKey] = useState(0);
+
+  // Correction feedback loop state
+  const [fieldCorrectionLabels, setFieldCorrectionLabels] = useState<Record<string, CorrectionLabel | null>>({});
   const [confidenceMeta, setConfidenceMeta] = useState<ConfidenceMeta | null>(null);
   const [correctionLabel, setCorrectionLabel] = useState<CorrectionLabel | null>(null);
+
+  // New AI UI Feedback States
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const [extractionStatus, setExtractionStatus] = useState("");
+  const [extractionCountdown, setExtractionCountdown] = useState(60);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Harbors
   const [harbors, setHarbors] = useState<any[]>([]);
@@ -313,6 +380,9 @@ export default function YachtEditorPage() {
     !isNewMode ||
     (!isOnline && offlineImages.length > 0) ||
     imagesApproved;
+  const areReviewPrerequisitesComplete = [1, 2, 3, 4].every((stepId) =>
+    isStepComplete(stepId),
+  );
 
   // AI Text State (Tab 3)
   const [aiTexts, setAiTexts] = useState({ nl: "", en: "", de: "" });
@@ -353,6 +423,32 @@ export default function YachtEditorPage() {
       }
     }
   }, [selectedLang]);
+
+  useEffect(() => {
+    setReviewImages(pipeline.images);
+  }, [pipeline.images]);
+
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+
+    if (!areReviewPrerequisitesComplete) {
+      if (isStepComplete(5)) {
+        markStepIncomplete(5);
+      }
+      return;
+    }
+
+    if (activeStep === 5 && !isStepComplete(5)) {
+      markStepComplete(5);
+    }
+  }, [
+    activeStep,
+    areReviewPrerequisitesComplete,
+    isDraftLoaded,
+    isStepComplete,
+    markStepComplete,
+    markStepIncomplete,
+  ]);
 
 
 
@@ -1173,6 +1269,137 @@ export default function YachtEditorPage() {
     }
   };
 
+  const gridClassName = useMemo(() => {
+    switch (imageGridDensity) {
+      case "dense":
+        return "grid-cols-2 lg:grid-cols-8";
+      case "compact":
+        return "grid-cols-2 lg:grid-cols-6";
+      default:
+        return "grid-cols-2 lg:grid-cols-4";
+    }
+  }, [imageGridDensity]);
+
+  const selectedLightboxImage = useMemo(
+    () =>
+      selectedLightboxImageId === null
+        ? null
+        : reviewImages.find((image) => image.id === selectedLightboxImageId) ?? null,
+    [reviewImages, selectedLightboxImageId],
+  );
+
+  const selectedLightboxIndex = useMemo(
+    () =>
+      selectedLightboxImageId === null
+        ? -1
+        : reviewImages.findIndex((image) => image.id === selectedLightboxImageId),
+    [reviewImages, selectedLightboxImageId],
+  );
+
+  const buildImageAiNotes = useCallback((image: PipelineImage) => {
+    const notes: string[] = [];
+    const adjustments = Array.isArray(image.quality_flags?.ai_adjustments)
+      ? image.quality_flags.ai_adjustments
+      : [];
+    notes.push(...adjustments);
+
+    if (image.quality_flags?.too_dark) {
+      notes.push("Source image was detected as dark before enhancement.");
+    }
+    if (image.quality_flags?.too_bright) {
+      notes.push("Source image had strong highlights before enhancement.");
+    }
+    if (image.quality_flags?.blurry) {
+      notes.push("Source image was soft, so clarity recovery was attempted.");
+    }
+    if (image.quality_flags?.low_res) {
+      notes.push("Source image resolution was low, so upscale logic was considered.");
+    }
+    if (
+      typeof image.quality_flags?.ai_rotation_angle === "number" &&
+      image.quality_flags.ai_rotation_angle > 0
+    ) {
+      notes.push(`Image orientation was corrected by ${image.quality_flags.ai_rotation_angle} degrees.`);
+    }
+    if (notes.length === 0) {
+      notes.push("AI marked this image as gallery-ready without major corrections.");
+    }
+
+    return Array.from(new Set(notes));
+  }, []);
+
+  const handlePipelineDragEnd = useCallback(
+    async (result: DropResult) => {
+      if (!result.destination) return;
+      if (result.destination.index === result.source.index) return;
+
+      const reordered = Array.from(reviewImages);
+      const [moved] = reordered.splice(result.source.index, 1);
+      reordered.splice(result.destination.index, 0, moved);
+      setReviewImages(reordered);
+
+      try {
+        setIsReorderingImages(true);
+        await pipeline.reorderImages(reordered.map((image) => image.id));
+      } catch (error) {
+        setReviewImages(pipeline.images);
+        toast.error("Failed to save image order");
+        console.error(error);
+      } finally {
+        setIsReorderingImages(false);
+      }
+    },
+    [pipeline, reviewImages],
+  );
+
+  const handleAutoSortImages = useCallback(async () => {
+    try {
+      setIsAutoSortingImages(true);
+      await pipeline.autoClassifyImages();
+      toast.success("AI sorted images into better categories.");
+    } catch (error) {
+      toast.error("AI image sorting failed.");
+      console.error(error);
+    } finally {
+      setIsAutoSortingImages(false);
+    }
+  }, [pipeline]);
+
+  const handleDeleteAllImages = useCallback(async () => {
+    if (reviewImages.length === 0) return;
+
+    try {
+      setIsDeletingAllImages(true);
+      setSelectedLightboxImageId(null);
+
+      const result = await pipeline.deleteImages(reviewImages.map((image) => image.id));
+
+      if (result.failed > 0) {
+        toast.error(`Deleted ${result.deleted} images, ${result.failed} failed.`);
+      } else {
+        toast.success(`Deleted ${result.deleted} images.`);
+      }
+    } catch (error) {
+      toast.error("Failed to delete images.");
+      console.error(error);
+    } finally {
+      setDeleteAllImagesDialogOpen(false);
+      setIsDeletingAllImages(false);
+    }
+  }, [pipeline, reviewImages]);
+
+  const moveLightboxImage = useCallback(
+    (direction: "next" | "prev") => {
+      if (selectedLightboxIndex < 0 || reviewImages.length === 0) return;
+
+      const delta = direction === "next" ? 1 : -1;
+      const nextIndex =
+        (selectedLightboxIndex + delta + reviewImages.length) % reviewImages.length;
+      setSelectedLightboxImageId(reviewImages[nextIndex]?.id ?? null);
+    },
+    [reviewImages, selectedLightboxIndex],
+  );
+
 
   const handleImageError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = PLACEHOLDER_IMAGE;
@@ -1485,6 +1712,32 @@ export default function YachtEditorPage() {
         : "🤖 AI Pipeline is analyzing your images...",
     );
 
+    // ── Start Progress & Countdown ──
+    setExtractionProgress(5);
+    setExtractionCountdown(60);
+    setExtractionStatus("Connecting to Gemini Vision API...");
+
+    progressIntervalRef.current = setInterval(() => {
+      setExtractionProgress((prev) => {
+        if (prev >= 95) return prev;
+        // Slow down as we approach the end
+        const step = prev < 40 ? 4 : prev < 70 ? 2 : 1;
+        const next = prev + step;
+
+        // Update status messages based on progress
+        if (next < 25) setExtractionStatus("Analyzing vessel images with Gemini Vision...");
+        else if (next < 50) setExtractionStatus("Searching Pinecone catalog for matching models...");
+        else if (next < 80) setExtractionStatus("Cross-referencing technical specifications...");
+        else setExtractionStatus("Finalizing data and validating results...");
+
+        return next;
+      });
+    }, 1500);
+
+    countdownIntervalRef.current = setInterval(() => {
+      setExtractionCountdown((prev) => (prev > 1 ? prev - 1 : 1));
+    }, 1000);
+
     try {
       const formData = new FormData();
 
@@ -1520,6 +1773,9 @@ export default function YachtEditorPage() {
         formData.append("hint_text", boatHint.trim());
       }
 
+      // Images are NOT sent from frontend — backend fetches them from DB
+      // using yacht_id (matching old project behavior for reliability).
+
       // We use fetch directly here to bypass Axios JSON parser,
       // which fails if PHP outputs warnings before the JSON
       const token = localStorage.getItem("auth_token");
@@ -1527,7 +1783,7 @@ export default function YachtEditorPage() {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
-        signal: AbortSignal.timeout(180000), // 3 mins
+        signal: AbortSignal.timeout(600000), // 10 mins
       });
 
       const responseText = await res.text();
@@ -1607,7 +1863,20 @@ export default function YachtEditorPage() {
           draught: "draft",
           hp: "horse_power",
           engine_brand: "engine_manufacturer",
+          engine_make: "engine_manufacturer",
           fuel_type: "fuel",
+          engine_hp: "horse_power",
+          engine_hours: "hours",
+          engine_count: "engine_quantity",
+          hull_material: "hull_construction",
+          construction_material: "hull_construction",
+          cabins_count: "cabins",
+          berths_count: "berths",
+          vessel_lying: "where",
+          asking_price: "price",
+          speed_max: "max_speed",
+          speed_cruising: "cruising_speed",
+          air_draf: "air_draft",
         };
         Object.entries(aliasMap).forEach(([from, to]) => {
           const sourceValue = normalizedFormValues[from];
@@ -1675,9 +1944,9 @@ export default function YachtEditorPage() {
               : normalizeTriStateValue(raw);
         });
 
-        // Build the merged object (filter nulls)
+        // Build the merged object (filter nulls only — match old project)
         const fieldsToMerge = Object.fromEntries(
-          Object.entries(normalizedFormValues).filter(([, val]) => val !== null && val !== undefined),
+          Object.entries(normalizedFormValues).filter(([, val]) => val !== null),
         );
 
         console.log("🟢 [Pipeline] Fields to merge:", fieldsToMerge);
@@ -1780,19 +2049,13 @@ export default function YachtEditorPage() {
       if (!background) {
         setShowExtractModal(false);
       }
+      // Clear intervals
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      setExtractionProgress(0);
     }
   };
 
-  // Auto-trigger extraction only in new mode when images transition to approved.
-  const prevImagesApprovedRef = useRef(imagesApproved);
-  useEffect(() => {
-    const wasApproved = prevImagesApprovedRef.current;
-    prevImagesApprovedRef.current = imagesApproved;
-
-    if (isNewMode && imagesApproved && !wasApproved && !geminiExtracted && !isExtracting) {
-      void handleAiExtract({ background: true, navigateToStep2: true, speedMode: "balanced" });
-    }
-  }, [imagesApproved, geminiExtracted, isExtracting, isNewMode]);
 
   const handleRegenerateDescription = async () => {
     const targetId = isNewMode ? createdYachtId : yachtId;
@@ -2024,7 +2287,7 @@ export default function YachtEditorPage() {
 
     const normalizeComparableValue = (field: string, value: unknown): string => {
       if (isOptionalTriStateField(field)) {
-        return normalizeTriStateValue(value);
+        return normalizeTriStateValue(value) || "";
       }
       if (typeof value === "boolean") return value ? "true" : "false";
       return String(value ?? "").trim().toLowerCase();
@@ -2223,6 +2486,12 @@ export default function YachtEditorPage() {
     if (Object.keys(fieldConfidence).length > 0) {
       formData.append("field_confidence", JSON.stringify(fieldConfidence));
     }
+
+    // Add Correction Feedback
+    if (Object.keys(fieldCorrectionLabels).length > 0) {
+      formData.append("field_correction_labels", JSON.stringify(fieldCorrectionLabels));
+    }
+
     formData.append("changed_by_type", role === "admin" ? "admin" : "user");
 
     let changedAiFieldCount = 0;
@@ -2398,14 +2667,23 @@ export default function YachtEditorPage() {
             <div className="mx-auto w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4">
               <Loader2 size={28} className="animate-spin text-blue-600" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Please wait</h3>
-            <p className="text-sm text-slate-500 mt-2">
-              {extractionType === "gemini"
+            <h3 className="text-lg font-bold text-slate-900">AI Extraction in Progress</h3>
+            <p className="text-sm text-slate-500 mt-2 min-h-[40px]">
+              {extractionStatus || (extractionType === "gemini"
                 ? "AI is analyzing your yacht photos and preparing fields."
-                : "🪄 RAG Engine is searching Pinecone to find consensus and auto-filling details..."}
+                : "🪄 RAG Engine is searching Pinecone to find consensus and auto-filling details...")}
             </p>
-            <div className="mt-5 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full w-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full animate-pulse" />
+            <div className="mt-5 space-y-3">
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(37,99,235,0.4)]"
+                  style={{ width: `${extractionProgress}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <span>{extractionProgress}% Complete</span>
+                <span>Approx. {extractionCountdown}s remaining</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2416,9 +2694,9 @@ export default function YachtEditorPage() {
         <div className="max-w-2xl mx-auto flex items-center justify-center py-7 px-6">
           {wizardSteps.map((step, index) => {
             const isActive = activeStep === step.id;
-            const isCompleted = step.id < activeStep;
+            const isCompleted = !isNewMode || step.id < activeStep || (activeStep === wizardSteps.length && step.id === wizardSteps.length);
             const isPast = isActive || isCompleted;
-            const isLocked = !canProceedFromStep1 && step.id > 1;
+            const isLocked = (!canProceedFromStep1 && step.id > 1) || (isExtracting && step.id > 1);
             return (
               <div key={step.id} className="flex items-center">
                 <button
@@ -2564,8 +2842,8 @@ export default function YachtEditorPage() {
                 ) : (
                   <div className="space-y-4">
                     {/* Stats bar */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
+                      <div className="flex flex-wrap items-center gap-4">
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                           {`${pipeline.stats.total} image${pipeline.stats.total !== 1 ? "s" : ""}`}
                         </p>
@@ -2587,220 +2865,512 @@ export default function YachtEditorPage() {
                                 ✓ {pipeline.stats.approved} approved
                               </span>
                             )}
+                            {isReorderingImages && (
+                              <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                Saving order...
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
-                      <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
-                        <Upload size={12} /> Add More
-                        <input
-                          type="file"
-                          multiple
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          disabled={isUploading || pipeline.isUploading}
-                        />
-                      </label>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
+                          <button
+                            type="button"
+                            onClick={() => setImageGridDensity("regular")}
+                            className={cn(
+                              "rounded-lg px-3 py-1 text-xs font-bold transition-colors",
+                              imageGridDensity === "regular"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            )}
+                            title="4 images per row"
+                          >
+                            4
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImageGridDensity("compact")}
+                            className={cn(
+                              "rounded-lg px-3 py-1 text-xs font-bold transition-colors",
+                              imageGridDensity === "compact"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            )}
+                            title="6 images per row"
+                          >
+                            6
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImageGridDensity("dense")}
+                            className={cn(
+                              "rounded-lg px-3 py-1 text-xs font-bold transition-colors",
+                              imageGridDensity === "dense"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            )}
+                            title="8 images per row"
+                          >
+                            8
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => void handleAutoSortImages()}
+                          disabled={isAutoSortingImages || reviewImages.length === 0}
+                          className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-bold text-violet-700 transition-colors hover:bg-violet-100 disabled:opacity-60"
+                        >
+                          {isAutoSortingImages ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Wand2 size={12} />
+                          )}
+                          AI auto-sort
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setDeleteAllImagesDialogOpen(true)}
+                          disabled={reviewImages.length === 0 || isDeletingAllImages}
+                          className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-60"
+                          title="Delete all images"
+                        >
+                          {isDeletingAllImages ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Trash size={12} />
+                          )}
+                        </button>
+
+                        <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                          <Upload size={12} /> Add More
+                          <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={isUploading || pipeline.isUploading}
+                          />
+                        </label>
+                      </div>
                     </div>
 
                     {/* ── Pipeline Image Grid ── */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {pipeline.images.map((img: PipelineImage) => {
-                        const isMain =
-                          mainPreview === img.optimized_url ||
-                          mainPreview === img.thumb_full_url;
-                        const statusConfig: Record<
-                          string,
-                          { bg: string; text: string; label: string }
-                        > = {
-                          processing: {
-                            bg: "bg-blue-500",
-                            text: "text-white",
-                            label: "⏳ Processing...",
-                          },
-                          ready_for_review: {
-                            bg: "bg-amber-500",
-                            text: "text-white",
-                            label: "👁 Ready for Review",
-                          },
-                          approved: {
-                            bg: "bg-emerald-500",
-                            text: "text-white",
-                            label: "✓ Approved",
-                          },
-                          processing_failed: {
-                            bg: "bg-red-500",
-                            text: "text-white",
-                            label: "✕ Failed",
-                          },
-                        };
-                        const sc =
-                          statusConfig[img.status] || statusConfig.processing;
-
-                        return (
+                    <DragDropContext onDragEnd={handlePipelineDragEnd}>
+                      <Droppable droppableId="pipeline-image-grid" direction="horizontal">
+                        {(provided) => (
                           <div
-                            key={img.id}
-                            className={cn(
-                              "relative group bg-white border shadow-sm overflow-hidden rounded-xl",
-                              img.status === "approved"
-                                ? "border-emerald-300 ring-1 ring-emerald-200"
-                                : img.status === "ready_for_review"
-                                  ? "border-amber-300"
-                                  : img.status === "processing"
-                                    ? "border-blue-200"
-                                    : "border-red-300",
-                            )}
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={cn("grid gap-4", gridClassName)}
                           >
-                            {/* Image */}
-                            <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
-                              <img
-                                src={
-                                  img.thumb_full_url ||
-                                  img.optimized_url ||
-                                  img.full_url
-                                }
-                                className={cn(
-                                  "w-full h-full object-cover transition-opacity",
-                                  //@ts-ignore
-                                  img.enhancement_method === "pending" &&
-                                  "opacity-80 grayscale-[0.2]",
-                                  img.status === "processing" && "opacity-60"
-                                )}
-                                onError={handleImageError}
-                              />
+                            {reviewImages.map((img: PipelineImage, index: number) => {
+                              const statusConfig: Record<
+                                string,
+                                { bg: string; text: string; label: string }
+                              > = {
+                                processing: {
+                                  bg: "bg-blue-500",
+                                  text: "text-white",
+                                  label: "⏳ Processing...",
+                                },
+                                ready_for_review: {
+                                  bg: "bg-amber-500",
+                                  text: "text-white",
+                                  label: "👁 Ready for Review",
+                                },
+                                approved: {
+                                  bg: "bg-emerald-500",
+                                  text: "text-white",
+                                  label: "✓ Approved",
+                                },
+                                processing_failed: {
+                                  bg: "bg-red-500",
+                                  text: "text-white",
+                                  label: "✕ Failed",
+                                },
+                              };
+                              const sc =
+                                statusConfig[img.status] || statusConfig.processing;
 
-                              {/* Loading Overlay for Processing */}
-                              {img.status === "processing" && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
-                                  <Loader2 size={24} className="animate-spin text-blue-600" />
+                              return (
+                                <Draggable key={img.id} draggableId={`pipeline-image-${img.id}`} index={index}>
+                                  {(dragProvided) => (
+                                    <div
+                                      ref={dragProvided.innerRef}
+                                      {...dragProvided.draggableProps}
+                                      className={cn(
+                                        "relative group bg-white border shadow-sm overflow-hidden rounded-xl",
+                                        img.status === "approved"
+                                          ? "border-emerald-300 ring-1 ring-emerald-200"
+                                          : img.status === "ready_for_review"
+                                            ? "border-amber-300"
+                                            : img.status === "processing"
+                                              ? "border-blue-200"
+                                              : "border-red-300",
+                                      )}
+                                    >
+                                      {/* Image */}
+                                      <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
+                                        <img
+                                          src={
+                                            img.thumb_full_url ||
+                                            img.optimized_url ||
+                                            img.full_url
+                                          }
+                                          alt={img.original_name || `Yacht image ${index + 1}`}
+                                          onClick={() => setSelectedLightboxImageId(img.id)}
+                                          className={cn(
+                                            "w-full h-full cursor-zoom-in object-cover transition-opacity",
+                                            img.enhancement_method === "pending" &&
+                                            "opacity-80 grayscale-[0.2]",
+                                            img.status === "processing" && "opacity-60"
+                                          )}
+                                          onError={handleImageError}
+                                        />
+
+                                        {/* Loading Overlay for Processing */}
+                                        {img.status === "processing" && (
+                                          <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
+                                            <Loader2 size={24} className="animate-spin text-blue-600" />
+                                          </div>
+                                        )}
+
+                                        {img.enhancement_method === "pending" && (
+                                          <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/30 backdrop-blur-[1px] z-10">
+                                            <div className="bg-white/40 p-2 rounded-full mb-2 backdrop-blur-md">
+                                              <Loader2
+                                                size={18}
+                                                className="animate-spin text-white"
+                                              />
+                                            </div>
+                                            <span className="text-[10px] tracking-wider uppercase text-white drop-shadow-md">
+                                              Optimizing...
+                                            </span>
+                                          </div>
+                                        )}
+
+                                        {/* Status badge */}
+                                        <div
+                                          className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
+                                        >
+                                          {sc.label}
+                                        </div>
+
+                                        <div
+                                          {...dragProvided.dragHandleProps}
+                                          className="absolute right-2 bottom-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur active:cursor-grabbing"
+                                          title="Drag to reorder"
+                                        >
+                                          <GripVertical size={14} />
+                                        </div>
+
+                                        {/* Quality label */}
+                                        {img.quality_label &&
+                                          img.status !== "processing" && (
+                                            <div
+                                              className={cn(
+                                                "absolute top-2 right-2 text-white text-[9px] font-bold px-2 py-1 rounded-md backdrop-blur-sm z-20 shadow-md",
+                                                img.quality_score &&
+                                                  img.quality_score < 70
+                                                  ? "bg-red-500/90"
+                                                  : "bg-black/60",
+                                              )}
+                                            >
+                                              {img.quality_label}
+                                            </div>
+                                          )}
+
+                                        {img.category && (
+                                          <div className="absolute bottom-2 right-12 z-20 rounded-md bg-[#0B1F3A]/80 px-2 py-1 text-[9px] font-bold text-white shadow-md backdrop-blur-sm">
+                                            {img.category}
+                                          </div>
+                                        )}
+
+                                        {/* AI Enhanced badge */}
+                                        {img.enhancement_method === "cloudinary" &&
+                                          img.status !== "processing" && (
+                                            <div className="absolute bottom-2 left-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-md shadow-md flex items-center gap-1.5 z-20">
+                                              <Sparkles size={10} /> AI Enhanced
+                                            </div>
+                                          )}
+                                      </div>
+
+                                      {/* Controls */}
+                                      <div className="p-3 space-y-2">
+                                        {/* Quality score bar */}
+                                        {img.quality_score !== null && (
+                                          <div className="space-y-1">
+                                            <div className="flex items-center justify-between gap-2">
+                                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                AI review score
+                                              </span>
+                                              <span className="text-[10px] font-bold text-slate-400">
+                                                {img.quality_score}/100
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                <div
+                                                  className={cn(
+                                                    "h-full rounded-full transition-all",
+                                                    img.quality_score >= 70
+                                                      ? "bg-emerald-500"
+                                                      : img.quality_score >= 40
+                                                        ? "bg-amber-500"
+                                                        : "bg-red-500",
+                                                  )}
+                                                  style={{ width: `${img.quality_score}%` }}
+                                                />
+                                              </div>
+                                            </div>
+                                            <p className="text-[10px] text-slate-400">
+                                              Measures gallery readiness after AI cleanup.
+                                            </p>
+                                          </div>
+                                        )}
+
+                                        {/* Keep original toggle */}
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[10px] text-slate-500 font-medium">
+                                            Keep original
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              pipeline.toggleKeepOriginal(img.id)
+                                            }
+                                            className={cn(
+                                              "w-8 h-4 rounded-full transition-colors relative",
+                                              img.keep_original
+                                                ? "bg-blue-500"
+                                                : "bg-slate-200",
+                                            )}
+                                          >
+                                            <div
+                                              className={cn(
+                                                "w-3 h-3 bg-white rounded-full shadow absolute top-0.5 transition-transform",
+                                                img.keep_original
+                                                  ? "translate-x-4"
+                                                  : "translate-x-0.5",
+                                              )}
+                                            />
+                                          </button>
+                                        </div>
+
+                                        <div className="rounded-lg bg-slate-50 px-2.5 py-2 text-[10px] text-slate-500">
+                                          <p className="font-semibold text-slate-700">AI comments</p>
+                                          <p className="mt-1 line-clamp-2">
+                                            {buildImageAiNotes(img)[0]}
+                                          </p>
+                                        </div>
+
+                                        {/* Action buttons */}
+                                        <div className="flex gap-2">
+                                          {img.status === "ready_for_review" && (
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                pipeline.approveImage(img.id)
+                                              }
+                                              className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
+                                            >
+                                              <Check size={12} /> Approve
+                                            </button>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => pipeline.deleteImage(img.id)}
+                                            className="bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold py-1.5 px-3 rounded-md transition-colors flex items-center gap-1"
+                                          >
+                                            <Trash size={12} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              );
+                            })}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+
+                    <Dialog
+                      open={selectedLightboxImage !== null}
+                      onOpenChange={(open) => {
+                        if (!open) {
+                          setSelectedLightboxImageId(null);
+                        }
+                      }}
+                    >
+                      <DialogContent
+                        showCloseButton={false}
+                        className="max-w-[min(96vw,1240px)] overflow-hidden rounded-[32px] border border-slate-800/80 bg-[#020817] p-0 shadow-[0_40px_120px_rgba(2,6,23,0.78)]"
+                      >
+                        {selectedLightboxImage && (
+                          <div className="max-h-[92vh] overflow-y-auto">
+                            <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_28%),linear-gradient(180deg,_#0f172a_0%,_#020617_100%)]">
+                              <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 p-4 sm:p-6">
+                                <div className="rounded-full border border-white/10 bg-slate-950/55 px-4 py-2 backdrop-blur-xl">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-200/70">
+                                    AI Gallery Review
+                                  </p>
                                 </div>
-                              )}
 
-                              {/*  @ts-ignore */}
-                              {img.enhancement_method === "pending" && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/30 backdrop-blur-[1px] z-10">
-                                  <div className="bg-white/40 p-2 rounded-full mb-2 backdrop-blur-md">
-                                    <Loader2
-                                      size={18}
-                                      className="animate-spin text-white"
-                                    />
-                                  </div>
-                                  <span className="text-[10px] tracking-wider uppercase text-white drop-shadow-md">
-                                    Optimizing...
+                                <div className="flex items-center gap-2">
+                                  <span className="rounded-full border border-white/10 bg-slate-950/60 px-3 py-1 text-xs font-semibold text-slate-100 backdrop-blur-xl">
+                                    {selectedLightboxIndex + 1} / {reviewImages.length}
                                   </span>
+                                  <DialogClose asChild>
+                                    <button
+                                      type="button"
+                                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-slate-950/60 text-white transition-colors hover:bg-white/10"
+                                      aria-label="Close image review"
+                                    >
+                                      <X size={18} />
+                                    </button>
+                                  </DialogClose>
                                 </div>
-                              )}
-
-                              {/* Status badge */}
-                              <div
-                                className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
-                              >
-                                {sc.label}
                               </div>
 
-                              {/* Quality label */}
-                              {img.quality_label &&
-                                img.status !== "processing" && (
-                                  <div
-                                    className={cn(
-                                      "absolute top-2 right-2 text-white text-[9px] font-bold px-2 py-1 rounded-md backdrop-blur-sm z-20 shadow-md",
-                                      img.quality_score &&
-                                        img.quality_score < 70
-                                        ? "bg-red-500/90"
-                                        : "bg-black/60",
-                                    )}
-                                  >
-                                    {img.quality_label}
-                                  </div>
-                                )}
+                              <div className="relative flex min-h-[54vh] items-center justify-center px-4 pb-24 pt-24 sm:px-8 lg:px-10">
+                                <img
+                                  src={
+                                    selectedLightboxImage.optimized_url ||
+                                    selectedLightboxImage.full_url
+                                  }
+                                  alt={
+                                    selectedLightboxImage.original_name ||
+                                    "Selected yacht image"
+                                  }
+                                  className="max-h-[62vh] w-auto max-w-full rounded-[28px] border border-white/10 bg-slate-950/70 object-contain shadow-[0_30px_100px_rgba(15,23,42,0.65)]"
+                                  onError={handleImageError}
+                                />
+                              </div>
 
-                              {/* AI Enhanced badge */}
-                              {img.enhancement_method === "cloudinary" &&
-                                img.status !== "processing" && (
-                                  <div className="absolute bottom-2 left-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-md shadow-md flex items-center gap-1.5 z-20">
-                                    <Sparkles size={10} /> AI Enhanced
-                                  </div>
-                                )}
+                              <button
+                                type="button"
+                                onClick={() => moveLightboxImage("prev")}
+                                className="absolute bottom-6 left-6 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-slate-950/65 text-white shadow-[0_12px_40px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-colors hover:bg-white/10"
+                              >
+                                <ChevronLeft size={20} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveLightboxImage("next")}
+                                className="absolute bottom-6 left-24 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-slate-950/65 text-white shadow-[0_12px_40px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-colors hover:bg-white/10"
+                              >
+                                <ChevronRight size={20} />
+                              </button>
                             </div>
 
-                            {/* Controls */}
-                            <div className="p-3 space-y-2">
-                              {/* Quality score bar */}
-                              {img.quality_score !== null && (
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                    <div
-                                      className={cn(
-                                        "h-full rounded-full transition-all",
-                                        img.quality_score >= 70
-                                          ? "bg-emerald-500"
-                                          : img.quality_score >= 40
-                                            ? "bg-amber-500"
-                                            : "bg-red-500",
-                                      )}
-                                      style={{ width: `${img.quality_score}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-[10px] font-bold text-slate-400">
-                                    {img.quality_score}
-                                  </span>
+                            <div className="border-t border-white/10 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(248,250,252,0.96)_100%)] p-6 sm:p-8 lg:p-10">
+                              <DialogHeader className="text-left">
+                                <div className="inline-flex w-fit items-center rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700">
+                                  Review Details
                                 </div>
-                              )}
+                                <DialogTitle className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                                  {selectedLightboxImage.original_name || "Image review"}
+                                </DialogTitle>
+                                <DialogDescription className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                                  Review the full image, the AI quality score, and the applied corrections before approving it for the final gallery.
+                                </DialogDescription>
+                              </DialogHeader>
 
-                              {/* Keep original toggle */}
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] text-slate-500 font-medium">
-                                  Keep original
+                              <div className="mt-6 flex flex-wrap gap-2">
+                                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm">
+                                  {selectedLightboxImage.category || "General"}
                                 </span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    pipeline.toggleKeepOriginal(img.id)
-                                  }
-                                  className={cn(
-                                    "w-8 h-4 rounded-full transition-colors relative",
-                                    img.keep_original
-                                      ? "bg-blue-500"
-                                      : "bg-slate-200",
-                                  )}
-                                >
-                                  <div
-                                    className={cn(
-                                      "w-3 h-3 bg-white rounded-full shadow absolute top-0.5 transition-transform",
-                                      img.keep_original
-                                        ? "translate-x-4"
-                                        : "translate-x-0.5",
-                                    )}
-                                  />
-                                </button>
+                                <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold capitalize text-violet-700 shadow-sm">
+                                  {(selectedLightboxImage.enhancement_method || "none").replace(/_/g, " ")}
+                                </span>
+                                {selectedLightboxImage.keep_original && (
+                                  <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-sm">
+                                    Keep original
+                                  </span>
+                                )}
                               </div>
 
-                              {/* Action buttons */}
-                              <div className="flex gap-2">
-                                {img.status === "ready_for_review" && (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      pipeline.approveImage(img.id)
-                                    }
-                                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
+                              <div className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
+                                      AI review score
+                                    </p>
+                                    <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
+                                      {selectedLightboxImage.quality_score ?? "—"}
+                                      <span className="text-lg text-slate-400">/100</span>
+                                    </p>
+                                  </div>
+                                  <span
+                                    className={cn(
+                                      "rounded-full px-3 py-1 text-xs font-bold",
+                                      (selectedLightboxImage.quality_score ?? 0) >= 70
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : (selectedLightboxImage.quality_score ?? 0) >= 40
+                                          ? "bg-amber-50 text-amber-700"
+                                          : "bg-red-50 text-red-700",
+                                    )}
                                   >
-                                    <Check size={12} /> Approve
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => pipeline.deleteImage(img.id)}
-                                  className="bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold py-1.5 px-3 rounded-md transition-colors flex items-center gap-1"
-                                >
-                                  <Trash size={12} />
-                                </button>
+                                    {(selectedLightboxImage.quality_score ?? 0) >= 70
+                                      ? "Gallery ready"
+                                      : (selectedLightboxImage.quality_score ?? 0) >= 40
+                                        ? "Needs review"
+                                        : "Needs correction"}
+                                  </span>
+                                </div>
+
+                                <p className="mt-4 text-sm leading-6 text-slate-500">
+                                  This score reflects how suitable the image is for the public gallery after AI cleanup and classification.
+                                </p>
+
+                                <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
+                                  AI review score
+                                </p>
+                                <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full bg-gradient-to-r",
+                                      (selectedLightboxImage.quality_score ?? 0) >= 70
+                                        ? "from-emerald-400 to-emerald-500"
+                                        : (selectedLightboxImage.quality_score ?? 0) >= 40
+                                          ? "from-amber-400 to-orange-500"
+                                          : "from-rose-400 to-red-500",
+                                    )}
+                                    style={{
+                                      width: `${selectedLightboxImage.quality_score ?? 0}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="mt-6 space-y-3">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
+                                  AI comments
+                                </p>
+                                <div className="space-y-2">
+                                  {buildImageAiNotes(selectedLightboxImage).map((note) => (
+                                    <div
+                                      key={note}
+                                      className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm leading-6 text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
+                                    >
+                                      {note}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 )}
 
@@ -2848,7 +3418,7 @@ export default function YachtEditorPage() {
                             if (result.step2_unlocked) {
                               if (isNewMode) {
                                 const extractionOk = await handleAiExtract({
-                                  background: true,
+                                  background: false,
                                   navigateToStep2: true,
                                   speedMode: "balanced",
                                 });
@@ -2866,6 +3436,7 @@ export default function YachtEditorPage() {
                               toast.success("Images approved.");
                             }
                           }}
+                          disabled={isExtracting}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-md"
                         >
                           <CheckCircle size={16} /> {isNewMode ? "Approve All" : "Approve All"}
@@ -2891,6 +3462,7 @@ export default function YachtEditorPage() {
                         <button
                           type="button"
                           onClick={() => setActiveStep(2)}
+                          disabled={isExtracting}
                           className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
                         >
                           Skip to Step 2 (Manual Fill) <ArrowRight size={20} />
@@ -2920,7 +3492,7 @@ export default function YachtEditorPage() {
                               toast("Extracting data from images...", { icon: "🪄" });
                               void handleAiExtract();
                             }}
-                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Sparkles size={16} /> Run AI Extraction Manually
                           </button>
@@ -3050,35 +3622,6 @@ export default function YachtEditorPage() {
               className="space-y-6 lg:space-y-8 pt-2"
             >
               {/* AI extraction summary intentionally hidden in Step 2 */}
-              {confidenceMeta?.ai_session_id && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-800">
-                    AI Correction Feedback
-                  </p>
-                  <p className="mt-1 text-xs text-amber-700">
-                    Session: <span className="font-semibold">{confidenceMeta.ai_session_id}</span>
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {CORRECTION_BUTTONS.map((item) => (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() =>
-                          setCorrectionLabel((prev) => (prev === item.value ? null : item.value))
-                        }
-                        className={cn(
-                          "rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors",
-                          correctionLabel === item.value
-                            ? "border-amber-600 bg-amber-600 text-white"
-                            : "border-amber-300 bg-white text-amber-800 hover:bg-amber-100",
-                        )}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* --- SECTION 2: CORE SPECS --- */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
@@ -3663,6 +4206,33 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
+                      <Label>Berths (Fixed)</Label>
+                      <Input
+                        name="berths_fixed"
+                        type="number"
+                        defaultValue={selectedYacht?.berths_fixed}
+                        placeholder="4"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Berths (Extra)</Label>
+                      <Input
+                        name="berths_extra"
+                        type="number"
+                        defaultValue={selectedYacht?.berths_extra}
+                        placeholder="2"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Berths (Crew)</Label>
+                      <Input
+                        name="berths_crew"
+                        type="number"
+                        defaultValue={selectedYacht?.berths_crew}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
                       <Label>Shower</Label>
                       <Input
                         name="shower"
@@ -3676,6 +4246,86 @@ export default function YachtEditorPage() {
                         name="bath"
                         defaultValue={selectedYacht?.bath}
                         placeholder="1"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Interior Type</Label>
+                      <Input
+                        name="interior_type"
+                        defaultValue={selectedYacht?.interior_type}
+                        placeholder="Classic, wood"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Saloon</Label>
+                      <Input
+                        name="saloon"
+                        defaultValue={selectedYacht?.saloon}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Headroom</Label>
+                      <Input
+                        name="headroom"
+                        defaultValue={selectedYacht?.headroom}
+                        placeholder="1.95m"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Separate Dining Area</Label>
+                      <Input
+                        name="separate_dining_area"
+                        defaultValue={selectedYacht?.separate_dining_area}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Engine Room</Label>
+                      <Input
+                        name="engine_room"
+                        defaultValue={selectedYacht?.engine_room}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Spaces Inside</Label>
+                      <Input
+                        name="spaces_inside"
+                        defaultValue={selectedYacht?.spaces_inside}
+                        placeholder="3"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Upholstery Color</Label>
+                      <Input
+                        name="upholstery_color"
+                        defaultValue={selectedYacht?.upholstery_color}
+                        placeholder="Blue"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Matrasses</Label>
+                      <Input
+                        name="matrasses"
+                        defaultValue={selectedYacht?.matrasses}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Cushions</Label>
+                      <Input
+                        name="cushions"
+                        defaultValue={selectedYacht?.cushions}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Curtains</Label>
+                      <Input
+                        name="curtains"
+                        defaultValue={selectedYacht?.curtains}
+                        placeholder="White"
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -3717,7 +4367,209 @@ export default function YachtEditorPage() {
                       <Input
                         name="cockpit_type"
                         defaultValue={selectedYacht?.cockpit_type}
-                        placeholder="e.g. Open / Closed"
+                        placeholder="Aft cockpit"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water Tank</Label>
+                      <Input
+                        name="water_tank"
+                        defaultValue={selectedYacht?.water_tank}
+                        placeholder="200L"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water Tank Gauge</Label>
+                      <Input
+                        name="water_tank_gauge"
+                        defaultValue={selectedYacht?.water_tank_gauge}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water Maker</Label>
+                      <Input
+                        name="water_maker"
+                        defaultValue={selectedYacht?.water_maker}
+                        placeholder="60 L/h"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Waste Water Tank</Label>
+                      <Input
+                        name="waste_water_tank"
+                        defaultValue={selectedYacht?.waste_water_tank}
+                        placeholder="80L"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Waste Water Gauge</Label>
+                      <Input
+                        name="waste_water_tank_gauge"
+                        defaultValue={selectedYacht?.waste_water_tank_gauge}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Waste Tank Drain Pump</Label>
+                      <Input
+                        name="waste_water_tank_drainpump"
+                        defaultValue={selectedYacht?.waste_water_tank_drainpump}
+                        placeholder="Electric"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Deck Suction</Label>
+                      <Input
+                        name="deck_suction"
+                        defaultValue={selectedYacht?.deck_suction}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Water System</Label>
+                      <Input
+                        name="water_system"
+                        defaultValue={selectedYacht?.water_system}
+                        placeholder="Pressurized"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Hot Water</Label>
+                      <Input
+                        name="hot_water"
+                        defaultValue={selectedYacht?.hot_water}
+                        placeholder="Boiler"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Sea Water Pump</Label>
+                      <Input
+                        name="sea_water_pump"
+                        defaultValue={selectedYacht?.sea_water_pump}
+                        placeholder="Yes"
+                      />
+                    </div>
+                    <div className="space-y-1 group flex items-center gap-3 pt-5">
+                      <input
+                        type="checkbox"
+                        name="deck_wash_pump"
+                        defaultChecked={
+                          selectedYacht?.deck_wash_pump === true ||
+                          selectedYacht?.deck_wash_pump === "true" ||
+                          selectedYacht?.deck_wash_pump === 1
+                        }
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label>Deck Wash Pump</Label>
+                    </div>
+                    <div className="space-y-1 group flex items-center gap-3 pt-5">
+                      <input
+                        type="checkbox"
+                        name="deck_shower"
+                        defaultChecked={
+                          selectedYacht?.deck_shower === true ||
+                          selectedYacht?.deck_shower === "true" ||
+                          selectedYacht?.deck_shower === 1
+                        }
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label>Deck Shower</Label>
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Television</Label>
+                      <TriStateSelect
+                        name="television"
+                        defaultValue={selectedYacht?.television}
+                        needsConfirmation={needsConfirm("television")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Radio / CD Player</Label>
+                      <Input
+                        name="cd_player"
+                        defaultValue={selectedYacht?.cd_player}
+                        placeholder="Pioneer"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Satellite Reception</Label>
+                      <Input
+                        name="satellite_reception"
+                        defaultValue={selectedYacht?.satellite_reception}
+                        placeholder="KVH TracVision"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Cooker</Label>
+                      <Input
+                        name="cooker"
+                        defaultValue={selectedYacht?.cooker}
+                        placeholder="3-burner"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Cooking Fuel</Label>
+                      <Input
+                        name="cooking_fuel"
+                        defaultValue={selectedYacht?.cooking_fuel}
+                        placeholder="Gas"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Oven</Label>
+                      <TriStateSelect
+                        name="oven"
+                        defaultValue={selectedYacht?.oven}
+                        needsConfirmation={needsConfirm("oven")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Microwave</Label>
+                      <TriStateSelect
+                        name="microwave"
+                        defaultValue={selectedYacht?.microwave}
+                        needsConfirmation={needsConfirm("microwave")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Fridge</Label>
+                      <TriStateSelect
+                        name="fridge"
+                        defaultValue={selectedYacht?.fridge}
+                        needsConfirmation={needsConfirm("fridge")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Freezer</Label>
+                      <TriStateSelect
+                        name="freezer"
+                        defaultValue={selectedYacht?.freezer}
+                        needsConfirmation={needsConfirm("freezer")}
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Hot Air Heating</Label>
+                      <Input
+                        name="hot_air"
+                        defaultValue={selectedYacht?.hot_air}
+                        placeholder="Webasto"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Stove Heating</Label>
+                      <Input
+                        name="stove"
+                        defaultValue={selectedYacht?.stove}
+                        placeholder="Refleks"
+                      />
+                    </div>
+                    <div className="space-y-1 group">
+                      <Label>Central Heating</Label>
+                      <Input
+                        name="central_heating"
+                        defaultValue={selectedYacht?.central_heating}
+                        placeholder="Kabola"
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -3796,9 +4648,60 @@ export default function YachtEditorPage() {
                       ph: "e.g. Garmin Striker 7sv",
                     },
                     { name: "ais", label: "AIS", ph: "e.g. em-trak B954" },
+                    {
+                      name: "log_speed",
+                      label: "Log / Speed",
+                      ph: "e.g. Simrad IS42",
+                    },
+                    {
+                      name: "rudder_position_indicator",
+                      label: "Rudder Position Indicator",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "turn_indicator",
+                      label: "Turn Indicator",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "ssb_receiver",
+                      label: "SSB Receiver",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "shortwave_radio",
+                      label: "Shortwave Radio",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "short_band_transmitter",
+                      label: "Short Band Transmitter",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "satellite_communication",
+                      label: "Satellite Communication",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "weatherfax_navtex",
+                      label: "Weatherfax / Navtex",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "charts_guides",
+                      label: "Charts / Guides",
+                      ph: "Yes",
+                    },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) => setFieldCorrectionLabels((p) => ({ ...p, [f.name]: label }))}
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -3813,7 +4716,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -3821,8 +4724,7 @@ export default function YachtEditorPage() {
               {/* Sub-Section: Safety Equipment */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-                  <Shield size={20} className="text-blue-600" /> Safety
-                  Equipment
+                  <Shield size={20} className="text-blue-600" /> Safety Equipment
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[
@@ -3840,6 +4742,16 @@ export default function YachtEditorPage() {
                       name: "bilge_pump",
                       label: "Bilge Pump",
                       ph: "e.g. Rule 2000 GPH",
+                    },
+                    {
+                      name: "bilge_pump_manual",
+                      label: "Bilge Pump (Manual)",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "bilge_pump_electric",
+                      label: "Bilge Pump (Electric)",
+                      ph: "Yes",
                     },
                     {
                       name: "fire_extinguisher",
@@ -3862,9 +4774,35 @@ export default function YachtEditorPage() {
                       ph: "e.g. Echomax EM230",
                     },
                     { name: "flares", label: "Flares", ph: "e.g. Ikaros set" },
+                    {
+                      name: "life_buoy",
+                      label: "Life Buoy",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "watertight_door",
+                      label: "Watertight Door",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "gas_bottle_locker",
+                      label: "Gas Bottle Locker",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "self_draining_cockpit",
+                      label: "Self Draining Cockpit",
+                      ph: "Yes",
+                    },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) => setFieldCorrectionLabels((p) => ({ ...p, [f.name]: label }))}
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -3879,7 +4817,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -3931,9 +4869,65 @@ export default function YachtEditorPage() {
                       label: "Voltage",
                       ph: "e.g. 12V / 230V",
                     },
+                    {
+                      name: "dynamo",
+                      label: "Dynamo",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "accumonitor",
+                      label: "Accumonitor",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "voltmeter",
+                      label: "Voltmeter",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "shore_power_cable",
+                      label: "Shore Power Cable",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "consumption_monitor",
+                      label: "Consumption Monitor",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "control_panel",
+                      label: "Control Panel",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "fuel_tank_gauge",
+                      label: "Fuel Tank Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "tachometer",
+                      label: "Tachometer",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "oil_pressure_gauge",
+                      label: "Oil Pressure Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "temperature_gauge",
+                      label: "Temperature Gauge",
+                      ph: "Yes",
+                    },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) => setFieldCorrectionLabels((p) => ({ ...p, [f.name]: label }))}
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -3948,7 +4942,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -4004,6 +4998,81 @@ export default function YachtEditorPage() {
                       name: "satellite_reception",
                       label: "Satellite Reception",
                       ph: "e.g. KVH TracVision TV5",
+                    },
+                    {
+                      name: "water_tank",
+                      label: "Water Tank",
+                      ph: "200L",
+                    },
+                    {
+                      name: "water_tank_gauge",
+                      label: "Water Tank Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "water_maker",
+                      label: "Water Maker",
+                      ph: "60 L/h",
+                    },
+                    {
+                      name: "waste_water_tank",
+                      label: "Waste Water Tank",
+                      ph: "80L",
+                    },
+                    {
+                      name: "waste_water_tank_gauge",
+                      label: "Waste Water Gauge",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "waste_water_tank_drainpump",
+                      label: "Waste Tank Drain Pump",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "deck_suction",
+                      label: "Deck Suction",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "water_system",
+                      label: "Water System",
+                      ph: "Pressurized",
+                    },
+                    {
+                      name: "hot_water",
+                      label: "Hot Water",
+                      ph: "Boiler",
+                    },
+                    {
+                      name: "sea_water_pump",
+                      label: "Sea Water Pump",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "deck_wash_pump",
+                      label: "Deck Wash Pump",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "deck_shower",
+                      label: "Deck Shower",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "hot_air",
+                      label: "Hot Air Heating",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "stove",
+                      label: "Stove Heating",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "central_heating",
+                      label: "Central Heating",
+                      ph: "Yes",
                     },
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
@@ -4087,18 +5156,84 @@ export default function YachtEditorPage() {
                       ph: "e.g. Full winter cover",
                     },
                     {
-                      name: "spinnaker",
-                      label: "Spinnaker",
-                      ph: "e.g. Asymmetric 85m²",
-                    },
-                    {
                       name: "fenders",
                       label: "Fenders & Lines",
                       ph: "e.g. 6x Polyform F4",
                     },
+                    {
+                      name: "anchor_connection",
+                      label: "Anchor Connection",
+                      ph: "Chain / Rope",
+                    },
+                    {
+                      name: "stern_anchor",
+                      label: "Stern Anchor",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "spud_pole",
+                      label: "Spud Pole",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "cockpit_tent",
+                      label: "Cockpit Tent",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "outdoor_cushions",
+                      label: "Outdoor Cushions",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "sea_rails",
+                      label: "Sea Rails",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "pushpit_pullpit",
+                      label: "Pushpit / Pullpit",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "sail_lowering_system",
+                      label: "Sail Lowering System",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "crutch",
+                      label: "Crutch (Schaar)",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "dinghy_brand",
+                      label: "Dinghy Brand",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "outboard_engine",
+                      label: "Outboard Engine",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "crane",
+                      label: "Crane",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "davits",
+                      label: "Davits",
+                      ph: "Yes",
+                    },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) => setFieldCorrectionLabels((p) => ({ ...p, [f.name]: label }))}
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -4113,7 +5248,85 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sub-Section: Rigging & Sails */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
+                <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
+                  <Wind size={20} className="text-blue-600" /> Rigging & Sails
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                  {[
+                    {
+                      name: "sailplan_type",
+                      label: "Sailplan Type",
+                      ph: "e.g. Sloop / Cutter / Ketch",
+                    },
+                    {
+                      name: "number_of_masts",
+                      label: "Number of Masts",
+                      ph: "e.g. 1 / 2",
+                    },
+                    {
+                      name: "spars_material",
+                      label: "Spars Material",
+                      ph: "e.g. Aluminum / Carbon",
+                    },
+                    { name: "bowsprit", label: "Bowsprit", ph: "Yes / No" },
+                    {
+                      name: "standing_rig",
+                      label: "Standing Rig",
+                      ph: "e.g. SS Wire / Rod",
+                    },
+                    { name: "main_sail", label: "Main Sail", ph: "Yes / No" },
+                    {
+                      name: "furling_mainsail",
+                      label: "Furling Mainsail",
+                      ph: "Yes / No",
+                    },
+                    { name: "jib", label: "Jib", ph: "Yes / No" },
+                    { name: "genoa", label: "Genoa", ph: "Yes / No" },
+                    { name: "spinnaker", label: "Spinnaker", ph: "Yes / No" },
+                    { name: "gennaker", label: "Gennaker", ph: "Yes / No" },
+                    { name: "mizzen", label: "Mizzen", ph: "Yes / No" },
+                    { name: "winches", label: "Winches", ph: "Yes" },
+                    {
+                      name: "electric_winches",
+                      label: "Electric Winches",
+                      ph: "Yes",
+                    },
+                    {
+                      name: "manual_winches",
+                      label: "Manual Winches",
+                      ph: "Yes",
+                    },
+                  ].map((f) => (
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) => setFieldCorrectionLabels((p) => ({ ...p, [f.name]: label }))}
+                    >
+                      {isOptionalTriStateField(f.name) ? (
+                        <TriStateSelect
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      ) : (
+                        <Input
+                          name={f.name}
+                          defaultValue={selectedYacht?.[f.name]}
+                          placeholder={f.ph}
+                          needsConfirmation={needsConfirm(f.name)}
+                        />
+                      )}
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -4167,477 +5380,483 @@ export default function YachtEditorPage() {
           )}
 
           {/* ── STEP 3: TEXT (AI Generated) ──────────────── */}
-          {activeStep === 3 && (
-            <>
-              <div className="bg-white rounded-lg border border-slate-200 p-8 space-y-8">
-                <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-                  <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                    <Globe size={18} className="text-blue-500" /> Vessel
-                    Description
-                  </h3>
+          {
+            activeStep === 3 && (
+              <>
+                <div className="bg-white rounded-lg border border-slate-200 p-8 space-y-8">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                    <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                      <Globe size={18} className="text-blue-500" /> Vessel
+                      Description
+                    </h3>
 
-                  {/* Language Tabs */}
-                  <div className="flex bg-slate-100 p-1 rounded-sm gap-1">
-                    {(["nl", "en", "de"] as const).map((lang) => (
-                      <button
-                        key={lang}
+                    {/* Language Tabs */}
+                    <div className="flex bg-slate-100 p-1 rounded-sm gap-1">
+                      {(["nl", "en", "de"] as const).map((lang) => (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => setSelectedLang(lang)}
+                          className={cn(
+                            "px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all",
+                            selectedLang === lang
+                              ? "bg-white text-[#003566] shadow-sm"
+                              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200",
+                          )}
+                        >
+                          {lang === "nl"
+                            ? "🇳🇱 NL"
+                            : lang === "en"
+                              ? "🇬🇧 EN"
+                              : "🇩🇪 DE"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-wrap items-end gap-5">
+                      <div className="flex-1 min-w-[150px]">
+                        <label className="text-xs font-bold text-slate-500 uppercase block">AI Tone</label>
+                        <select
+                          className="w-full bg-white border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 shadow-sm mt-1 focus:border-blue-500 focus:outline-none"
+                          value={aiTone}
+                          onChange={(e) => setAiTone(e.target.value)}
+                        >
+                          <option value="professional">Professional</option>
+                          <option value="enthusiastic">Enthusiastic</option>
+                          <option value="luxurious">Luxurious</option>
+                          <option value="concise">Concise & Direct</option>
+                          <option value="storytelling">Storytelling</option>
+                        </select>
+                      </div>
+                      <div className="w-24">
+                        <label className="text-xs font-bold text-slate-500 uppercase block">Min Words</label>
+                        <Input
+                          type="number"
+                          className="mt-1"
+                          value={aiMinWords}
+                          onChange={(e) => setAiMinWords(parseInt(e.target.value) || 200)}
+                        />
+                      </div>
+                      <div className="w-24">
+                        <label className="text-xs font-bold text-slate-500 uppercase block">Max Words</label>
+                        <Input
+                          type="number"
+                          className="mt-1"
+                          value={aiMaxWords}
+                          onChange={(e) => setAiMaxWords(parseInt(e.target.value) || 500)}
+                        />
+                      </div>
+                      <Button
                         type="button"
-                        onClick={() => setSelectedLang(lang)}
-                        className={cn(
-                          "px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all",
-                          selectedLang === lang
-                            ? "bg-white text-[#003566] shadow-sm"
-                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-200",
-                        )}
+                        onClick={handleRegenerateDescription}
+                        disabled={isRegenerating}
+                        className="bg-blue-600 hover:bg-blue-700 text-white gap-2 mt-1 h-9"
                       >
-                        {lang === "nl"
-                          ? "🇳🇱 NL"
-                          : lang === "en"
-                            ? "🇬🇧 EN"
-                            : "🇩🇪 DE"}
-                      </button>
-                    ))}
+                        {isRegenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                        Regenerate
+                      </Button>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-2">
+                      <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">
+                        {selectedLang === "nl"
+                          ? "Nederlandse Beschrijving"
+                          : selectedLang === "en"
+                            ? "English Description"
+                            : "Deutsche Beschreibung"}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={toggleDictation}
+                          className={cn("flex items-center justify-center w-8 h-8 rounded-full transition-colors", isDictating ? "bg-red-100 text-red-600 animate-pulse" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}
+                          title={isDictating ? "Stop recording" : "Start dictation"}
+                        >
+                          <div className={cn("w-3 h-3 rounded-full", isDictating ? "bg-red-600" : "bg-slate-600")} />
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-1 max-w-[150px] truncate"
+                            value={selectedVoice}
+                            onChange={(e) => setSelectedVoice(e.target.value)}
+                          >
+                            <option value="">Default Voice</option>
+                            {voices.map(v => (
+                              <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if ('speechSynthesis' in window) {
+                                if (window.speechSynthesis.speaking) {
+                                  window.speechSynthesis.cancel();
+                                  setIsPlayingAudio(false);
+                                  return;
+                                }
+
+                                const utterance = new SpeechSynthesisUtterance(aiTexts[selectedLang]);
+                                if (selectedVoice) {
+                                  const voice = voices.find(v => v.name === selectedVoice);
+                                  if (voice) utterance.voice = voice;
+                                } else {
+                                  utterance.lang = selectedLang === 'nl' ? 'nl-NL' : selectedLang === 'en' ? 'en-US' : 'de-DE';
+                                }
+
+                                utterance.onend = () => setIsPlayingAudio(false);
+                                utterance.onerror = () => setIsPlayingAudio(false);
+
+                                window.speechSynthesis.speak(utterance);
+                                setIsPlayingAudio(true);
+                              } else {
+                                toast.error("Text-to-speech not supported in this browser.");
+                              }
+                            }}
+                            className={cn(
+                              "flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-colors",
+                              isPlayingAudio
+                                ? "text-red-700 bg-red-50 hover:bg-red-100"
+                                : "text-[#003566] bg-blue-50 hover:bg-blue-100"
+                            )}
+                          >
+                            {isPlayingAudio ? (
+                              <>
+                                <div className="w-2 h-2 bg-red-600 rounded-sm animate-pulse" /> Stop Audio
+                              </>
+                            ) : (
+                              <>
+                                <Volume2 size={12} /> Play Audio
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <RichTextEditor
+                      content={aiTexts[selectedLang]}
+                      onChange={(html) =>
+                        setAiTexts((prev) => ({ ...prev, [selectedLang]: html }))
+                      }
+                      placeholder="Review and edit the AI-generated description here..."
+                    />
                   </div>
                 </div>
+              </>
+            )
+          }
 
-                <div className="space-y-4">
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-wrap items-end gap-5">
-                    <div className="flex-1 min-w-[150px]">
-                      <label className="text-xs font-bold text-slate-500 uppercase block">AI Tone</label>
-                      <select
-                        className="w-full bg-white border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 shadow-sm mt-1 focus:border-blue-500 focus:outline-none"
-                        value={aiTone}
-                        onChange={(e) => setAiTone(e.target.value)}
-                      >
-                        <option value="professional">Professional</option>
-                        <option value="enthusiastic">Enthusiastic</option>
-                        <option value="luxurious">Luxurious</option>
-                        <option value="concise">Concise & Direct</option>
-                        <option value="storytelling">Storytelling</option>
-                      </select>
-                    </div>
-                    <div className="w-24">
-                      <label className="text-xs font-bold text-slate-500 uppercase block">Min Words</label>
-                      <Input
-                        type="number"
-                        className="mt-1"
-                        value={aiMinWords}
-                        onChange={(e) => setAiMinWords(parseInt(e.target.value) || 200)}
-                      />
-                    </div>
-                    <div className="w-24">
-                      <label className="text-xs font-bold text-slate-500 uppercase block">Max Words</label>
-                      <Input
-                        type="number"
-                        className="mt-1"
-                        value={aiMaxWords}
-                        onChange={(e) => setAiMaxWords(parseInt(e.target.value) || 500)}
-                      />
-                    </div>
+          {/* ── STEP 4: DISPLAY SETTINGS ─────────────────── */}
+          {
+            activeStep === 4 && (
+              <>
+                {/* NEW SECTION: SCHEDULING AUTHORITY */}
+                <div className="space-y-8 bg-slate-50 p-10 border border-slate-200 shadow-sm">
+                  <div className="flex justify-between items-center border-b border-slate-200 pb-4">
+                    <h3 className="text-[12px] font-black uppercase text-[#003566] tracking-[0.4em] flex items-center gap-3 italic">
+                      <Calendar size={20} className="text-blue-600" /> 04.
+                      Scheduling Authority
+                    </h3>
                     <Button
                       type="button"
-                      onClick={handleRegenerateDescription}
-                      disabled={isRegenerating}
-                      className="bg-blue-600 hover:bg-blue-700 text-white gap-2 mt-1 h-9"
+                      onClick={addAvailabilityRule}
+                      className="bg-[#003566] text-white text-[8px] font-black uppercase tracking-widest px-6 h-8"
                     >
-                      {isRegenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                      Regenerate
+                      {t?.scheduling?.addWindow || "Add Scheduling Window"}
                     </Button>
                   </div>
 
-                  <div className="flex justify-between items-center pt-2">
-                    <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">
-                      {selectedLang === "nl"
-                        ? "Nederlandse Beschrijving"
-                        : selectedLang === "en"
-                          ? "English Description"
-                          : "Deutsche Beschreibung"}
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={toggleDictation}
-                        className={cn("flex items-center justify-center w-8 h-8 rounded-full transition-colors", isDictating ? "bg-red-100 text-red-600 animate-pulse" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}
-                        title={isDictating ? "Stop recording" : "Start dictation"}
+                  <div className="space-y-4">
+                    {availabilityRules.map((rule, idx) => (
+                      <div
+                        key={idx}
+                        className="flex flex-wrap items-center gap-6 bg-white p-4 border border-slate-100 shadow-sm relative group"
                       >
-                        <div className={cn("w-3 h-3 rounded-full", isDictating ? "bg-red-600" : "bg-slate-600")} />
-                      </button>
+                        <div className="flex-1 min-w-[300px]">
+                          <Label>Days of Week</Label>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {[
+                              { val: 1, label: "Mon" },
+                              { val: 2, label: "Tue" },
+                              { val: 3, label: "Wed" },
+                              { val: 4, label: "Thu" },
+                              { val: 5, label: "Fri" },
+                              { val: 6, label: "Sat" },
+                              { val: 0, label: "Sun" },
+                            ].map((day) => {
+                              const isSelected = rule.days_of_week.includes(day.val);
+                              return (
+                                <button
+                                  key={day.val}
+                                  type="button"
+                                  onClick={() => {
+                                    const newDays = isSelected
+                                      ? rule.days_of_week.filter(d => d !== day.val)
+                                      : [...rule.days_of_week, day.val].sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
+                                    updateAvailabilityRule(idx, "days_of_week", newDays);
+                                  }}
+                                  className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${isSelected
+                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                                    }`}
+                                >
+                                  {day.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
 
-                      <div className="flex items-center gap-2">
-                        <select
-                          className="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-1 max-w-[150px] truncate"
-                          value={selectedVoice}
-                          onChange={(e) => setSelectedVoice(e.target.value)}
-                        >
-                          <option value="">Default Voice</option>
-                          {voices.map(v => (
-                            <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
-                          ))}
-                        </select>
+                        <div className="flex-1 min-w-[120px]">
+                          <Label>{t?.scheduling?.startTime || "Start Time"}</Label>
+                          <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
+                            <Clock size={12} className="text-slate-400" />
+                            <input
+                              type="time"
+                              step="900"
+                              value={rule.start_time}
+                              onChange={(e) =>
+                                updateAvailabilityRule(
+                                  idx,
+                                  "start_time",
+                                  e.target.value,
+                                )
+                              }
+                              className="bg-transparent text-xs font-bold text-[#003566] outline-none w-full"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex-1 min-w-[120px]">
+                          <Label>{t?.scheduling?.endTime || "End Time"}</Label>
+                          <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
+                            <Clock size={12} className="text-slate-400" />
+                            <input
+                              type="time"
+                              step="900"
+                              value={rule.end_time}
+                              onChange={(e) =>
+                                updateAvailabilityRule(
+                                  idx,
+                                  "end_time",
+                                  e.target.value,
+                                )
+                              }
+                              className="bg-transparent text-xs font-bold text-[#003566] outline-none w-full"
+                            />
+                          </div>
+                        </div>
+
                         <button
                           type="button"
-                          onClick={() => {
-                            if ('speechSynthesis' in window) {
-                              if (window.speechSynthesis.speaking) {
-                                window.speechSynthesis.cancel();
-                                setIsPlayingAudio(false);
-                                return;
-                              }
-
-                              const utterance = new SpeechSynthesisUtterance(aiTexts[selectedLang]);
-                              if (selectedVoice) {
-                                const voice = voices.find(v => v.name === selectedVoice);
-                                if (voice) utterance.voice = voice;
-                              } else {
-                                utterance.lang = selectedLang === 'nl' ? 'nl-NL' : selectedLang === 'en' ? 'en-US' : 'de-DE';
-                              }
-
-                              utterance.onend = () => setIsPlayingAudio(false);
-                              utterance.onerror = () => setIsPlayingAudio(false);
-
-                              window.speechSynthesis.speak(utterance);
-                              setIsPlayingAudio(true);
-                            } else {
-                              toast.error("Text-to-speech not supported in this browser.");
-                            }
-                          }}
-                          className={cn(
-                            "flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-colors",
-                            isPlayingAudio
-                              ? "text-red-700 bg-red-50 hover:bg-red-100"
-                              : "text-[#003566] bg-blue-50 hover:bg-blue-100"
-                          )}
+                          onClick={() => removeAvailabilityRule(idx)}
+                          className="p-2 text-red-400 hover:text-red-600 transition-colors"
                         >
-                          {isPlayingAudio ? (
-                            <>
-                              <div className="w-2 h-2 bg-red-600 rounded-sm animate-pulse" /> Stop Audio
-                            </>
-                          ) : (
-                            <>
-                              <Volume2 size={12} /> Play Audio
-                            </>
-                          )}
+                          <Trash size={16} />
                         </button>
                       </div>
-                    </div>
+                    ))}
+
+                    {availabilityRules.length === 0 && (
+                      <div className="text-center py-12 border-2 border-dashed border-slate-200 bg-white">
+                        <Calendar
+                          size={32}
+                          className="mx-auto text-slate-200 mb-2"
+                        />
+                        <p className="text-sm font-semibold text-slate-500">
+                          {t?.scheduling?.empty || "No scheduling rules defined yet."}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <RichTextEditor
-                    content={aiTexts[selectedLang]}
-                    onChange={(html) =>
-                      setAiTexts((prev) => ({ ...prev, [selectedLang]: html }))
-                    }
-                    placeholder="Review and edit the AI-generated description here..."
-                  />
                 </div>
-              </div>
-            </>
-          )}
-
-          {/* ── STEP 4: DISPLAY SETTINGS ─────────────────── */}
-          {activeStep === 4 && (
-            <>
-              {/* NEW SECTION: SCHEDULING AUTHORITY */}
-              <div className="space-y-8 bg-slate-50 p-10 border border-slate-200 shadow-sm">
-                <div className="flex justify-between items-center border-b border-slate-200 pb-4">
-                  <h3 className="text-[12px] font-black uppercase text-[#003566] tracking-[0.4em] flex items-center gap-3 italic">
-                    <Calendar size={20} className="text-blue-600" /> 04.
-                    Scheduling Authority
-                  </h3>
-                  <Button
-                    type="button"
-                    onClick={addAvailabilityRule}
-                    className="bg-[#003566] text-white text-[8px] font-black uppercase tracking-widest px-6 h-8"
-                  >
-                    {t?.scheduling?.addWindow || "Add Scheduling Window"}
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  {availabilityRules.map((rule, idx) => (
-                    <div
-                      key={idx}
-                      className="flex flex-wrap items-center gap-6 bg-white p-4 border border-slate-100 shadow-sm relative group"
-                    >
-                      <div className="flex-1 min-w-[300px]">
-                        <Label>Days of Week</Label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {[
-                            { val: 1, label: "Mon" },
-                            { val: 2, label: "Tue" },
-                            { val: 3, label: "Wed" },
-                            { val: 4, label: "Thu" },
-                            { val: 5, label: "Fri" },
-                            { val: 6, label: "Sat" },
-                            { val: 0, label: "Sun" },
-                          ].map((day) => {
-                            const isSelected = rule.days_of_week.includes(day.val);
-                            return (
-                              <button
-                                key={day.val}
-                                type="button"
-                                onClick={() => {
-                                  const newDays = isSelected
-                                    ? rule.days_of_week.filter(d => d !== day.val)
-                                    : [...rule.days_of_week, day.val].sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
-                                  updateAvailabilityRule(idx, "days_of_week", newDays);
-                                }}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${isSelected
-                                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                  }`}
-                              >
-                                {day.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="flex-1 min-w-[120px]">
-                        <Label>{t?.scheduling?.startTime || "Start Time"}</Label>
-                        <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
-                          <Clock size={12} className="text-slate-400" />
-                          <input
-                            type="time"
-                            step="900"
-                            value={rule.start_time}
-                            onChange={(e) =>
-                              updateAvailabilityRule(
-                                idx,
-                                "start_time",
-                                e.target.value,
-                              )
-                            }
-                            className="bg-transparent text-xs font-bold text-[#003566] outline-none w-full"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex-1 min-w-[120px]">
-                        <Label>{t?.scheduling?.endTime || "End Time"}</Label>
-                        <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
-                          <Clock size={12} className="text-slate-400" />
-                          <input
-                            type="time"
-                            step="900"
-                            value={rule.end_time}
-                            onChange={(e) =>
-                              updateAvailabilityRule(
-                                idx,
-                                "end_time",
-                                e.target.value,
-                              )
-                            }
-                            className="bg-transparent text-xs font-bold text-[#003566] outline-none w-full"
-                          />
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => removeAvailabilityRule(idx)}
-                        className="p-2 text-red-400 hover:text-red-600 transition-colors"
-                      >
-                        <Trash size={16} />
-                      </button>
-                    </div>
-                  ))}
-
-                  {availabilityRules.length === 0 && (
-                    <div className="text-center py-12 border-2 border-dashed border-slate-200 bg-white">
-                      <Calendar
-                        size={32}
-                        className="mx-auto text-slate-200 mb-2"
-                      />
-                      <p className="text-sm font-semibold text-slate-500">
-                        {t?.scheduling?.empty || "No scheduling rules defined yet."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
+              </>
+            )
+          }
 
           {/* ── STEP 5: REVIEW & SAVE ────────────────────── */}
-          {activeStep === 5 && (
-            <div className="space-y-8">
-              <div className="bg-white border border-slate-200 p-8 shadow-sm">
-                <h3 className="text-[12px] font-black text-[#003566] uppercase tracking-[0.3em] flex items-center gap-3 border-b-2 border-[#003566] pb-4 mb-6">
-                  <FileText size={18} /> {t?.wizard?.review?.title || "Review"}
-                </h3>
-                <p className="text-sm text-slate-600 mb-6">
-                  Review all steps before submitting. Completed steps are marked
-                  with a blue checkmark in the tab bar above.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                  {wizardSteps.slice(0, 4).map((step) => (
-                    <div
-                      key={step.id}
-                      className={cn(
-                        "p-4 border flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors",
-                        isStepComplete(step.id)
-                          ? "border-blue-300 bg-blue-50/50"
-                          : "border-orange-300 bg-orange-50/50",
-                      )}
-                      onClick={() => handleStepChange(step.id)}
-                    >
-                      <span
-                        className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black",
-                          isStepComplete(step.id)
-                            ? "bg-blue-500 text-white"
-                            : "bg-orange-400 text-white",
-                        )}
-                      >
-                        {isStepComplete(step.id) ? (
-                          <Check size={14} strokeWidth={3} />
-                        ) : (
-                          step.id
-                        )}
-                      </span>
-                      <div>
-                        <p className="text-sm font-bold text-slate-700">
-                          {step.label}
-                        </p>
-                        <p className="text-[9px] text-slate-500">
-                          {isStepComplete(step.id)
-                            ? t?.wizard?.review?.completed || "Completed"
-                            : t?.wizard?.review?.notCompleted || "Pending"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* ── CHECKLIST & COMPLIANCE ── */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-8">
-                  <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
-                    <CheckSquare size={16} className="text-blue-600" />
-                    Compliance & Documenten
-                  </h4>
-                  <p className="text-xs text-slate-500 mb-6 max-w-2xl">
-                    Hieronder ziet u de benodigde documenten voor dit type schip. U kunt deze nu alvast uploaden, of wachten tot het contract door de klant is getekend.
+          {
+            activeStep === 5 && (
+              <div className="space-y-8">
+                <div className="bg-white border border-slate-200 p-8 shadow-sm">
+                  <h3 className="text-[12px] font-black text-[#003566] uppercase tracking-[0.3em] flex items-center gap-3 border-b-2 border-[#003566] pb-4 mb-6">
+                    <FileText size={18} /> {t?.wizard?.review?.title || "Review"}
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-6">
+                    Review all steps before submitting. Completed steps are marked
+                    with a blue checkmark in the tab bar above.
                   </p>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Checklist Requirements Preview */}
-                    <div className="space-y-3">
-                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Benodigde Documenten</h5>
-                      {fetchingChecklist ? (
-                        <div className="flex items-center gap-2 text-sm text-slate-400 py-4"><Loader2 size={16} className="animate-spin" /> Laden...</div>
-                      ) : checklistTemplates.length > 0 ? (
-                        <div className="space-y-2">
-                          {checklistTemplates.map(template => (
-                            <div key={template.id} className="mb-4">
-                              <p className="font-semibold text-sm text-slate-800 bg-white border border-slate-200 p-2 rounded-md mb-2">{template.name}</p>
-                              <div className="space-y-2 pl-4">
-                                {template.items?.map((item: any) => (
-                                  <div key={item.id} className="flex gap-3 text-sm text-slate-600 bg-white p-2 rounded-md border border-slate-100 shadow-sm">
-                                    <div className="mt-0.5"><div className="w-4 h-4 rounded border-2 border-slate-300" /></div>
-                                    <div>
-                                      <p className="font-medium text-slate-700">{item.title}</p>
-                                      {item.description && <p className="text-xs text-slate-500">{item.description}</p>}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-slate-500 italic py-4">Geen specifieke documenten vereist voor dit type.</p>
-                      )}
-                    </div>
-
-                    {/* Document Upload Area */}
-                    <div className="space-y-4">
-                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Upload Documenten</h5>
-
-                      {/* Upload Dropzone */}
-                      <label className={cn(
-                        "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors bg-white",
-                        isUploadingDocument ? "border-slate-300 opacity-70" : "border-slate-300 hover:bg-slate-50 hover:border-blue-400"
-                      )}>
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          {isUploadingDocument ? (
-                            <Loader2 size={24} className="text-blue-500 animate-spin mb-2" />
-                          ) : (
-                            <UploadCloud size={24} className="text-slate-400 mb-2" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    {wizardSteps.slice(0, 4).map((step) => (
+                      <div
+                        key={step.id}
+                        className={cn(
+                          "p-4 border flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors",
+                          (!isNewMode || isStepComplete(step.id))
+                            ? "border-blue-300 bg-blue-50/50"
+                            : "border-orange-300 bg-orange-50/50",
+                        )}
+                        onClick={() => handleStepChange(step.id)}
+                      >
+                        <span
+                          className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black",
+                            (!isNewMode || isStepComplete(step.id))
+                              ? "bg-blue-500 text-white"
+                              : "bg-orange-400 text-white",
                           )}
-                          <p className="text-sm font-medium text-slate-600">
-                            {isUploadingDocument ? "Bezig met uploaden..." : "Klik of sleep een document"}
+                        >
+                          {(!isNewMode || isStepComplete(step.id)) ? (
+                            <Check size={14} strokeWidth={3} />
+                          ) : (
+                            step.id
+                          )}
+                        </span>
+                        <div>
+                          <p className="text-sm font-bold text-slate-700">
+                            {step.label}
                           </p>
-                          <p className="text-xs text-slate-500 mt-1">PDF, DOCX, JPG (Max 10MB)</p>
+                          <p className="text-[9px] text-slate-500">
+                            {(!isNewMode || isStepComplete(step.id))
+                              ? t?.wizard?.review?.completed || "Completed"
+                              : t?.wizard?.review?.notCompleted || "Pending"}
+                          </p>
                         </div>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.doc,.docx,image/jpeg,image/png"
-                          onChange={handleDocumentUpload}
-                          disabled={isUploadingDocument}
-                        />
-                      </label>
+                      </div>
+                    ))}
+                  </div>
 
-                      {/* Uploaded Documents List */}
-                      {boatDocuments.length > 0 && (
-                        <div className="space-y-2 mt-4">
-                          <h6 className="text-xs font-semibold text-slate-700">Reeds Geüpload ({boatDocuments.length})</h6>
+                  {/* ── CHECKLIST & COMPLIANCE ── */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-8">
+                    <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
+                      <CheckSquare size={16} className="text-blue-600" />
+                      Compliance & Documenten
+                    </h4>
+                    <p className="text-xs text-slate-500 mb-6 max-w-2xl">
+                      Hieronder ziet u de benodigde documenten voor dit type schip. U kunt deze nu alvast uploaden, of wachten tot het contract door de klant is getekend.
+                    </p>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      {/* Checklist Requirements Preview */}
+                      <div className="space-y-3">
+                        <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Benodigde Documenten</h5>
+                        {fetchingChecklist ? (
+                          <div className="flex items-center gap-2 text-sm text-slate-400 py-4"><Loader2 size={16} className="animate-spin" /> Laden...</div>
+                        ) : checklistTemplates.length > 0 ? (
                           <div className="space-y-2">
-                            {boatDocuments.map(doc => (
-                              <div key={doc.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                  <FileText size={16} className="text-blue-500 shrink-0" />
-                                  <div className="truncate">
-                                    <p className="text-sm font-medium text-slate-700 truncate">{doc.file_path.split('/').pop()}</p>
-                                    <p className="text-[10px] text-slate-400">{new Date(doc.uploaded_at).toLocaleDateString()} • {doc.file_type?.toUpperCase()}</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <a href={doc.file_path} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
-                                    <Eye size={14} />
-                                  </a>
-                                  <button type="button" onClick={() => handleDocumentDelete(doc.id)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                                    <Trash size={14} />
-                                  </button>
+                            {checklistTemplates.map(template => (
+                              <div key={template.id} className="mb-4">
+                                <p className="font-semibold text-sm text-slate-800 bg-white border border-slate-200 p-2 rounded-md mb-2">{template.name}</p>
+                                <div className="space-y-2 pl-4">
+                                  {template.items?.map((item: any) => (
+                                    <div key={item.id} className="flex gap-3 text-sm text-slate-600 bg-white p-2 rounded-md border border-slate-100 shadow-sm">
+                                      <div className="mt-0.5"><div className="w-4 h-4 rounded border-2 border-slate-300" /></div>
+                                      <div>
+                                        <p className="font-medium text-slate-700">{item.title}</p>
+                                        {item.description && <p className="text-xs text-slate-500">{item.description}</p>}
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             ))}
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <p className="text-sm text-slate-500 italic py-4">Geen specifieke documenten vereist voor dit type.</p>
+                        )}
+                      </div>
+
+                      {/* Document Upload Area */}
+                      <div className="space-y-4">
+                        <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Upload Documenten</h5>
+
+                        {/* Upload Dropzone */}
+                        <label className={cn(
+                          "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors bg-white",
+                          isUploadingDocument ? "border-slate-300 opacity-70" : "border-slate-300 hover:bg-slate-50 hover:border-blue-400"
+                        )}>
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            {isUploadingDocument ? (
+                              <Loader2 size={24} className="text-blue-500 animate-spin mb-2" />
+                            ) : (
+                              <UploadCloud size={24} className="text-slate-400 mb-2" />
+                            )}
+                            <p className="text-sm font-medium text-slate-600">
+                              {isUploadingDocument ? "Bezig met uploaden..." : "Klik of sleep een document"}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">PDF, DOCX, JPG (Max 10MB)</p>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,image/jpeg,image/png"
+                            onChange={handleDocumentUpload}
+                            disabled={isUploadingDocument}
+                          />
+                        </label>
+
+                        {/* Uploaded Documents List */}
+                        {boatDocuments.length > 0 && (
+                          <div className="space-y-2 mt-4">
+                            <h6 className="text-xs font-semibold text-slate-700">Reeds Geüpload ({boatDocuments.length})</h6>
+                            <div className="space-y-2">
+                              {boatDocuments.map(doc => (
+                                <div key={doc.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                  <div className="flex items-center gap-3 overflow-hidden">
+                                    <FileText size={16} className="text-blue-500 shrink-0" />
+                                    <div className="truncate">
+                                      <p className="text-sm font-medium text-slate-700 truncate">{doc.file_path.split('/').pop()}</p>
+                                      <p className="text-[10px] text-slate-400">{new Date(doc.uploaded_at).toLocaleDateString()} • {doc.file_type?.toUpperCase()}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <a href={doc.file_path} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
+                                      <Eye size={14} />
+                                    </a>
+                                    <button type="button" onClick={() => handleDocumentDelete(doc.id)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                                      <Trash size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* ── SIGNHOST INTEGRATION ── */}
-                {activeYachtId && (
-                  <div className="mb-8">
-                    <SignhostFlow
-                      yachtId={Number(activeYachtId)}
-                      yachtName={selectedYacht?.boat_name || (draft?.data as any)?.step2?.selectedYacht?.boat_name || "Unnamed Vessel"}
-                      locationId={selectedYacht?.ref_harbor_id || (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id || null}
-                    />
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#003566] text-white hover:bg-blue-800 h-14 font-black uppercase text-[11px] tracking-widest transition-all shadow-xl"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="animate-spin mr-2 w-5 h-5" />
-                  ) : (
-                    <Save className="mr-2 w-5 h-5" />
+                  {/* ── SIGNHOST INTEGRATION ── */}
+                  {activeYachtId && (
+                    <div className="mb-8">
+                      <SignhostFlow
+                        yachtId={Number(activeYachtId)}
+                        yachtName={selectedYacht?.boat_name || (draft?.data as any)?.step2?.selectedYacht?.boat_name || "Unnamed Vessel"}
+                        locationId={selectedYacht?.ref_harbor_id || (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id || null}
+                      />
+                    </div>
                   )}
-                  {isNewMode
-                    ? t?.wizard?.review?.create || "Create Vessel"
-                    : t?.wizard?.review?.update || "Update Vessel"}
-                </Button>
+
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#003566] text-white hover:bg-blue-800 h-14 font-black uppercase text-[11px] tracking-widest transition-all shadow-xl"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="animate-spin mr-2 w-5 h-5" />
+                    ) : (
+                      <Save className="mr-2 w-5 h-5" />
+                    )}
+                    {isNewMode
+                      ? t?.wizard?.review?.create || "Create Vessel"
+                      : t?.wizard?.review?.update || "Update Vessel"}
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* ── STEP NAVIGATION ───────────────────────────── */}
           <div className="flex justify-between items-center pt-6 border-t border-slate-200 mt-8">
@@ -4680,8 +5899,8 @@ export default function YachtEditorPage() {
               <div />
             )}
           </div>
-        </form>
-      </div>
+        </form >
+      </div >
 
       <style jsx global>{`
         .dark .yacht-editor-theme {
@@ -4744,15 +5963,26 @@ export default function YachtEditorPage() {
         variant="destructive"
         onConfirm={executeVideoDelete}
       />
-    </div>
+
+      <ConfirmDialog
+        open={deleteAllImagesDialogOpen}
+        onOpenChange={setDeleteAllImagesDialogOpen}
+        title="Delete all images"
+        description="Are you sure you want to remove all uploaded images from this yacht? This action cannot be undone."
+        confirmText={isDeletingAllImages ? "Deleting..." : "Delete all"}
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={handleDeleteAllImages}
+      />
+    </div >
   );
 }
 
 // ---------------- Helper Components ---------------- //
 
-function Label({ children }: { children: React.ReactNode }) {
+function Label({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <label className="text-[13px] font-medium text-slate-700 mb-1.5 block group-hover:text-blue-600 transition-colors">
+    <label className={cn("text-[13px] font-medium text-slate-700 mb-1.5 block group-hover:text-blue-600 transition-colors", className)}>
       {children}
     </label>
   );
@@ -4789,19 +6019,64 @@ function Input(
   );
 }
 
+function YachtFieldWrapper({
+  children,
+  label,
+  yachtId,
+  fieldName,
+  correctionLabel,
+  onCorrectionLabelChange,
+}: {
+  children: React.ReactNode;
+  label: string;
+  yachtId?: number;
+  fieldName: string;
+  correctionLabel?: CorrectionLabel | null;
+  onCorrectionLabelChange?: (label: CorrectionLabel | null) => void;
+}) {
+  const isCorrection = correctionLabel !== undefined;
+
+  return (
+    <div className="space-y-2 group">
+      <div className="flex items-center justify-between">
+        <Label className="flex items-center gap-1">
+          {label}
+          {yachtId && <FieldHistoryPopover yachtId={yachtId} fieldName={fieldName} label={label} />}
+        </Label>
+      </div>
+      {children}
+      {isCorrection && onCorrectionLabelChange && (
+        <FieldCorrectionControls
+          activeLabel={correctionLabel}
+          onSelect={(label) => onCorrectionLabelChange(label)}
+          onClear={() => onCorrectionLabelChange(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 function TriStateSelect(
   props: React.SelectHTMLAttributes<HTMLSelectElement> & {
     needsConfirmation?: boolean;
+    yachtId?: number;
+    fieldName?: string;
+    label?: string;
   },
 ) {
-  const { needsConfirmation, defaultValue, ...selectProps } = props;
+  const { needsConfirmation, defaultValue, yachtId, fieldName, label, ...selectProps } = props;
   const normalizedDefault = normalizeTriStateValue(defaultValue);
 
   return (
     <div className="relative">
+      <div className="flex items-center gap-2 mb-1">
+        {yachtId && fieldName && label && !selectProps.children && (
+          <FieldHistoryPopover yachtId={yachtId} fieldName={fieldName} label={label} />
+        )}
+      </div>
       <select
         {...selectProps}
-        defaultValue={normalizedDefault}
+        defaultValue={normalizedDefault ?? undefined}
         className={cn(
           "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
           "hover:border-slate-300",
