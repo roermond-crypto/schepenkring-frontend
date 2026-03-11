@@ -361,7 +361,10 @@ export default function YachtEditorPage() {
 
   // Video State
   const [boatVideos, setBoatVideos] = useState<any[]>([]);
+  const [marketingVideos, setMarketingVideos] = useState<any[]>([]);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isGeneratingMarketingVideo, setIsGeneratingMarketingVideo] =
+    useState(false);
   const [isPublishingVideo, setIsPublishingVideo] = useState<number | null>(
     null,
   );
@@ -378,6 +381,34 @@ export default function YachtEditorPage() {
   const pipeline = useImagePipeline(activeYachtId);
   const imagesApproved = pipeline.isStep2Unlocked;
   const [reviewImages, setReviewImages] = useState<PipelineImage[]>([]);
+
+  const loadMarketingVideos = useCallback(
+    async (targetYachtId: number | string) => {
+      try {
+        const response = await api.get("/social/videos");
+        const payload =
+          Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response.data?.videos)
+              ? response.data.videos
+              : Array.isArray(response.data?.data?.videos)
+                ? response.data.data.videos
+                : Array.isArray(response.data?.data)
+                  ? response.data.data
+                  : [];
+
+        setMarketingVideos(
+          payload.filter(
+            (video: any) =>
+              Number(video?.yacht_id ?? video?.boat_id) === Number(targetYachtId),
+          ),
+        );
+      } catch (error) {
+        console.error("Failed to fetch marketing videos", error);
+      }
+    },
+    [],
+  );
   const [imageGridDensity, setImageGridDensity] =
     useState<ImageGridDensity>("regular");
   const [selectedLightboxImageId, setSelectedLightboxImageId] = useState<
@@ -1197,6 +1228,8 @@ export default function YachtEditorPage() {
           console.error("Failed to fetch boat videos", e);
         }
 
+        await loadMarketingVideos(yachtId);
+
         // Load existing availability rules
         if (yacht.availability_rules || yacht.availabilityRules) {
           const rawRules = yacht.availability_rules || yacht.availabilityRules;
@@ -1246,7 +1279,7 @@ export default function YachtEditorPage() {
     };
 
     fetchYachtDetails();
-  }, [yachtId, isNewMode, locale, router]);
+  }, [yachtId, isNewMode, locale, router, loadMarketingVideos]);
 
   // --- 2. HANDLERS ---
 
@@ -1282,6 +1315,57 @@ export default function YachtEditorPage() {
     } finally {
       setIsUploadingVideo(false);
       if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleGenerateMarketingVideo = async (force = false) => {
+    let targetId = isNewMode ? createdYachtId : yachtId;
+    if (isNewMode && !targetId) {
+      const loadingToastId = toast.loading("Creating vessel draft...");
+      try {
+        const fd = new FormData();
+        fd.append("status", "draft");
+        const createRes = await api.post("/yachts", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        targetId = createRes.data.id;
+        setCreatedYachtId(targetId as number);
+        toast.dismiss(loadingToastId);
+      } catch (error) {
+        toast.dismiss(loadingToastId);
+        toast.error("Failed to initialize draft vessel.");
+        return;
+      }
+    }
+
+    if (!targetId) {
+      toast.error("Save the vessel first before generating a marketing video.");
+      return;
+    }
+
+    setIsGeneratingMarketingVideo(true);
+    try {
+      const response = await api.post("/social/videos/generate", {
+        yacht_id: Number(targetId),
+        template_type: "vertical_slideshow_v1",
+        force,
+      });
+
+      const queuedCount = response.data?.renderable_image_count;
+      const message =
+        typeof queuedCount === "number"
+          ? `Video queued with ${queuedCount} renderable image(s).`
+          : "Video generation queued.";
+
+      toast.success(response.data?.message || message);
+      await loadMarketingVideos(targetId);
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+          "Could not queue marketing video generation.",
+      );
+    } finally {
+      setIsGeneratingMarketingVideo(false);
     }
   };
 
@@ -3829,37 +3913,157 @@ export default function YachtEditorPage() {
           {/* ── VIDEO SECTION (After Image Pipeline but inside Step 1) ── */}
           {activeStep === 1 && (
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mt-8 mb-4">
-              <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <Video size={18} className="text-blue-500" /> Vessel Video
-                    Operations
-                  </h3>
-                  <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">
-                    {t?.video?.manage || "Manage Videos & Social Posting"}
-                  </p>
-                </div>
-                <label className="cursor-pointer bg-[#003566] text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2">
-                  {isUploadingVideo ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Upload size={14} />
-                  )}
-                  {t?.video?.upload || "Upload MP4"}
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="video/*"
-                    onChange={handleVideoUpload}
-                    disabled={isUploadingVideo}
-                  />
-                </label>
-              </div>
+	              <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+	                <div>
+	                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+	                    <Video size={18} className="text-blue-500" /> Vessel Video
+	                    Operations
+	                  </h3>
+	                  <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">
+	                    {t?.video?.manage || "Manage Videos & Social Posting"}
+	                  </p>
+	                </div>
+	                <div className="flex flex-wrap items-center gap-2">
+	                  <Button
+	                    type="button"
+	                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded shadow-sm"
+	                    onClick={() => handleGenerateMarketingVideo(false)}
+	                    disabled={isGeneratingMarketingVideo}
+	                  >
+	                    {isGeneratingMarketingVideo ? (
+	                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+	                    ) : (
+	                      <Sparkles size={14} className="mr-2" />
+	                    )}
+	                    Generate from images
+	                  </Button>
+	                  <label className="cursor-pointer bg-[#003566] text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2">
+	                    {isUploadingVideo ? (
+	                      <Loader2 className="w-4 h-4 animate-spin" />
+	                    ) : (
+	                      <Upload size={14} />
+	                    )}
+	                    {t?.video?.upload || "Upload MP4"}
+	                    <input
+	                      type="file"
+	                      className="hidden"
+	                      accept="video/*"
+	                      onChange={handleVideoUpload}
+	                      disabled={isUploadingVideo}
+	                    />
+	                  </label>
+	                </div>
+	              </div>
 
-              <div className="p-6">
-                {boatVideos.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 opacity-40 gap-3 border-2 border-dashed border-slate-200 rounded-lg">
-                    <Video size={32} className="text-slate-500" />
+	              <div className="p-6">
+	                <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+	                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+	                    <div>
+	                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
+	                        Automated Social Video
+	                      </p>
+	                      <p className="mt-2 text-sm text-emerald-900">
+	                        Queue a marketing video built from the approved boat images. The backend will render it and it will appear in the social video library with status updates.
+	                      </p>
+	                    </div>
+	                    <div className="flex flex-wrap gap-2">
+	                      <Button
+	                        type="button"
+	                        variant="outline"
+	                        className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
+	                        onClick={() =>
+	                          router.push(`/${locale}/dashboard/${role}/social`)
+	                        }
+	                      >
+	                        Open Social Library
+	                      </Button>
+	                      <Button
+	                        type="button"
+	                        variant="outline"
+	                        className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
+	                        onClick={() => handleGenerateMarketingVideo(true)}
+	                        disabled={isGeneratingMarketingVideo}
+	                      >
+	                        Force Regenerate
+	                      </Button>
+	                    </div>
+	                  </div>
+	                </div>
+
+	                {marketingVideos.length > 0 && (
+	                  <div className="mb-8">
+	                    <div className="mb-3 flex items-center justify-between">
+	                      <p className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
+	                        Generated marketing videos
+	                      </p>
+	                      <button
+	                        type="button"
+	                        className="text-[10px] uppercase font-black tracking-[0.2em] text-[#003566]"
+	                        onClick={() => loadMarketingVideos(isNewMode ? createdYachtId || yachtId : yachtId)}
+	                      >
+	                        Refresh
+	                      </button>
+	                    </div>
+	                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+	                      {marketingVideos.map((video) => (
+	                        <div
+	                          key={`marketing-${video.id}`}
+	                          className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+	                        >
+	                          <div className="flex items-start justify-between gap-4">
+	                            <div>
+	                              <p className="text-sm font-bold text-slate-800">
+	                                Marketing Video #{video.id}
+	                              </p>
+	                              <p className="mt-1 text-xs text-slate-500">
+	                                Template: {video.template_type || "vertical_slideshow_v1"}
+	                              </p>
+	                            </div>
+	                            <span
+	                              className={cn(
+	                                "rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em]",
+	                                video.status === "ready" || video.status === "published"
+	                                  ? "bg-emerald-100 text-emerald-700"
+	                                  : video.status === "failed"
+	                                    ? "bg-red-100 text-red-700"
+	                                    : "bg-blue-100 text-blue-700",
+	                              )}
+	                            >
+	                              {video.status || "queued"}
+	                            </span>
+	                          </div>
+	                          <div className="mt-4 flex flex-wrap gap-2">
+	                            {video.video_url && (
+	                              <a
+	                                href={video.video_url}
+	                                target="_blank"
+	                                rel="noreferrer"
+	                                className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-50"
+	                              >
+	                                <Eye size={12} className="mr-2" />
+	                                Open Video
+	                              </a>
+	                            )}
+	                            <Button
+	                              type="button"
+	                              variant="outline"
+	                              className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
+	                              onClick={() =>
+	                                router.push(`/${locale}/dashboard/${role}/social`)
+	                              }
+	                            >
+	                              View in Social
+	                            </Button>
+	                          </div>
+	                        </div>
+	                      ))}
+	                    </div>
+	                  </div>
+	                )}
+
+	                {boatVideos.length === 0 ? (
+	                  <div className="flex flex-col items-center justify-center py-12 opacity-40 gap-3 border-2 border-dashed border-slate-200 rounded-lg">
+	                    <Video size={32} className="text-slate-500" />
                     <span className="text-xs uppercase font-bold text-slate-500">
                       {t?.video?.noVideo || "No Video uploaded"}
                     </span>

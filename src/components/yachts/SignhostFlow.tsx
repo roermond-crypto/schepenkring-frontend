@@ -856,7 +856,8 @@ export function SignhostFlow({
           boat_name: draft.vesselName || yachtName,
           contract_language: draft.language,
           contract_template_key: contractTemplateKey,
-          contract_template: draft,
+          contract_template: contractTemplateKey,
+          contract_template_payload: draft,
           contract_render_url: contractRenderUrl,
           contract_render_language:
             contractTemplateKey === "escrow_form"
