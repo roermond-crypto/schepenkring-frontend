@@ -3040,19 +3040,7 @@ export default function YachtEditorPage() {
                                           </div>
                                         )}
 
-                                        {img.enhancement_method === "pending" && (
-                                          <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/30 backdrop-blur-[1px] z-10">
-                                            <div className="bg-white/40 p-2 rounded-full mb-2 backdrop-blur-md">
-                                              <Loader2
-                                                size={18}
-                                                className="animate-spin text-white"
-                                              />
-                                            </div>
-                                            <span className="text-[10px] tracking-wider uppercase text-white drop-shadow-md">
-                                              Optimizing...
-                                            </span>
-                                          </div>
-                                        )}
+
 
                                         {/* Status badge */}
                                         <div

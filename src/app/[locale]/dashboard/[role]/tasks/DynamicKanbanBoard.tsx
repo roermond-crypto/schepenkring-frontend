@@ -70,6 +70,46 @@ const DynamicKanbanBoard: React.FC<Props> = ({
     const [isAddingCol, setIsAddingCol] = useState(false);
     const [collapsedCols, setCollapsedCols] = useState<Record<number, boolean>>({});
 
+    const normalizeColumnName = (name: string) => name.trim().toLowerCase();
+
+    const isDoneColumn = (name: string) => {
+        const normalized = normalizeColumnName(name);
+        return normalized === "done" || normalized === "completed";
+    };
+
+    const isInProgressColumn = (name: string) => normalizeColumnName(name) === "in progress";
+
+    const getColumnHeaderStyles = (name: string) => {
+        if (isDoneColumn(name)) {
+            return {
+                title: "text-emerald-700 dark:text-emerald-300",
+                count: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+                container: "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60",
+            };
+        }
+
+        if (isInProgressColumn(name)) {
+            return {
+                title: "text-amber-700 dark:text-amber-300",
+                count: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+                container: "bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50",
+            };
+        }
+
+        return {
+            title: "text-[#003566] dark:text-sky-300",
+            count: "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300",
+            container: "border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/80",
+        };
+    };
+
+    const getTaskAccentBarClass = (task: Task, columnName: string) => {
+        if (task.status === "Done" || isDoneColumn(columnName)) return "bg-emerald-500";
+        if (task.priority === "High") return "bg-red-500";
+        if (task.priority === "Medium") return "bg-amber-500";
+        return "bg-sky-500";
+    };
+
     const toggleCollapse = (colId: number) => {
         setCollapsedCols(prev => ({ ...prev, [colId]: !prev[colId] }));
     };
@@ -170,7 +210,10 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                         {...provided.droppableProps}
                         ref={provided.innerRef}
                     >
-                        {cols.map((col, index) => (
+                        {cols.map((col, index) => {
+                            const columnHeaderStyles = getColumnHeaderStyles(col.name);
+
+                            return (
                             <Draggable key={`col-${col.id}`} draggableId={`col-${col.id}`} index={index}>
                                 {(providedCol, snapshotCol) => (
                                     <div
@@ -185,10 +228,11 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                         {/* Column Header */}
                                         <div
                                             {...providedCol.dragHandleProps}
-                                            className={cn("border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/80 rounded-t-lg flex group",
+                                            className={cn("rounded-t-lg flex group border-b",
+                                                columnHeaderStyles.container,
                                                 collapsedCols[col.id] ? "flex-col items-center py-4 h-full border-b-0 cursor-pointer" : "p-4 border-b items-center justify-between"
                                             )}
-                                            onClick={(e) => {
+                                            onClick={() => {
                                                 if (collapsedCols[col.id]) {
                                                     toggleCollapse(col.id);
                                                 }
@@ -196,10 +240,10 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                         >
                                             {collapsedCols[col.id] ? (
                                                 <>
-                                                    <span className="text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full mb-4">
+                                                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full mb-4", columnHeaderStyles.count)}>
                                                         {tasksByCol[col.id]?.length || 0}
                                                     </span>
-                                                    <h3 style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }} className="font-black text-xs uppercase tracking-widest text-[#003566] dark:text-sky-300 rotate-180 flex-1 flex items-center justify-center">
+                                                    <h3 style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }} className={cn("font-black text-xs uppercase tracking-widest rotate-180 flex-1 flex items-center justify-center", columnHeaderStyles.title)}>
                                                         {col.name}
                                                     </h3>
                                                 </>
@@ -222,10 +266,10 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                             setEditingColId(col.id);
                                                             setEditingColName(col.name);
                                                         }}>
-                                                            <h3 className="font-black text-xs uppercase tracking-widest text-[#003566] dark:text-sky-300 truncate max-w-[180px]">
+                                                            <h3 className={cn("font-black text-xs uppercase tracking-widest truncate max-w-[180px]", columnHeaderStyles.title)}>
                                                                 {col.name}
                                                             </h3>
-                                                            <span className="text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">
+                                                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", columnHeaderStyles.count)}>
                                                                 {tasksByCol[col.id]?.length || 0}
                                                             </span>
                                                         </div>
@@ -287,8 +331,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                                     {/* Top Color Bar by Priority */}
                                                                     <div className={cn(
                                                                         "absolute top-0 left-0 w-full h-1",
-                                                                        task.priority === "High" ? "bg-red-500" :
-                                                                            task.priority === "Medium" ? "bg-amber-500" : "bg-sky-500"
+                                                                        getTaskAccentBarClass(task, col.name)
                                                                     )} />
 
                                                                     <div className="flex justify-between items-start gap-2 mb-2">
@@ -345,7 +388,8 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                     </div>
                                 )}
                             </Draggable>
-                        ))}
+                            );
+                        })}
                         {provided.placeholder}
 
                         {/* Add Column Button */}
