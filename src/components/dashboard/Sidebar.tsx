@@ -20,6 +20,7 @@ import {
   Users,
   Wifi,
   WifiOff,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -123,6 +124,11 @@ export function Sidebar({
         href: `${root}/errors`,
         icon: TriangleAlert,
       });
+      items.push({
+        title: "Boat Audit",
+        href: `${root}/boat-audit`,
+        icon: ShieldCheck, // Reusing ShieldCheck or Bot for AI audit
+      });
     }
 
     items.push({ title: t.boats, href: `${root}/yachts`, icon: Ship });
@@ -164,10 +170,10 @@ export function Sidebar({
             item.href === root
               ? pathname === item.href
               : pathname === item.href ||
-                pathname.startsWith(`${item.href}/`) ||
-                (item.href === `${root}/locations` &&
-                  (pathname === `${root}/harbors` ||
-                    pathname.startsWith(`${root}/harbors/`)));
+              pathname.startsWith(`${item.href}/`) ||
+              (item.href === `${root}/locations` &&
+                (pathname === `${root}/harbors` ||
+                  pathname.startsWith(`${root}/harbors/`)));
 
           return (
             <Link

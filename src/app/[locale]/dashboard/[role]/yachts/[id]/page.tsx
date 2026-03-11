@@ -93,6 +93,8 @@ import {
   getYachtDraft,
   commitYachtDraft,
 } from "@/lib/api/yacht-drafts";
+import { FieldHistoryPopover } from "@/components/yachts/FieldHistoryPopover";
+import { FieldCorrectionControls, CorrectionLabel } from "@/components/yachts/FieldCorrectionControls";
 
 // ALi
 // Wizard step config
@@ -131,13 +133,7 @@ type AvailabilityRule = {
   end_time: string;
 };
 
-type CorrectionLabel =
-  | "wrong_image_detection"
-  | "wrong_text_interpretation"
-  | "guessed_too_much"
-  | "duplicate_data_issue"
-  | "import_mismatch"
-  | "other";
+// Available explicitly from FieldCorrectionControls import
 
 type ConfidenceMeta = {
   overall_confidence: number;
@@ -364,6 +360,9 @@ export default function YachtEditorPage() {
   const [extractionType, setExtractionType] = useState<"gemini" | "magic">("gemini");
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [formKey, setFormKey] = useState(0);
+
+  // Correction feedback loop state
+  const [fieldCorrectionLabels, setFieldCorrectionLabels] = useState<Record<string, CorrectionLabel | null>>({});
   const [confidenceMeta, setConfidenceMeta] = useState<ConfidenceMeta | null>(null);
   const [correctionLabel, setCorrectionLabel] = useState<CorrectionLabel | null>(null);
 
@@ -2288,7 +2287,7 @@ export default function YachtEditorPage() {
 
     const normalizeComparableValue = (field: string, value: unknown): string => {
       if (isOptionalTriStateField(field)) {
-        return normalizeTriStateValue(value);
+        return normalizeTriStateValue(value) || "";
       }
       if (typeof value === "boolean") return value ? "true" : "false";
       return String(value ?? "").trim().toLowerCase();
@@ -2487,6 +2486,12 @@ export default function YachtEditorPage() {
     if (Object.keys(fieldConfidence).length > 0) {
       formData.append("field_confidence", JSON.stringify(fieldConfidence));
     }
+
+    // Add Correction Feedback
+    if (Object.keys(fieldCorrectionLabels).length > 0) {
+      formData.append("field_correction_labels", JSON.stringify(fieldCorrectionLabels));
+    }
+
     formData.append("changed_by_type", role === "admin" ? "admin" : "user");
 
     let changedAiFieldCount = 0;
@@ -4689,8 +4694,14 @@ export default function YachtEditorPage() {
                       ph: "Yes",
                     },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) => setFieldCorrectionLabels((p) => ({ ...p, [f.name]: label }))}
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -4705,7 +4716,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -4784,8 +4795,14 @@ export default function YachtEditorPage() {
                       ph: "Yes",
                     },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) => setFieldCorrectionLabels((p) => ({ ...p, [f.name]: label }))}
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -4800,7 +4817,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -4903,8 +4920,14 @@ export default function YachtEditorPage() {
                       ph: "Yes",
                     },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) => setFieldCorrectionLabels((p) => ({ ...p, [f.name]: label }))}
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -4919,7 +4942,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -5203,8 +5226,14 @@ export default function YachtEditorPage() {
                       ph: "Yes",
                     },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) => setFieldCorrectionLabels((p) => ({ ...p, [f.name]: label }))}
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -5219,7 +5248,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -5275,8 +5304,14 @@ export default function YachtEditorPage() {
                       ph: "Yes",
                     },
                   ].map((f) => (
-                    <div key={f.name} className="space-y-1 group">
-                      <Label>{f.label}</Label>
+                    <YachtFieldWrapper
+                      key={f.name}
+                      label={f.label}
+                      yachtId={Number(selectedYacht?.id)}
+                      fieldName={f.name}
+                      correctionLabel={fieldCorrectionLabels[f.name]}
+                      onCorrectionLabelChange={(label) => setFieldCorrectionLabels((p) => ({ ...p, [f.name]: label }))}
+                    >
                       {isOptionalTriStateField(f.name) ? (
                         <TriStateSelect
                           name={f.name}
@@ -5291,7 +5326,7 @@ export default function YachtEditorPage() {
                           needsConfirmation={needsConfirm(f.name)}
                         />
                       )}
-                    </div>
+                    </YachtFieldWrapper>
                   ))}
                 </div>
               </div>
@@ -5945,9 +5980,9 @@ export default function YachtEditorPage() {
 
 // ---------------- Helper Components ---------------- //
 
-function Label({ children }: { children: React.ReactNode }) {
+function Label({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <label className="text-[13px] font-medium text-slate-700 mb-1.5 block group-hover:text-blue-600 transition-colors">
+    <label className={cn("text-[13px] font-medium text-slate-700 mb-1.5 block group-hover:text-blue-600 transition-colors", className)}>
       {children}
     </label>
   );
@@ -5984,19 +6019,64 @@ function Input(
   );
 }
 
+function YachtFieldWrapper({
+  children,
+  label,
+  yachtId,
+  fieldName,
+  correctionLabel,
+  onCorrectionLabelChange,
+}: {
+  children: React.ReactNode;
+  label: string;
+  yachtId?: number;
+  fieldName: string;
+  correctionLabel?: CorrectionLabel | null;
+  onCorrectionLabelChange?: (label: CorrectionLabel | null) => void;
+}) {
+  const isCorrection = correctionLabel !== undefined;
+
+  return (
+    <div className="space-y-2 group">
+      <div className="flex items-center justify-between">
+        <Label className="flex items-center gap-1">
+          {label}
+          {yachtId && <FieldHistoryPopover yachtId={yachtId} fieldName={fieldName} label={label} />}
+        </Label>
+      </div>
+      {children}
+      {isCorrection && onCorrectionLabelChange && (
+        <FieldCorrectionControls
+          activeLabel={correctionLabel}
+          onSelect={(label) => onCorrectionLabelChange(label)}
+          onClear={() => onCorrectionLabelChange(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 function TriStateSelect(
   props: React.SelectHTMLAttributes<HTMLSelectElement> & {
     needsConfirmation?: boolean;
+    yachtId?: number;
+    fieldName?: string;
+    label?: string;
   },
 ) {
-  const { needsConfirmation, defaultValue, ...selectProps } = props;
+  const { needsConfirmation, defaultValue, yachtId, fieldName, label, ...selectProps } = props;
   const normalizedDefault = normalizeTriStateValue(defaultValue);
 
   return (
     <div className="relative">
+      <div className="flex items-center gap-2 mb-1">
+        {yachtId && fieldName && label && !selectProps.children && (
+          <FieldHistoryPopover yachtId={yachtId} fieldName={fieldName} label={label} />
+        )}
+      </div>
       <select
         {...selectProps}
-        defaultValue={normalizedDefault}
+        defaultValue={normalizedDefault ?? undefined}
         className={cn(
           "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
           "hover:border-slate-300",
