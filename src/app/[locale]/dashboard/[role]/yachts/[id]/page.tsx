@@ -1023,11 +1023,11 @@ export default function YachtEditorPage() {
           const uiState = toObjectRecord(remoteDraft.ui_state_json);
           const serverCompletedSteps = Array.isArray(uiState.completedSteps)
             ? uiState.completedSteps
-                .map((value) => Number(value))
-                .filter(
-                  (value) =>
-                    Number.isInteger(value) && value >= 1 && value <= 5,
-                )
+              .map((value) => Number(value))
+              .filter(
+                (value) =>
+                  Number.isInteger(value) && value >= 1 && value <= 5,
+              )
             : [];
 
           flushDraft({
@@ -1383,7 +1383,7 @@ export default function YachtEditorPage() {
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||
-          "Could not queue marketing video generation.",
+        "Could not queue marketing video generation.",
       );
     } finally {
       setIsGeneratingMarketingVideo(false);
@@ -1520,8 +1520,8 @@ export default function YachtEditorPage() {
       selectedLightboxImageId === null
         ? -1
         : reviewImages.findIndex(
-            (image) => image.id === selectedLightboxImageId,
-          ),
+          (image) => image.id === selectedLightboxImageId,
+        ),
     [reviewImages, selectedLightboxImageId],
   );
 
@@ -1888,7 +1888,7 @@ export default function YachtEditorPage() {
         if (refreshRes.data?.images) {
           pipeline.setImagesDirectly?.(refreshRes.data);
         }
-      } catch {}
+      } catch { }
       if (pipeline.refreshImages) await pipeline.refreshImages();
       if (shouldSetCreatedYachtId) {
         setCreatedYachtId(Number(targetId));
@@ -2062,8 +2062,8 @@ export default function YachtEditorPage() {
       if (!res.ok) {
         throw new Error(
           responseData?.error ||
-            responseData?.message ||
-            `AI extraction request failed (HTTP ${res.status})`,
+          responseData?.message ||
+          `AI extraction request failed (HTTP ${res.status})`,
         );
       }
 
@@ -3046,12 +3046,11 @@ export default function YachtEditorPage() {
                   className={`
                     w-[54px] h-[54px] rounded-full flex items-center justify-center
                     text-[18px] font-bold border-[3px] transition-all duration-300
-                    ${
-                      isLocked
-                        ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
-                        : isPast
-                          ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
-                          : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
+                    ${isLocked
+                      ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
+                      : isPast
+                        ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
+                        : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
                     }
                   `}
                 >
@@ -3059,9 +3058,8 @@ export default function YachtEditorPage() {
                 </button>
                 {index < wizardSteps.length - 1 && (
                   <div
-                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${
-                      step.id < activeStep ? "bg-[#2563eb]" : "bg-[#d4d8de]"
-                    }`}
+                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${step.id < activeStep ? "bg-[#2563eb]" : "bg-[#d4d8de]"
+                      }`}
                   />
                 )}
               </div>
@@ -3084,9 +3082,9 @@ export default function YachtEditorPage() {
               {isNewMode
                 ? t?.header?.newTitle || "Register New Vessel"
                 : (t?.header?.editTitle || "Edit Vessel")?.replace(
-                    "{name}",
-                    selectedYacht?.boat_name || "Loading...",
-                  )}
+                  "{name}",
+                  selectedYacht?.boat_name || "Loading...",
+                )}
             </h1>
             <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider mt-0.5">
               Step {activeStep} of {wizardSteps.length} &middot;{" "}
@@ -3354,68 +3352,67 @@ export default function YachtEditorPage() {
                                   statusConfig[img.status] ||
                                   statusConfig.processing;
 
-                              return (
-                                <Draggable key={img.id} draggableId={`pipeline-image-${img.id}`} index={index}>
-                                  {(dragProvided) => (
-                                    <div
-                                      ref={dragProvided.innerRef}
-                                      {...dragProvided.draggableProps}
-                                      className={cn(
-                                        "relative group bg-white border shadow-sm overflow-hidden rounded-xl",
-                                        img.status === "approved"
-                                          ? "border-emerald-300 ring-1 ring-emerald-200"
-                                          : img.status === "ready_for_review"
-                                            ? "border-amber-300"
-                                            : img.status === "processing"
-                                              ? "border-blue-200"
-                                              : "border-red-300"
-                                      )}
-                                    >
-                                      {/* Image */}
-                                      <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
-                                        <img
-                                          key={`img-${img.id}-${img.thumb_full_url || img.optimized_url || img.full_url || img.url || img.original_temp_url}`}
-                                          src={
-                                            img.thumb_full_url ||
-                                            img.optimized_url ||
-                                            img.full_url ||
-                                            img.url ||
-                                            img.original_temp_url ||
-                                            PLACEHOLDER_IMAGE
-                                          }
-                                          alt={img.original_name || `Yacht image ${index + 1}`}
-                                          onClick={() => setSelectedLightboxImageId(img.id)}
-                                          className={cn(
-                                            "w-full h-full cursor-zoom-in object-cover transition-opacity",
-                                            img.enhancement_method === "pending" &&
-                                            "opacity-80 grayscale-[0.2]",
-                                            img.status === "processing" && "opacity-60"
-                                          )}
-                                          onError={handleImageError}
-                                        />
-
-                                        {/* Loading Overlay for Processing */}
-                                        {img.status === "processing" && (
-                                          <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
-                                            <Loader2 size={24} className="animate-spin text-blue-600" />
-                                          </div>
+                                return (
+                                  <Draggable key={img.id} draggableId={`pipeline-image-${img.id}`} index={index}>
+                                    {(dragProvided) => (
+                                      <div
+                                        ref={dragProvided.innerRef}
+                                        {...dragProvided.draggableProps}
+                                        className={cn(
+                                          "relative group bg-white border shadow-sm overflow-hidden rounded-xl",
+                                          img.status === "approved"
+                                            ? "border-emerald-300 ring-1 ring-emerald-200"
+                                            : img.status === "ready_for_review"
+                                              ? "border-amber-300"
+                                              : img.status === "processing"
+                                                ? "border-blue-200"
+                                                : "border-red-300"
                                         )}
-                                      </div>
-
-                                      {/* Status badge */}
-                                      <div
-                                        className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
                                       >
-                                        {sc.label}
-                                      </div>
+                                        {/* Image */}
+                                        <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
+                                          <img
+                                            key={`img-${img.id}-${img.thumb_full_url || img.optimized_url || img.full_url || img.url || img.original_temp_url}`}
+                                            src={
+                                              img.thumb_full_url ||
+                                              img.optimized_url ||
+                                              img.full_url ||
+                                              img.url ||
+                                              img.original_temp_url ||
+                                              PLACEHOLDER_IMAGE
+                                            }
+                                            alt={img.original_name || `Yacht image ${index + 1}`}
+                                            onClick={() => setSelectedLightboxImageId(img.id)}
+                                            className={cn(
+                                              "w-full h-full cursor-zoom-in object-cover transition-opacity",
+                                              img.enhancement_method === "pending" &&
+                                              "opacity-80 grayscale-[0.2]",
+                                              img.status === "processing" && "opacity-60"
+                                            )}
+                                            onError={handleImageError}
+                                          />
 
-                                      <div
-                                        {...dragProvided.dragHandleProps}
-                                        className="absolute right-2 bottom-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur active:cursor-grabbing"
-                                        title="Drag to reorder"
-                                      >
-                                        <GripVertical size={14} />
-                                      </div>
+                                          {/* Loading Overlay for Processing */}
+                                          {img.status === "processing" && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
+                                              <Loader2 size={24} className="animate-spin text-blue-600" />
+                                            </div>
+                                          )}
+
+                                          {/* Status badge */}
+                                          <div
+                                            className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}
+                                          >
+                                            {sc.label}
+                                          </div>
+
+                                          <div
+                                            {...dragProvided.dragHandleProps}
+                                            className="absolute right-2 bottom-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur active:cursor-grabbing"
+                                            title="Drag to reorder"
+                                          >
+                                            <GripVertical size={14} />
+                                          </div>
                                           {/* Quality label */}
                                           {img.quality_label &&
                                             img.status !== "processing" && (
@@ -3470,7 +3467,7 @@ export default function YachtEditorPage() {
                                                       img.quality_score >= 70
                                                         ? "bg-emerald-500"
                                                         : img.quality_score >=
-                                                            40
+                                                          40
                                                           ? "bg-amber-500"
                                                           : "bg-red-500",
                                                     )}
@@ -3530,16 +3527,16 @@ export default function YachtEditorPage() {
                                           <div className="flex gap-2">
                                             {img.status ===
                                               "ready_for_review" && (
-                                              <button
-                                                type="button"
-                                                onClick={() =>
-                                                  pipeline.approveImage(img.id)
-                                                }
-                                                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
-                                              >
-                                                <Check size={12} /> Approve
-                                              </button>
-                                            )}
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    pipeline.approveImage(img.id)
+                                                  }
+                                                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
+                                                >
+                                                  <Check size={12} /> Approve
+                                                </button>
+                                              )}
                                             <button
                                               type="button"
                                               onClick={() =>
@@ -3687,7 +3684,7 @@ export default function YachtEditorPage() {
                                         0) >= 70
                                         ? "bg-emerald-50 text-emerald-700"
                                         : (selectedLightboxImage.quality_score ??
-                                              0) >= 40
+                                          0) >= 40
                                           ? "bg-amber-50 text-amber-700"
                                           : "bg-red-50 text-red-700",
                                     )}
@@ -3696,7 +3693,7 @@ export default function YachtEditorPage() {
                                       0) >= 70
                                       ? "Gallery ready"
                                       : (selectedLightboxImage.quality_score ??
-                                            0) >= 40
+                                        0) >= 40
                                         ? "Needs review"
                                         : "Needs correction"}
                                   </span>
@@ -3719,7 +3716,7 @@ export default function YachtEditorPage() {
                                         0) >= 70
                                         ? "from-emerald-400 to-emerald-500"
                                         : (selectedLightboxImage.quality_score ??
-                                              0) >= 40
+                                          0) >= 40
                                           ? "from-amber-400 to-orange-500"
                                           : "from-rose-400 to-red-500",
                                     )}
@@ -3835,71 +3832,71 @@ export default function YachtEditorPage() {
                 {(pipeline.stats.total > 0 ||
                   imagesApproved ||
                   (!isOnline && offlineImages.length > 0)) && (
-                  <div className="flex flex-col items-center gap-4 py-4">
-                    {/* Offline Skip Button */}
-                    {!isOnline ? (
-                      <div className="flex flex-col items-center gap-3 w-full max-w-lg">
-                        <div className="bg-amber-50 text-amber-700 border border-amber-200 rounded-lg p-4 text-sm w-full flex gap-3 shadow-sm mb-2">
-                          <WifiOff className="shrink-0" size={18} />
-                          <div>
-                            <p className="font-semibold mb-1">
-                              AI Extraction Not Available Offline
-                            </p>
-                            <p>
-                              You can skip this step and fill in the boat
-                              details manually. Images are saved locally.
-                            </p>
+                    <div className="flex flex-col items-center gap-4 py-4">
+                      {/* Offline Skip Button */}
+                      {!isOnline ? (
+                        <div className="flex flex-col items-center gap-3 w-full max-w-lg">
+                          <div className="bg-amber-50 text-amber-700 border border-amber-200 rounded-lg p-4 text-sm w-full flex gap-3 shadow-sm mb-2">
+                            <WifiOff className="shrink-0" size={18} />
+                            <div>
+                              <p className="font-semibold mb-1">
+                                AI Extraction Not Available Offline
+                              </p>
+                              <p>
+                                You can skip this step and fill in the boat
+                                details manually. Images are saved locally.
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setActiveStep(2)}
-                          disabled={isExtracting}
-                          className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
-                        >
-                          Skip to Step 2 (Manual Fill) <ArrowRight size={20} />
-                        </button>
-                      </div>
-                    ) : (
-                      isExtracting && (
-                        <div className="w-full max-w-lg flex flex-col items-center justify-center gap-3 py-6 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
-                          <Loader2
-                            size={32}
-                            className="animate-spin text-blue-600"
-                          />
-                          <p className="text-blue-800 font-medium">
-                            Gemini is analyzing your images...
-                          </p>
-                        </div>
-                      )
-                    )}
-                    {!geminiExtracted && !isExtracting && isOnline && (
-                      <div className="flex flex-col items-center gap-3">
-                        <p className="text-xs text-slate-400 text-center">
-                          {imagesApproved
-                            ? `AI is ready to analyze ${pipeline.stats.approved} approved optimized images`
-                            : `Upload and approve images first, then AI will analyze them`}
-                        </p>
-
-                        {/* Manual Trigger for Edit Mode or Retries */}
-                        {imagesApproved && (
                           <button
                             type="button"
-                            onClick={() => {
-                              toast("Extracting data from images...", {
-                                icon: "🪄",
-                              });
-                              void handleAiExtract();
-                            }}
-                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => setActiveStep(2)}
+                            disabled={isExtracting}
+                            className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
                           >
-                            <Sparkles size={16} /> Run AI Extraction Manually
+                            Skip to Step 2 (Manual Fill) <ArrowRight size={20} />
                           </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                        </div>
+                      ) : (
+                        isExtracting && (
+                          <div className="w-full max-w-lg flex flex-col items-center justify-center gap-3 py-6 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                            <Loader2
+                              size={32}
+                              className="animate-spin text-blue-600"
+                            />
+                            <p className="text-blue-800 font-medium">
+                              Gemini is analyzing your images...
+                            </p>
+                          </div>
+                        )
+                      )}
+                      {!geminiExtracted && !isExtracting && isOnline && (
+                        <div className="flex flex-col items-center gap-3">
+                          <p className="text-xs text-slate-400 text-center">
+                            {imagesApproved
+                              ? `AI is ready to analyze ${pipeline.stats.approved} approved optimized images`
+                              : `Upload and approve images first, then AI will analyze them`}
+                          </p>
+
+                          {/* Manual Trigger for Edit Mode or Retries */}
+                          {imagesApproved && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toast("Extracting data from images...", {
+                                  icon: "🪄",
+                                });
+                                void handleAiExtract();
+                              }}
+                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Sparkles size={16} /> Run AI Extraction Manually
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                 {/* Extracted Fields Preview intentionally hidden */}
               </div>
@@ -3909,157 +3906,157 @@ export default function YachtEditorPage() {
           {/* ── VIDEO SECTION (After Image Pipeline but inside Step 1) ── */}
           {activeStep === 1 && (
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mt-8 mb-4">
-	              <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-	                <div>
-	                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-	                    <Video size={18} className="text-blue-500" /> Vessel Video
-	                    Operations
-	                  </h3>
-	                  <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">
-	                    {t?.video?.manage || "Manage Videos & Social Posting"}
-	                  </p>
-	                </div>
-	                <div className="flex flex-wrap items-center gap-2">
-	                  <Button
-	                    type="button"
-	                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded shadow-sm"
-	                    onClick={() => handleGenerateMarketingVideo(false)}
-	                    disabled={isGeneratingMarketingVideo}
-	                  >
-	                    {isGeneratingMarketingVideo ? (
-	                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-	                    ) : (
-	                      <Sparkles size={14} className="mr-2" />
-	                    )}
-	                    Generate from images
-	                  </Button>
-	                  <label className="cursor-pointer bg-[#003566] text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2">
-	                    {isUploadingVideo ? (
-	                      <Loader2 className="w-4 h-4 animate-spin" />
-	                    ) : (
-	                      <Upload size={14} />
-	                    )}
-	                    {t?.video?.upload || "Upload MP4"}
-	                    <input
-	                      type="file"
-	                      className="hidden"
-	                      accept="video/*"
-	                      onChange={handleVideoUpload}
-	                      disabled={isUploadingVideo}
-	                    />
-	                  </label>
-	                </div>
-	              </div>
+              <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Video size={18} className="text-blue-500" /> Vessel Video
+                    Operations
+                  </h3>
+                  <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">
+                    {t?.video?.manage || "Manage Videos & Social Posting"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded shadow-sm"
+                    onClick={() => handleGenerateMarketingVideo(false)}
+                    disabled={isGeneratingMarketingVideo}
+                  >
+                    {isGeneratingMarketingVideo ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Sparkles size={14} className="mr-2" />
+                    )}
+                    Generate from images
+                  </Button>
+                  <label className="cursor-pointer bg-[#003566] text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2">
+                    {isUploadingVideo ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload size={14} />
+                    )}
+                    {t?.video?.upload || "Upload MP4"}
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      disabled={isUploadingVideo}
+                    />
+                  </label>
+                </div>
+              </div>
 
-	              <div className="p-6">
-	                <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
-	                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-	                    <div>
-	                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
-	                        Automated Social Video
-	                      </p>
-	                      <p className="mt-2 text-sm text-emerald-900">
-	                        Queue a marketing video built from the approved boat images. The backend will render it and it will appear in the social video library with status updates.
-	                      </p>
-	                    </div>
-	                    <div className="flex flex-wrap gap-2">
-	                      <Button
-	                        type="button"
-	                        variant="outline"
-	                        className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
-	                        onClick={() =>
-	                          router.push(`/${locale}/dashboard/${role}/social`)
-	                        }
-	                      >
-	                        Open Social Library
-	                      </Button>
-	                      <Button
-	                        type="button"
-	                        variant="outline"
-	                        className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
-	                        onClick={() => handleGenerateMarketingVideo(true)}
-	                        disabled={isGeneratingMarketingVideo}
-	                      >
-	                        Force Regenerate
-	                      </Button>
-	                    </div>
-	                  </div>
-	                </div>
+              <div className="p-6">
+                <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
+                        Automated Social Video
+                      </p>
+                      <p className="mt-2 text-sm text-emerald-900">
+                        Queue a marketing video built from the approved boat images. The backend will render it and it will appear in the social video library with status updates.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
+                        onClick={() =>
+                          router.push(`/${locale}/dashboard/${role}/social`)
+                        }
+                      >
+                        Open Social Library
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
+                        onClick={() => handleGenerateMarketingVideo(true)}
+                        disabled={isGeneratingMarketingVideo}
+                      >
+                        Force Regenerate
+                      </Button>
+                    </div>
+                  </div>
+                </div>
 
-	                {marketingVideos.length > 0 && (
-	                  <div className="mb-8">
-	                    <div className="mb-3 flex items-center justify-between">
-	                      <p className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
-	                        Generated marketing videos
-	                      </p>
-	                      <button
-	                        type="button"
-	                        className="text-[10px] uppercase font-black tracking-[0.2em] text-[#003566]"
-	                        onClick={() => loadMarketingVideos(isNewMode ? createdYachtId || yachtId : yachtId)}
-	                      >
-	                        Refresh
-	                      </button>
-	                    </div>
-	                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-	                      {marketingVideos.map((video) => (
-	                        <div
-	                          key={`marketing-${video.id}`}
-	                          className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-	                        >
-	                          <div className="flex items-start justify-between gap-4">
-	                            <div>
-	                              <p className="text-sm font-bold text-slate-800">
-	                                Marketing Video #{video.id}
-	                              </p>
-	                              <p className="mt-1 text-xs text-slate-500">
-	                                Template: {video.template_type || "vertical_slideshow_v1"}
-	                              </p>
-	                            </div>
-	                            <span
-	                              className={cn(
-	                                "rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em]",
-	                                video.status === "ready" || video.status === "published"
-	                                  ? "bg-emerald-100 text-emerald-700"
-	                                  : video.status === "failed"
-	                                    ? "bg-red-100 text-red-700"
-	                                    : "bg-blue-100 text-blue-700",
-	                              )}
-	                            >
-	                              {video.status || "queued"}
-	                            </span>
-	                          </div>
-	                          <div className="mt-4 flex flex-wrap gap-2">
-	                            {video.video_url && (
-	                              <a
-	                                href={video.video_url}
-	                                target="_blank"
-	                                rel="noreferrer"
-	                                className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-50"
-	                              >
-	                                <Eye size={12} className="mr-2" />
-	                                Open Video
-	                              </a>
-	                            )}
-	                            <Button
-	                              type="button"
-	                              variant="outline"
-	                              className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
-	                              onClick={() =>
-	                                router.push(`/${locale}/dashboard/${role}/social`)
-	                              }
-	                            >
-	                              View in Social
-	                            </Button>
-	                          </div>
-	                        </div>
-	                      ))}
-	                    </div>
-	                  </div>
-	                )}
+                {marketingVideos.length > 0 && (
+                  <div className="mb-8">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
+                        Generated marketing videos
+                      </p>
+                      <button
+                        type="button"
+                        className="text-[10px] uppercase font-black tracking-[0.2em] text-[#003566]"
+                        onClick={() => loadMarketingVideos(isNewMode ? createdYachtId || yachtId : yachtId)}
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      {marketingVideos.map((video) => (
+                        <div
+                          key={`marketing-${video.id}`}
+                          className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-bold text-slate-800">
+                                Marketing Video #{video.id}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                Template: {video.template_type || "vertical_slideshow_v1"}
+                              </p>
+                            </div>
+                            <span
+                              className={cn(
+                                "rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em]",
+                                video.status === "ready" || video.status === "published"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : video.status === "failed"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-blue-100 text-blue-700",
+                              )}
+                            >
+                              {video.status || "queued"}
+                            </span>
+                          </div>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {video.video_url && (
+                              <a
+                                href={video.video_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-50"
+                              >
+                                <Eye size={12} className="mr-2" />
+                                Open Video
+                              </a>
+                            )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
+                              onClick={() =>
+                                router.push(`/${locale}/dashboard/${role}/social`)
+                              }
+                            >
+                              View in Social
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-	                {boatVideos.length === 0 ? (
-	                  <div className="flex flex-col items-center justify-center py-12 opacity-40 gap-3 border-2 border-dashed border-slate-200 rounded-lg">
-	                    <Video size={32} className="text-slate-500" />
+                {boatVideos.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 opacity-40 gap-3 border-2 border-dashed border-slate-200 rounded-lg">
+                    <Video size={32} className="text-slate-500" />
                     <span className="text-xs uppercase font-bold text-slate-500">
                       {t?.video?.noVideo || "No Video uploaded"}
                     </span>
@@ -6228,23 +6225,22 @@ export default function YachtEditorPage() {
                                 onClick={() => {
                                   const newDays = isSelected
                                     ? rule.days_of_week.filter(
-                                        (d) => d !== day.val,
-                                      )
+                                      (d) => d !== day.val,
+                                    )
                                     : [...rule.days_of_week, day.val].sort(
-                                        (a, b) =>
-                                          (a === 0 ? 7 : a) - (b === 0 ? 7 : b),
-                                      );
+                                      (a, b) =>
+                                        (a === 0 ? 7 : a) - (b === 0 ? 7 : b),
+                                    );
                                   updateAvailabilityRule(
                                     idx,
                                     "days_of_week",
                                     newDays,
                                   );
                                 }}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${
-                                  isSelected
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${isSelected
                                     ? "bg-blue-600 text-white border-blue-600 shadow-sm"
                                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                }`}
+                                  }`}
                               >
                                 {day.label}
                               </button>
