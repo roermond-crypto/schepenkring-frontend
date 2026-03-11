@@ -40,6 +40,7 @@ import {
 } from "@/lib/api/signhost";
 
 type ContractLanguage = "nl" | "en" | "de" | "fr";
+type ContractTemplateKey = "sale_agreement" | "escrow_form";
 
 type LocationOption = {
   id: number;
@@ -116,6 +117,23 @@ const languageOptions: { value: ContractLanguage; label: string }[] = [
   { value: "en", label: "English" },
   { value: "de", label: "Deutsch" },
   { value: "fr", label: "Français" },
+];
+
+const contractTemplateOptions: Array<{
+  value: ContractTemplateKey;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "sale_agreement",
+    label: "Sale agreement",
+    description: "Current vessel agreement template",
+  },
+  {
+    value: "escrow_form",
+    label: "Escrow form",
+    description: "Language-specific HISWA-RECRON escrow page",
+  },
 ];
 
 const locationCompanyDefaults: Record<
@@ -285,6 +303,58 @@ function boolLabel(language: ContractLanguage, value: "yes" | "no") {
 
 function resolveAttachmentLanguage(language: ContractLanguage): ContractLanguage | "en" {
   return language === "fr" ? "en" : language;
+}
+
+function resolveEscrowFormLanguage(language: ContractLanguage): "nl" | "en" | "de" {
+  if (language === "de") return "de";
+  if (language === "en" || language === "fr") return "en";
+  return "nl";
+}
+
+function buildEscrowContractUrl(
+  origin: string,
+  locale: string,
+  language: ContractLanguage,
+  draft: ContractDraft,
+) {
+  const formLanguage = resolveEscrowFormLanguage(language);
+  const params = new URLSearchParams({
+    memberName: draft.companyName || "",
+    contactName: draft.companyName || "",
+    memberEmail: draft.companyEmail || "",
+    sellerName: draft.companyName || "",
+    sellerAddress: draft.companyAddress || "",
+    sellerPostalCity: [draft.companyPostalCode, draft.companyCity]
+      .filter(Boolean)
+      .join(" "),
+    sellerPhone: draft.companyPhone || "",
+    sellerEmail: draft.companyEmail || "",
+    buyerName: draft.clientName || "",
+    buyerAddress: draft.clientAddress || "",
+    buyerPostalCity: [draft.clientPostalCode, draft.clientCity]
+      .filter(Boolean)
+      .join(" "),
+    buyerPhone: draft.clientPhone || "",
+    buyerEmail: draft.clientEmail || "",
+    agreementNumber: draft.registrationNumber || "",
+    agreementDate: draft.agreementDate || "",
+    deliveryDescription: draft.vesselName || "",
+    totalAmount: draft.askingPrice || "",
+    paidBy: "",
+    drawnUpDate: draft.agreementDate || "",
+    drawnUpCity: draft.agreementCity || draft.companyCity || "",
+    payee1: draft.companyName || "",
+    iban1: "",
+    amount1: draft.askingPrice || "",
+    payee2: "",
+    iban2: "",
+    amount2: "",
+    payee3: "",
+    iban3: "",
+    amount3: "",
+  });
+
+  return `${origin}/${locale}/contracts/escrow/${formLanguage}?${params.toString()}`;
 }
 
 function getAgreementCopy(language: ContractLanguage) {
@@ -641,6 +711,8 @@ export function SignhostFlow({
   const [editorOpen, setEditorOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [contractTemplateKey, setContractTemplateKey] =
+    useState<ContractTemplateKey>("sale_agreement");
 
   useEffect(() => {
     const nextDraft = buildContractDraft(yachtName, yachtData, selectedLocation);
@@ -699,6 +771,9 @@ export function SignhostFlow({
       : "en";
   const languageAttachment =
     attachmentByLanguage[resolveAttachmentLanguage(draft.language)];
+  const selectedTemplate = contractTemplateOptions.find(
+    (option) => option.value === contractTemplateKey,
+  ) ?? contractTemplateOptions[0];
 
   const handleFieldChange = <K extends keyof ContractDraft>(
     key: K,
@@ -720,6 +795,24 @@ export function SignhostFlow({
   };
 
   const handlePreviewPrint = () => {
+    if (contractTemplateKey === "escrow_form") {
+      const escrowUrl = buildEscrowContractUrl(
+        window.location.origin,
+        locale,
+        draft.language,
+        draft,
+      );
+      const previewWindow = window.open(
+        escrowUrl,
+        "_blank",
+        "width=960,height=1280",
+      );
+      if (!previewWindow) {
+        toast.error("Popup blocked. Allow popups to print or save PDF.");
+      }
+      return;
+    }
+
     const previewWindow = window.open("", "_blank", "width=960,height=1280");
     if (!previewWindow) {
       toast.error("Popup blocked. Allow popups to print or save PDF.");
@@ -740,15 +833,35 @@ export function SignhostFlow({
 
     setIsGenerating(true);
     try {
+      const contractRenderUrl =
+        contractTemplateKey === "escrow_form"
+          ? buildEscrowContractUrl(
+              window.location.origin,
+              locale,
+              draft.language,
+              draft,
+            )
+          : undefined;
+
       const res = await signhostApi.generateContract({
         entity_type: "Vessel",
         entity_id: yachtId,
         location_id: locationId,
-        title: `${previewCopy.title} - ${draft.vesselName || yachtName}`,
+        title: `${
+          contractTemplateKey === "escrow_form"
+            ? "Escrow account service form"
+            : previewCopy.title
+        } - ${draft.vesselName || yachtName}`,
         metadata: {
           boat_name: draft.vesselName || yachtName,
           contract_language: draft.language,
+          contract_template_key: contractTemplateKey,
           contract_template: draft,
+          contract_render_url: contractRenderUrl,
+          contract_render_language:
+            contractTemplateKey === "escrow_form"
+              ? resolveEscrowFormLanguage(draft.language)
+              : draft.language,
           location_snapshot: selectedLocation,
         },
       });
@@ -869,6 +982,21 @@ export function SignhostFlow({
             {statusDisplay.label}
           </div>
           <select
+            value={contractTemplateKey}
+            onChange={(event) =>
+              setContractTemplateKey(
+                event.target.value as ContractTemplateKey,
+              )
+            }
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          >
+            {contractTemplateOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select
             value={draft.language}
             onChange={(event) =>
               handleFieldChange("language", event.target.value as ContractLanguage)
@@ -906,13 +1034,19 @@ export function SignhostFlow({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.24em] text-blue-600 dark:text-sky-300">
-                  {previewCopy.title}
+                  {contractTemplateKey === "escrow_form"
+                    ? selectedTemplate.label
+                    : previewCopy.title}
                 </p>
                 <h5 className="mt-2 text-3xl font-black italic text-[#003566] dark:text-slate-100">
-                  {draft.vesselName || yachtName}
+                  {contractTemplateKey === "escrow_form"
+                    ? "HISWA-RECRON Escrow"
+                    : draft.vesselName || yachtName}
                 </h5>
                 <p className="mt-3 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-                  {previewCopy.previewHint}
+                  {contractTemplateKey === "escrow_form"
+                    ? "This template uses the standalone language-specific escrow route so the backend can render the final PDF from a stable URL."
+                    : previewCopy.previewHint}
                 </p>
               </div>
 
@@ -939,6 +1073,86 @@ export function SignhostFlow({
               </div>
             )}
 
+            {contractTemplateKey === "escrow_form" ? (
+              <div className="mt-6 space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                    Selected template
+                  </p>
+                  <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {selectedTemplate.label}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    {selectedTemplate.description}
+                  </p>
+                  <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
+                    Render URL:
+                  </p>
+                  <p className="mt-1 break-all rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
+                    {typeof window !== "undefined"
+                      ? buildEscrowContractUrl(
+                          window.location.origin,
+                          locale,
+                          draft.language,
+                          draft,
+                        )
+                      : ""}
+                  </p>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                      HISWA-RECRON member
+                    </p>
+                    <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">
+                        {fieldValue(draft.companyName)}
+                      </p>
+                      <p>{fieldValue(draft.companyAddress)}</p>
+                      <p>
+                        {fieldValue(
+                          [draft.companyPostalCode, draft.companyCity]
+                            .filter(Boolean)
+                            .join(" "),
+                        )}
+                      </p>
+                      <p>{fieldValue(draft.companyPhone)}</p>
+                      <p>{fieldValue(draft.companyEmail)}</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                      Buyer details
+                    </p>
+                    <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">
+                        {fieldValue(draft.clientName)}
+                      </p>
+                      <p>{fieldValue(draft.clientAddress)}</p>
+                      <p>
+                        {fieldValue(
+                          [draft.clientPostalCode, draft.clientCity]
+                            .filter(Boolean)
+                            .join(" "),
+                        )}
+                      </p>
+                      <p>{fieldValue(draft.clientPhone)}</p>
+                      <p>{fieldValue(draft.clientEmail)}</p>
+                      <p>{fieldValue(draft.vesselName || yachtName)}</p>
+                      <p>
+                        {previewCopy.priceText(
+                          draft.askingPrice || "0",
+                          draft.askingPriceWords,
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
@@ -1066,6 +1280,8 @@ export function SignhostFlow({
                 </div>
               </div>
             </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -1077,10 +1293,14 @@ export function SignhostFlow({
               </div>
               <div>
                 <h5 className="text-lg font-black text-slate-900 dark:text-slate-100">
-                  {previewCopy.generateLabel}
+                  {contractTemplateKey === "escrow_form"
+                    ? "Generate escrow PDF"
+                    : previewCopy.generateLabel}
                 </h5>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Generate the PDF from this contract template, then send it to Signhost.
+                  {contractTemplateKey === "escrow_form"
+                    ? "Generate the PDF from the dedicated escrow route, then send it to Signhost."
+                    : "Generate the PDF from this contract template, then send it to Signhost."}
                 </p>
               </div>
             </div>
@@ -1097,7 +1317,9 @@ export function SignhostFlow({
                 ) : (
                   <RefreshCw className="mr-2 h-4 w-4" />
                 )}
-                {previewCopy.generateLabel}
+                {contractTemplateKey === "escrow_form"
+                  ? "Generate escrow PDF"
+                  : previewCopy.generateLabel}
               </Button>
               <Button
                 type="button"
