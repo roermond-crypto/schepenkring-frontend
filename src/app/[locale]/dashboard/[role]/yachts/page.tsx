@@ -369,6 +369,11 @@ export default function FleetManagementPage() {
     return String(value).trim();
   };
 
+  const meaningfulString = (value: any): string => {
+    const normalized = safeString(value);
+    return /^-+$/.test(normalized) ? "" : normalized;
+  };
+
   const formatCurrency = (amount: number | string | null | undefined) => {
     if (amount === null || amount === undefined || amount === "") return t?.fallbacks?.price || "Price on request";
     const numAmount = Number(amount);
@@ -475,8 +480,48 @@ export default function FleetManagementPage() {
       .replace(/^-+|-+$/g, ""); // trim hyphens
   };
 
+  const getPublicListingId = (yacht: any): string => {
+    const externalUrl = safeString(yacht.external_url);
+    const externalMatch = externalUrl.match(/\/aanbod-boten\/(\d+)(?:\/|$)/i);
+    if (externalMatch?.[1]) {
+      return externalMatch[1];
+    }
+
+    const sourceIdentifier = safeString(yacht.source_identifier);
+    const sourceMatch = sourceIdentifier.match(/(\d{5,})/);
+    if (sourceMatch?.[1]) {
+      return sourceMatch[1];
+    }
+
+    const vesselId = safeString(yacht.vessel_id);
+    const vesselMatch = vesselId.match(/(\d{5,})/i);
+
+    return vesselMatch?.[1] || "";
+  };
+
   const getPublicUrl = (yacht: any): string => {
-    return yacht.external_url || "";
+    const directUrl = safeString(yacht.external_url);
+    if (directUrl) {
+      return directUrl.endsWith("/") ? directUrl : `${directUrl}/`;
+    }
+
+    const listingId = getPublicListingId(yacht);
+    if (!listingId) {
+      return "";
+    }
+
+    const slugSource =
+      meaningfulString(yacht.boat_name) ||
+      meaningfulString(yacht.name) ||
+      [meaningfulString(yacht.manufacturer), meaningfulString(yacht.model)]
+        .filter(Boolean)
+        .join(" ") ||
+      meaningfulString(yacht.vessel_id);
+    const slug = slugify(slugSource);
+
+    return slug
+      ? `https://www.schepenkring.nl/aanbod-boten/${listingId}/${slug}/`
+      : `https://www.schepenkring.nl/aanbod-boten/${listingId}/`;
   };
 
   return (
@@ -716,148 +761,151 @@ export default function FleetManagementPage() {
       {/* GRID VIEW */}
       {!loading && viewMode === "grid" && fleet.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {fleet.map((yacht) => (
-            <div
-              key={yacht.id}
-              className="bg-white border border-slate-200 group overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300"
-            >
+          {fleet.map((yacht) => {
+            const publicUrl =
+              getPublicUrl(yacht) || "https://www.schepenkring.nl/aanbod-boten/";
+
+            return (
+              <div
+                key={yacht.id}
+                className="bg-white border border-slate-200 group overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300"
+              >
               {/* IMAGE SECTION */}
-              <div className="h-64 bg-slate-100 overflow-hidden relative">
-                <img
-                  src={getImageUrl(yacht.main_image)}
-                  onError={handleImageError}
-                  alt={getYachtName(yacht)}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+                <div className="h-64 bg-slate-100 overflow-hidden relative">
+                  <img
+                    src={getImageUrl(yacht.main_image)}
+                    onError={handleImageError}
+                    alt={getYachtName(yacht)}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
 
-                {/* VESSEL ID BADGE */}
-                {yacht.vessel_id && (
-                  <div className="absolute top-3 left-3 bg-black/80 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1">
-                    {yacht.vessel_id}
+                  {/* VESSEL ID BADGE */}
+                  {yacht.vessel_id && (
+                    <div className="absolute top-3 left-3 bg-black/80 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1">
+                      {yacht.vessel_id}
+                    </div>
+                  )}
+
+                  {/* STATUS BADGE */}
+                  <div className="absolute top-3 right-3">
+                    <span
+                      className={cn(
+                        "text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
+                        getStatusConfig(yacht.status).color,
+                        getStatusConfig(yacht.status).bg,
+                        getStatusConfig(yacht.status).border,
+                      )}
+                    >
+                      {getYachtStatus(yacht)}
+                    </span>
                   </div>
-                )}
 
-                {/* STATUS BADGE */}
-                <div className="absolute top-3 right-3">
-                  <span
-                    className={cn(
-                      "text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
-                      getStatusConfig(yacht.status).color,
-                      getStatusConfig(yacht.status).bg,
-                      getStatusConfig(yacht.status).border,
-                    )}
-                  >
-                    {getYachtStatus(yacht)}
-                  </span>
-                </div>
-
-                {/* ACTION OVERLAY */}
-                <div className="absolute inset-0 bg-[#003566]/90 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-6">
-                  <button
-                    onClick={() =>
-                      router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
-                    }
-                    className="w-full max-w-[200px] bg-white text-[#003566] px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2"
-                  >
-                    <Edit3 size={12} />
-                    {t?.actions?.editManifest || "Edit Manifest"}
-                  </button>
-
-                  {getPublicUrl(yacht) && (
+                  {/* ACTION OVERLAY */}
+                  <div className="absolute inset-0 bg-[#003566]/90 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-6">
                     <button
-                      onClick={() => window.open(getPublicUrl(yacht), "_blank")}
+                      onClick={() =>
+                        router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
+                      }
+                      className="w-full max-w-[200px] bg-white text-[#003566] px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2"
+                    >
+                      <Edit3 size={12} />
+                      {t?.actions?.editManifest || "Edit Manifest"}
+                    </button>
+
+                    <button
+                      onClick={() => window.open(publicUrl, "_blank")}
                       className="w-full max-w-[200px] bg-blue-600 text-white px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                     >
                       <Eye size={12} />
                       {t?.actions?.viewDetails || "View Details"}
                     </button>
-                  )}
 
-                  <button
-                    onClick={() => handleDelete(yacht)}
-                    disabled={isSubmitting}
-                    className="w-full max-w-[200px] bg-red-600 text-white px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-red-700 transition-all flex items-center justify-center gap-2"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="animate-spin" size={12} />
-                    ) : (
-                      <Trash size={12} />
-                    )}
-                    {t?.actions?.deleteVessel || "Delete Vessel"}
-                  </button>
-                </div>
-              </div>
-
-              {/* DETAILS SECTION */}
-              <div className="p-5 space-y-4 flex-1 flex flex-col">
-                <div>
-                  <h3 className="text-lg font-serif italic mb-1 line-clamp-1">
-                    {getYachtName(yacht)}
-                  </h3>
-                  <p className="text-lg font-bold text-blue-900">
-                    {formatCurrency(yacht.price)}
-                  </p>
+                    <button
+                      onClick={() => handleDelete(yacht)}
+                      disabled={isSubmitting}
+                      className="w-full max-w-[200px] bg-red-600 text-white px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="animate-spin" size={12} />
+                      ) : (
+                        <Trash size={12} />
+                      )}
+                      {t?.actions?.deleteVessel || "Delete Vessel"}
+                    </button>
+                  </div>
                 </div>
 
-                {/* SPECIFICATIONS */}
-                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+                {/* DETAILS SECTION */}
+                <div className="p-5 space-y-4 flex-1 flex flex-col">
                   <div className="space-y-1">
-                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
-                      {t?.sections?.dimensions || "Dimensions"}
+                    <h3 className="text-lg font-serif italic mb-1 line-clamp-1">
+                      {getYachtName(yacht)}
+                    </h3>
+                    <p className="text-lg font-bold text-blue-900">
+                      {formatCurrency(yacht.price)}
                     </p>
+                  </div>
+
+                  {/* SPECIFICATIONS */}
+                  <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-[10px] text-slate-600">
-                        <Maximize2 size={12} className="text-blue-600" />
-                        <span className="font-medium">LOA: {yacht.loa ?? "--"}m</span>
+                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                        {t?.sections?.dimensions || "Dimensions"}
+                      </p>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-[10px] text-slate-600">
+                          <Maximize2 size={12} className="text-blue-600" />
+                          <span className="font-medium">LOA: {yacht.loa ?? "--"}m</span>
+                        </div>
+                        {yacht.beam && (
+                          <div className="flex items-center gap-2 text-[10px] text-slate-600">
+                            <Maximize2
+                              size={12}
+                              className="text-blue-600 rotate-90"
+                            />
+                            <span>Beam: {yacht.beam}m</span>
+                          </div>
+                        )}
                       </div>
-                      {yacht.beam && (
-                        <div className="flex items-center gap-2 text-[10px] text-slate-600">
-                          <Maximize2
-                            size={12}
-                            className="text-blue-600 rotate-90"
-                          />
-                          <span>Beam: {yacht.beam}m</span>
-                        </div>
-                      )}
                     </div>
-                  </div>
 
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
-                      {t?.sections?.details || "Details"}
-                    </p>
                     <div className="space-y-1">
-                      {yacht.year && (
-                        <div className="flex items-center gap-2 text-[10px] text-slate-600">
-                          <Calendar size={12} className="text-blue-600" />
-                          <span>{yacht.year}</span>
-                        </div>
-                      )}
-                      {yacht.where && (
-                        <div className="flex items-center gap-2 text-[10px] text-slate-600 line-clamp-1">
-                          <MapPin size={12} className="text-blue-600" />
-                          <span>{yacht.where}</span>
-                        </div>
-                      )}
+                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                        {t?.sections?.details || "Details"}
+                      </p>
+                      <div className="space-y-1">
+                        {yacht.year && (
+                          <div className="flex items-center gap-2 text-[10px] text-slate-600">
+                            <Calendar size={12} className="text-blue-600" />
+                            <span>{yacht.year}</span>
+                          </div>
+                        )}
+                        {yacht.where && (
+                          <div className="flex items-center gap-2 text-[10px] text-slate-600 line-clamp-1">
+                            <MapPin size={12} className="text-blue-600" />
+                            <span>{yacht.where}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* FOOTER */}
-                <div className="pt-4 border-t border-slate-100 mt-auto">
-                  <button
-                    onClick={() =>
-                      router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
-                    }
-                    className="w-full text-[9px] font-black uppercase text-blue-600 tracking-widest hover:text-blue-800 transition-colors flex items-center justify-center gap-1"
-                  >
-                    {t?.actions?.manageVessel || "Manage Vessel"}
-                    <ChevronRight size={12} />
-                  </button>
+                  {/* FOOTER */}
+                  <div className="pt-4 border-t border-slate-100 mt-auto">
+                    <button
+                      onClick={() =>
+                        router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
+                      }
+                      className="w-full text-[9px] font-black uppercase text-blue-600 tracking-widest hover:text-blue-800 transition-colors flex items-center justify-center gap-1"
+                    >
+                      {t?.actions?.manageVessel || "Manage Vessel"}
+                      <ChevronRight size={12} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {/* LIST VIEW */}
@@ -874,110 +922,111 @@ export default function FleetManagementPage() {
           </div>
 
           {/* TABLE ROWS */}
-          {fleet.map((yacht) => (
-            <div
-              key={yacht.id}
-              className="grid grid-cols-12 gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors"
-            >
+          {fleet.map((yacht) => {
+            const publicUrl =
+              getPublicUrl(yacht) || "https://www.schepenkring.nl/aanbod-boten/";
+
+            return (
+              <div
+                key={yacht.id}
+                className="grid grid-cols-12 gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors"
+              >
               {/* VESSEL */}
-              <div className="col-span-3 flex items-center gap-3">
-                <div className="w-16 h-12 bg-slate-100 overflow-hidden flex-shrink-0">
-                  <img
-                    src={getImageUrl(yacht.main_image)}
-                    onError={handleImageError}
-                    alt={getYachtName(yacht)}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <p className="font-medium text-[#003566]">
-                    {getYachtName(yacht)}
-                  </p>
-                  {yacht.vessel_id && (
-                    <p className="text-[9px] text-slate-500 font-medium">
-                      ID: {yacht.vessel_id}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* PRICE */}
-              <div className="col-span-2 flex items-center">
-                <p className="font-bold text-blue-900">
-                  {formatCurrency(yacht.price)}
-                </p>
-              </div>
-
-              {/* SPECIFICATIONS */}
-              <div className="col-span-2 flex items-center">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-[11px] text-slate-600">
-                    <Maximize2 size={12} className="text-blue-600" />
-                    <span>{formatLength(yacht.loa)}</span>
+                <div className="col-span-3 flex items-center gap-3">
+                  <div className="w-16 h-12 bg-slate-100 overflow-hidden flex-shrink-0">
+                    <img
+                      src={getImageUrl(yacht.main_image)}
+                      onError={handleImageError}
+                      alt={getYachtName(yacht)}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  {yacht.where && (
-                    <div className="flex items-center gap-2 text-[11px] text-slate-600">
-                      <MapPin size={12} className="text-blue-600" />
-                      <span className="truncate">{yacht.where}</span>
-                    </div>
-                  )}
+                  <div>
+                    <p className="font-medium text-[#003566]">
+                      {getYachtName(yacht)}
+                    </p>
+                    {yacht.vessel_id && (
+                      <p className="text-[9px] text-slate-500 font-medium">
+                        ID: {yacht.vessel_id}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* STATUS */}
-              <div className="col-span-2 flex items-center">
-                <span
-                  className={cn(
-                    "inline-flex text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
-                    getStatusConfig(yacht.status).color,
-                    getStatusConfig(yacht.status).bg,
-                    getStatusConfig(yacht.status).border,
-                  )}
-                >
-                  {getYachtStatus(yacht)}
-                </span>
-              </div>
+                {/* PRICE */}
+                <div className="col-span-2 flex items-center">
+                  <p className="font-bold text-blue-900">
+                    {formatCurrency(yacht.price)}
+                  </p>
+                </div>
 
-              {/* YEAR */}
-              <div className="col-span-1 flex items-center">
-                <span className="text-[11px] font-medium text-slate-600">
-                  {yacht.year || "--"}
-                </span>
-              </div>
+                {/* SPECIFICATIONS */}
+                <div className="col-span-2 flex items-center">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                      <Maximize2 size={12} className="text-blue-600" />
+                      <span>{formatLength(yacht.loa)}</span>
+                    </div>
+                    {yacht.where && (
+                      <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                        <MapPin size={12} className="text-blue-600" />
+                        <span className="truncate">{yacht.where}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-              {/* ACTIONS */}
-              <div className="col-span-2 flex items-center justify-end gap-2">
-                <button
-                  onClick={() =>
-                    router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
-                  }
-                  className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
-                  title="Edit"
-                >
-                  <Edit3 size={16} />
-                </button>
-                {getPublicUrl(yacht) && (
+                {/* STATUS */}
+                <div className="col-span-2 flex items-center">
+                  <span
+                    className={cn(
+                      "inline-flex text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
+                      getStatusConfig(yacht.status).color,
+                      getStatusConfig(yacht.status).bg,
+                      getStatusConfig(yacht.status).border,
+                    )}
+                  >
+                    {getYachtStatus(yacht)}
+                  </span>
+                </div>
+
+                {/* YEAR */}
+                <div className="col-span-1 flex items-center">
+                  <span className="text-[11px] font-medium text-slate-600">
+                    {yacht.year || "--"}
+                  </span>
+                </div>
+
+                {/* ACTIONS */}
+                <div className="col-span-2 flex items-center justify-end gap-2">
                   <button
                     onClick={() =>
-                      window.open(getPublicUrl(yacht), "_blank")
+                      router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
                     }
+                    className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
+                    title="Edit"
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                  <button
+                    onClick={() => window.open(publicUrl, "_blank")}
                     className="p-2 text-emerald-600 hover:text-emerald-800 transition-colors"
                     title="View"
                   >
                     <Eye size={16} />
                   </button>
-                )}
-                <button
-                  onClick={() => handleDelete(yacht)}
-                  disabled={isSubmitting}
-                  className="p-2 text-red-600 hover:text-red-800 transition-colors"
-                  title="Delete"
-                >
-                  <Trash size={16} />
-                </button>
+                  <button
+                    onClick={() => handleDelete(yacht)}
+                    disabled={isSubmitting}
+                    className="p-2 text-red-600 hover:text-red-800 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash size={16} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {/* FOOTER */}

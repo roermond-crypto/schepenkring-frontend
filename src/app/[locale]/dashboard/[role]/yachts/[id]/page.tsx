@@ -2073,6 +2073,15 @@ export default function YachtEditorPage() {
         const formValues = responseData.step2_form_values;
         const meta = responseData.meta;
 
+        // ── Sanitize: strip ALL "unknown" values from AI response ──
+        // AI models sometimes ignore prompt instructions. This guarantees
+        // "unknown" never appears in any form field.
+        for (const key of Object.keys(formValues)) {
+          if (typeof formValues[key] === "string" && formValues[key].toLowerCase().trim() === "unknown") {
+            formValues[key] = "";
+          }
+        }
+
         const normalizedFormValues: Record<string, unknown> = {
           ...toObjectRecord(formValues),
         };
