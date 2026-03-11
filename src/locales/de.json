@@ -883,14 +883,54 @@
       }
     },
     "detail": {
+      "contactRecord": "Kontaktprofil",
       "contactInfo": "Kontaktinfo",
+      "close": "Kontaktbereich schließen",
+      "editContact": "Kontakt bearbeiten",
+      "updateContact": "Besucherprofil für diesen Chat aktualisieren",
+      "name": "Name",
       "email": "E-Mail",
       "phone": "Telefon",
+      "whatsapp": "WhatsApp-Benutzer-ID",
+      "language": "Bevorzugte Sprache",
+      "doNotContact": "Nicht kontaktieren",
+      "doNotContactHelp": "Weitere Kontaktaufnahme für diesen Kontakt verhindern.",
+      "consentMarketing": "Marketing-Einwilligung",
+      "consentMarketingHelp": "Werbenachrichten und Kampagnen erlauben.",
+      "consentService": "Einwilligung zu Service-Nachrichten",
+      "consentServiceHelp": "Wichtige Service- und Betriebsupdates erlauben.",
       "location": "Standort",
       "company": "Unternehmen",
       "sourceUrl": "Quell-URL",
       "sharedFiles": "Geteilte Dateien ({count})",
-      "activity": "Aktivität"
+      "activity": "Aktivität",
+      "snapshot": "Übersicht",
+      "statusLabel": "Konversationsstatus",
+      "save": "Änderungen speichern",
+      "saving": "Wird gespeichert...",
+      "saved": "Kontaktdaten aktualisiert.",
+      "saveFailed": "Kontakt konnte nicht aktualisiert werden.",
+      "unknownVisitor": "Anonymer Besucher",
+      "noCompany": "Noch kein Unternehmen",
+      "unknownLocation": "Unbekannter Standort",
+      "noActivity": "Noch keine Aktivität erfasst.",
+      "placeholders": {
+        "name": "John Visitor",
+        "email": "john@example.com",
+        "phone": "+31612345678",
+        "whatsapp": "31612345678"
+      },
+      "languages": {
+        "nl": "Niederländisch",
+        "en": "Englisch",
+        "de": "Deutsch",
+        "fr": "Französisch"
+      },
+      "presence": {
+        "online": "Online",
+        "offline": "Offline",
+        "away": "Abwesend"
+      }
     }
   },
   "DashboardSignhostFlow": {

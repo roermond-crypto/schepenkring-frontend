@@ -883,14 +883,54 @@
       }
     },
     "detail": {
+      "contactRecord": "Contact record",
       "contactInfo": "Contact Info",
+      "close": "Close contact panel",
+      "editContact": "Edit contact",
+      "updateContact": "Update the visitor profile used in chat",
+      "name": "Name",
       "email": "Email",
       "phone": "Phone",
+      "whatsapp": "WhatsApp user ID",
+      "language": "Preferred language",
+      "doNotContact": "Do not contact",
+      "doNotContactHelp": "Prevent follow-up outreach for this contact.",
+      "consentMarketing": "Marketing consent",
+      "consentMarketingHelp": "Allow promotional messages and campaigns.",
+      "consentService": "Service messages consent",
+      "consentServiceHelp": "Allow essential service and operational updates.",
       "location": "Location",
       "company": "Company",
       "sourceUrl": "Source URL",
       "sharedFiles": "Shared files ({count})",
-      "activity": "Activity"
+      "activity": "Activity",
+      "snapshot": "Snapshot",
+      "statusLabel": "Conversation status",
+      "save": "Save changes",
+      "saving": "Saving...",
+      "saved": "Contact details updated.",
+      "saveFailed": "Could not update the contact.",
+      "unknownVisitor": "Anonymous Visitor",
+      "noCompany": "No company yet",
+      "unknownLocation": "Unknown location",
+      "noActivity": "No activity recorded yet.",
+      "placeholders": {
+        "name": "John Visitor",
+        "email": "john@example.com",
+        "phone": "+31612345678",
+        "whatsapp": "31612345678"
+      },
+      "languages": {
+        "nl": "Dutch",
+        "en": "English",
+        "de": "German",
+        "fr": "French"
+      },
+      "presence": {
+        "online": "Online",
+        "offline": "Offline",
+        "away": "Away"
+      }
     }
   },
   "DashboardSignhostFlow": {

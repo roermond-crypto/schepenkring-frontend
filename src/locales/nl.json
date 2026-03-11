@@ -884,14 +884,54 @@
       }
     },
     "detail": {
+      "contactRecord": "Contactrecord",
       "contactInfo": "Contactgegevens",
+      "close": "Contactpaneel sluiten",
+      "editContact": "Contact bewerken",
+      "updateContact": "Werk het bezoekersprofiel voor deze chat bij",
+      "name": "Naam",
       "email": "E-mail",
       "phone": "Telefoon",
+      "whatsapp": "WhatsApp gebruiker ID",
+      "language": "Voorkeurstaal",
+      "doNotContact": "Niet contacteren",
+      "doNotContactHelp": "Blokkeer vervolgcontact voor dit contact.",
+      "consentMarketing": "Marketingtoestemming",
+      "consentMarketingHelp": "Sta promotionele berichten en campagnes toe.",
+      "consentService": "Toestemming servicemeldingen",
+      "consentServiceHelp": "Sta essentiële service- en operationele updates toe.",
       "location": "Locatie",
       "company": "Bedrijf",
       "sourceUrl": "Bron URL",
       "sharedFiles": "Gedeelde bestanden ({count})",
-      "activity": "Activiteit"
+      "activity": "Activiteit",
+      "snapshot": "Overzicht",
+      "statusLabel": "Conversatiestatus",
+      "save": "Wijzigingen opslaan",
+      "saving": "Opslaan...",
+      "saved": "Contactgegevens bijgewerkt.",
+      "saveFailed": "Kon het contact niet bijwerken.",
+      "unknownVisitor": "Anonieme bezoeker",
+      "noCompany": "Nog geen bedrijf",
+      "unknownLocation": "Onbekende locatie",
+      "noActivity": "Nog geen activiteit geregistreerd.",
+      "placeholders": {
+        "name": "John Visitor",
+        "email": "john@example.com",
+        "phone": "+31612345678",
+        "whatsapp": "31612345678"
+      },
+      "languages": {
+        "nl": "Nederlands",
+        "en": "Engels",
+        "de": "Duits",
+        "fr": "Frans"
+      },
+      "presence": {
+        "online": "Online",
+        "offline": "Offline",
+        "away": "Afwezig"
+      }
     }
   },
   "DashboardSignhostFlow": {

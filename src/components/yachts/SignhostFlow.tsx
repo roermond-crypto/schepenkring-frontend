@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
   AlertCircle,
-  CheckCircle,
   ExternalLink,
   Eye,
   FileCheck,
@@ -86,11 +85,29 @@ type ContractDraft = {
   agreementCity: string;
 };
 
+type YachtContractData = {
+  price?: string | number | null;
+  year?: string | number | null;
+  loa?: string | number | null;
+  beam?: string | number | null;
+  draft?: string | number | null;
+  engine_manufacturer?: string | null;
+  engine_model?: string | null;
+  hull_construction?: string | null;
+  deck_construction?: string | null;
+  builder?: string | null;
+  hull_number?: string | null;
+  reg_details?: string | null;
+  boat_name?: string | null;
+  manufacturer?: string | null;
+  model?: string | null;
+};
+
 interface SignhostFlowProps {
   yachtId: number;
   yachtName: string;
   locationId: number | null;
-  yachtData?: Record<string, any> | null;
+  yachtData?: YachtContractData | null;
   locationOptions?: LocationOption[];
 }
 
@@ -259,8 +276,160 @@ function titleCase(input: string) {
   return input.charAt(0).toUpperCase() + input.slice(1).toLowerCase();
 }
 
-function boolLabel(value: "yes" | "no") {
+function boolLabel(language: ContractLanguage, value: "yes" | "no") {
+  if (language === "nl") return value === "yes" ? "Ja" : "Nee";
+  if (language === "de") return value === "yes" ? "Ja" : "Nein";
+  if (language === "fr") return value === "yes" ? "Oui" : "Non";
   return value === "yes" ? "Yes" : "No";
+}
+
+function resolveAttachmentLanguage(language: ContractLanguage): ContractLanguage | "en" {
+  return language === "fr" ? "en" : language;
+}
+
+function getAgreementCopy(language: ContractLanguage) {
+  switch (language) {
+    case "nl":
+      return {
+        heading: "BEMIDDELINGSOVEREENKOMST",
+        referenceLabel: "Referentienummer",
+        nameLabel: "Naam",
+        addressLabel: "Adres",
+        postalCityLabel: "Postcode / plaats",
+        phoneLabel: "Telefoonnummer",
+        emailLabel: "E-mail",
+        passportLabel: "Paspoortnummer",
+        marriedLabel: "Gehuwd",
+        clientCaption: "Hierna te noemen cliënt",
+        intermediaryConnector: "en",
+        companyLabel: "Bedrijf",
+        intermediaryCaption: "Hierna te noemen bemiddelaar",
+        introLabel: "zijn overeengekomen:",
+        signatureClient: "handtekening cliënt",
+        signatureIntermediary: "handtekening bemiddelaar",
+      };
+    case "de":
+      return {
+        heading: "MAKLERVERTRAG",
+        referenceLabel: "Referenznummer",
+        nameLabel: "Name",
+        addressLabel: "Adresse",
+        postalCityLabel: "Postleitzahl / Ort",
+        phoneLabel: "Telefonnummer",
+        emailLabel: "E-Mail",
+        passportLabel: "Passnummer",
+        marriedLabel: "Verheiratet",
+        clientCaption: "nachfolgend Kunde genannt",
+        intermediaryConnector: "und",
+        companyLabel: "Unternehmen",
+        intermediaryCaption: "nachfolgend Vermittler genannt",
+        introLabel: "haben vereinbart:",
+        signatureClient: "Unterschrift Kunde",
+        signatureIntermediary: "Unterschrift Vermittler",
+      };
+    case "fr":
+      return {
+        heading: "CONTRAT DE COURTAGE",
+        referenceLabel: "Numero de reference",
+        nameLabel: "Nom",
+        addressLabel: "Adresse",
+        postalCityLabel: "Code postal / ville",
+        phoneLabel: "Telephone",
+        emailLabel: "E-mail",
+        passportLabel: "Numero de passeport",
+        marriedLabel: "Marie",
+        clientCaption: "ci-apres denomme le client",
+        intermediaryConnector: "et",
+        companyLabel: "Societe",
+        intermediaryCaption: "ci-apres denomme l'intermediaire",
+        introLabel: "sont convenus de ce qui suit :",
+        signatureClient: "signature du client",
+        signatureIntermediary: "signature de l'intermediaire",
+      };
+    default:
+      return {
+        heading: "BROKER'S AGREEMENT",
+        referenceLabel: "Reference number",
+        nameLabel: "Name",
+        addressLabel: "Address",
+        postalCityLabel: "Postal code / city",
+        phoneLabel: "Phonenumber",
+        emailLabel: "E-mail",
+        passportLabel: "Passport number",
+        marriedLabel: "Married",
+        clientCaption: "Hereafter named client",
+        intermediaryConnector: "and",
+        companyLabel: "Company",
+        intermediaryCaption: "Hereafter named intermediary",
+        introLabel: "have agreed:",
+        signatureClient: "signature client",
+        signatureIntermediary: "signature intermediary",
+      };
+  }
+}
+
+function getAgreementClauses(draft: ContractDraft) {
+  const yesNoRegister = `${boolLabel(draft.language, draft.shipRegisterEntry)}${draft.shipRegisterPlace ? ` ${draft.language === "en" ? "in" : draft.language === "de" ? "in" : draft.language === "fr" ? "a" : "te"} ${draft.shipRegisterPlace}` : ""}`;
+  const yesNoMortgage = `${boolLabel(draft.language, draft.hasMortgage)}${draft.mortgageInFavorOf ? `${draft.language === "en" ? ", in favor of " : draft.language === "de" ? ", zugunsten von " : draft.language === "fr" ? ", au profit de " : ", ten gunste van "}${draft.mortgageInFavorOf}` : ""}`;
+
+  switch (draft.language) {
+    case "nl":
+      return [
+        `1. dat de cliënt de bemiddelaar de exclusieve opdracht geeft om het vaartuig dat zijn eigendom is te verkopen met de volgende specificatie:<br />Naam: ${draft.vesselName || "………"}<br />Merk / type vaartuig: ${draft.vesselBrandType || "………"}<br />Bouwjaar, circa: ${draft.buildYear || "………"}<br />Afmetingen, circa: ${draft.dimensions || "………"}<br />Bouwmateriaal: ${draft.buildingMaterial || "………"}<br />Bouwer: ${draft.builder || "………"}<br />Rompnummer / CIN nummer: ${draft.hullNumber || "………"}<br />Motor: ${draft.engine || "………"}<br />Motornummer: ${draft.engineNumber || "………"}<br />Registratienummer: ${draft.registrationNumber || "………"}<br />Inschrijving scheepsregister: ${yesNoRegister}<br />Scheepshypotheek: ${yesNoMortgage}<br />BTW-verklaring: ${boolLabel(draft.language, draft.vatDeclaration)}<br />welke opdracht de bemiddelaar aanvaardt door ondertekening van deze overeenkomst.`,
+        `2. dat de bemiddelaar dit vaartuig te koop zal aanbieden voor de vraagprijs van EUR ${draft.askingPrice || "………"}${draft.askingPriceWords ? ` (${draft.askingPriceWords})` : ""}.`,
+        "3. dat aan de cliënt courtage in rekening wordt gebracht over de laatst schriftelijk vastgelegde verkoopprijs zodra overeenstemming over koop/verkoop is bereikt, ongeacht of die prijs in geld, natura of diensten wordt voldaan.",
+        "4. dat de courtage bedraagt:<br />- 8% voor vaartuigen met een koop/verkoopprijs tot en met EUR 100.000 met een minimum van EUR 2.500<br />- 6% voor vaartuigen met een koop/verkoopprijs boven EUR 100.000 met een minimum van EUR 8.000<br />De verschuldigde courtage wordt verhoogd met de wettelijk verschuldigde btw.",
+        "5. dat de bemiddelaar de opbrengst voor de cliënt ontvangt via derdengelden.",
+        "6. dat het vaartuig van de cliënt gedurende de looptijd van de overeenkomst wordt gestald in de verkoophaven van de bemiddelaar. De stallingssom bedraagt EUR ……… (inclusief btw) per maand of gedeelte daarvan en dient maandelijks vooruit door de cliënt te worden voldaan.<br />De bovenstaande liggelden:<br />- zijn verschuldigd bij beëindiging van de bemiddelingsovereenkomst door rechtsgeldige opzegging.<br />- zijn verschuldigd bij verwijdering van het object uit het verkoopgebied van de bemiddelaar zonder beëindiging van de opdracht.<br />- worden maandelijks berekend indien de boot niet binnen 6 maanden wordt verkocht.<br />Bij verkoop via de jachtmakelaar worden over de eerste 6 maanden geen liggelden berekend.",
+        "7. dat de cliënt de bemiddelaar machtigt om proef te varen wanneer hij niet aanwezig is (en zonder zijn voorafgaande toestemming).",
+        "8. dat het vaartuig voor rekening en risico van de cliënt blijft, ook tijdens een proefvaart, totdat de eigendomsoverdracht aan de koper is voltooid en de cliënt tot dat moment voor passende verzekering zorgt.",
+        "9. dat de cliënt verantwoordelijk is voor de juistheid van zijn beschrijving en de door hem verstrekte gegevens met betrekking tot het vaartuig en dat hij de bemiddelaar vrijwaart voor aanspraken van derden.",
+        "10. dat deze overeenkomst voor onbepaalde tijd wordt aangegaan. De cliënt kan de overeenkomst te allen tijde beëindigen tegen betaling aan de bemiddelaar van een vergoeding zoals vastgesteld in artikel 13 van deze algemene voorwaarden. De bemiddelaar kan de overeenkomst te allen tijde om dringende redenen beëindigen.",
+        "11. dat op deze overeenkomst de HISWA bemiddelingsvoorwaarden voor vaartuigen van toepassing zijn, waarvan de cliënt door ondertekening kennis heeft genomen.",
+      ];
+    case "de":
+      return [
+        `1. dass der Kunde dem Vermittler den exklusiven Auftrag erteilt, das in seinem Eigentum stehende Wasserfahrzeug mit folgender Spezifikation zu verkaufen:<br />Name: ${draft.vesselName || "………"}<br />Marke / Typ Wasserfahrzeug: ${draft.vesselBrandType || "………"}<br />Baujahr, circa: ${draft.buildYear || "………"}<br />Abmessungen, circa: ${draft.dimensions || "………"}<br />Baumaterial: ${draft.buildingMaterial || "………"}<br />Werft / Hersteller: ${draft.builder || "………"}<br />Rumpfnummer / CIN-Nummer: ${draft.hullNumber || "………"}<br />Motor: ${draft.engine || "………"}<br />Motornummer: ${draft.engineNumber || "………"}<br />Registriernummer: ${draft.registrationNumber || "………"}<br />Eintrag im Schiffsregister: ${yesNoRegister}<br />Schiffshypothek: ${yesNoMortgage}<br />MwSt.-Erklärung: ${boolLabel(draft.language, draft.vatDeclaration)}<br />welchen Auftrag der Vermittler durch Unterzeichnung dieses Vertrags annimmt.`,
+        `2. dass der Vermittler dieses Wasserfahrzeug zum Angebotspreis von EUR ${draft.askingPrice || "………"}${draft.askingPriceWords ? ` (${draft.askingPriceWords})` : ""} zum Verkauf anbietet.`,
+        "3. dass vom Kunden eine Maklerprovision auf den zuletzt schriftlich festgelegten Verkaufspreis geschuldet wird, sobald Einigkeit über Kauf/Verkauf erzielt wurde, unabhängig davon, ob dieser Preis in Geld, in Natur oder in Leistungen erfüllt wird.",
+        "4. dass die Maklerprovision beträgt:<br />- 8% für Wasserfahrzeuge mit einem Kauf-/Verkaufspreis bis EUR 100.000 mit einem Minimum von EUR 2.500<br />- 6% für Wasserfahrzeuge mit einem Kauf-/Verkaufspreis über EUR 100.000 mit einem Minimum von EUR 8.000<br />Die geschuldete Provision erhöht sich um die gesetzlich geschuldete Mehrwertsteuer.",
+        "5. dass der Vermittler den Erlös für den Kunden über ein Treuhandkonto entgegennimmt.",
+        "6. dass das Wasserfahrzeug des Kunden für die Dauer des Vertrags im Verkaufshafen des Vermittlers liegt. Die Liegegebühr beträgt EUR ……… (inklusive Mehrwertsteuer) pro Monat oder Teil eines Monats und ist vom Kunden monatlich im Voraus zu zahlen.<br />Die oben genannten Liegegebühren:<br />- sind bei Beendigung des Maklervertrags durch wirksame Kündigung fällig.<br />- sind fällig bei Entfernung des Objekts aus dem Verkaufsbereich des Maklers ohne Beendigung des Auftrags.<br />- werden monatlich berechnet, wenn das Boot nicht innerhalb von 6 Monaten verkauft wird.<br />Bei Verkauf über den Yachtmakler werden in den ersten 6 Monaten keine Liegegebühren berechnet.",
+        "7. dass der Kunde den Vermittler ermächtigt, eine Probefahrt vorzunehmen, wenn er nicht anwesend ist (und ohne seine vorherige Zustimmung).",
+        "8. dass das Wasserfahrzeug auf Rechnung und Gefahr des Kunden bleibt, auch während einer Probefahrt, bis das Eigentum auf den Käufer übertragen ist und der Kunde bis dahin eine angemessene Versicherung unterhält.",
+        "9. dass der Kunde für die Richtigkeit seiner Beschreibung und der von ihm bereitgestellten Daten zum Wasserfahrzeug verantwortlich ist und den Vermittler von Ansprüchen Dritter freistellt.",
+        "10. dass dieser Vertrag auf unbestimmte Zeit geschlossen wird. Der Kunde kann den Vertrag jederzeit gegen Zahlung einer Vergütung an den Vermittler kündigen, wie in Artikel 13 dieser allgemeinen Bedingungen festgelegt. Der Vermittler kann den Vertrag jederzeit aus zwingenden Gründen kündigen.",
+        "11. dass für diesen Vertrag die HISWA-Bedingungen für Maklerverträge von Wasserfahrzeugen gelten, von denen der Kunde durch Unterzeichnung Kenntnis genommen hat.",
+      ];
+    case "fr":
+      return [
+        `1. que le client confie a l'intermediaire la mission exclusive de vendre le bateau lui appartenant avec les caracteristiques suivantes :<br />Nom : ${draft.vesselName || "………"}<br />Marque / type de bateau : ${draft.vesselBrandType || "………"}<br />Annee de construction, environ : ${draft.buildYear || "………"}<br />Dimensions, environ : ${draft.dimensions || "………"}<br />Materiau de construction : ${draft.buildingMaterial || "………"}<br />Constructeur : ${draft.builder || "………"}<br />Numero de coque / numero CIN : ${draft.hullNumber || "………"}<br />Moteur : ${draft.engine || "………"}<br />Numero du moteur : ${draft.engineNumber || "………"}<br />Numero d'immatriculation : ${draft.registrationNumber || "………"}<br />Inscription au registre naval : ${yesNoRegister}<br />Hypotheque maritime : ${yesNoMortgage}<br />Declaration TVA : ${boolLabel(draft.language, draft.vatDeclaration)}<br />mission acceptee par l'intermediaire lors de la signature du present contrat.`,
+        `2. que l'intermediaire proposera ce bateau a la vente au prix demande de EUR ${draft.askingPrice || "………"}${draft.askingPriceWords ? ` (${draft.askingPriceWords})` : ""}.`,
+        "3. qu'une commission de courtage est due par le client sur le dernier prix de vente etabli par ecrit des qu'un accord sur l'achat/la vente est atteint, que ce prix soit regle en especes, en nature ou en services.",
+        "4. que la commission de courtage est de :<br />- 8% pour les bateaux ayant un prix d'achat/vente jusqu'a EUR 100.000 avec un minimum de EUR 2.500<br />- 6% pour les bateaux ayant un prix d'achat/vente superieur a EUR 100.000 avec un minimum de EUR 8.000<br />La commission due est augmentee de la TVA legalement applicable.",
+        "5. que l'intermediaire recevra les fonds pour le client par l'intermediaire d'un compte de tiers.",
+        "6. que le bateau du client sera stationne pendant la duree du contrat dans le port de vente de l'intermediaire. Les frais de stationnement sont de EUR ……… (TVA comprise) par mois ou partie de mois et doivent etre payes d'avance chaque mois par le client.<br />Les frais de stationnement ci-dessus :<br />- sont exigibles lors de la resiliation valable du contrat de courtage.<br />- sont exigibles lors du retrait de l'objet de la zone de vente du courtier sans resiliation de la mission.<br />- sont factures mensuellement si le bateau n'est pas vendu dans les 6 mois.<br />En cas de vente par le courtier en yachts, aucun frais d'emplacement n'est facture pendant les 6 premiers mois.",
+        "7. que le client autorise l'intermediaire a effectuer un essai en navigation lorsqu'il n'est pas present (et sans son autorisation prealable).",
+        "8. que le bateau reste aux frais et risques du client, meme pendant l'essai, jusqu'au transfert de propriete a l'acheteur et que le client souscrit une assurance adequate jusqu'a ce moment.",
+        "9. que le client est responsable de l'exactitude de sa description et des donnees fournies concernant le bateau et qu'il garantit l'intermediaire contre toute reclamation de tiers.",
+        "10. que le present contrat est conclu pour une duree indeterminee. Le client peut y mettre fin a tout moment moyennant paiement a l'intermediaire d'une indemnite telle que prevue a l'article 13 des presentes conditions generales. L'intermediaire peut y mettre fin a tout moment pour motifs imperieux.",
+        "11. que les conditions generales HISWA relatives au contrat de courtage pour bateaux s'appliquent au present contrat et que le client en a pris connaissance en signant.",
+      ];
+    default:
+      return [
+        `1. that the client grants the intermediary the exclusive assignment to sell the vessel in his property with the following specification:<br />Name: ${draft.vesselName || "………"}<br />Brand / type vessel: ${draft.vesselBrandType || "………"}<br />Building year, circa: ${draft.buildYear || "………"}<br />Dimensions, circa: ${draft.dimensions || "………"}<br />Building material: ${draft.buildingMaterial || "………"}<br />Builder: ${draft.builder || "………"}<br />Hullnumber / CIN Number: ${draft.hullNumber || "………"}<br />Engine: ${draft.engine || "………"}<br />Engine number: ${draft.engineNumber || "………"}<br />Registration number: ${draft.registrationNumber || "………"}<br />Entry ship register: ${yesNoRegister}<br />Ship mortgage: ${yesNoMortgage}<br />VAT declaration: ${boolLabel(draft.language, draft.vatDeclaration)}<br />whichever assignment the intermediary accepts by signing this agreement.`,
+        `2. that the intermediary will put this vessel up for sale for the asking price of EUR ${draft.askingPrice || "………"}${draft.askingPriceWords ? ` (${draft.askingPriceWords} euro)` : ""}.`,
+        "3. that a broker's commission is payable by the client for the last sales price established in writing as soon as the consensus ad idem has been reached about the purchase/sale, regardless of the fact whether this sales price is settled in cash, in kind or in services.",
+        "4. that the broker's commission is:<br />- 8% for vessels with a purchase/sales price up to EUR 100,000 with a minimum of EUR 2,500<br />- 6% for vessels with a purchase/sales price above EUR 100,000 with a minimum of EUR 8,000<br />The payable broker's commission is increased by the legally payable VAT.",
+        "5. that the intermediary will receive proceeds for the client by means of Third party funds.",
+        "6. that the vessel of the client will be stored for the term of the agreement in the sales harbor of the intermediary. The storage sum is EUR ……… (including VAT) per month or part of the month, this sum has to be paid in advance by the client every month.<br />The above mooring fees:<br />- are payable upon termination of the brokerage agreement by valid notice.<br />- are payable upon removal of the object from the broker's sales area without termination of the commission.<br />- are charged monthly if the boat is not sold within 6 months.<br />In case of sale through the yacht broker, no berth fees will be charged for the first 6 months.",
+        "7. that the client authorizes the intermediary to make a trial run when he is not present (and without his prior permission).",
+        "8. that the vessel remains at the account and risk of the client, even during the trial run, until the time that the transfer of property to the buyer is completed and the client takes up adequate insurance until the transfer of the property.",
+        "9. that the client is responsible for the correctness of his description and the data provided by him with regard to the vessel and that he/she indemnifies the intermediary from claims by third parties.",
+        "10. that this contract is concluded for an indefinite period. The client may terminate the contract at any time on payment to the intermediary of a fee as established in Article 13 of these general terms and conditions. The intermediary may terminate the contract at any time for compelling reasons.",
+        "11. that the General Conditions Broker's agreement vessels of HISWA apply to this agreement, with which the client has become acquainted by signing.",
+      ];
+  }
 }
 
 function extractCity(name?: string | null) {
@@ -315,81 +484,63 @@ function formatAgreementDate(language: ContractLanguage, value: string) {
 
 function getPreviewHtml(draft: ContractDraft) {
   const copy = copyByLanguage[draft.language];
+  const agreementCopy = getAgreementCopy(draft.language);
   const dateLabel = formatAgreementDate(draft.language, draft.agreementDate);
-
-  const row = (label: string, value: string) =>
-    `<tr><td style="padding:6px 0;color:#6b7280;width:240px;">${label}</td><td style="padding:6px 0;color:#0f172a;font-weight:600;">${value || "...................."}</td></tr>`;
+  const reference = `SK-${draft.language.toUpperCase()}-${draft.vesselName?.slice(0, 3).toUpperCase() || "DOC"}-${draft.agreementDate || "0000-00-00"}`;
+  const lineValue = (value?: string) => value?.trim() || "………";
+  const clauses = getAgreementClauses(draft)
+    .map((clause) => `<p class="clause">${clause}</p>`)
+    .join("");
 
   return `
     <html>
       <head>
-        <title>${copy.title}</title>
+        <title>${agreementCopy.heading}</title>
         <style>
-          body { font-family: Georgia, serif; padding: 42px; color: #0f172a; }
-          h1 { margin: 0 0 6px; font-size: 30px; color: #0b3a6b; }
-          h2 { margin: 28px 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.12em; color: #475569; }
-          p { line-height: 1.7; font-size: 14px; }
-          table { width: 100%; border-collapse: collapse; font-size: 14px; }
-          .card { border: 1px solid #dbe4f0; border-radius: 16px; padding: 20px; margin-bottom: 18px; }
-          .sig { display:flex; gap:32px; margin-top:48px; }
-          .sig div { flex:1; border-top:1px solid #cbd5e1; padding-top:12px; font-size: 13px; }
+          @page { size: A4; margin: 22mm 18mm; }
+          body { font-family: "Times New Roman", Georgia, serif; color: #111827; font-size: 13px; line-height: 1.35; }
+          .page { max-width: 760px; margin: 0 auto; }
+          .topline { font-size: 12px; margin: 0 0 18px; white-space: pre-line; }
+          h1 { margin: 12px 0 16px; font-size: 28px; text-align: center; letter-spacing: 0.04em; }
+          .meta p { margin: 4px 0; }
+          .label { display: inline-block; min-width: 150px; }
+          .intro { margin: 12px 0 14px; }
+          .clause { margin: 0 0 12px; }
+          .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 36px; }
+          .sigline { border-top: 1px solid #111827; padding-top: 34px; }
         </style>
       </head>
       <body>
-        <h1>${copy.title}</h1>
-        <p>${copy.subtitle}</p>
-        <div class="card">
-          <h2>${copy.sellerLabel}</h2>
-          <table>
-            ${row("Company", draft.companyName)}
-            ${row("Address", draft.companyAddress)}
-            ${row("Postal code / city", [draft.companyPostalCode, draft.companyCity].filter(Boolean).join(" "))}
-            ${row("Phone", draft.companyPhone)}
-            ${row("E-mail", draft.companyEmail)}
-          </table>
-        </div>
-        <div class="card">
-          <h2>${copy.buyerLabel}</h2>
-          <table>
-            ${row("Name", draft.clientName)}
-            ${row("Address", draft.clientAddress)}
-            ${row("Postal code / city", [draft.clientPostalCode, draft.clientCity].filter(Boolean).join(" "))}
-            ${row("Phone", draft.clientPhone)}
-            ${row("E-mail", draft.clientEmail)}
-            ${row("Passport number", draft.passportNumber)}
-            ${row("Married", boolLabel(draft.married))}
-            ${row("Partner name", draft.spouseName)}
-          </table>
-        </div>
-        <div class="card">
-          <h2>${copy.vesselLabel}</h2>
-          <table>
-            ${row("Name", draft.vesselName)}
-            ${row("Brand / type vessel", draft.vesselBrandType)}
-            ${row("Building year, circa", draft.buildYear)}
-            ${row("Dimensions, circa", draft.dimensions)}
-            ${row("Building material", draft.buildingMaterial)}
-            ${row("Builder", draft.builder)}
-            ${row("Hullnumber / CIN Number", draft.hullNumber)}
-            ${row("Engine", draft.engine)}
-            ${row("Engine number", draft.engineNumber)}
-            ${row("Registration number", draft.registrationNumber)}
-          </table>
-        </div>
-        <div class="card">
-          <h2>${copy.declarationsLabel}</h2>
-          <p>${copy.registerText(boolLabel(draft.shipRegisterEntry), draft.shipRegisterPlace)}</p>
-          <p>${copy.mortgageText(boolLabel(draft.hasMortgage), draft.mortgageInFavorOf)}</p>
-          <p>${copy.vatText(boolLabel(draft.vatDeclaration))}</p>
-          <p>${copy.priceText(draft.askingPrice, draft.askingPriceWords)}</p>
-        </div>
-        <div class="card">
-          <h2>${copy.closingLabel}</h2>
+        <div class="page">
+          <p class="topline">__________\n\n______________________________\n\n____</p>
+          <h1>${agreementCopy.heading}</h1>
+          <div class="meta">
+            <p><span class="label">${agreementCopy.referenceLabel}:</span> ${reference}</p>
+            <p><span class="label">${agreementCopy.nameLabel}:</span> ${lineValue(draft.clientName)}</p>
+            <p><span class="label">${agreementCopy.addressLabel}:</span> ${lineValue(draft.clientAddress)}</p>
+            <p><span class="label">${agreementCopy.postalCityLabel}:</span> ${lineValue([draft.clientPostalCode, draft.clientCity].filter(Boolean).join(" "))}</p>
+            <p><span class="label">${agreementCopy.phoneLabel}:</span> ${lineValue(draft.clientPhone)}</p>
+            <p><span class="label">${agreementCopy.emailLabel}:</span> ${lineValue(draft.clientEmail)}</p>
+            <p><span class="label">${agreementCopy.passportLabel}:</span> ${lineValue(draft.passportNumber)}</p>
+            <p><span class="label">${agreementCopy.marriedLabel}:</span> ${boolLabel(draft.language, draft.married)}</p>
+          </div>
+          <p>${agreementCopy.clientCaption}</p>
+          <p>${agreementCopy.intermediaryConnector}</p>
+          <div class="meta">
+            <p><span class="label">${agreementCopy.companyLabel}:</span> ${lineValue(draft.companyName)}</p>
+            <p><span class="label">${agreementCopy.addressLabel}:</span> ${lineValue(draft.companyAddress)}</p>
+            <p><span class="label">${agreementCopy.postalCityLabel}:</span> ${lineValue([draft.companyPostalCode, draft.companyCity].filter(Boolean).join(" "))}</p>
+            <p><span class="label">${agreementCopy.phoneLabel}:</span> ${lineValue(draft.companyPhone)}</p>
+            <p><span class="label">${agreementCopy.emailLabel}:</span> ${lineValue(draft.companyEmail)}</p>
+          </div>
+          <p>${agreementCopy.intermediaryCaption}</p>
+          <p class="intro">${agreementCopy.introLabel}</p>
+          ${clauses}
           <p>${copy.closingText(dateLabel, draft.agreementCity || draft.companyCity)}</p>
-        </div>
-        <div class="sig">
-          <div>${copy.sellerLabel}</div>
-          <div>${copy.buyerLabel}</div>
+          <div class="signatures">
+            <div class="sigline">${agreementCopy.signatureClient}</div>
+            <div class="sigline">${agreementCopy.signatureIntermediary}</div>
+          </div>
         </div>
       </body>
     </html>
@@ -398,7 +549,7 @@ function getPreviewHtml(draft: ContractDraft) {
 
 function buildContractDraft(
   yachtName: string,
-  yachtData: Record<string, any> | null | undefined,
+  yachtData: YachtContractData | null | undefined,
   location: LocationOption | null | undefined,
 ): ContractDraft {
   const locationDefaults = resolveLocationDefaults(location);
@@ -546,7 +697,8 @@ export function SignhostFlow({
     locale === "nl" || locale === "de" || locale === "fr" || locale === "en"
       ? locale
       : "en";
-  const languageAttachment = attachmentByLanguage[localeLanguage];
+  const languageAttachment =
+    attachmentByLanguage[resolveAttachmentLanguage(draft.language)];
 
   const handleFieldChange = <K extends keyof ContractDraft>(
     key: K,
@@ -640,8 +792,16 @@ export function SignhostFlow({
 
       setSignRequest(res.sign_request);
       toast.success("Signature request sent.");
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to send request.");
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } }).response
+          ?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response!.data!.message!
+          : "Failed to send request.";
+      toast.error(message);
     } finally {
       setIsSending(false);
     }
@@ -821,7 +981,7 @@ export function SignhostFlow({
                   <p>{fieldValue(draft.clientEmail)}</p>
                   <p>Passport: {fieldValue(draft.passportNumber)}</p>
                   <p>
-                    Married: {boolLabel(draft.married)}
+                    Married: {boolLabel(draft.language, draft.married)}
                     {draft.spouseName ? ` • ${draft.spouseName}` : ""}
                   </p>
                 </div>
@@ -867,17 +1027,17 @@ export function SignhostFlow({
               <div className="mt-4 space-y-2 text-sm leading-7 text-slate-700 dark:text-slate-300">
                 <p>
                   {previewCopy.registerText(
-                    boolLabel(draft.shipRegisterEntry),
+                    boolLabel(draft.language, draft.shipRegisterEntry),
                     draft.shipRegisterPlace,
                   )}
                 </p>
                 <p>
                   {previewCopy.mortgageText(
-                    boolLabel(draft.hasMortgage),
+                    boolLabel(draft.language, draft.hasMortgage),
                     draft.mortgageInFavorOf,
                   )}
                 </p>
-                <p>{previewCopy.vatText(boolLabel(draft.vatDeclaration))}</p>
+                <p>{previewCopy.vatText(boolLabel(draft.language, draft.vatDeclaration))}</p>
                 <p>
                   {previewCopy.priceText(
                     draft.askingPrice || "0",

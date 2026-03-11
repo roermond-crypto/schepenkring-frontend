@@ -11,6 +11,7 @@ import {
   getContactInfo,
   sendSupportMessage,
   startSupportCall,
+  updateConversationContact,
   updateConversationStatus,
   createConversation,
 } from "@/lib/chat-api";
@@ -85,6 +86,11 @@ export function ChatPage() {
       name: contactData?.name && contactData.name !== "Loading..." ? contactData.name : conv.contact_name,
       email: contactData?.email ?? conv.guest_email,
       phone: contactData?.phone ?? conv.guest_phone,
+      whatsapp_user_id: contactData?.whatsapp_user_id,
+      language_preferred: contactData?.language_preferred ?? "nl",
+      do_not_contact: contactData?.do_not_contact ?? false,
+      consent_marketing: contactData?.consent_marketing ?? false,
+      consent_service_messages: contactData?.consent_service_messages ?? true,
       company: contactData?.company ?? conv.contact_company,
       avatar: contactData?.avatar ?? conv.contact_avatar,
       status: contactData?.status ?? "online",
@@ -116,6 +122,61 @@ export function ChatPage() {
 
       const newMsg = await startSupportCall(selectedConv.id, phoneNumber);
       setMessages((prev) => [...prev, newMsg]);
+    },
+    [selectedConv],
+  );
+
+  const handleUpdateContact = useCallback(
+    async (payload: {
+      name: string;
+      email?: string;
+      phone?: string;
+      whatsapp_user_id?: string;
+      language_preferred?: string;
+      do_not_contact: boolean;
+      consent_marketing: boolean;
+      consent_service_messages: boolean;
+    }) => {
+      if (!selectedConv) return;
+
+      const updated = await updateConversationContact(selectedConv.id, payload);
+
+      setContact((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...updated,
+              company: prev.company,
+              location: prev.location,
+              shared_files: prev.shared_files,
+              events: prev.events,
+            }
+          : updated,
+      );
+
+      setSelectedConv((prev) =>
+        prev
+          ? {
+              ...prev,
+              contact_name: updated.name,
+              guest_email: updated.email,
+              guest_phone: updated.phone,
+            }
+          : prev,
+      );
+
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === selectedConv.id
+            ? {
+                ...conversation,
+                contact_name: updated.name,
+                guest_email: updated.email,
+                guest_phone: updated.phone,
+              }
+            : conversation,
+        ),
+      );
     },
     [selectedConv],
   );
@@ -236,6 +297,7 @@ export function ChatPage() {
             <ContactDetailPanel
               contact={contact}
               conversation={selectedConv}
+              onUpdateContact={handleUpdateContact}
               onClose={() => setShowDetailPanel(false)}
             />
           </div>
