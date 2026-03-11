@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   UserPlus,
@@ -214,23 +214,24 @@ export default function RoleManagementPage() {
     access_level: "Limited" as "Limited" | "Full",
     status: "Active" as StatusUi,
   });
+  const syncFailedText = t("toasts.syncFailed");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await api.get("/admin/users");
       const list = Array.isArray(data?.data) ? data.data : [];
       setUsers(list);
     } catch (err: unknown) {
-      toast.error(extractErrorMessage(err, t("toasts.syncFailed")));
+      toast.error(extractErrorMessage(err, syncFailedText));
     } finally {
       setLoading(false);
     }
-  };
+  }, [syncFailedText]);
 
   useEffect(() => {
     void fetchData();
-  }, []);
+  }, [fetchData]);
 
   useEffect(() => {
     const handler = () => setOpenActionId(null);
@@ -282,6 +283,43 @@ export default function RoleManagementPage() {
       toast.error(extractErrorMessage(err, t("toasts.terminationFailed")), {
         id: "delete",
       });
+    }
+  };
+
+  const handleStatusToggle = async (user: UserRecord) => {
+    const nextStatus: UserStatus =
+      user.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
+
+    try {
+      toast.loading(
+        nextStatus === "ACTIVE"
+          ? "Activating user..."
+          : "Deactivating user...",
+        { id: `status-${user.id}` },
+      );
+
+      const response = await api.patch(
+        `/admin/users/${user.id}`,
+        { status: nextStatus },
+        { headers: { "Idempotency-Key": idempotencyKey() } },
+      );
+
+      const updated = response.data?.data ?? response.data;
+      setUsers((prev) =>
+        prev.map((entry) => (entry.id === user.id ? { ...entry, ...updated } : entry)),
+      );
+
+      toast.success(
+        nextStatus === "ACTIVE"
+          ? "User activated"
+          : "User deactivated",
+        { id: `status-${user.id}` },
+      );
+    } catch (err: unknown) {
+      toast.error(
+        extractErrorMessage(err, "Failed to update user status"),
+        { id: `status-${user.id}` },
+      );
     }
   };
 
@@ -605,6 +643,38 @@ export default function RoleManagementPage() {
                             exit={{ opacity: 0, scale: 0.95 }}
                             className="absolute right-0 top-10 z-30 w-52 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
                           >
+                            <button
+                              onClick={() => {
+                                router.push(
+                                  `/${locale}/dashboard/admin/account?userId=${user.id}`,
+                                );
+                                setOpenActionId(null);
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                            >
+                              <span className="inline-flex items-center gap-3">
+                                <UserCircle size={15} className="text-blue-500" />
+                                View account
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                void handleStatusToggle(user);
+                                setOpenActionId(null);
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                            >
+                              <span className="inline-flex items-center gap-3">
+                                {user.status === "ACTIVE" ? (
+                                  <XCircle size={15} className="text-red-500" />
+                                ) : (
+                                  <CheckCircle2 size={15} className="text-emerald-500" />
+                                )}
+                                {user.status === "ACTIVE"
+                                  ? "Set inactive"
+                                  : "Set active"}
+                              </span>
+                            </button>
                             <button
                               onClick={() => {
                                 setImpersonateTarget(user);

@@ -82,7 +82,7 @@ export function useImagePipeline(
     const [isLoading, setIsLoading] = useState(false);
     const pollRef = useRef<NodeJS.Timeout | null>(null);
 
-    const isProcessing = stats.processing > 0 || images.some(img => !img.thumb_url || img.enhancement_method === 'pending');
+    const isProcessing = stats.processing > 0;
 
     // Fetch images from backend
     const refreshImages = useCallback(async () => {

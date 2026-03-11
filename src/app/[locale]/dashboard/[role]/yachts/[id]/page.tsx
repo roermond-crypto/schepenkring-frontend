@@ -6238,8 +6238,8 @@ export default function YachtEditorPage() {
                                   );
                                 }}
                                 className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${isSelected
-                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
                                   }`}
                               >
                                 {day.label}
@@ -6698,7 +6698,7 @@ export default function YachtEditorPage() {
         variant="destructive"
         onConfirm={handleDeleteAllImages}
       />
-    </div>
+    </div >
   );
 }
 

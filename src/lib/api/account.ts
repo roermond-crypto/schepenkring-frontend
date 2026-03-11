@@ -45,6 +45,30 @@ export async function getMe() {
   return data;
 }
 
+export async function getAdminUser(userId: number | string) {
+  const { data } = await api.get<{ data: MeUser }>(`/admin/users/${userId}`);
+  return data;
+}
+
+export async function updateAdminUser(
+  userId: number | string,
+  payload: {
+    name?: string;
+    email?: string | null;
+    phone?: string | null;
+    status?: MeUserStatus;
+  },
+) {
+  const { data } = await api.patch<{ data: MeUser }>(
+    `/admin/users/${userId}`,
+    payload,
+    {
+      headers: { "Idempotency-Key": idempotencyKey() },
+    },
+  );
+  return data;
+}
+
 export async function updateMeProfile(payload: {
   name: string;
   timezone?: string | null;

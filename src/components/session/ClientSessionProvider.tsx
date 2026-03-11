@@ -12,11 +12,9 @@ import {
 import {
   AUTH_SESSION_COOKIE,
   CLIENT_SESSION_UPDATED_EVENT,
-  getClientToken,
 } from "@/lib/auth/client-session";
-import { getMe } from "@/lib/api/account";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
-import { normalizeRole, type UserRole } from "@/lib/auth/roles";
+import type { UserRole } from "@/lib/auth/roles";
 
 type ClientSessionUser = {
   id?: string;
@@ -207,47 +205,6 @@ export function ClientSessionProvider({
       window.removeEventListener(CLIENT_SESSION_UPDATED_EVENT, syncUser);
     };
   }, [initialUser]);
-
-  useEffect(() => {
-    let active = true;
-
-    const refreshFromApi = async () => {
-      if (!getClientToken()) return;
-
-      try {
-        const response = await getMe();
-        if (!active) return;
-
-        const nextUser: ClientSessionUser = {
-          id: String(response.data.id),
-          name: response.data.name || initialUser.name,
-          email: response.data.email || initialUser.email,
-          avatar: normalizeAvatarUrl(response.data.avatar),
-          role:
-            normalizeRole(response.data.role) ||
-            normalizeRole(response.data.type) ||
-            initialUser.role,
-        };
-
-        setUserState((current) => ({
-          ...current,
-          ...nextUser,
-        }));
-      } catch {
-        // Keep UI on the cached session if /me fails.
-      }
-    };
-
-    void refreshFromApi();
-    window.addEventListener(CLIENT_SESSION_UPDATED_EVENT, refreshFromApi);
-    window.addEventListener("focus", refreshFromApi);
-
-    return () => {
-      active = false;
-      window.removeEventListener(CLIENT_SESSION_UPDATED_EVENT, refreshFromApi);
-      window.removeEventListener("focus", refreshFromApi);
-    };
-  }, [initialUser.email, initialUser.name, initialUser.role]);
 
   const value = useMemo(
     () => ({
