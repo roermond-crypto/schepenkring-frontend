@@ -1,242 +1,464 @@
-"use client"
+"use client";
 
-import { useTranslations } from "next-intl"
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import Image from "next/image";
 import {
-    X,
-    Mail,
-    Phone,
-    MapPin,
-    Building2,
-    FileText,
-    Image as ImageIcon,
-    Download,
-    Clock,
-    CheckCircle2,
-    AlertCircle,
-    Zap,
-    Globe,
-    ExternalLink,
-} from "lucide-react"
-import type { Conversation, ContactInfo, Attachment, SystemEvent } from "@/types/chat"
-import { cn } from "@/lib/utils"
+  Building2,
+  Check,
+  Globe,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  Save,
+  ShieldOff,
+  UserRound,
+  X,
+} from "lucide-react";
+import type { ContactInfo, Conversation } from "@/types/chat";
+import { cn } from "@/lib/utils";
 
 interface ContactDetailPanelProps {
-    contact: ContactInfo | null
-    conversation: Conversation
-    onClose: () => void
+  contact: ContactInfo | null;
+  conversation: Conversation;
+  onUpdateContact: (payload: {
+    name: string;
+    email?: string;
+    phone?: string;
+    whatsapp_user_id?: string;
+    language_preferred?: string;
+    do_not_contact: boolean;
+    consent_marketing: boolean;
+    consent_service_messages: boolean;
+  }) => Promise<void>;
+  onClose: () => void;
 }
 
-function formatFileSize(bytes: number) {
-    if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`
-    return `${Math.round(bytes / 1024)} KB`
+interface ContactFormState {
+  name: string;
+  email: string;
+  phone: string;
+  whatsapp_user_id: string;
+  language_preferred: string;
+  do_not_contact: boolean;
+  consent_marketing: boolean;
+  consent_service_messages: boolean;
 }
 
-function formatEventTime(date: Date) {
-    return new Date(date).toLocaleString([], {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    })
+function buildFormState(
+  contact: ContactInfo | null,
+  conversation: Conversation,
+): ContactFormState {
+  return {
+    name: contact?.name ?? conversation.contact_name ?? "",
+    email: contact?.email ?? conversation.guest_email ?? "",
+    phone: contact?.phone ?? conversation.guest_phone ?? "",
+    whatsapp_user_id: contact?.whatsapp_user_id ?? "",
+    language_preferred: contact?.language_preferred ?? "nl",
+    do_not_contact: contact?.do_not_contact ?? false,
+    consent_marketing: contact?.consent_marketing ?? false,
+    consent_service_messages: contact?.consent_service_messages ?? true,
+  };
 }
 
-function getEventIcon(type: string) {
-    switch (type) {
-        case "harbor_claim":
-            return <Zap size={12} className="text-blue-500" />
-        case "verification_sent":
-            return <Mail size={12} className="text-indigo-500" />
-        case "error_detected":
-            return <AlertCircle size={12} className="text-red-500" />
-        case "harbor_live":
-            return <CheckCircle2 size={12} className="text-emerald-500" />
-        default:
-            return <Clock size={12} className="text-slate-400" />
+function normalizeOptional(value: string) {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function ToggleRow({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-800">{label}</p>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+          {description}
+        </p>
+      </div>
+      <span
+        className={cn(
+          "relative mt-0.5 inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border transition-colors",
+          checked ? "border-blue-600 bg-blue-600" : "border-slate-300 bg-white",
+        )}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+          className="peer sr-only"
+        />
+        <span
+          className={cn(
+            "pointer-events-none absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
+            checked ? "translate-x-5" : "translate-x-0",
+          )}
+        />
+      </span>
+    </label>
+  );
+}
+
+export function ContactDetailPanel({
+  contact,
+  conversation,
+  onUpdateContact,
+  onClose,
+}: ContactDetailPanelProps) {
+  const t = useTranslations("DashboardChat");
+  const [form, setForm] = useState<ContactFormState>(() =>
+    buildFormState(contact, conversation),
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    setForm(buildFormState(contact, conversation));
+    setError(null);
+    setSuccess(null);
+  }, [contact, conversation]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await onUpdateContact({
+        name: form.name.trim(),
+        email: normalizeOptional(form.email),
+        phone: normalizeOptional(form.phone),
+        whatsapp_user_id: normalizeOptional(form.whatsapp_user_id),
+        language_preferred: normalizeOptional(form.language_preferred),
+        do_not_contact: form.do_not_contact,
+        consent_marketing: form.consent_marketing,
+        consent_service_messages: form.consent_service_messages,
+      });
+      setSuccess(t("detail.saved"));
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : t("detail.saveFailed"),
+      );
+    } finally {
+      setSaving(false);
     }
-}
+  };
 
-export function ContactDetailPanel({ contact, conversation, onClose }: ContactDetailPanelProps) {
-    const t = useTranslations("DashboardChat")
-    if (!contact) {
-        return (
-            <div className="flex items-center justify-center h-full bg-white/70">
-                <div className="animate-pulse flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-slate-200" />
-                    <div className="h-3 w-24 bg-slate-200 rounded" />
-                    <div className="h-2.5 w-32 bg-slate-200 rounded" />
-                </div>
-            </div>
-        )
-    }
+  const updateField = <K extends keyof ContactFormState>(
+    key: K,
+    value: ContactFormState[K],
+  ) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
-    return (
-        <div className="flex flex-col h-full bg-white/70 backdrop-blur-sm overflow-y-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200/60">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("detail.contactInfo")}</h3>
-                <button
-                    onClick={onClose}
-                    className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
-                >
-                    <X size={14} className="text-slate-500" />
-                </button>
-            </div>
+  const statusLabel = contact?.status ?? "online";
+  const avatarLetter = (form.name || conversation.contact_name || "?")
+    .charAt(0)
+    .toUpperCase();
+  const avatarSrc = contact?.avatar ?? conversation.contact_avatar;
 
-            {/* Profile Card */}
-            <div className="px-5 py-6 text-center border-b border-slate-200/60">
-                <div className="relative inline-block mb-3">
-                    {contact.avatar ? (
-                        <img
-                            src={contact.avatar}
-                            alt={contact.name}
-                            className="w-20 h-20 rounded-2xl object-cover ring-4 ring-white shadow-lg"
-                        />
-                    ) : (
-                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center ring-4 ring-white shadow-lg">
-                            <span className="text-white text-2xl font-bold">{contact.name.charAt(0)}</span>
-                        </div>
-                    )}
-                    {contact.status && (
-                        <span className={cn(
-                            "absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-[3px] border-white",
-                            contact.status === "online" ? "bg-emerald-500" : contact.status === "away" ? "bg-amber-500" : "bg-slate-400"
-                        )} />
-                    )}
-                </div>
-                <h2 className="text-base font-bold text-slate-800">{contact.name}</h2>
-                {contact.company && (
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">{contact.company}</p>
-                )}
-                {contact.status && (
-                    <span className={cn(
-                        "inline-block mt-2 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full",
-                        contact.status === "online" ? "bg-emerald-50 text-emerald-600" :
-                            contact.status === "away" ? "bg-amber-50 text-amber-600" :
-                                "bg-slate-100 text-slate-500"
-                    )}>
-                        {contact.status}
-                    </span>
-                )}
-            </div>
-
-            {/* Contact details */}
-            <div className="px-5 py-4 space-y-3 border-b border-slate-200/60">
-                {contact.email && (
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                            <Mail size={14} className="text-blue-500" />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{t("detail.email")}</p>
-                            <p className="text-xs text-slate-700 font-medium truncate">{contact.email}</p>
-                        </div>
-                    </div>
-                )}
-                {contact.phone && (
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                            <Phone size={14} className="text-emerald-500" />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{t("detail.phone")}</p>
-                            <p className="text-xs text-slate-700 font-medium">{contact.phone}</p>
-                        </div>
-                    </div>
-                )}
-                {contact.location && (
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
-                            <MapPin size={14} className="text-orange-500" />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{t("detail.location")}</p>
-                            <p className="text-xs text-slate-700 font-medium">{contact.location}</p>
-                        </div>
-                    </div>
-                )}
-                {contact.company && (
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                            <Building2 size={14} className="text-purple-500" />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{t("detail.company")}</p>
-                            <p className="text-xs text-slate-700 font-medium">{contact.company}</p>
-                        </div>
-                    </div>
-                )}
-                {conversation.context?.page_url && (
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                            <Globe size={14} className="text-indigo-500" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{t("detail.sourceUrl")}</p>
-                            <a href={conversation.context.page_url} target="_blank" className="text-xs text-blue-600 font-medium truncate block hover:underline">
-                                {conversation.context.page_url}
-                                <ExternalLink size={10} className="inline ml-1" />
-                            </a>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Shared Media & Files */}
-            {contact.shared_files.length > 0 && (
-                <div className="px-5 py-4 border-b border-slate-200/60">
-                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">
-                        {t("detail.sharedFiles", { count: contact.shared_files.length })}
-                    </h4>
-                    <div className="space-y-2">
-                        {contact.shared_files.map((file) => (
-                            <div key={file.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-100/80 transition-colors group">
-                                <div className={cn(
-                                    "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
-                                    file.type.startsWith("image/") ? "bg-pink-50" : "bg-blue-50"
-                                )}>
-                                    {file.type.startsWith("image/") ? (
-                                        <ImageIcon size={14} className="text-pink-500" />
-                                    ) : (
-                                        <FileText size={14} className="text-blue-500" />
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium text-slate-700 truncate">{file.name}</p>
-                                    <p className="text-[10px] text-slate-400">{formatFileSize(file.size)}</p>
-                                </div>
-                                <button className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg bg-white/80 shadow-sm flex items-center justify-center transition-all hover:bg-white">
-                                    <Download size={12} className="text-slate-500" />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Activity Timeline */}
-            {contact.events.length > 0 && (
-                <div className="px-5 py-4">
-                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">
-                        {t("detail.activity")}
-                    </h4>
-                    <div className="relative">
-                        <div className="absolute left-[15px] top-3 bottom-3 w-px bg-slate-200" />
-                        <div className="space-y-3">
-                            {contact.events.map((event) => (
-                                <div key={event.id} className="flex items-start gap-3 relative">
-                                    <div className="w-8 h-8 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center flex-shrink-0 z-10">
-                                        {getEventIcon(event.type)}
-                                    </div>
-                                    <div className="pt-1">
-                                        <p className="text-xs text-slate-700 font-medium">{event.description}</p>
-                                        <p className="text-[10px] text-slate-400 mt-0.5">{formatEventTime(event.created_at)}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+  return (
+    <aside className="flex h-full flex-col bg-white">
+      <div className="flex items-center justify-between border-b border-slate-200/60 px-5 py-4">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">
+            {t("detail.contactRecord")}
+          </p>
+          <h3 className="mt-1 text-sm font-bold text-slate-800">
+            {t("detail.contactInfo")}
+          </h3>
         </div>
-    )
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200"
+          aria-label={t("detail.close")}
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-b border-slate-200/60 px-5 py-6">
+          <div className="mx-auto flex w-full max-w-[248px] flex-col items-center rounded-[2rem] border border-slate-200/70 bg-gradient-to-b from-white to-slate-50 px-6 py-7 text-center shadow-sm">
+            {avatarSrc ? (
+              <Image
+                src={avatarSrc}
+                alt={form.name}
+                width={80}
+                height={80}
+                unoptimized
+                className="h-20 w-20 rounded-[1.5rem] object-cover shadow-sm"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] bg-gradient-to-br from-amber-300 via-orange-400 to-emerald-500 text-2xl font-bold text-white shadow-sm">
+                {avatarLetter}
+              </div>
+            )}
+            <h4 className="mt-5 text-2xl font-bold text-slate-800">
+              {form.name || t("detail.unknownVisitor")}
+            </h4>
+            <p className="mt-1 text-sm text-slate-500">
+              {contact?.company ??
+                conversation.contact_company ??
+                t("detail.noCompany")}
+            </p>
+            <div className="mt-4 inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600">
+              {t(`detail.presence.${statusLabel}`)}
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6 px-5 py-5">
+          <section className="space-y-4">
+            <div className="space-y-1">
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
+                {t("detail.editContact")}
+              </p>
+              <h4 className="text-sm font-semibold text-slate-800">
+                {t("detail.updateContact")}
+              </h4>
+            </div>
+
+            <div className="grid gap-3">
+              <label className="space-y-1.5">
+                <span className="text-xs font-semibold text-slate-600">
+                  {t("detail.name")}
+                </span>
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3 focus-within:border-blue-500 focus-within:bg-white">
+                  <UserRound size={16} className="text-slate-400" />
+                  <input
+                    value={form.name}
+                    onChange={(event) =>
+                      updateField("name", event.target.value)
+                    }
+                    className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                    placeholder={t("detail.placeholders.name")}
+                    required
+                  />
+                </div>
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="text-xs font-semibold text-slate-600">
+                  {t("detail.email")}
+                </span>
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3 focus-within:border-blue-500 focus-within:bg-white">
+                  <Mail size={16} className="text-slate-400" />
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(event) =>
+                      updateField("email", event.target.value)
+                    }
+                    className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                    placeholder={t("detail.placeholders.email")}
+                  />
+                </div>
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="text-xs font-semibold text-slate-600">
+                  {t("detail.phone")}
+                </span>
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3 focus-within:border-blue-500 focus-within:bg-white">
+                  <Phone size={16} className="text-slate-400" />
+                  <input
+                    value={form.phone}
+                    onChange={(event) =>
+                      updateField("phone", event.target.value)
+                    }
+                    className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                    placeholder={t("detail.placeholders.phone")}
+                  />
+                </div>
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="text-xs font-semibold text-slate-600">
+                  {t("detail.whatsapp")}
+                </span>
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3 focus-within:border-blue-500 focus-within:bg-white">
+                  <Phone size={16} className="text-slate-400" />
+                  <input
+                    value={form.whatsapp_user_id}
+                    onChange={(event) =>
+                      updateField("whatsapp_user_id", event.target.value)
+                    }
+                    className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                    placeholder={t("detail.placeholders.whatsapp")}
+                  />
+                </div>
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="text-xs font-semibold text-slate-600">
+                  {t("detail.language")}
+                </span>
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3 focus-within:border-blue-500 focus-within:bg-white">
+                  <Globe size={16} className="text-slate-400" />
+                  <select
+                    value={form.language_preferred}
+                    onChange={(event) =>
+                      updateField("language_preferred", event.target.value)
+                    }
+                    className="w-full bg-transparent text-sm text-slate-800 outline-none"
+                  >
+                    <option value="nl">{t("detail.languages.nl")}</option>
+                    <option value="en">{t("detail.languages.en")}</option>
+                    <option value="de">{t("detail.languages.de")}</option>
+                    <option value="fr">{t("detail.languages.fr")}</option>
+                  </select>
+                </div>
+              </label>
+            </div>
+
+            <div className="space-y-3">
+              <ToggleRow
+                label={t("detail.doNotContact")}
+                description={t("detail.doNotContactHelp")}
+                checked={form.do_not_contact}
+                onChange={(checked) => updateField("do_not_contact", checked)}
+              />
+              <ToggleRow
+                label={t("detail.consentMarketing")}
+                description={t("detail.consentMarketingHelp")}
+                checked={form.consent_marketing}
+                onChange={(checked) =>
+                  updateField("consent_marketing", checked)
+                }
+              />
+              <ToggleRow
+                label={t("detail.consentService")}
+                description={t("detail.consentServiceHelp")}
+                checked={form.consent_service_messages}
+                onChange={(checked) =>
+                  updateField("consent_service_messages", checked)
+                }
+              />
+            </div>
+
+            {(error || success) && (
+              <div
+                className={cn(
+                  "rounded-2xl border px-4 py-3 text-sm",
+                  error
+                    ? "border-rose-200 bg-rose-50 text-rose-700"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-700",
+                )}
+              >
+                {error ?? success}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={saving || !form.name.trim()}
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#0B1F3A] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#12315d] disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              {saving ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Save size={16} />
+              )}
+              {saving ? t("detail.saving") : t("detail.save")}
+            </button>
+          </section>
+
+          <section className="space-y-3 border-t border-slate-200/70 pt-5">
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
+              {t("detail.snapshot")}
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 px-4 py-3">
+                <Building2 size={16} className="mt-0.5 text-fuchsia-500" />
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    {t("detail.company")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {contact?.company ??
+                      conversation.contact_company ??
+                      t("detail.noCompany")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 px-4 py-3">
+                <MapPin size={16} className="mt-0.5 text-sky-500" />
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    {t("detail.location")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {contact?.location ??
+                      conversation.context?.place_id ??
+                      t("detail.unknownLocation")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 px-4 py-3">
+                <ShieldOff size={16} className="mt-0.5 text-amber-500" />
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    {t("detail.statusLabel")}
+                  </p>
+                  <p className="mt-1 text-sm capitalize text-slate-700">
+                    {conversation.status}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3 border-t border-slate-200/70 pt-5">
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
+              {t("detail.activity")}
+            </p>
+            <div className="space-y-3">
+              {contact?.events?.length ? (
+                contact.events.map((eventItem) => (
+                  <div
+                    key={eventItem.id}
+                    className="rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white">
+                        <Check size={13} className="text-slate-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-700">
+                          {eventItem.description}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {new Date(eventItem.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
+                  {t("detail.noActivity")}
+                </div>
+              )}
+            </div>
+          </section>
+        </form>
+      </div>
+    </aside>
+  );
 }

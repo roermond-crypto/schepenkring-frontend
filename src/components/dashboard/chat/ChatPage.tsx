@@ -11,6 +11,7 @@ import {
   getContactInfo,
   sendSupportMessage,
   startSupportCall,
+  updateConversationContact,
   updateConversationStatus,
   createConversation,
 } from "@/lib/chat-api";
@@ -85,6 +86,11 @@ export function ChatPage() {
       name: contactData?.name && contactData.name !== "Loading..." ? contactData.name : conv.contact_name,
       email: contactData?.email ?? conv.guest_email,
       phone: contactData?.phone ?? conv.guest_phone,
+      whatsapp_user_id: contactData?.whatsapp_user_id,
+      language_preferred: contactData?.language_preferred ?? "nl",
+      do_not_contact: contactData?.do_not_contact ?? false,
+      consent_marketing: contactData?.consent_marketing ?? false,
+      consent_service_messages: contactData?.consent_service_messages ?? true,
       company: contactData?.company ?? conv.contact_company,
       avatar: contactData?.avatar ?? conv.contact_avatar,
       status: contactData?.status ?? "online",
@@ -120,6 +126,61 @@ export function ChatPage() {
     [selectedConv],
   );
 
+  const handleUpdateContact = useCallback(
+    async (payload: {
+      name: string;
+      email?: string;
+      phone?: string;
+      whatsapp_user_id?: string;
+      language_preferred?: string;
+      do_not_contact: boolean;
+      consent_marketing: boolean;
+      consent_service_messages: boolean;
+    }) => {
+      if (!selectedConv) return;
+
+      const updated = await updateConversationContact(selectedConv.id, payload);
+
+      setContact((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...updated,
+              company: prev.company,
+              location: prev.location,
+              shared_files: prev.shared_files,
+              events: prev.events,
+            }
+          : updated,
+      );
+
+      setSelectedConv((prev) =>
+        prev
+          ? {
+              ...prev,
+              contact_name: updated.name,
+              guest_email: updated.email,
+              guest_phone: updated.phone,
+            }
+          : prev,
+      );
+
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === selectedConv.id
+            ? {
+                ...conversation,
+                contact_name: updated.name,
+                guest_email: updated.email,
+                guest_phone: updated.phone,
+              }
+            : conversation,
+        ),
+      );
+    },
+    [selectedConv],
+  );
+
   // Update status
   const handleStatusChange = useCallback(
     async (status: ConversationStatus) => {
@@ -148,7 +209,7 @@ export function ChatPage() {
   return (
     <div className="chat-page-theme space-y-6">
 
-      <div className="flex h-[calc(100vh-24rem)] min-h-[38rem] bg-gradient-to-br from-slate-50 via-white to-blue-50/30 overflow-hidden rounded-2xl border border-slate-200/60 shadow-xl">
+      <div className="flex h-[calc(100vh-9rem)] min-h-[42rem] bg-gradient-to-br from-slate-50 via-white to-blue-50/30 overflow-hidden rounded-2xl border border-slate-200/60 shadow-xl">
         {/* Mobile nav bar */}
         <div className="lg:hidden fixed top-20 left-0 right-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-2 flex items-center gap-2">
           {mobilePanel !== "list" && (
@@ -236,6 +297,7 @@ export function ChatPage() {
             <ContactDetailPanel
               contact={contact}
               conversation={selectedConv}
+              onUpdateContact={handleUpdateContact}
               onClose={() => setShowDetailPanel(false)}
             />
           </div>

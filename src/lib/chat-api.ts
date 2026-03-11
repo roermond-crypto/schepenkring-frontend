@@ -42,6 +42,18 @@ interface BackendConversation {
   updated_at: string;
 }
 
+interface BackendContact {
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  whatsapp_user_id?: string | null;
+  language_preferred?: string | null;
+  do_not_contact?: boolean | null;
+  consent_marketing?: boolean | null;
+  consent_service_messages?: boolean | null;
+}
+
 interface BackendMessage {
   id: string;
   conversation_id: string;
@@ -192,6 +204,60 @@ export async function getContactInfo(conversationId: string): Promise<ContactInf
     name: "Loading...",
     email: undefined,
     phone: undefined,
+    whatsapp_user_id: undefined,
+    language_preferred: undefined,
+    do_not_contact: false,
+    consent_marketing: false,
+    consent_service_messages: true,
+    status: "online",
+    shared_files: [],
+    events: [],
+  };
+}
+
+export async function updateConversationContact(
+  conversationId: string,
+  payload: {
+    name: string;
+    email?: string;
+    phone?: string;
+    whatsapp_user_id?: string;
+    language_preferred?: string;
+    do_not_contact: boolean;
+    consent_marketing: boolean;
+    consent_service_messages: boolean;
+  },
+): Promise<ContactInfo> {
+  const response = await apiRequest<{
+    id: string;
+    location_id?: number;
+    status?: string;
+    contact?: BackendContact | null;
+    lead?: {
+      id?: number;
+      name?: string | null;
+      email?: string | null;
+      phone?: string | null;
+    } | null;
+  }>({
+    method: "PATCH",
+    url: `/chat/conversations/${conversationId}/contact`,
+    data: payload,
+  });
+
+  const contact = response.contact ?? {};
+  const lead = response.lead ?? {};
+
+  return {
+    name: contact.name ?? lead.name ?? payload.name,
+    email: contact.email ?? lead.email ?? payload.email,
+    phone: contact.phone ?? lead.phone ?? payload.phone,
+    whatsapp_user_id: contact.whatsapp_user_id ?? payload.whatsapp_user_id,
+    language_preferred: contact.language_preferred ?? payload.language_preferred,
+    do_not_contact: contact.do_not_contact ?? payload.do_not_contact,
+    consent_marketing: contact.consent_marketing ?? payload.consent_marketing,
+    consent_service_messages:
+      contact.consent_service_messages ?? payload.consent_service_messages,
     status: "online",
     shared_files: [],
     events: [],
