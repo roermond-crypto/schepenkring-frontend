@@ -2781,8 +2781,8 @@ export default function YachtEditorPage() {
                       Assets & AI Extraction
                     </h3>
                     <p className="text-sm text-slate-500 mt-1">
-                      Upload images → system auto-optimizes → approve → then AI
-                      fills all form fields.
+                      Upload images → instant previews → approve → then AI
+                      fills all form fields while optimization runs in the background.
                     </p>
                   </div>
                   {imagesApproved && (
