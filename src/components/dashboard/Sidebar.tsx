@@ -21,6 +21,7 @@ import {
   Wifi,
   WifiOff,
   ShieldCheck,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -111,6 +112,11 @@ export function Sidebar({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,
+      });
+      items.push({
+        title: "FAQ",
+        href: `${root}/faq`,
+        icon: HelpCircle,
       });
       items.push({
         title: t.socialAutomation,
