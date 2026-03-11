@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Anchor, LayoutTemplate, Pencil, Plus, RefreshCcw, Trash2 } from "lucide-react";
+import {
+  Anchor,
+  LayoutTemplate,
+  Pencil,
+  Plus,
+  RefreshCcw,
+  Trash2,
+} from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -58,9 +65,13 @@ export function AdminLocationsManagerPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [statusFilter, setStatusFilter] = useState<
+    "ALL" | "ACTIVE" | "INACTIVE"
+  >("ALL");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingLocation, setEditingLocation] = useState<LocationRecord | null>(null);
+  const [editingLocation, setEditingLocation] = useState<LocationRecord | null>(
+    null,
+  );
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [deleteTarget, setDeleteTarget] = useState<LocationRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -143,14 +154,10 @@ export function AdminLocationsManagerPage({
     try {
       if (editingLocation) {
         await api.patch(`/admin/locations/${editingLocation.id}`, payload);
-        toast.success(
-          isNl ? "Locatie bijgewerkt." : "Location updated.",
-        );
+        toast.success(isNl ? "Locatie bijgewerkt." : "Location updated.");
       } else {
         await api.post("/admin/locations", payload);
-        toast.success(
-          isNl ? "Locatie aangemaakt." : "Location created.",
-        );
+        toast.success(isNl ? "Locatie aangemaakt." : "Location created.");
       }
 
       resetDialog();
@@ -177,9 +184,7 @@ export function AdminLocationsManagerPage({
     setDeleting(true);
     try {
       await api.delete(`/admin/locations/${deleteTarget.id}`);
-      toast.success(
-        isNl ? "Locatie verwijderd." : "Location deleted.",
-      );
+      toast.success(isNl ? "Locatie verwijderd." : "Location deleted.");
       setDeleteTarget(null);
       await loadLocations();
     } catch (error) {
@@ -205,7 +210,7 @@ export function AdminLocationsManagerPage({
   };
 
   return (
-    <div className="max-w-7xl p-4 sm:p-6 lg:p-8">
+    <div className=" p-2 sm:p-2 lg:p-2">
       <Toaster position="top-right" />
 
       <div className="rounded-[28px] border border-[#C9D8EE] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_38%),linear-gradient(135deg,#F7FBFF_0%,#EDF4FF_52%,#E4EEF9_100%)] p-8 text-[#0B1F3A] shadow-[0_20px_60px_rgba(15,39,74,0.10)]">
@@ -234,7 +239,10 @@ export function AdminLocationsManagerPage({
               <RefreshCcw className={loading ? "animate-spin" : ""} />
               {isNl ? "Verversen" : "Refresh"}
             </Button>
-            <Button asChild className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]">
+            <Button
+              asChild
+              className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]"
+            >
               <Link href={widgetHref}>
                 <LayoutTemplate />
                 {isNl ? "Widget-instellingen" : "Widget settings"}
@@ -256,7 +264,9 @@ export function AdminLocationsManagerPage({
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder={isNl ? "Zoek op naam of code..." : "Search by name or code..."}
+          placeholder={
+            isNl ? "Zoek op naam of code..." : "Search by name or code..."
+          }
           className="h-16 rounded-[22px] border border-slate-200 bg-white px-5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-400"
         />
 
@@ -267,7 +277,9 @@ export function AdminLocationsManagerPage({
           }
           className="h-16 rounded-[22px] border border-slate-200 bg-white px-5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-400"
         >
-          <option value="ALL">{isNl ? "Alle statussen" : "All statuses"}</option>
+          <option value="ALL">
+            {isNl ? "Alle statussen" : "All statuses"}
+          </option>
           <option value="ACTIVE">{isNl ? "Actief" : "Active"}</option>
           <option value="INACTIVE">{isNl ? "Inactief" : "Inactive"}</option>
         </select>
@@ -306,8 +318,8 @@ export function AdminLocationsManagerPage({
                       {location.name}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      {location.boats_total} boats, {location.yachts_total} yachts,{" "}
-                      {location.open_leads} open leads
+                      {location.boats_total} boats, {location.yachts_total}{" "}
+                      yachts, {location.open_leads} open leads
                     </p>
                   </div>
                 </div>
@@ -388,7 +400,10 @@ export function AdminLocationsManagerPage({
               <input
                 value={form.name}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, name: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
                 }
                 placeholder={isNl ? "Locatienaam" : "Location name"}
                 className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-400"
@@ -418,7 +433,9 @@ export function AdminLocationsManagerPage({
                   className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-400"
                 >
                   <option value="ACTIVE">{isNl ? "Actief" : "Active"}</option>
-                  <option value="INACTIVE">{isNl ? "Inactief" : "Inactive"}</option>
+                  <option value="INACTIVE">
+                    {isNl ? "Inactief" : "Inactive"}
+                  </option>
                 </select>
               </div>
             </div>
