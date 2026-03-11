@@ -47,8 +47,10 @@ type DashboardData = {
 type DashboardAuditItem = {
   id: number;
   action?: string;
+  event_type?: string;
   entity_type?: string;
   entity_id?: number | null;
+  assigned_to?: number | null;
   created_at?: string;
   updated_at?: string;
   status?: string;
@@ -233,22 +235,22 @@ export default function AdminDashboardHome() {
       const avgDaysToSale =
         soldYachts.length > 0
           ? Math.round(
-              soldYachts.reduce((acc: number, y: any) => {
-                const created = y.created_at ? new Date(y.created_at) : null;
-                const updated = y.updated_at ? new Date(y.updated_at) : null;
-                if (!created || !updated) return acc;
-                return (
-                  acc +
-                  Math.max(
-                    1,
-                    Math.round(
-                      (updated.getTime() - created.getTime()) /
-                        (1000 * 60 * 60 * 24),
-                    ),
-                  )
-                );
-              }, 0) / soldYachts.length,
-            )
+            soldYachts.reduce((acc: number, y: any) => {
+              const created = y.created_at ? new Date(y.created_at) : null;
+              const updated = y.updated_at ? new Date(y.updated_at) : null;
+              if (!created || !updated) return acc;
+              return (
+                acc +
+                Math.max(
+                  1,
+                  Math.round(
+                    (updated.getTime() - created.getTime()) /
+                    (1000 * 60 * 60 * 24),
+                  ),
+                )
+              );
+            }, 0) / soldYachts.length,
+          )
           : 0;
 
       setData({
@@ -272,11 +274,11 @@ export default function AdminDashboardHome() {
           summaryRes.status === "fulfilled" && summaryRes.value.data
             ? summaryRes.value.data
             : {
-                activeBids: { change: 0, sparkline: [] },
-                pendingTasks: { change: 0, sparkline: [] },
-                fleetIntake: { change: 0, sparkline: [] },
-                completedSales: { change: 0, sparkline: [] },
-              },
+              activeBids: { change: 0, sparkline: [] },
+              pendingTasks: { change: 0, sparkline: [] },
+              fleetIntake: { change: 0, sparkline: [] },
+              completedSales: { change: 0, sparkline: [] },
+            },
       });
     } catch (error) {
       console.error("Admin dashboard sync error:", error);
@@ -404,7 +406,7 @@ export default function AdminDashboardHome() {
   const welcomeName =
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("user_data") || "{}")?.name ||
-        t("defaults.userName")
+      t("defaults.userName")
       : t("defaults.userName");
 
   return (
@@ -566,10 +568,10 @@ export default function AdminDashboardHome() {
                   <p className="mt-1 text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
                     {item.isCurrency
                       ? new Intl.NumberFormat("de-DE", {
-                          style: "currency",
-                          currency: "EUR",
-                          minimumFractionDigits: 0,
-                        }).format(item.value)
+                        style: "currency",
+                        currency: "EUR",
+                        minimumFractionDigits: 0,
+                      }).format(item.value)
                       : `${item.value}${item.suffix}`}
                   </p>
                   <div className="mt-3 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700/50">
@@ -765,7 +767,7 @@ export default function AdminDashboardHome() {
                             </span>
                             <span className="text-xs text-slate-400 dark:text-slate-500">
                               {formatDistanceToNow(
-                                new Date(task.created_at || task.updated_at),
+                                new Date(task.created_at || task.updated_at || Date.now()),
                                 {
                                   addSuffix: true,
                                 },
