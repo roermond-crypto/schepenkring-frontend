@@ -8,7 +8,7 @@ import {
   SyntheticEvent,
   useMemo,
 } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import {
   Camera,
@@ -138,6 +138,7 @@ const WIZARD_STEP_IDS = [
   { id: 3, key: "text", icon: FileText },
   { id: 4, key: "display", icon: Eye },
   { id: 5, key: "review", icon: CheckCircle },
+  { id: 6, key: "contract", icon: Key },
 ] as const;
 
 const DRAFT_KEY_PREFIX = "yacht_draft_";
@@ -263,7 +264,7 @@ function hasObjectValues(value: unknown): boolean {
 function clampWizardStep(value: unknown, fallback = 1): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(5, Math.max(1, Math.trunc(parsed)));
+  return Math.min(6, Math.max(1, Math.trunc(parsed)));
 }
 
 const YACHT_FORM_TEXT = {
@@ -342,6 +343,32 @@ const YACHT_FORM_TEXT = {
       designer: "Designer",
       builder: "Builder",
       controlType: "Control Type",
+      newTitle: "Register New Vessel",
+      editTitle: "Edit Vessel",
+      loadingName: "Loading...",
+      stepImages: "Images",
+      stepSpecs: "Specifications",
+      stepText: "Description",
+      stepDisplay: "Display",
+      stepReview: "Review",
+      stepContract: "Contract",
+      stepOneTitle: "Vessel Assets & AI Extraction",
+      stepOneDescription: "Upload images -> system auto-optimizes -> approve -> then AI fills all form fields.",
+      imagesApproved: "Images Approved",
+      vesselDescriptionHelp: "Vessel Description",
+      optionalRecommended: "(optional but recommended)",
+      createVessel: "Create Vessel",
+      updateVessel: "Update Vessel",
+      previous: "Previous",
+      next: "Next",
+      approveImagesFirst: "Approve Images First",
+      completed: "Completed",
+      pending: "Pending",
+      continueToContract: "Save and Continue to Contract",
+      contractStepDescription:
+        "Manage the contract template, print the PDF, and generate the Signhost-ready contract from this step.",
+      reviewContractNotice:
+        "Save this vessel first. The contract flow opens in the next step after the vessel record is stored.",
       harborLocation: "Sales Location (Harbor) *",
       price: "Price (€)",
       minBidAmount: "Minimum Bid Amount (€)",
@@ -495,6 +522,32 @@ const YACHT_FORM_TEXT = {
       designer: "Ontwerper",
       builder: "Bouwer",
       controlType: "Besturingstype",
+      newTitle: "Nieuw vaartuig registreren",
+      editTitle: "Vaartuig bewerken",
+      loadingName: "Laden...",
+      stepImages: "Afbeeldingen",
+      stepSpecs: "Specificaties",
+      stepText: "Beschrijving",
+      stepDisplay: "Weergave",
+      stepReview: "Controle",
+      stepContract: "Contract",
+      stepOneTitle: "Vaartuigmedia & AI-extractie",
+      stepOneDescription: "Upload afbeeldingen -> systeem optimaliseert automatisch -> keur goed -> daarna vult AI alle velden in.",
+      imagesApproved: "Afbeeldingen goedgekeurd",
+      vesselDescriptionHelp: "Vaartuigbeschrijving",
+      optionalRecommended: "(optioneel maar aanbevolen)",
+      createVessel: "Vaartuig aanmaken",
+      updateVessel: "Vaartuig bijwerken",
+      previous: "Vorige",
+      next: "Volgende",
+      approveImagesFirst: "Keur eerst afbeeldingen goed",
+      completed: "Voltooid",
+      pending: "Open",
+      continueToContract: "Opslaan en naar contract",
+      contractStepDescription:
+        "Beheer het contractsjabloon, druk de PDF af en genereer vanuit deze stap het Signhost-klare contract.",
+      reviewContractNotice:
+        "Sla dit vaartuig eerst op. De contractflow opent in de volgende stap zodra het vaartuigrecord is opgeslagen.",
       harborLocation: "Verkooplocatie (haven) *",
       price: "Prijs (€)",
       minBidAmount: "Minimum biedbedrag (€)",
@@ -648,6 +701,32 @@ const YACHT_FORM_TEXT = {
       designer: "Designer",
       builder: "Werft",
       controlType: "Steuerungstyp",
+      newTitle: "Neues Schiff registrieren",
+      editTitle: "Schiff bearbeiten",
+      loadingName: "Wird geladen...",
+      stepImages: "Bilder",
+      stepSpecs: "Spezifikationen",
+      stepText: "Beschreibung",
+      stepDisplay: "Anzeige",
+      stepReview: "Prufung",
+      stepContract: "Vertrag",
+      stepOneTitle: "Schiffsmedien & KI-Extraktion",
+      stepOneDescription: "Bilder hochladen -> System optimiert automatisch -> freigeben -> danach fullt die KI alle Felder aus.",
+      imagesApproved: "Bilder freigegeben",
+      vesselDescriptionHelp: "Schiffsbeschreibung",
+      optionalRecommended: "(optional, aber empfohlen)",
+      createVessel: "Schiff erstellen",
+      updateVessel: "Schiff aktualisieren",
+      previous: "Zuruck",
+      next: "Weiter",
+      approveImagesFirst: "Bilder zuerst freigeben",
+      completed: "Abgeschlossen",
+      pending: "Offen",
+      continueToContract: "Speichern und weiter zum Vertrag",
+      contractStepDescription:
+        "Verwalten Sie die Vertragsvorlage, drucken Sie das PDF und erzeugen Sie in diesem Schritt den Signhost-bereiten Vertrag.",
+      reviewContractNotice:
+        "Speichern Sie dieses Schiff zuerst. Der Vertragsablauf wird im nächsten Schritt geöffnet, sobald der Datensatz gespeichert ist.",
       harborLocation: "Verkaufsstandort (Hafen) *",
       price: "Preis (€)",
       minBidAmount: "Mindestgebot (€)",
@@ -801,6 +880,32 @@ const YACHT_FORM_TEXT = {
       designer: "Designer",
       builder: "Constructeur",
       controlType: "Type de commande",
+      newTitle: "Enregistrer un nouveau bateau",
+      editTitle: "Modifier le bateau",
+      loadingName: "Chargement...",
+      stepImages: "Images",
+      stepSpecs: "Specifications",
+      stepText: "Description",
+      stepDisplay: "Affichage",
+      stepReview: "Revision",
+      stepContract: "Contrat",
+      stepOneTitle: "Medias du bateau et extraction IA",
+      stepOneDescription: "Telechargez des images -> le systeme optimise automatiquement -> approuvez -> puis l'IA remplit les champs.",
+      imagesApproved: "Images approuvees",
+      vesselDescriptionHelp: "Description du bateau",
+      optionalRecommended: "(optionnel mais recommande)",
+      createVessel: "Creer le bateau",
+      updateVessel: "Mettre a jour le bateau",
+      previous: "Precedent",
+      next: "Suivant",
+      approveImagesFirst: "Approuver d'abord les images",
+      completed: "Termine",
+      pending: "En attente",
+      continueToContract: "Enregistrer et continuer vers le contrat",
+      contractStepDescription:
+        "Gerez le modele de contrat, imprimez le PDF et generez depuis cette etape le contrat pret pour Signhost.",
+      reviewContractNotice:
+        "Enregistrez d'abord ce bateau. Le flux du contrat s'ouvre a l'etape suivante une fois la fiche enregistree.",
       harborLocation: "Lieu de vente (port) *",
       price: "Prix (€)",
       minBidAmount: "Montant minimum de l'offre (€)",
@@ -907,6 +1012,7 @@ function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
 
 export default function YachtEditorPage() {
   const params = useParams<{ id: string; role?: string }>();
+  const searchParams = useSearchParams();
   // We can't safely extract locale from params directly if it's missing or async,
   // so we'll grab it safely using our hook that reads the pathname
   const locale = useLocale();
@@ -928,11 +1034,12 @@ export default function YachtEditorPage() {
   ) => t?.sections?.[key] || yachtFormText.sections[key] || fallback;
 
   const stepFallbacks: Record<string, string> = {
-    images: "Images",
-    specs: "Specifications",
-    text: "Description",
-    display: "Display",
-    review: "Review",
+    images: labelText("stepImages", "Images"),
+    specs: labelText("stepSpecs", "Specifications"),
+    text: labelText("stepText", "Description"),
+    display: labelText("stepDisplay", "Display"),
+    review: labelText("stepReview", "Review"),
+    contract: labelText("stepContract", "Contract"),
   };
 
   const wizardSteps = WIZARD_STEP_IDS.map((step) => ({
@@ -949,6 +1056,7 @@ export default function YachtEditorPage() {
     { value: 0, label: t?.weekdays?.sunday || "Sunday" },
   ];
   const isNewMode = params.id === "new";
+  const requestedStep = clampWizardStep(searchParams.get("step"), 0);
   const yachtId = params.id;
   const { isOnline } = useNetworkStatus();
   const { user } = useUser();
@@ -1378,6 +1486,11 @@ export default function YachtEditorPage() {
       setActiveStep(draft.currentStep);
     }
   }, [isDraftLoaded, draft.currentStep, isNewMode, canProceedFromStep1]);
+
+  useEffect(() => {
+    if (!isDraftLoaded || requestedStep < 1) return;
+    setActiveStep(requestedStep);
+  }, [isDraftLoaded, requestedStep]);
 
   // Keep current wizard step synced to draft metadata.
   useEffect(() => {
@@ -3570,7 +3683,9 @@ export default function YachtEditorPage() {
           ? "Vessel Registered Successfully"
           : "Manifest Updated Successfully",
       );
-      router.push(`/${locale}/dashboard/${role}/yachts`);
+      router.push(
+        `/${locale}/dashboard/${role}/yachts/${finalYachtId}?step=6`,
+      );
     } catch (err: any) {
       console.error("Submission error:", err);
 
@@ -3652,7 +3767,11 @@ export default function YachtEditorPage() {
                   type="button"
                   onClick={() => handleStepChange(step.id)}
                   disabled={isLocked}
-                  title={isLocked ? "Approve images first" : step.label}
+                  title={
+                    isLocked
+                      ? labelText("approveImagesFirst", "Approve Images First")
+                      : step.label
+                  }
                   className={`
                     w-[54px] h-[54px] rounded-full flex items-center justify-center
                     text-[18px] font-bold border-[3px] transition-all duration-300
@@ -3692,10 +3811,15 @@ export default function YachtEditorPage() {
           <div>
             <h1 className="text-xl lg:text-2xl font-serif italic text-white">
               {isNewMode
-                ? t?.header?.newTitle || "Register New Vessel"
-                : (t?.header?.editTitle || "Edit Vessel")?.replace(
+                ? t?.header?.newTitle ||
+                  labelText("newTitle", "Register New Vessel")
+                : (
+                    t?.header?.editTitle ||
+                    labelText("editTitle", "Edit Vessel")
+                  )?.replace(
                     "{name}",
-                    selectedYacht?.boat_name || "Loading...",
+                    selectedYacht?.boat_name ||
+                      labelText("loadingName", "Loading..."),
                   )}
             </h1>
             <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider mt-0.5">
@@ -3735,17 +3859,23 @@ export default function YachtEditorPage() {
                 <div className="flex justify-between items-end border-b border-slate-200 pb-4">
                   <div>
                     <h3 className="text-lg font-bold text-[#003566] flex items-center gap-3">
-                      <Images size={22} className="text-blue-600" /> Vessel
-                      Assets & AI Extraction
+                      <Images size={22} className="text-blue-600" />{" "}
+                      {labelText(
+                        "stepOneTitle",
+                        "Vessel Assets & AI Extraction",
+                      )}
                     </h3>
                     <p className="text-sm text-slate-500 mt-1">
-                      Upload images → system auto-optimizes → approve → then AI
-                      fills all form fields.
+                      {labelText(
+                        "stepOneDescription",
+                        "Upload images -> system auto-optimizes -> approve -> then AI fills all form fields.",
+                      )}
                     </p>
                   </div>
                   {imagesApproved && (
                     <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-4 py-2 rounded-lg">
-                      <CheckCircle size={14} /> Images Approved
+                      <CheckCircle size={14} />{" "}
+                      {labelText("imagesApproved", "Images Approved")}
                     </div>
                   )}
                 </div>
@@ -3754,9 +3884,12 @@ export default function YachtEditorPage() {
                 <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-3">
                   <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                     <FileText size={14} className="text-blue-500" />
-                    Vessel Description{" "}
+                    {labelText("vesselDescriptionHelp", "Vessel Description")}{" "}
                     <span className="text-slate-400 font-normal">
-                      (optional but recommended)
+                      {labelText(
+                        "optionalRecommended",
+                        "(optional but recommended)",
+                      )}
                     </span>
                   </label>
                   <textarea
@@ -6967,7 +7100,9 @@ export default function YachtEditorPage() {
             <div className="space-y-8">
               <div className="bg-white border border-slate-200 p-8 shadow-sm">
                 <h3 className="text-[12px] font-black text-[#003566] uppercase tracking-[0.3em] flex items-center gap-3 border-b-2 border-[#003566] pb-4 mb-6">
-                  <FileText size={18} /> {t?.wizard?.review?.title || "Review"}
+                  <FileText size={18} />{" "}
+                  {t?.wizard?.review?.title ||
+                    labelText("stepReview", "Review")}
                 </h3>
                 <p className="text-sm text-slate-600 mb-6">
                   {labelText(
@@ -7007,8 +7142,10 @@ export default function YachtEditorPage() {
                         </p>
                         <p className="text-[9px] text-slate-500">
                           {!isNewMode || isStepComplete(step.id)
-                            ? t?.wizard?.review?.completed || "Completed"
-                            : t?.wizard?.review?.notCompleted || "Pending"}
+                            ? t?.wizard?.review?.completed ||
+                              labelText("completed", "Completed")
+                            : t?.wizard?.review?.notCompleted ||
+                              labelText("pending", "Pending")}
                         </p>
                       </div>
                     </div>
@@ -7177,31 +7314,12 @@ export default function YachtEditorPage() {
                   </div>
                 </div>
 
-                {/* ── SIGNHOST INTEGRATION ── */}
-                {activeYachtId && (
-                  <div className="mb-8">
-                    <SignhostFlow
-                      yachtId={Number(activeYachtId)}
-                      yachtName={
-                        selectedYacht?.boat_name ||
-                        (draft?.data as any)?.step2?.selectedYacht?.boat_name ||
-                        "Unnamed Vessel"
-                      }
-                      locationId={
-                        selectedYacht?.ref_harbor_id ||
-                        (draft?.data as any)?.step2?.selectedYacht
-                          ?.ref_harbor_id ||
-                        null
-                      }
-                      yachtData={
-                        selectedYacht ||
-                        (draft?.data as any)?.step2?.selectedYacht ||
-                        null
-                      }
-                      locationOptions={harbors}
-                    />
-                  </div>
-                )}
+                <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
+                  {labelText(
+                    "reviewContractNotice",
+                    "Save this vessel first. The contract flow opens in the next step after the vessel record is stored.",
+                  )}
+                </div>
 
                 <Button
                   type="submit"
@@ -7214,9 +7332,53 @@ export default function YachtEditorPage() {
                     <Save className="mr-2 w-5 h-5" />
                   )}
                   {isNewMode
-                    ? t?.wizard?.review?.create || "Create Vessel"
-                    : t?.wizard?.review?.update || "Update Vessel"}
+                    ? t?.wizard?.review?.create ||
+                      labelText("createVessel", "Create Vessel")
+                    : t?.wizard?.review?.update ||
+                      labelText("updateVessel", "Update Vessel")}
                 </Button>
+              </div>
+            </div>
+          )}
+
+          {activeStep === 6 && (
+            <div className="space-y-8">
+              <div className="bg-white border border-slate-200 p-8 shadow-sm">
+                <h3 className="text-[12px] font-black text-[#003566] uppercase tracking-[0.3em] flex items-center gap-3 border-b-2 border-[#003566] pb-4 mb-6">
+                  <FileText size={18} /> {labelText("stepContract", "Contract")}
+                </h3>
+                <p className="text-sm text-slate-600 mb-6">
+                  {labelText(
+                    "contractStepDescription",
+                    "Manage the contract template, print the PDF, and generate the Signhost-ready contract from this step.",
+                  )}
+                </p>
+
+                {activeYachtId ? (
+                  <SignhostFlow
+                    yachtId={Number(activeYachtId)}
+                    yachtName={
+                      selectedYacht?.boat_name ||
+                      (draft?.data as any)?.step2?.selectedYacht?.boat_name ||
+                      "Unnamed Vessel"
+                    }
+                    locationId={
+                      selectedYacht?.ref_harbor_id ||
+                      (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id ||
+                      null
+                    }
+                    yachtData={
+                      selectedYacht ||
+                      (draft?.data as any)?.step2?.selectedYacht ||
+                      null
+                    }
+                    locationOptions={harbors}
+                  />
+                ) : (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+                    Save the vessel in Step 5 before opening the contract flow.
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -7230,12 +7392,12 @@ export default function YachtEditorPage() {
               className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 h-11 px-6 text-xs font-bold uppercase tracking-wider disabled:opacity-30"
             >
               <ChevronLeft size={16} className="mr-1" />{" "}
-              {t?.wizard?.nav?.previous || "Previous"}
+              {t?.wizard?.nav?.previous || labelText("previous", "Previous")}
             </Button>
             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
               Step {activeStep} of {wizardSteps.length}
             </span>
-            {activeStep < 5 ? (
+            {activeStep < wizardSteps.length && activeStep !== 5 ? (
               <Button
                 type="button"
                 onClick={() => {
@@ -7253,13 +7415,29 @@ export default function YachtEditorPage() {
                 {isNewMode && !canProceedFromStep1 && activeStep === 1 ? (
                   <>
                     {t?.wizard?.nav?.runExtractionFirst ||
-                      "Approve Images First"}
+                      labelText("approveImagesFirst", "Approve Images First")}
                   </>
                 ) : (
                   <>
-                    {t?.wizard?.nav?.next || "Next"}{" "}
+                    {t?.wizard?.nav?.next || labelText("next", "Next")}{" "}
                     <ChevronRight size={16} className="ml-1" />
                   </>
+                )}
+              </Button>
+            ) : activeStep === 5 ? (
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-11 px-6 text-xs font-bold uppercase tracking-wider bg-[#003566] text-white hover:bg-blue-800 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ChevronRight size={16} className="mr-1" />
+                )}
+                {labelText(
+                  "continueToContract",
+                  "Save and Continue to Contract",
                 )}
               </Button>
             ) : (
