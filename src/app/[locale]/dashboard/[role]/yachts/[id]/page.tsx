@@ -102,7 +102,7 @@ const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
     </div>
   ),
 });
-import { toast, Toaster } from "react-hot-toast";
+import { toast as hotToast, Toaster } from "react-hot-toast";
 import { useYachtDraft } from "@/hooks/useYachtDraft";
 import { convertBatchToWebP } from "@/lib/convertToWebP";
 import { CatalogAutocomplete } from "@/components/ui/CatalogAutocomplete";
@@ -150,6 +150,16 @@ const UPLOAD_MAX_PARALLEL_BATCHES = 4;
 const STORAGE_URL = "https://app.schepen-kring.nl/storage/";
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=600&q=80";
+
+const suppressedToast = Object.assign(
+  ((..._args: any[]) => "suppressed") as any,
+  {
+    success: ((..._args: any[]) => "suppressed") as any,
+    error: ((..._args: any[]) => "suppressed") as any,
+    loading: ((..._args: any[]) => "suppressed") as any,
+    dismiss: ((..._args: any[]) => undefined) as any,
+  },
+) as typeof hotToast;
 
 type AiStagedImage = {
   file: File;
@@ -1010,6 +1020,80 @@ function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
   return null;
 }
 
+type DescriptionFormValue = string | number | boolean;
+
+const DESCRIPTION_CONTEXT_IGNORED_FIELDS = new Set([
+  "id",
+  "user_id",
+  "created_at",
+  "updated_at",
+  "deleted_at",
+  "main_image",
+  "images",
+  "availability_rules",
+  "availabilityRules",
+  "short_description_en",
+  "short_description_nl",
+  "short_description_de",
+  "short_description_fr",
+]);
+
+function stripRichText(value: string): string {
+  return value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildDescriptionFormValues(
+  value: unknown,
+): Record<string, DescriptionFormValue> {
+  const record = toObjectRecord(value);
+  const entries = Object.entries(record)
+    .filter(([key, rawValue]) => {
+      if (DESCRIPTION_CONTEXT_IGNORED_FIELDS.has(key)) return false;
+      if (rawValue === null || rawValue === undefined) return false;
+      if (Array.isArray(rawValue)) return false;
+      if (typeof rawValue === "object") return false;
+      if (typeof rawValue === "string") {
+        const trimmed = rawValue.trim();
+        return trimmed !== "" && trimmed.toLowerCase() !== "undefined";
+      }
+      if (typeof rawValue === "number") {
+        return Number.isFinite(rawValue);
+      }
+      return typeof rawValue === "boolean";
+    })
+    .map(([key, rawValue]) => [
+      key,
+      typeof rawValue === "string" ? rawValue.trim() : rawValue,
+    ])
+    .sort(([leftKey], [rightKey]) => (leftKey as string).localeCompare(rightKey as string));
+
+  return Object.fromEntries(entries);
+}
+
+function buildDescriptionRequestSignature(
+  formValues: Record<string, DescriptionFormValue>,
+  tone: string,
+  minWords: number | "",
+  maxWords: number | "",
+): string {
+  return JSON.stringify({
+    tone,
+    minWords: minWords || 200,
+    maxWords: maxWords || 500,
+    formValues,
+  });
+}
+
+function hasThinDescriptions(texts: { nl: string; en: string; de: string }): boolean {
+  return (["nl", "en", "de"] as const).some(
+    (lang) => stripRichText(texts[lang]).length < 140,
+  );
+}
+
 export default function YachtEditorPage() {
   const params = useParams<{ id: string; role?: string }>();
   const searchParams = useSearchParams();
@@ -1074,6 +1158,8 @@ export default function YachtEditorPage() {
 
   // Wizard State
   const [activeStep, setActiveStep] = useState<number>(1);
+  const suppressCreationToasts = isNewMode && activeStep <= 4;
+  const toast = suppressCreationToasts ? suppressedToast : hotToast;
   const {
     draft,
     isLoaded: isDraftLoaded,
@@ -1117,7 +1203,11 @@ export default function YachtEditorPage() {
       ? String(createdYachtId)
       : null
     : (yachtId as string);
-  const pipeline = useImagePipeline(activeYachtId);
+
+  // Gemini Extraction State (Step 1)
+  const [isExtracting, setIsExtracting] = useState(false);
+
+  const pipeline = useImagePipeline(activeYachtId, { pausePolling: isExtracting });
   const imagesApproved = pipeline.isStep2Unlocked;
   const [reviewImages, setReviewImages] = useState<PipelineImage[]>([]);
 
@@ -1169,11 +1259,16 @@ export default function YachtEditorPage() {
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
+  useEffect(() => {
+    if (suppressCreationToasts) {
+      hotToast.dismiss();
+    }
+  }, [suppressCreationToasts]);
+
   // Gemini Extraction State (Step 1)
   const [boatHint, setBoatHint] = useState("");
   const [geminiExtracted, setGeminiExtracted] = useState(false);
   const [extractionResult, setExtractionResult] = useState<any>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
   const [showExtractModal, setShowExtractModal] = useState(false);
   const [extractionType, setExtractionType] = useState<"gemini" | "magic">(
     "gemini",
@@ -1216,10 +1311,42 @@ export default function YachtEditorPage() {
   const [aiMinWords, setAiMinWords] = useState<number | "">(200);
   const [aiMaxWords, setAiMaxWords] = useState<number | "">(500);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const lastDescriptionRequestSignatureRef = useRef<string | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>("");
   const [isDictating, setIsDictating] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
+  const descriptionFormValues = useMemo(
+    () => buildDescriptionFormValues(selectedYacht),
+    [selectedYacht],
+  );
+  const descriptionRequestSignature = useMemo(
+    () =>
+      buildDescriptionRequestSignature(
+        descriptionFormValues,
+        aiTone,
+        aiMinWords,
+        aiMaxWords,
+      ),
+    [descriptionFormValues, aiTone, aiMinWords, aiMaxWords],
+  );
+  const hasDescriptionContext = useMemo(() => {
+    const keys = Object.keys(descriptionFormValues);
+    return (
+      keys.length >= 5 ||
+      Boolean(
+        descriptionFormValues.boat_name ||
+          descriptionFormValues.manufacturer ||
+          descriptionFormValues.model ||
+          descriptionFormValues.boat_type ||
+          descriptionFormValues.boat_category,
+      )
+    );
+  }, [descriptionFormValues]);
+  const needsAutoDescriptionGeneration = useMemo(
+    () => hasThinDescriptions(aiTexts),
+    [aiTexts],
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -1746,11 +1873,11 @@ export default function YachtEditorPage() {
           const uiState = toObjectRecord(remoteDraft.ui_state_json);
           const serverCompletedSteps = Array.isArray(uiState.completedSteps)
             ? uiState.completedSteps
-                .map((value) => Number(value))
-                .filter(
-                  (value) =>
-                    Number.isInteger(value) && value >= 1 && value <= 5,
-                )
+              .map((value) => Number(value))
+              .filter(
+                (value) =>
+                  Number.isInteger(value) && value >= 1 && value <= 5,
+              )
             : [];
 
           flushDraft({
@@ -2106,7 +2233,7 @@ export default function YachtEditorPage() {
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||
-          "Could not queue marketing video generation.",
+        "Could not queue marketing video generation.",
       );
     } finally {
       setIsGeneratingMarketingVideo(false);
@@ -2243,8 +2370,8 @@ export default function YachtEditorPage() {
       selectedLightboxImageId === null
         ? -1
         : reviewImages.findIndex(
-            (image) => image.id === selectedLightboxImageId,
-          ),
+          (image) => image.id === selectedLightboxImageId,
+        ),
     [reviewImages, selectedLightboxImageId],
   );
 
@@ -2611,7 +2738,7 @@ export default function YachtEditorPage() {
         if (refreshRes.data?.images) {
           pipeline.setImagesDirectly?.(refreshRes.data);
         }
-      } catch {}
+      } catch { }
       if (pipeline.refreshImages) await pipeline.refreshImages();
       if (shouldSetCreatedYachtId) {
         setCreatedYachtId(Number(targetId));
@@ -2785,8 +2912,8 @@ export default function YachtEditorPage() {
       if (!res.ok) {
         throw new Error(
           responseData?.error ||
-            responseData?.message ||
-            `AI extraction request failed (HTTP ${res.status})`,
+          responseData?.message ||
+          `AI extraction request failed (HTTP ${res.status})`,
         );
       }
 
@@ -2795,6 +2922,15 @@ export default function YachtEditorPage() {
       if (responseData?.success && responseData?.step2_form_values) {
         const formValues = responseData.step2_form_values;
         const meta = responseData.meta;
+
+        // ── Sanitize: strip ALL "unknown" values from AI response ──
+        // AI models sometimes ignore prompt instructions. This guarantees
+        // "unknown" never appears in any form field.
+        for (const key of Object.keys(formValues)) {
+          if (typeof formValues[key] === "string" && formValues[key].toLowerCase().trim() === "unknown") {
+            formValues[key] = "";
+          }
+        }
 
         const normalizedFormValues: Record<string, unknown> = {
           ...toObjectRecord(formValues),
@@ -3007,6 +3143,25 @@ export default function YachtEditorPage() {
           }));
         }
 
+        const mergedDescriptionState = {
+          ...toObjectRecord(selectedYacht),
+          ...fieldsToMerge,
+        };
+        const extractedDescriptionFormValues =
+          buildDescriptionFormValues(mergedDescriptionState);
+        if (Object.keys(extractedDescriptionFormValues).length > 0) {
+          void handleRegenerateDescription({
+            silent: true,
+            signature: buildDescriptionRequestSignature(
+              extractedDescriptionFormValues,
+              aiTone,
+              aiMinWords,
+              aiMaxWords,
+            ),
+            formValuesOverride: extractedDescriptionFormValues,
+          });
+        }
+
         const fieldCount = Object.keys(fieldsToMerge).length;
         const confPct = Math.round((meta?.overall_confidence || 0) * 100);
         const removedCount = meta?.removed_fields?.length || 0;
@@ -3076,43 +3231,112 @@ export default function YachtEditorPage() {
     }
   };
 
-  const handleRegenerateDescription = async () => {
+  const handleRegenerateDescription = useCallback(
+    async (options?: {
+      silent?: boolean;
+      signature?: string;
+      formValuesOverride?: Record<string, DescriptionFormValue>;
+    }) => {
+      const targetId = isNewMode ? createdYachtId : yachtId;
+      if (!targetId) {
+        toast.error("Please save the yacht first before regenerating text.");
+        return;
+      }
+
+      const requestFormValues =
+        options?.formValuesOverride || descriptionFormValues;
+      const toastId = options?.silent
+        ? null
+        : toast.loading("🪄 Building broker-grade descriptions...");
+      const requestSignature =
+        options?.signature ||
+        buildDescriptionRequestSignature(
+          requestFormValues,
+          aiTone,
+          aiMinWords,
+          aiMaxWords,
+        );
+
+      setIsRegenerating(true);
+
+      try {
+        const res = await api.post("/ai/generate-description", {
+          yacht_id: targetId,
+          tone: aiTone,
+          min_words: aiMinWords || 200,
+          max_words: aiMaxWords || 500,
+          form_values: requestFormValues,
+        });
+
+        if (res.data?.success && res.data?.descriptions) {
+          setAiTexts({
+            en: res.data.descriptions.en || "",
+            nl: res.data.descriptions.nl || "",
+            de: res.data.descriptions.de || "",
+          });
+          lastDescriptionRequestSignatureRef.current = requestSignature;
+          if (toastId) {
+            toast.success("Descriptions updated from step 2 data.", {
+              id: toastId,
+            });
+          }
+        } else {
+          throw new Error("Failed to generate descriptions.");
+        }
+      } catch (e: any) {
+        console.error(e);
+        lastDescriptionRequestSignatureRef.current = null;
+        if (toastId) {
+          toast.error(
+            e?.response?.data?.error || "Failed to regenerate text.",
+            {
+              id: toastId,
+            },
+          );
+        }
+      } finally {
+        setIsRegenerating(false);
+      }
+    },
+    [
+      isNewMode,
+      createdYachtId,
+      yachtId,
+      aiTone,
+      aiMinWords,
+      aiMaxWords,
+      descriptionFormValues,
+      toast,
+    ],
+  );
+
+  useEffect(() => {
+    if (activeStep !== 3) return;
     const targetId = isNewMode ? createdYachtId : yachtId;
-    if (!targetId) {
-      toast.error("Please save the yacht first before regenerating text.");
+    if (!targetId || isRegenerating) return;
+    if (!hasDescriptionContext || !needsAutoDescriptionGeneration) return;
+    if (
+      lastDescriptionRequestSignatureRef.current === descriptionRequestSignature
+    ) {
       return;
     }
 
-    setIsRegenerating(true);
-    const toastId = toast.loading("🪄 Generating new descriptions...");
-
-    try {
-      const res = await api.post("/ai/generate-description", {
-        yacht_id: targetId,
-        tone: aiTone,
-        min_words: aiMinWords || 200,
-        max_words: aiMaxWords || 500,
-      });
-
-      if (res.data?.success && res.data?.descriptions) {
-        setAiTexts({
-          en: res.data.descriptions.en || "",
-          nl: res.data.descriptions.nl || "",
-          de: res.data.descriptions.de || "",
-        });
-        toast.success("Descriptions updated!", { id: toastId });
-      } else {
-        throw new Error("Failed to generate descriptions.");
-      }
-    } catch (e: any) {
-      console.error(e);
-      toast.error(e?.response?.data?.error || "Failed to regenerate text.", {
-        id: toastId,
-      });
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
+    lastDescriptionRequestSignatureRef.current = descriptionRequestSignature;
+    void handleRegenerateDescription({
+      silent: true,
+      signature: descriptionRequestSignature,
+    });
+  }, [
+    activeStep,
+    isNewMode,
+    createdYachtId,
+    yachtId,
+    isRegenerating,
+    hasDescriptionContext,
+    needsAutoDescriptionGeneration,
+    descriptionRequestSignature,
+    handleRegenerateDescription,
+  ]);
 
   const toggleDictation = () => {
     if (!recognition) {
@@ -3714,7 +3938,7 @@ export default function YachtEditorPage() {
 
   return (
     <div className="yacht-editor-theme bg-[#F8FAFC]">
-      <Toaster position="top-right" />
+      {!suppressCreationToasts && <Toaster position="top-right" />}
 
       {showExtractModal && (
         <div className="fixed inset-0 z-[120] bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4">
@@ -3775,12 +3999,11 @@ export default function YachtEditorPage() {
                   className={`
                     w-[54px] h-[54px] rounded-full flex items-center justify-center
                     text-[18px] font-bold border-[3px] transition-all duration-300
-                    ${
-                      isLocked
-                        ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
-                        : isPast
-                          ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
-                          : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
+                    ${isLocked
+                      ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
+                      : isPast
+                        ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
+                        : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
                     }
                   `}
                 >
@@ -3788,9 +4011,8 @@ export default function YachtEditorPage() {
                 </button>
                 {index < wizardSteps.length - 1 && (
                   <div
-                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${
-                      step.id < activeStep ? "bg-[#2563eb]" : "bg-[#d4d8de]"
-                    }`}
+                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${step.id < activeStep ? "bg-[#2563eb]" : "bg-[#d4d8de]"
+                      }`}
                   />
                 )}
               </div>
@@ -4098,11 +4320,7 @@ export default function YachtEditorPage() {
                                   statusConfig.processing;
 
                                 return (
-                                  <Draggable
-                                    key={img.id}
-                                    draggableId={`pipeline-image-${img.id}`}
-                                    index={index}
-                                  >
+                                  <Draggable key={img.id} draggableId={`pipeline-image-${img.id}`} index={index}>
                                     {(dragProvided) => (
                                       <div
                                         ref={dragProvided.innerRef}
@@ -4115,31 +4333,28 @@ export default function YachtEditorPage() {
                                               ? "border-amber-300"
                                               : img.status === "processing"
                                                 ? "border-blue-200"
-                                                : "border-red-300",
+                                                : "border-red-300"
                                         )}
                                       >
                                         {/* Image */}
                                         <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
                                           <img
+                                            key={`img-${img.id}-${img.thumb_full_url || img.optimized_url || img.full_url || img.url || img.original_temp_url}`}
                                             src={
                                               img.thumb_full_url ||
                                               img.optimized_url ||
-                                              img.full_url
+                                              img.full_url ||
+                                              img.url ||
+                                              img.original_temp_url ||
+                                              PLACEHOLDER_IMAGE
                                             }
-                                            alt={
-                                              img.original_name ||
-                                              `Yacht image ${index + 1}`
-                                            }
-                                            onClick={() =>
-                                              setSelectedLightboxImageId(img.id)
-                                            }
+                                            alt={img.original_name || `Yacht image ${index + 1}`}
+                                            onClick={() => setSelectedLightboxImageId(img.id)}
                                             className={cn(
                                               "w-full h-full cursor-zoom-in object-cover transition-opacity",
-                                              img.enhancement_method ===
-                                                "pending" &&
-                                                "opacity-80 grayscale-[0.2]",
-                                              img.status === "processing" &&
-                                                "opacity-60",
+                                              img.enhancement_method === "pending" &&
+                                              "opacity-80 grayscale-[0.2]",
+                                              img.status === "processing" && "opacity-60"
                                             )}
                                             onError={handleImageError}
                                           />
@@ -4147,25 +4362,7 @@ export default function YachtEditorPage() {
                                           {/* Loading Overlay for Processing */}
                                           {img.status === "processing" && (
                                             <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
-                                              <Loader2
-                                                size={24}
-                                                className="animate-spin text-blue-600"
-                                              />
-                                            </div>
-                                          )}
-
-                                          {img.enhancement_method ===
-                                            "pending" && (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white font-bold bg-[#0B1F3A]/30 backdrop-blur-[1px] z-10">
-                                              <div className="bg-white/40 p-2 rounded-full mb-2 backdrop-blur-md">
-                                                <Loader2
-                                                  size={18}
-                                                  className="animate-spin text-white"
-                                                />
-                                              </div>
-                                              <span className="text-[10px] tracking-wider uppercase text-white drop-shadow-md">
-                                                Optimizing...
-                                              </span>
+                                              <Loader2 size={24} className="animate-spin text-blue-600" />
                                             </div>
                                           )}
 
@@ -4183,7 +4380,6 @@ export default function YachtEditorPage() {
                                           >
                                             <GripVertical size={14} />
                                           </div>
-
                                           {/* Quality label */}
                                           {img.quality_label &&
                                             img.status !== "processing" && (
@@ -4238,7 +4434,7 @@ export default function YachtEditorPage() {
                                                       img.quality_score >= 70
                                                         ? "bg-emerald-500"
                                                         : img.quality_score >=
-                                                            40
+                                                          40
                                                           ? "bg-amber-500"
                                                           : "bg-red-500",
                                                     )}
@@ -4298,16 +4494,16 @@ export default function YachtEditorPage() {
                                           <div className="flex gap-2">
                                             {img.status ===
                                               "ready_for_review" && (
-                                              <button
-                                                type="button"
-                                                onClick={() =>
-                                                  pipeline.approveImage(img.id)
-                                                }
-                                                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
-                                              >
-                                                <Check size={12} /> Approve
-                                              </button>
-                                            )}
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    pipeline.approveImage(img.id)
+                                                  }
+                                                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
+                                                >
+                                                  <Check size={12} /> Approve
+                                                </button>
+                                              )}
                                             <button
                                               type="button"
                                               onClick={() =>
@@ -4455,7 +4651,7 @@ export default function YachtEditorPage() {
                                         0) >= 70
                                         ? "bg-emerald-50 text-emerald-700"
                                         : (selectedLightboxImage.quality_score ??
-                                              0) >= 40
+                                          0) >= 40
                                           ? "bg-amber-50 text-amber-700"
                                           : "bg-red-50 text-red-700",
                                     )}
@@ -4464,7 +4660,7 @@ export default function YachtEditorPage() {
                                       0) >= 70
                                       ? "Gallery ready"
                                       : (selectedLightboxImage.quality_score ??
-                                            0) >= 40
+                                        0) >= 40
                                         ? "Needs review"
                                         : "Needs correction"}
                                   </span>
@@ -4487,7 +4683,7 @@ export default function YachtEditorPage() {
                                         0) >= 70
                                         ? "from-emerald-400 to-emerald-500"
                                         : (selectedLightboxImage.quality_score ??
-                                              0) >= 40
+                                          0) >= 40
                                           ? "from-amber-400 to-orange-500"
                                           : "from-rose-400 to-red-500",
                                     )}
@@ -4603,71 +4799,71 @@ export default function YachtEditorPage() {
                 {(pipeline.stats.total > 0 ||
                   imagesApproved ||
                   (!isOnline && offlineImages.length > 0)) && (
-                  <div className="flex flex-col items-center gap-4 py-4">
-                    {/* Offline Skip Button */}
-                    {!isOnline ? (
-                      <div className="flex flex-col items-center gap-3 w-full max-w-lg">
-                        <div className="bg-amber-50 text-amber-700 border border-amber-200 rounded-lg p-4 text-sm w-full flex gap-3 shadow-sm mb-2">
-                          <WifiOff className="shrink-0" size={18} />
-                          <div>
-                            <p className="font-semibold mb-1">
-                              AI Extraction Not Available Offline
-                            </p>
-                            <p>
-                              You can skip this step and fill in the boat
-                              details manually. Images are saved locally.
-                            </p>
+                    <div className="flex flex-col items-center gap-4 py-4">
+                      {/* Offline Skip Button */}
+                      {!isOnline ? (
+                        <div className="flex flex-col items-center gap-3 w-full max-w-lg">
+                          <div className="bg-amber-50 text-amber-700 border border-amber-200 rounded-lg p-4 text-sm w-full flex gap-3 shadow-sm mb-2">
+                            <WifiOff className="shrink-0" size={18} />
+                            <div>
+                              <p className="font-semibold mb-1">
+                                AI Extraction Not Available Offline
+                              </p>
+                              <p>
+                                You can skip this step and fill in the boat
+                                details manually. Images are saved locally.
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setActiveStep(2)}
-                          disabled={isExtracting}
-                          className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
-                        >
-                          Skip to Step 2 (Manual Fill) <ArrowRight size={20} />
-                        </button>
-                      </div>
-                    ) : (
-                      isExtracting && (
-                        <div className="w-full max-w-lg flex flex-col items-center justify-center gap-3 py-6 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
-                          <Loader2
-                            size={32}
-                            className="animate-spin text-blue-600"
-                          />
-                          <p className="text-blue-800 font-medium">
-                            Gemini is analyzing your images...
-                          </p>
-                        </div>
-                      )
-                    )}
-                    {!geminiExtracted && !isExtracting && isOnline && (
-                      <div className="flex flex-col items-center gap-3">
-                        <p className="text-xs text-slate-400 text-center">
-                          {imagesApproved
-                            ? `AI is ready to analyze ${pipeline.stats.approved} approved optimized images`
-                            : `Upload and approve images first, then AI will analyze them`}
-                        </p>
-
-                        {/* Manual Trigger for Edit Mode or Retries */}
-                        {imagesApproved && (
                           <button
                             type="button"
-                            onClick={() => {
-                              toast("Extracting data from images...", {
-                                icon: "🪄",
-                              });
-                              void handleAiExtract();
-                            }}
-                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => setActiveStep(2)}
+                            disabled={isExtracting}
+                            className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
                           >
-                            <Sparkles size={16} /> Run AI Extraction Manually
+                            Skip to Step 2 (Manual Fill) <ArrowRight size={20} />
                           </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                        </div>
+                      ) : (
+                        isExtracting && (
+                          <div className="w-full max-w-lg flex flex-col items-center justify-center gap-3 py-6 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                            <Loader2
+                              size={32}
+                              className="animate-spin text-blue-600"
+                            />
+                            <p className="text-blue-800 font-medium">
+                              Gemini is analyzing your images...
+                            </p>
+                          </div>
+                        )
+                      )}
+                      {!geminiExtracted && !isExtracting && isOnline && (
+                        <div className="flex flex-col items-center gap-3">
+                          <p className="text-xs text-slate-400 text-center">
+                            {imagesApproved
+                              ? `AI is ready to analyze ${pipeline.stats.approved} approved optimized images`
+                              : `Upload and approve images first, then AI will analyze them`}
+                          </p>
+
+                          {/* Manual Trigger for Edit Mode or Retries */}
+                          {imagesApproved && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toast("Extracting data from images...", {
+                                  icon: "🪄",
+                                });
+                                void handleAiExtract();
+                              }}
+                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Sparkles size={16} /> Run AI Extraction Manually
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                 {/* Extracted Fields Preview intentionally hidden */}
               </div>
@@ -4677,157 +4873,157 @@ export default function YachtEditorPage() {
           {/* ── VIDEO SECTION (After Image Pipeline but inside Step 1) ── */}
           {activeStep === 1 && (
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mt-8 mb-4">
-	              <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-	                <div>
-	                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-	                    <Video size={18} className="text-blue-500" /> Vessel Video
-	                    Operations
-	                  </h3>
-	                  <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">
-	                    {t?.video?.manage || "Manage Videos & Social Posting"}
-	                  </p>
-	                </div>
-	                <div className="flex flex-wrap items-center gap-2">
-	                  <Button
-	                    type="button"
-	                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded shadow-sm"
-	                    onClick={() => handleGenerateMarketingVideo(false)}
-	                    disabled={isGeneratingMarketingVideo}
-	                  >
-	                    {isGeneratingMarketingVideo ? (
-	                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-	                    ) : (
-	                      <Sparkles size={14} className="mr-2" />
-	                    )}
-	                    Generate from images
-	                  </Button>
-	                  <label className="cursor-pointer bg-[#003566] text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2">
-	                    {isUploadingVideo ? (
-	                      <Loader2 className="w-4 h-4 animate-spin" />
-	                    ) : (
-	                      <Upload size={14} />
-	                    )}
-	                    {t?.video?.upload || "Upload MP4"}
-	                    <input
-	                      type="file"
-	                      className="hidden"
-	                      accept="video/*"
-	                      onChange={handleVideoUpload}
-	                      disabled={isUploadingVideo}
-	                    />
-	                  </label>
-	                </div>
-	              </div>
+              <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Video size={18} className="text-blue-500" /> Vessel Video
+                    Operations
+                  </h3>
+                  <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">
+                    {t?.video?.manage || "Manage Videos & Social Posting"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded shadow-sm"
+                    onClick={() => handleGenerateMarketingVideo(false)}
+                    disabled={isGeneratingMarketingVideo}
+                  >
+                    {isGeneratingMarketingVideo ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Sparkles size={14} className="mr-2" />
+                    )}
+                    Generate from images
+                  </Button>
+                  <label className="cursor-pointer bg-[#003566] text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2">
+                    {isUploadingVideo ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload size={14} />
+                    )}
+                    {t?.video?.upload || "Upload MP4"}
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      disabled={isUploadingVideo}
+                    />
+                  </label>
+                </div>
+              </div>
 
-	              <div className="p-6">
-	                <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
-	                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-	                    <div>
-	                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
-	                        Automated Social Video
-	                      </p>
-	                      <p className="mt-2 text-sm text-emerald-900">
-	                        Queue a marketing video built from the approved boat images. The backend will render it and it will appear in the social video library with status updates.
-	                      </p>
-	                    </div>
-	                    <div className="flex flex-wrap gap-2">
-	                      <Button
-	                        type="button"
-	                        variant="outline"
-	                        className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
-	                        onClick={() =>
-	                          router.push(`/${locale}/dashboard/${role}/social`)
-	                        }
-	                      >
-	                        Open Social Library
-	                      </Button>
-	                      <Button
-	                        type="button"
-	                        variant="outline"
-	                        className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
-	                        onClick={() => handleGenerateMarketingVideo(true)}
-	                        disabled={isGeneratingMarketingVideo}
-	                      >
-	                        Force Regenerate
-	                      </Button>
-	                    </div>
-	                  </div>
-	                </div>
+              <div className="p-6">
+                <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
+                        Automated Social Video
+                      </p>
+                      <p className="mt-2 text-sm text-emerald-900">
+                        Queue a marketing video built from the approved boat images. The backend will render it and it will appear in the social video library with status updates.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
+                        onClick={() =>
+                          router.push(`/${locale}/dashboard/${role}/social`)
+                        }
+                      >
+                        Open Social Library
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
+                        onClick={() => handleGenerateMarketingVideo(true)}
+                        disabled={isGeneratingMarketingVideo}
+                      >
+                        Force Regenerate
+                      </Button>
+                    </div>
+                  </div>
+                </div>
 
-	                {marketingVideos.length > 0 && (
-	                  <div className="mb-8">
-	                    <div className="mb-3 flex items-center justify-between">
-	                      <p className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
-	                        Generated marketing videos
-	                      </p>
-	                      <button
-	                        type="button"
-	                        className="text-[10px] uppercase font-black tracking-[0.2em] text-[#003566]"
-	                        onClick={() => loadMarketingVideos(isNewMode ? createdYachtId || yachtId : yachtId)}
-	                      >
-	                        Refresh
-	                      </button>
-	                    </div>
-	                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-	                      {marketingVideos.map((video) => (
-	                        <div
-	                          key={`marketing-${video.id}`}
-	                          className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-	                        >
-	                          <div className="flex items-start justify-between gap-4">
-	                            <div>
-	                              <p className="text-sm font-bold text-slate-800">
-	                                Marketing Video #{video.id}
-	                              </p>
-	                              <p className="mt-1 text-xs text-slate-500">
-	                                Template: {video.template_type || "vertical_slideshow_v1"}
-	                              </p>
-	                            </div>
-	                            <span
-	                              className={cn(
-	                                "rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em]",
-	                                video.status === "ready" || video.status === "published"
-	                                  ? "bg-emerald-100 text-emerald-700"
-	                                  : video.status === "failed"
-	                                    ? "bg-red-100 text-red-700"
-	                                    : "bg-blue-100 text-blue-700",
-	                              )}
-	                            >
-	                              {video.status || "queued"}
-	                            </span>
-	                          </div>
-	                          <div className="mt-4 flex flex-wrap gap-2">
-	                            {video.video_url && (
-	                              <a
-	                                href={video.video_url}
-	                                target="_blank"
-	                                rel="noreferrer"
-	                                className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-50"
-	                              >
-	                                <Eye size={12} className="mr-2" />
-	                                Open Video
-	                              </a>
-	                            )}
-	                            <Button
-	                              type="button"
-	                              variant="outline"
-	                              className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
-	                              onClick={() =>
-	                                router.push(`/${locale}/dashboard/${role}/social`)
-	                              }
-	                            >
-	                              View in Social
-	                            </Button>
-	                          </div>
-	                        </div>
-	                      ))}
-	                    </div>
-	                  </div>
-	                )}
+                {marketingVideos.length > 0 && (
+                  <div className="mb-8">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
+                        Generated marketing videos
+                      </p>
+                      <button
+                        type="button"
+                        className="text-[10px] uppercase font-black tracking-[0.2em] text-[#003566]"
+                        onClick={() => loadMarketingVideos(isNewMode ? createdYachtId || yachtId : yachtId)}
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      {marketingVideos.map((video) => (
+                        <div
+                          key={`marketing-${video.id}`}
+                          className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-bold text-slate-800">
+                                Marketing Video #{video.id}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                Template: {video.template_type || "vertical_slideshow_v1"}
+                              </p>
+                            </div>
+                            <span
+                              className={cn(
+                                "rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em]",
+                                video.status === "ready" || video.status === "published"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : video.status === "failed"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-blue-100 text-blue-700",
+                              )}
+                            >
+                              {video.status || "queued"}
+                            </span>
+                          </div>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {video.video_url && (
+                              <a
+                                href={video.video_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-50"
+                              >
+                                <Eye size={12} className="mr-2" />
+                                Open Video
+                              </a>
+                            )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
+                              onClick={() =>
+                                router.push(`/${locale}/dashboard/${role}/social`)
+                              }
+                            >
+                              View in Social
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-	                {boatVideos.length === 0 ? (
-	                  <div className="flex flex-col items-center justify-center py-12 opacity-40 gap-3 border-2 border-dashed border-slate-200 rounded-lg">
-	                    <Video size={32} className="text-slate-500" />
+                {boatVideos.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 opacity-40 gap-3 border-2 border-dashed border-slate-200 rounded-lg">
+                    <Video size={32} className="text-slate-500" />
                     <span className="text-xs uppercase font-bold text-slate-500">
                       {t?.video?.noVideo || "No Video uploaded"}
                     </span>
@@ -6826,7 +7022,7 @@ export default function YachtEditorPage() {
                     </div>
                     <Button
                       type="button"
-                      onClick={handleRegenerateDescription}
+                      onClick={() => handleRegenerateDescription()}
                       disabled={isRegenerating}
                       className="bg-blue-600 hover:bg-blue-700 text-white gap-2 mt-1 h-9"
                     >
@@ -7001,23 +7197,22 @@ export default function YachtEditorPage() {
                                 onClick={() => {
                                   const newDays = isSelected
                                     ? rule.days_of_week.filter(
-                                        (d) => d !== day.val,
-                                      )
+                                      (d) => d !== day.val,
+                                    )
                                     : [...rule.days_of_week, day.val].sort(
-                                        (a, b) =>
-                                          (a === 0 ? 7 : a) - (b === 0 ? 7 : b),
-                                      );
+                                      (a, b) =>
+                                        (a === 0 ? 7 : a) - (b === 0 ? 7 : b),
+                                    );
                                   updateAvailabilityRule(
                                     idx,
                                     "days_of_week",
                                     newDays,
                                   );
                                 }}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${
-                                  isSelected
-                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                }`}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${isSelected
+                                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                                  }`}
                               >
                                 {day.label}
                               </button>
@@ -7522,7 +7717,7 @@ export default function YachtEditorPage() {
         variant="destructive"
         onConfirm={handleDeleteAllImages}
       />
-    </div>
+    </div >
   );
 }
 

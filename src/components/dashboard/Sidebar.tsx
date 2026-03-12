@@ -127,11 +127,6 @@ export function Sidebar({
         href: `${root}/errors`,
         icon: TriangleAlert,
       });
-      items.push({
-        title: "Boat Audit",
-        href: `${root}/boat-audit`,
-        icon: ShieldCheck, // Reusing ShieldCheck or Bot for AI audit
-      });
     }
 
     items.push({ title: t.boats, href: `${root}/yachts`, icon: Ship });

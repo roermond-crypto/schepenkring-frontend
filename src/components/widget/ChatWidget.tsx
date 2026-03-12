@@ -10,7 +10,6 @@ import {
 import {
   MessageCircle,
   Minimize2,
-  Paperclip,
   Send,
   WifiOff,
   X,
@@ -144,11 +143,24 @@ function ChatBody({
   sending: boolean;
 }) {
   const [input, setInput] = useState("");
+  const [composerFocused, setComposerFocused] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const hasUserMessages = messages.some((message) => message.isUser);
+  const showWelcomePanel = !hasUserMessages;
+  const visibleMessages = messages.filter((message) => message.id !== "init");
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
+
+  useEffect(() => {
+    const element = textareaRef.current;
+    if (!element) return;
+
+    element.style.height = "0px";
+    element.style.height = `${Math.min(element.scrollHeight, 140)}px`;
+  }, [input]);
 
   const handleSend = () => {
     const value = input.trim();
@@ -158,137 +170,210 @@ function ChatBody({
   };
 
   return (
-    <div className="flex h-full flex-col bg-white font-sans" style={{ fontFamily: '"Inter", sans-serif' }}>
+    <div
+      className="flex h-full min-h-0 flex-col bg-[radial-gradient(circle_at_top,_rgba(219,234,254,0.72),_rgba(248,250,252,0.98)_42%,_#ffffff_100%)] text-slate-900"
+      style={{ fontFamily: '"Manrope", "Inter", sans-serif' }}
+    >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
       `}</style>
-      <div className="border-b border-slate-200/80 px-4 py-4">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Quick prompts
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {quickPrompts.map((prompt) => (
-            <button
-              key={prompt}
-              onClick={() => onSend(prompt)}
-              disabled={sending}
-              className="rounded-full border px-3 py-1.5 text-xs transition hover:opacity-85 disabled:opacity-50"
-              style={{
-                borderColor: colors.quickChipBorder,
-                background: colors.quickChipBg,
-                color: colors.quickChipText,
-              }}
+      <div className="border-b border-slate-200/80 bg-white/70 px-4 py-3 backdrop-blur-xl">
+        {showWelcomePanel ? (
+          <div className="rounded-[28px] border border-white/90 bg-white/92 p-4 shadow-[0_22px_60px_-34px_rgba(15,23,42,0.45)]">
+            <div className="flex items-start gap-3">
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg"
+                style={{
+                  background: `linear-gradient(145deg, ${colors.headerStart}, ${colors.headerEnd})`,
+                }}
+              >
+                <MessageCircle size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700/70">
+                  Live concierge
+                </p>
+                <h5 className="mt-1 text-sm font-bold text-slate-900">
+                  Ask about boats, viewings, or harbor support.
+                </h5>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                  Send a message and our team will follow up with the right details.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Quick prompts
+              </div>
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {quickPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => onSend(prompt)}
+                    disabled={sending}
+                    className="shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition hover:-translate-y-0.5 hover:opacity-90 disabled:opacity-50"
+                    style={{
+                      borderColor: colors.quickChipBorder,
+                      background: colors.quickChipBg,
+                      color: colors.quickChipText,
+                    }}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+                {harborName && (
+                  <button
+                    onClick={() => onSend(`I need support for ${harborName}`)}
+                    disabled={sending}
+                    className="shrink-0 rounded-full border border-sky-200 bg-sky-50 px-3.5 py-2 text-xs font-semibold text-sky-700 transition hover:-translate-y-0.5 hover:bg-sky-100 disabled:opacity-50"
+                  >
+                    Support for {harborName}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1">
+            <div className="flex shrink-0 items-center gap-2 rounded-full bg-slate-950 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              Support online
+            </div>
+            {quickPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                onClick={() => onSend(prompt)}
+                disabled={sending}
+                className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div className="space-y-3 pb-2">
+          {visibleMessages.map((msg) => (
+            <div
+              key={msg.id}
+              className={cn("flex", msg.isUser ? "justify-end" : "justify-start")}
             >
-              {prompt}
-            </button>
+              <div
+                className={cn(
+                  "max-w-[86%] rounded-[24px] px-4 py-3 text-[13px] leading-6 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]",
+                  msg.isUser
+                    ? "rounded-br-md text-white"
+                    : "rounded-bl-md border border-white/90 bg-white/92 text-slate-800",
+                )}
+                style={
+                  msg.isUser
+                    ? {
+                      background: `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                    }
+                    : undefined
+                }
+              >
+                <p className="whitespace-pre-wrap">{msg.text}</p>
+                <p
+                  className={cn(
+                    "mt-1.5 text-[10px] font-medium",
+                    msg.isUser ? "text-white/72" : "text-slate-400",
+                  )}
+                >
+                  {msg.timestamp.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
           ))}
-          {harborName && (
-            <button
-              onClick={() => onSend(`I need support for ${harborName}`)}
-              disabled={sending}
-              className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-700 transition hover:bg-sky-100 disabled:opacity-50"
-            >
-              Support for {harborName}
-            </button>
+
+          {typing && (
+            <div className="flex justify-start">
+              <div className="inline-flex items-center gap-1 rounded-full border border-white/90 bg-white/92 px-3.5 py-2.5 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.4)]">
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.2s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.1s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
+              </div>
+            </div>
           )}
+          <div ref={endRef} />
         </div>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={cn("flex", msg.isUser ? "justify-end" : "justify-start")}
-          >
+      <div className="border-t border-slate-200/80 bg-white/82 px-4 py-4 backdrop-blur-xl">
+        <div
+          className={cn(
+            "rounded-[30px] border bg-white px-3 py-3 shadow-[0_22px_60px_-34px_rgba(15,23,42,0.45)] transition",
+            composerFocused
+              ? "border-sky-300 shadow-[0_24px_60px_-28px_rgba(37,99,235,0.24)]"
+              : "border-slate-200",
+          )}
+        >
+          <div className="flex items-end gap-3">
             <div
+              className="mb-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white"
+              style={{
+                background: `linear-gradient(145deg, ${colors.headerStart}, ${colors.headerEnd})`,
+              }}
+            >
+              <MessageCircle size={17} />
+            </div>
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onFocus={() => setComposerFocused(true)}
+              onBlur={() => setComposerFocused(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Write your message..."
+              disabled={sending}
+              rows={1}
+              className="max-h-[140px] min-h-[52px] flex-1 resize-none bg-transparent px-1 py-2 text-[15px] font-medium leading-6 text-slate-900 outline-none placeholder:text-slate-400 disabled:opacity-50"
+            />
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!input.trim() || sending}
               className={cn(
-                "max-w-[84%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
-                msg.isUser
-                  ? "rounded-br-sm text-white shadow-md"
-                  : "rounded-bl-sm border border-slate-200 bg-white text-slate-800",
+                "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white transition",
+                input.trim() && !sending
+                  ? "shadow-lg hover:-translate-y-0.5"
+                  : "cursor-not-allowed bg-slate-300 shadow-none",
               )}
               style={
-                msg.isUser
+                input.trim() && !sending
                   ? {
-                    background: `linear-gradient(140deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                    background: `linear-gradient(135deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
                   }
                   : undefined
               }
+              aria-label="Send message"
             >
-              <p className="whitespace-pre-wrap">{msg.text}</p>
-              <p
-                className={cn(
-                  "mt-1 text-[10px]",
-                  msg.isUser ? "text-white/70" : "text-slate-400",
-                )}
-              >
-                {msg.timestamp.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
+              {sending ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Send size={16} />
+              )}
+            </button>
           </div>
-        ))}
-
-        {typing && (
-          <div className="flex justify-start">
-            <div className="inline-flex items-center gap-1 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-3 py-2">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.2s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.1s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
-            </div>
+          <div className="mt-3 flex items-center justify-between gap-2 px-1">
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
+              Press Enter to send
+            </span>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+              {sending ? "Sending..." : "Encrypted support"}
+            </span>
           </div>
-        )}
-        <div ref={endRef} />
-      </div>
-
-      <div className="border-t border-slate-200 bg-white px-3 py-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200"
-            aria-label="Attach file"
-          >
-            <Paperclip size={14} />
-          </button>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder="Type your message..."
-            disabled={sending}
-            className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:bg-white disabled:opacity-50"
-          />
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!input.trim() || sending}
-            className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-lg text-white transition",
-              input.trim() && !sending
-                ? "shadow-md hover:translate-y-[-1px]"
-                : "cursor-not-allowed bg-slate-300",
-            )}
-            style={
-              input.trim() && !sending
-                ? {
-                  background: `linear-gradient(130deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
-                }
-                : undefined
-            }
-          >
-            {sending ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Send size={14} />
-            )}
-          </button>
         </div>
       </div>
     </div>
@@ -298,7 +383,6 @@ function ChatBody({
 // ── Main Widget ────────────────────────────────────────────────────
 
 export function ChatWidget({
-  harborId,
   harborName,
   locationId,
   accentColor,
@@ -312,7 +396,6 @@ export function ChatWidget({
   const [isOpen, setIsOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [guestName, setGuestName] = useState<string | null>(null);
   const [messages, setMessages] = useState<WidgetMessage[]>([
     {
       id: "init",
@@ -358,7 +441,6 @@ export function ChatWidget({
   const resetChat = () => {
     setSending(false);
     setConversationId(null);
-    setGuestName(null);
     setMessages([
       {
         id: "init",
@@ -477,54 +559,62 @@ export function ChatWidget({
             aria-label="Close chat backdrop"
           />
 
-          <div className="fixed inset-x-3 bottom-3 top-16 z-50 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-[120px] sm:w-[440px] sm:h-[750px] sm:rounded-[32px]">
+          <div className="fixed inset-x-3 bottom-3 top-16 z-50 flex flex-col overflow-hidden rounded-[30px] border border-white/70 bg-white/90 shadow-[0_32px_80px_-28px_rgba(15,23,42,0.42)] backdrop-blur-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[calc(100vh-9rem)] sm:max-h-[720px] sm:w-[430px]">
             <div
-              className="relative flex items-center justify-between overflow-hidden px-6 py-5 text-white"
+              className="relative overflow-hidden border-b border-white/15 px-5 py-5 text-white"
               style={{
                 background: `linear-gradient(140deg, ${colors.headerStart}, ${colors.headerEnd})`,
               }}
             >
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20">
-                  <MessageCircle size={16} />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.22),_transparent_42%),radial-gradient(circle_at_bottom_right,_rgba(15,23,42,0.22),_transparent_38%)]" />
+
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/18 ring-1 ring-white/25 backdrop-blur">
+                    <MessageCircle size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold leading-tight">
+                      {harborName || "NauticSecure"}
+                    </h4>
+                    <p className="mt-1 text-[11px] text-white/78">
+                      {conversationId ? "Conversation active" : "Online support"}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/80">
+                      <span className="rounded-full bg-white/14 px-2.5 py-1 backdrop-blur">
+                        {conversationId ? "Connected" : "Support online"}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-white/75">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                        Encrypted
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold leading-tight">
-                    {harborName || "NauticSecure"}
-                  </h4>
-                  <p className="text-[11px] text-white/70">
-                    {conversationId ? "Connected to support" : "Online support"}
-                  </p>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/14 transition hover:bg-white/24"
+                    aria-label="Minimize chat"
+                  >
+                    <Minimize2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      resetChat();
+                    }}
+                    className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-950/18 transition hover:bg-slate-950/28"
+                    aria-label="Close and reset chat"
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    resetChat();
-                  }}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 transition hover:bg-white/25"
-                  aria-label="Close and reset chat"
-                >
-                  <X size={15} />
-                </button>
-              </div>
-
-              <svg
-                className="pointer-events-none absolute bottom-0 left-0 right-0 h-7 w-full text-white"
-                viewBox="0 0 400 60"
-                preserveAspectRatio="none"
-              >
-                <path
-                  d="M0 40 C 90 70, 220 8, 400 36 L 400 60 L 0 60 Z"
-                  fill="currentColor"
-                  fillOpacity="0.92"
-                />
-              </svg>
             </div>
 
-            <div className="h-[calc(100%-52px)]">
+            <div className="min-h-0 flex-1">
               {!isOnline ? (
                 <div className="flex h-full flex-col items-center justify-center px-6 text-center">
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
