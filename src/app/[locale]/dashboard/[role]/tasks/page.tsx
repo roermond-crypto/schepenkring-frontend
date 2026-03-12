@@ -43,6 +43,12 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Toaster, toast } from "react-hot-toast";
 import DynamicKanbanBoard from "./DynamicKanbanBoard";
+import { normalizeRole } from "@/lib/auth/roles";
+import {
+  getBoardColumnDisplayName,
+  getBoardStatusForColumn,
+  resolveBoardColumnId,
+} from "./board-utils";
 
 // ============================================
 // INTERFACES
@@ -558,6 +564,7 @@ function TaskModal({
   preSelectedColId,
 }: TaskModalProps) {
   const t = useTranslations("DashboardAdminTasks");
+  const canAssignToOtherUsers = users.length > 0;
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -601,13 +608,13 @@ function TaskModal({
         column_id: preSelectedColId,
         assigned_to: currentId || "",
         due_date: new Date().toISOString().split("T")[0],
-        type: "assigned",
+        type: canAssignToOtherUsers ? "assigned" : "personal",
       });
       setReminderAt("");
       setPendingAttachments([]);
     }
     setErrors({});
-  }, [task, isOpen, preSelectedColId]);
+  }, [task, isOpen, preSelectedColId, canAssignToOtherUsers]);
 
   const API_BASE =
     typeof window !== "undefined" && window.location.hostname == "localhost"
@@ -790,7 +797,11 @@ function TaskModal({
       newErrors.description = t("validation.descriptionRequired");
     if (!formData.due_date)
       newErrors.due_date = t("validation.dueDateRequired");
-    if (formData.type === "assigned" && !formData.assigned_to) {
+    if (
+      canAssignToOtherUsers &&
+      formData.type === "assigned" &&
+      !formData.assigned_to
+    ) {
       newErrors.assigned_to = t("validation.assignEmployee");
     }
     setErrors(newErrors);
@@ -807,6 +818,7 @@ function TaskModal({
     const apiData = {
       ...formData,
       title: titleForApi,
+      type: canAssignToOtherUsers ? formData.type : "personal",
       assigned_to: formData.assigned_to ? parseInt(formData.assigned_to) : null,
       pendingAttachments: pendingAttachments,
     };
@@ -974,21 +986,28 @@ function TaskModal({
 
           {/* Trello-style Action Buttons Bar */}
           <div className="px-6 py-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                setFormData((prev) => ({
-                  ...prev,
-                  type: prev.type === "assigned" ? "personal" : "assigned",
-                }))
-              }
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#282e33] border border-slate-200 dark:border-slate-700 rounded-md shadow-sm hover:bg-slate-50 dark:hover:bg-[#333b44] transition-colors text-slate-700 dark:text-slate-300"
-            >
-              <UserIcon size={14} />
-              {formData.type === "assigned"
-                ? t("type.assigned")
-                : t("type.personal")}
-            </button>
+            {canAssignToOtherUsers ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    type: prev.type === "assigned" ? "personal" : "assigned",
+                  }))
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#282e33] border border-slate-200 dark:border-slate-700 rounded-md shadow-sm hover:bg-slate-50 dark:hover:bg-[#333b44] transition-colors text-slate-700 dark:text-slate-300"
+              >
+                <UserIcon size={14} />
+                {formData.type === "assigned"
+                  ? t("type.assigned")
+                  : t("type.personal")}
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#282e33] border border-slate-200 dark:border-slate-700 rounded-md shadow-sm text-slate-700 dark:text-slate-300">
+                <UserIcon size={14} />
+                {t("type.personal")}
+              </span>
+            )}
             <div className="relative inline-flex">
               <CalendarIcon
                 size={14}
@@ -1062,7 +1081,7 @@ function TaskModal({
                 </button>
               </>
             )}
-            {formData.type === "assigned" && (
+            {canAssignToOtherUsers && formData.type === "assigned" && (
               <select
                 value={formData.assigned_to}
                 onChange={(e) =>
@@ -1122,7 +1141,7 @@ function TaskModal({
                 <option value="">Column: Default</option>
                 {columns.map((col) => (
                   <option key={col.id} value={col.id}>
-                    {col.name}
+                    {getBoardColumnDisplayName(col.name, t)}
                   </option>
                 ))}
               </select>
@@ -1500,7 +1519,9 @@ function TaskModal({
 export default function AdminTaskBoardPage() {
   const t = useTranslations("DashboardAdminTasks");
   const params = useParams<{ role?: string }>();
-  const role = params?.role ?? "admin";
+  const role = normalizeRole(params?.role) ?? "admin";
+  const canManageTaskWorkspace = role === "admin" || role === "location";
+  const canConfigureAutomation = canManageTaskWorkspace;
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -1550,19 +1571,23 @@ export default function AdminTaskBoardPage() {
         return;
       }
 
-      const tasksRes = await axios.get(`${API_BASE}/tasks`, {
+      const taskEndpoint = canManageTaskWorkspace ? "/tasks" : "/tasks/my";
+      const tasksRes = await axios.get(`${API_BASE}${taskEndpoint}`, {
         ...getHeaders(),
         params: locationId ? { location_id: locationId } : undefined,
       });
-      const boardsRes = await axios.get(`${API_BASE}/boards`, {
-        ...getHeaders(),
-        params: locationId ? { location_id: locationId } : undefined,
-      });
-      // Admin: fetch all employees (or all users) for assignment
-      const usersRes = await axios.get(`${API_BASE}/public/users/employees`, {
-        ...getHeaders(),
-        params: locationId ? { location_id: locationId } : undefined,
-      });
+      const boardsRes = canManageTaskWorkspace
+        ? await axios.get(`${API_BASE}/boards`, {
+            ...getHeaders(),
+            params: locationId ? { location_id: locationId } : undefined,
+          })
+        : null;
+      const usersRes = canManageTaskWorkspace
+        ? await axios.get(`${API_BASE}/public/users/employees`, {
+            ...getHeaders(),
+            params: locationId ? { location_id: locationId } : undefined,
+          })
+        : null;
 
       const nextTasks = Array.isArray(tasksRes.data) ? tasksRes.data : [];
       setTasks(
@@ -1571,11 +1596,14 @@ export default function AdminTaskBoardPage() {
           status: fromApiStatus(task.status),
         })),
       );
-      if (boardsRes.data && boardsRes.data.columns) {
+      if (boardsRes?.data && boardsRes.data.columns) {
         setBoard(boardsRes.data);
         setColumns(boardsRes.data.columns);
+      } else {
+        setBoard(null);
+        setColumns([]);
       }
-      setUsers(usersRes.data);
+      setUsers(Array.isArray(usersRes?.data) ? usersRes.data : []);
     } catch (error: unknown) {
       console.error("Error fetching data:", error);
       toast.error(resolveApiErrorMessage(error, t, "toasts.loadFailed"));
@@ -1692,6 +1720,15 @@ export default function AdminTaskBoardPage() {
     return filtered;
   }, [tasks, filters, showDone]);
 
+  const filteredBoardTasks = useMemo(
+    () =>
+      filteredTasks.map((task) => ({
+        ...task,
+        column_id: resolveBoardColumnId(task, columns),
+      })),
+    [filteredTasks, columns],
+  );
+
   const handleTaskSubmit = async (taskData: TaskSubmitData) => {
     try {
       const token = getStoredToken();
@@ -1701,9 +1738,22 @@ export default function AdminTaskBoardPage() {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       };
+      const normalizedStatus = taskData.status as Task["status"];
+      const resolvedColumnId =
+        taskData.column_id ??
+        resolveBoardColumnId(
+          { status: normalizedStatus, column_id: null },
+          columns,
+        );
+      const resolvedStatus = getBoardStatusForColumn(
+        resolvedColumnId,
+        columns,
+        normalizedStatus,
+      );
       const dataToSend = {
         ...taskData,
-        status: toApiStatus(taskData.status as Task["status"]),
+        status: toApiStatus(resolvedStatus),
+        column_id: resolvedColumnId ?? undefined,
         assigned_to: taskData.assigned_to
           ? typeof taskData.assigned_to === "number"
             ? taskData.assigned_to
@@ -1806,13 +1856,45 @@ export default function AdminTaskBoardPage() {
     newStatus: Task["status"],
   ) => {
     try {
-      await axios.patch(
-        `${API_BASE}/tasks/${taskId}/status`,
-        { status: toApiStatus(newStatus) },
-        getHeaders(),
-      );
+      const currentTask = tasks.find((task) => task.id === taskId);
+      const nextColumnId = currentTask
+        ? resolveBoardColumnId(
+            {
+              status: newStatus,
+              column_id: currentTask.column_id ?? null,
+            },
+            columns,
+          )
+        : null;
+
+      if (nextColumnId != null && currentTask?.column_id !== nextColumnId) {
+        await axios.put(
+          `${API_BASE}/tasks/${taskId}`,
+          {
+            status: toApiStatus(newStatus),
+            column_id: nextColumnId,
+          },
+          getHeaders(),
+        );
+      } else {
+        await axios.patch(
+          `${API_BASE}/tasks/${taskId}/status`,
+          { status: toApiStatus(newStatus) },
+          getHeaders(),
+        );
+      }
+
       setTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)),
+        prev.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                status: newStatus,
+                column_id:
+                  nextColumnId != null ? nextColumnId : task.column_id,
+              }
+            : task,
+        ),
       );
       toast.success(t("toasts.statusUpdated"));
     } catch (error: unknown) {
@@ -1901,6 +1983,12 @@ export default function AdminTaskBoardPage() {
     newPosition: number,
     tasksMap: Record<number, Task[]>,
   ) => {
+    const movedTask = tasks.find((task) => task.id === taskId);
+    const nextStatus = getBoardStatusForColumn(
+      newColId,
+      columns,
+      movedTask?.status ?? "To Do",
+    ) as Task["status"];
     const payloadTasks: Array<{
       id: number;
       column_id: number;
@@ -1924,6 +2012,7 @@ export default function AdminTaskBoardPage() {
             ...t,
             column_id: Number(updatedT.column_id),
             position: updatedT.position,
+            status: t.id === taskId ? nextStatus : t.status,
           };
         }
         return t;
@@ -1936,8 +2025,17 @@ export default function AdminTaskBoardPage() {
         { tasks: payloadTasks },
         getHeaders(),
       );
+
+      if (movedTask && movedTask.status !== nextStatus) {
+        await axios.patch(
+          `${API_BASE}/tasks/${taskId}/status`,
+          { status: toApiStatus(nextStatus) },
+          getHeaders(),
+        );
+      }
     } catch (err) {
       toast.error("Failed to move task");
+      await fetchData();
     }
   };
 
@@ -2070,14 +2168,16 @@ export default function AdminTaskBoardPage() {
                 >
                   <List size={16} className="mr-2" /> {t("views.list")}
                 </Button>
-                <Button
-                  variant={viewMode === "board" ? "default" : "outline"}
-                  onClick={() => setViewMode("board")}
-                  className="rounded-none h-12 px-4 border text-xs"
-                >
-                  <ClipboardList size={16} className="mr-2" />{" "}
-                  {t("views.board")}
-                </Button>
+                {canManageTaskWorkspace && (
+                  <Button
+                    variant={viewMode === "board" ? "default" : "outline"}
+                    onClick={() => setViewMode("board")}
+                    className="rounded-none h-12 px-4 border text-xs"
+                  >
+                    <ClipboardList size={16} className="mr-2" />{" "}
+                    {t("views.board")}
+                  </Button>
+                )}
                 <Button
                   variant={viewMode === "calendar" ? "default" : "outline"}
                   onClick={() => setViewMode("calendar")}
@@ -2112,11 +2212,13 @@ export default function AdminTaskBoardPage() {
               >
                 <Plus size={16} className="mr-2" /> {t("actions.newTask")}
               </button>
-              <Link href={`/dashboard/${role}/tasks/automation`}>
-                <button className="rounded-none h-12 w-fit px-8 border text-xs uppercase tracking-widest font-black flex items-center">
-                  <CalendarIcon size={16} className="mr-2" /> Automation Rules
-                </button>
-              </Link>
+              {canConfigureAutomation && (
+                <Link href={`/dashboard/${role}/tasks/automation`}>
+                  <button className="rounded-none h-12 w-fit px-8 border text-xs uppercase tracking-widest font-black flex items-center">
+                    <CalendarIcon size={16} className="mr-2" /> Automation Rules
+                  </button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -2297,7 +2399,7 @@ export default function AdminTaskBoardPage() {
               )}
             >
               <DynamicKanbanBoard
-                tasks={filteredTasks}
+                tasks={filteredBoardTasks}
                 columns={columns}
                 onTaskMove={handleTaskMove}
                 onColumnMove={handleColumnMove}

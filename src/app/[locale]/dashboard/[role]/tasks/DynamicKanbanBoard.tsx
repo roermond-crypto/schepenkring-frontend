@@ -2,11 +2,13 @@
 // Dynamic Kanban Board Component for Admin Tasks
 // Dynamic Kanban Board Component for Admin Tasks
 
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { Plus, Edit2, Trash2, Calendar as CalendarIcon, User as UserIcon, AlertTriangle, Shield, Info, MoreVertical, ChevronDown, ChevronRight, Minimize2, Maximize2 } from "lucide-react";
+import { Plus, Trash2, Calendar as CalendarIcon, User as UserIcon, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getBoardColumnDisplayName } from "./board-utils";
 
 interface User {
     id: number;
@@ -62,8 +64,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
     onEditTask,
     onDeleteTask,
 }) => {
-    const [cols, setCols] = useState<Column[]>([]);
-    const [tasksByCol, setTasksByCol] = useState<Record<number, Task[]>>({});
+    const t = useTranslations("DashboardAdminTasks");
     const [editingColId, setEditingColId] = useState<number | null>(null);
     const [editingColName, setEditingColName] = useState("");
     const [newColName, setNewColName] = useState("");
@@ -114,18 +115,17 @@ const DynamicKanbanBoard: React.FC<Props> = ({
         setCollapsedCols(prev => ({ ...prev, [colId]: !prev[colId] }));
     };
 
-    useEffect(() => {
-        // Sort columns by position
-        const sortedCols = [...columns].sort((a, b) => a.position - b.position);
-        setCols(sortedCols);
+    const sortedColumns = useMemo(
+        () => [...columns].sort((a, b) => a.position - b.position),
+        [columns],
+    );
 
-        // Group tasks by column
+    const tasksByCol = useMemo(() => {
         const grouped: Record<number, Task[]> = {};
-        sortedCols.forEach((c) => {
+        sortedColumns.forEach((c) => {
             grouped[c.id] = [];
         });
-        // For tasks that might have no column initially, put them in the first col
-        const defaultColId = sortedCols.length > 0 ? sortedCols[0].id : 0;
+        const defaultColId = sortedColumns.length > 0 ? sortedColumns[0].id : 0;
 
         tasks.forEach((t) => {
             const colId = t.column_id || defaultColId;
@@ -139,8 +139,8 @@ const DynamicKanbanBoard: React.FC<Props> = ({
             grouped[Number(colId)].sort((a, b) => (a.position || 0) - (b.position || 0));
         });
 
-        setTasksByCol(grouped);
-    }, [columns, tasks]);
+        return grouped;
+    }, [sortedColumns, tasks]);
 
     const handleDragEnd = (result: DropResult) => {
         const { source, destination, type } = result;
@@ -149,12 +149,11 @@ const DynamicKanbanBoard: React.FC<Props> = ({
         if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
         if (type === "column") {
-            const newCols = Array.from(cols);
+            const newCols = Array.from(sortedColumns);
             const [removed] = newCols.splice(source.index, 1);
             newCols.splice(destination.index, 0, removed);
 
             const updatedCols = newCols.map((c, i) => ({ ...c, position: i }));
-            setCols(updatedCols);
             onColumnMove(removed.id, destination.index, updatedCols);
             return;
         }
@@ -175,14 +174,15 @@ const DynamicKanbanBoard: React.FC<Props> = ({
             newTasksByCol[sourceColId] = updatedTasks;
         } else {
             const destTasks = Array.from(tasksByCol[destColId] || []);
-            movedTask.column_id = destColId;
-            destTasks.splice(destination.index, 0, movedTask);
+            destTasks.splice(destination.index, 0, {
+                ...movedTask,
+                column_id: destColId,
+            });
 
             newTasksByCol[sourceColId] = sourceTasks.map((t, idx) => ({ ...t, position: idx }));
             newTasksByCol[destColId] = destTasks.map((t, idx) => ({ ...t, position: idx }));
         }
 
-        setTasksByCol(newTasksByCol);
         onTaskMove(movedTask.id, destColId, destination.index, newTasksByCol);
     };
 
@@ -210,8 +210,9 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                         {...provided.droppableProps}
                         ref={provided.innerRef}
                     >
-                        {cols.map((col, index) => {
+                        {sortedColumns.map((col, index) => {
                             const columnHeaderStyles = getColumnHeaderStyles(col.name);
+                            const displayName = getBoardColumnDisplayName(col.name, t);
 
                             return (
                             <Draggable key={`col-${col.id}`} draggableId={`col-${col.id}`} index={index}>
@@ -244,7 +245,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                         {tasksByCol[col.id]?.length || 0}
                                                     </span>
                                                     <h3 style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }} className={cn("font-black text-xs uppercase tracking-widest rotate-180 flex-1 flex items-center justify-center", columnHeaderStyles.title)}>
-                                                        {col.name}
+                                                        {displayName}
                                                     </h3>
                                                 </>
                                             ) : (
@@ -267,7 +268,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                             setEditingColName(col.name);
                                                         }}>
                                                             <h3 className={cn("font-black text-xs uppercase tracking-widest truncate max-w-[180px]", columnHeaderStyles.title)}>
-                                                                {col.name}
+                                                                {displayName}
                                                             </h3>
                                                             <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", columnHeaderStyles.count)}>
                                                                 {tasksByCol[col.id]?.length || 0}

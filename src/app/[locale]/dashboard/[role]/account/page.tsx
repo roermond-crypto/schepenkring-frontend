@@ -35,6 +35,9 @@ import Image from "next/image";
 import { setClientSession, getClientToken } from "@/lib/auth/client-session";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
+import { SUPPORTED_LOCALES, type AppLocale } from "@/lib/i18n";
+import { normalizeRole } from "@/lib/auth/roles";
+import type { SessionUser } from "@/lib/auth/session";
 
 type AccountTab = "profile" | "personal" | "address" | "security" | "password";
 
@@ -66,6 +69,49 @@ function normalizeAvatarUrl(value?: string | null) {
   return value.startsWith("/") ? `${origin}${value}` : `${origin}/${value}`;
 }
 
+function normalizeLocaleValue(value?: string | null, fallback: AppLocale = "nl"): AppLocale {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+  const matched = SUPPORTED_LOCALES.find(
+    (locale) => normalized === locale || normalized.startsWith(`${locale}-`),
+  );
+
+  return matched ?? fallback;
+}
+
+type GoogleAddressComponent = {
+  long_name: string;
+  short_name: string;
+  types: string[];
+};
+
+type GooglePlaceResult = {
+  address_components?: GoogleAddressComponent[];
+};
+
+type GooglePlacesAutocomplete = {
+  addListener: (eventName: string, handler: () => void) => void;
+  getPlace: () => GooglePlaceResult;
+};
+
+type GoogleWindow = Window & {
+  google?: {
+    maps?: {
+      places?: {
+        Autocomplete: new (
+          input: HTMLInputElement,
+          options: {
+            fields: string[];
+            types: string[];
+          },
+        ) => GooglePlacesAutocomplete;
+      };
+    };
+  };
+};
+
 export default function DashboardAccountPage() {
   const t = useTranslations("DashboardAccount");
   const router = useRouter();
@@ -74,6 +120,7 @@ export default function DashboardAccountPage() {
   const { updateUser } = useClientSession();
   const role = params?.role ?? "admin";
   const locale = params?.locale ?? "en";
+  const normalizedRouteLocale = normalizeLocaleValue(locale, "nl");
   const selectedUserId = searchParams.get("userId");
   const isAdminSelectedUserView = role === "admin" && Boolean(selectedUserId);
 
@@ -110,13 +157,17 @@ export default function DashboardAccountPage() {
 
       const token = getClientToken();
       if (token && normalizedUser) {
-        setClientSession(token, {
+        const sessionUser: SessionUser = {
           id: String(normalizedUser.id),
           name: normalizedUser.name,
           email: normalizedUser.email,
           avatar: normalizedUser.avatar || undefined,
-          role: normalizedUser.role || normalizedUser.type?.toLowerCase() || "client",
-        } as any);
+          role:
+            normalizeRole(normalizedUser.role) ??
+            normalizeRole(normalizedUser.type?.toLowerCase()) ??
+            "client",
+        };
+        setClientSession(token, sessionUser);
       }
 
       updateUser({
@@ -187,6 +238,13 @@ export default function DashboardAccountPage() {
     { id: "password", label: t("tabs.password") },
   ];
 
+  const localeOptions: Array<{ value: AppLocale; label: string }> = SUPPORTED_LOCALES.map(
+    (value) => ({
+      value,
+      label: t(`languages.${value}`),
+    }),
+  );
+
   const activeTabLabel = tabs.find((tab) => tab.id === activeTab)?.label ?? t("tabs.profile");
 
   useEffect(() => {
@@ -217,7 +275,7 @@ export default function DashboardAccountPage() {
         setProfile({
           name: nextUser.name || "",
           timezone: nextUser.timezone || "",
-          locale: nextUser.locale || "en",
+          locale: normalizeLocaleValue(nextUser.locale, normalizedRouteLocale),
         });
         setPersonal({
           first_name: nextUser.first_name || "",
@@ -247,7 +305,7 @@ export default function DashboardAccountPage() {
     return () => {
       active = false;
     };
-  }, [isAdminSelectedUserView, selectedUserId, updateUser]);
+  }, [isAdminSelectedUserView, normalizedRouteLocale, selectedUserId, updateUser]);
 
   useEffect(() => {
     if (activeTab !== "address") return;
@@ -260,7 +318,7 @@ export default function DashboardAccountPage() {
     let cancelled = false;
 
     const setupAutocomplete = () => {
-      const googleRef = (window as any).google;
+      const googleRef = (window as GoogleWindow).google;
       if (!googleRef?.maps?.places?.Autocomplete || !placeInputRef.current) return;
 
       const autocomplete = new googleRef.maps.places.Autocomplete(
@@ -281,7 +339,7 @@ export default function DashboardAccountPage() {
         let postal = "";
         let countryObj = "";
 
-        place.address_components.forEach((component: any) => {
+        place.address_components.forEach((component: GoogleAddressComponent) => {
           const types = component.types;
           if (types.includes("street_number")) {
             address1 = `${component.long_name} ${address1}`;
@@ -314,7 +372,7 @@ export default function DashboardAccountPage() {
       });
     };
 
-    const existingGoogle = (window as any).google;
+    const existingGoogle = (window as GoogleWindow).google;
     if (existingGoogle?.maps?.places?.Autocomplete) {
       setupAutocomplete();
       return;
@@ -454,6 +512,12 @@ export default function DashboardAccountPage() {
       .join("")
       .slice(0, 2)
       .toUpperCase() || "U";
+
+  const twoFactorStatusLabel = user?.two_factor_confirmed_at
+    ? t("labels.verified")
+    : security.two_factor_enabled
+      ? t("labels.pendingVerification")
+      : t("labels.notConfigured");
 
   return (
     <>
@@ -652,7 +716,23 @@ export default function DashboardAccountPage() {
                       ) : null}
                       <label className="space-y-2">
                         <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.locale")}</span>
-                        <input disabled={isAdminSelectedUserView} className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.locale} onChange={(e) => setProfile((p) => ({ ...p, locale: e.target.value }))} />
+                        <select
+                          disabled={isAdminSelectedUserView}
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          value={profile.locale}
+                          onChange={(e) =>
+                            setProfile((p) => ({
+                              ...p,
+                              locale: normalizeLocaleValue(e.target.value, normalizedRouteLocale),
+                            }))
+                          }
+                        >
+                          {localeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
                       </label>
                       <label className="space-y-2 sm:col-span-2">
                         <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.timezone")}</span>
@@ -730,7 +810,7 @@ export default function DashboardAccountPage() {
                       </label>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                      {t("labels.confirmed")} {user?.two_factor_confirmed_at ? t("labels.yes") : t("labels.no")}
+                      {t("labels.twoFactorStatus")} {twoFactorStatusLabel}
                     </div>
                     <label className="space-y-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Shield size={12} /> {t("fields.otpSecret")}</span>

@@ -593,9 +593,19 @@
       "yes": "Ja",
       "no": "Nee",
       "confirmed": "Bevestigd:",
+      "twoFactorStatus": "2FA-status:",
+      "verified": "Bevestigd",
+      "pendingVerification": "Nog niet bevestigd",
+      "notConfigured": "Nog niet ingesteld",
       "user": "Gebruiker",
       "profilePicture": "Profielfoto",
       "uploadHelp": "Upload een nieuwe avatar (max 5MB, WEBP/JPG/PNG)."
+    },
+    "languages": {
+      "en": "English",
+      "nl": "Nederlands",
+      "de": "Deutsch",
+      "fr": "Français"
     },
     "actions": {
       "syncProfile": "Profiel synchroniseren",

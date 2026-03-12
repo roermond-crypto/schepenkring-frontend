@@ -37,7 +37,7 @@ export function FieldHistoryPopover({ yachtId, fieldName, label }: FieldHistoryP
     const fetchHistory = async () => {
         setIsLoading(true);
         try {
-            const response = await api.get(`/api/yachts/${yachtId}/fields/${fieldName}/history`);
+            const response = await api.get(`/yachts/${yachtId}/fields/${fieldName}/history`);
             setHistory(response.data.history || []);
         } catch (error) {
             console.error("Failed to fetch field history:", error);

@@ -542,10 +542,27 @@ export default function YachtEditorPage() {
     Record<string, CorrectionLabel | null>
   >({});
   const [confidenceMeta, setConfidenceMeta] = useState<ConfidenceMeta | null>(
-    null,
+    () => {
+      if (typeof window === "undefined") return null;
+      try {
+        const stored = localStorage.getItem(`yacht_ai_meta_${yachtId}`);
+        return stored ? JSON.parse(stored) : null;
+      } catch {
+        return null;
+      }
+    },
   );
   const [correctionLabel, setCorrectionLabel] =
     useState<CorrectionLabel | null>(null);
+
+  // Persist confidenceMeta to localStorage immediately (no debounce)
+  useEffect(() => {
+    if (!yachtId) return;
+    const key = `yacht_ai_meta_${yachtId}`;
+    if (confidenceMeta) {
+      localStorage.setItem(key, JSON.stringify(confidenceMeta));
+    }
+  }, [confidenceMeta, yachtId]);
 
   // New AI UI Feedback States
   const [extractionProgress, setExtractionProgress] = useState(0);
@@ -808,6 +825,17 @@ export default function YachtEditorPage() {
       hasObjectValues(step4Obj);
 
     if (!hasRestorableData) return;
+
+    // Guard: if the previous "new" draft was already submitted via Step 5,
+    // clear stale data so the user starts fresh for the next yacht.
+    const completedKey = `yacht_draft_completed_${yachtId}`;
+    if (localStorage.getItem(completedKey)) {
+      void clearDraft();
+      localStorage.removeItem(completedKey);
+      localStorage.removeItem(`yacht_ai_meta_${yachtId}`);
+      restoredDraftRef.current = true;
+      return;
+    }
 
     const restoredCreatedYachtId = Number(step1Obj.createdYachtId);
     if (
@@ -1124,6 +1152,13 @@ export default function YachtEditorPage() {
 
         serverDraftVersionRef.current = remoteDraft.version;
 
+        // Skip restoring server drafts that were already submitted
+        if (remoteDraft.status === "submitted") {
+          serverDraftInitializedRef.current = true;
+          serverDraftBootstrapInFlightRef.current = false;
+          return;
+        }
+
         if (!hasLocalDraftContent) {
           const payload = toObjectRecord(remoteDraft.payload_json);
           const uiState = toObjectRecord(remoteDraft.ui_state_json);
@@ -1396,6 +1431,7 @@ export default function YachtEditorPage() {
           nl: yacht.short_description_nl || "",
           de: yacht.short_description_de || "",
         });
+
       } catch (err) {
         console.error("Failed to fetch yacht details", err);
         toast.error("Failed to load yacht details");
@@ -3155,6 +3191,11 @@ export default function YachtEditorPage() {
 
       // Draft is now persisted server-side, clear local wizard draft.
       await clearDraft();
+      // Mark this draft as completed so next visit to /yachts/new starts fresh
+      if (isNewMode) {
+        localStorage.setItem(`yacht_draft_completed_${yachtId}`, "1");
+        localStorage.removeItem(`yacht_ai_meta_${yachtId}`);
+      }
 
       // (Legacy manual bulk image gallery submission removed; handled by Image Pipeline now)
 
