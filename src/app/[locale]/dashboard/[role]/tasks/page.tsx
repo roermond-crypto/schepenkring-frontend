@@ -39,6 +39,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Toaster, toast } from "react-hot-toast";
@@ -1529,6 +1530,8 @@ export default function AdminTaskBoardPage() {
     undefined,
   );
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [deleteTaskId, setDeleteTaskId] = useState<number | null>(null);
+  const [deleteTaskLoading, setDeleteTaskLoading] = useState(false);
 
   const API_BASE =
     typeof window !== "undefined" && window.location.hostname == "localhost"
@@ -1791,13 +1794,16 @@ export default function AdminTaskBoardPage() {
   };
 
   const handleDeleteTask = async (taskId: number) => {
-    if (!confirm(t("confirm.deleteTask"))) return;
     try {
+      setDeleteTaskLoading(true);
       await axios.delete(`${API_BASE}/tasks/${taskId}`, getHeaders());
       toast.success(t("toasts.taskDeleted"));
       await fetchData();
+      setDeleteTaskId(null);
     } catch (error: unknown) {
       toast.error(resolveApiErrorMessage(error, t, "toasts.deleteFailed"));
+    } finally {
+      setDeleteTaskLoading(false);
     }
   };
 
@@ -2489,7 +2495,7 @@ export default function AdminTaskBoardPage() {
                         )}
 
                         <Button
-                          onClick={() => handleDeleteTask(task.id)}
+                          onClick={() => setDeleteTaskId(task.id)}
                           variant="outline"
                           size="sm"
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -2529,6 +2535,23 @@ export default function AdminTaskBoardPage() {
         users={users}
         columns={columns}
         preSelectedColId={preSelectedColId}
+      />
+      <ConfirmDialog
+        open={deleteTaskId !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleteTaskLoading) setDeleteTaskId(null);
+        }}
+        title={t("confirm.deleteTask")}
+        description={t("confirm.deleteTask")}
+        confirmText={t("confirm.deleteTask")}
+        cancelText={t("actions.cancel")}
+        variant="destructive"
+        isLoading={deleteTaskLoading}
+        onConfirm={() => {
+          if (deleteTaskId !== null) {
+            void handleDeleteTask(deleteTaskId);
+          }
+        }}
       />
     </>
   );
