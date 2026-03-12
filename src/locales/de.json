@@ -592,9 +592,19 @@
       "yes": "Ja",
       "no": "Nein",
       "confirmed": "Bestatigt:",
+      "twoFactorStatus": "2FA-Status:",
+      "verified": "Bestatigt",
+      "pendingVerification": "Noch nicht bestatigt",
+      "notConfigured": "Noch nicht eingerichtet",
       "user": "Benutzer",
       "profilePicture": "Profilbild",
       "uploadHelp": "Laden Sie einen neuen Avatar hoch (max. 5MB, WEBP/JPG/PNG)."
+    },
+    "languages": {
+      "en": "English",
+      "nl": "Nederlands",
+      "de": "Deutsch",
+      "fr": "Français"
     },
     "actions": {
       "syncProfile": "Profil synchronisieren",

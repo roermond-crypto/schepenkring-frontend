@@ -592,9 +592,19 @@
       "yes": "Yes",
       "no": "No",
       "confirmed": "Confirmed:",
+      "twoFactorStatus": "2FA status:",
+      "verified": "Verified",
+      "pendingVerification": "Not verified yet",
+      "notConfigured": "Not configured",
       "user": "User",
       "profilePicture": "Profile picture",
       "uploadHelp": "Upload a new avatar (max 5MB, WEBP/JPG/PNG)."
+    },
+    "languages": {
+      "en": "English",
+      "nl": "Nederlands",
+      "de": "Deutsch",
+      "fr": "Français"
     },
     "actions": {
       "syncProfile": "Sync Profile",
