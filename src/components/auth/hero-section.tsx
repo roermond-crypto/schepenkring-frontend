@@ -184,7 +184,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
 
     const role = normalizeRole(
       (nestedUser?.role as string | undefined) ??
-        ((nestedData?.type as string | undefined)?.toLowerCase()) ??
+        (nestedData?.type as string | undefined)?.toLowerCase() ??
         (data.userType as string | undefined) ??
         (data.role as string | undefined) ??
         null,
@@ -279,7 +279,9 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
       name: formData.name,
       email: formData.email,
       phone: formData.phone || undefined,
-      location_id: formData.location_id ? Number(formData.location_id) : undefined,
+      location_id: formData.location_id
+        ? Number(formData.location_id)
+        : undefined,
       website: formData.website,
       password: formData.password,
     });
@@ -432,12 +434,17 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                 className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
               >
                 <option value="" disabled>
-                  {loadingLocations ? "Loading locations..." : "Select location"}
+                  {loadingLocations
+                    ? "Loading locations..."
+                    : "Select location"}
                 </option>
                 {locations.map((location) => (
-                  <option key={location.id} value={location.id} className="text-slate-900">
+                  <option
+                    key={location.id}
+                    value={location.id}
+                    className="text-slate-900"
+                  >
                     {location.name}
-                    {location.code ? ` (${location.code})` : ""}
                   </option>
                 ))}
               </select>

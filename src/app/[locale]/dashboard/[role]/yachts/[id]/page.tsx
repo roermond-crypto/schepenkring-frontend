@@ -379,6 +379,7 @@ const YACHT_FORM_TEXT = {
         "Manage the contract template, print the PDF, and generate the Signhost-ready contract from this step.",
       reviewContractNotice:
         "Save this vessel first. The contract flow opens in the next step after the vessel record is stored.",
+      saveVesselFirst: "Save Vessel First",
       harborLocation: "Sales Location (Harbor) *",
       price: "Price (€)",
       minBidAmount: "Minimum Bid Amount (€)",
@@ -558,6 +559,7 @@ const YACHT_FORM_TEXT = {
         "Beheer het contractsjabloon, druk de PDF af en genereer vanuit deze stap het Signhost-klare contract.",
       reviewContractNotice:
         "Sla dit vaartuig eerst op. De contractflow opent in de volgende stap zodra het vaartuigrecord is opgeslagen.",
+      saveVesselFirst: "Sla eerst het vaartuig op",
       harborLocation: "Verkooplocatie (haven) *",
       price: "Prijs (€)",
       minBidAmount: "Minimum biedbedrag (€)",
@@ -737,6 +739,7 @@ const YACHT_FORM_TEXT = {
         "Verwalten Sie die Vertragsvorlage, drucken Sie das PDF und erzeugen Sie in diesem Schritt den Signhost-bereiten Vertrag.",
       reviewContractNotice:
         "Speichern Sie dieses Schiff zuerst. Der Vertragsablauf wird im nächsten Schritt geöffnet, sobald der Datensatz gespeichert ist.",
+      saveVesselFirst: "Schiff zuerst speichern",
       harborLocation: "Verkaufsstandort (Hafen) *",
       price: "Preis (€)",
       minBidAmount: "Mindestgebot (€)",
@@ -916,6 +919,7 @@ const YACHT_FORM_TEXT = {
         "Gerez le modele de contrat, imprimez le PDF et generez depuis cette etape le contrat pret pour Signhost.",
       reviewContractNotice:
         "Enregistrez d'abord ce bateau. Le flux du contrat s'ouvre a l'etape suivante une fois la fiche enregistree.",
+      saveVesselFirst: "Enregistrer d'abord le bateau",
       harborLocation: "Lieu de vente (port) *",
       price: "Prix (€)",
       minBidAmount: "Montant minimum de l'offre (€)",
@@ -3911,10 +3915,11 @@ export default function YachtEditorPage() {
       if (typeof window !== "undefined" && localStorage.getItem("auth_token")) {
         try {
           const snapshot = buildServerDraftSnapshot();
+          const nextWizardStep = activeStep === 5 ? 6 : activeStep;
           const savedDraft = await createOrReplaceYachtDraft({
             draft_id: snapshot.draftId,
             yacht_id: Number(finalYachtId),
-            wizard_step: activeStep,
+            wizard_step: nextWizardStep,
             payload_json: snapshot.payloadPatch,
             ui_state_json: snapshot.uiStatePatch,
             images_manifest_json: snapshot.imagesManifestPatch,
@@ -3948,7 +3953,9 @@ export default function YachtEditorPage() {
           ? "Vessel Registered Successfully"
           : "Manifest Updated Successfully",
       );
-      router.push(
+      setActiveStep(6);
+      setDraftStep(6);
+      router.replace(
         `/${locale}/dashboard/${role}/yachts/${finalYachtId}?step=6`,
       );
     } catch (err: any) {
@@ -4025,7 +4032,8 @@ export default function YachtEditorPage() {
             const isPast = isActive || isCompleted;
             const isLocked =
               (!canProceedFromStep1 && step.id > 1) ||
-              (isExtracting && step.id > 1);
+              (isExtracting && step.id > 1) ||
+              (isNewMode && step.id === 6 && !createdYachtId);
             return (
               <div key={step.id} className="flex items-center">
                 <button
@@ -4034,7 +4042,9 @@ export default function YachtEditorPage() {
                   disabled={isLocked}
                   title={
                     isLocked
-                      ? labelText("approveImagesFirst", "Approve Images First")
+                      ? isNewMode && step.id === 6 && !createdYachtId
+                        ? labelText("saveVesselFirst", "Save Vessel First")
+                        : labelText("approveImagesFirst", "Approve Images First")
                       : step.label
                   }
                   className={`
@@ -7612,7 +7622,10 @@ export default function YachtEditorPage() {
                   />
                 ) : (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-                    Save the vessel in Step 5 before opening the contract flow.
+                    {labelText(
+                      "reviewContractNotice",
+                      "Save this vessel first. The contract flow opens in the next step after the vessel record is stored.",
+                    )}
                   </div>
                 )}
               </div>

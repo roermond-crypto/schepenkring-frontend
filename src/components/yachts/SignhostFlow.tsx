@@ -1,5 +1,8 @@
 "use client";
 
+import Image from "next/image";
+import { jsPDF } from "jspdf";
+import { Fragment } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -12,7 +15,6 @@ import {
   Globe2,
   Loader2,
   PencilLine,
-  Printer,
   RefreshCw,
   Send,
   XCircle,
@@ -29,16 +31,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import {
-  signhostApi,
-  type SignRequest,
-} from "@/lib/api/signhost";
+import { signhostApi, type SignRequest } from "@/lib/api/signhost";
 
 type ContractLanguage = "nl" | "en" | "de" | "fr";
 type ContractTemplateKey = "sale_agreement" | "escrow_form";
 
 function resolveContractLanguage(locale: string): ContractLanguage {
-  if (locale === "nl" || locale === "en" || locale === "de" || locale === "fr") {
+  if (
+    locale === "nl" ||
+    locale === "en" ||
+    locale === "de" ||
+    locale === "fr"
+  ) {
     return locale;
   }
   return "en";
@@ -107,19 +111,12 @@ type YachtContractData = {
 };
 
 interface SignhostFlowProps {
-  yachtId: number;
+  yachtId: number | null;
   yachtName: string;
   locationId: number | null;
   yachtData?: YachtContractData | null;
   locationOptions?: LocationOption[];
 }
-
-const languageOptions: { value: ContractLanguage; label: string }[] = [
-  { value: "nl", label: "Nederlands" },
-  { value: "en", label: "English" },
-  { value: "de", label: "Deutsch" },
-  { value: "fr", label: "Français" },
-];
 
 const contractTemplateOptions: Array<{
   value: ContractTemplateKey;
@@ -140,15 +137,17 @@ const contractTemplateOptions: Array<{
 
 const locationCompanyDefaults: Record<
   string,
-  Partial<Pick<
-    ContractDraft,
-    | "companyName"
-    | "companyAddress"
-    | "companyPostalCode"
-    | "companyCity"
-    | "companyPhone"
-    | "companyEmail"
-  >>
+  Partial<
+    Pick<
+      ContractDraft,
+      | "companyName"
+      | "companyAddress"
+      | "companyPostalCode"
+      | "companyCity"
+      | "companyPhone"
+      | "companyEmail"
+    >
+  >
 > = {
   roermond: {
     companyName: "Krekelberg Nautic B.V.",
@@ -320,7 +319,7 @@ const editorCopyByLanguage: Record<
     statusCancelled: string;
     statusDraft: string;
     editContract: string;
-    printPdf: string;
+    downloadPdf: string;
     createDeeplink: string;
     openDeeplink: string;
     noLocationSelected: string;
@@ -330,7 +329,8 @@ const editorCopyByLanguage: Record<
     renderUrl: string;
     escrowMember: string;
     escrowBuyerDetails: string;
-    generateEscrowPdf: string;
+    sendEscrowToSignhost: string;
+    sendToSignhost: string;
   }
 > = {
   en: {
@@ -382,7 +382,7 @@ const editorCopyByLanguage: Record<
     statusCancelled: "Cancelled",
     statusDraft: "Draft",
     editContract: "Edit contract",
-    printPdf: "Print / Save PDF",
+    downloadPdf: "Download PDF",
     createDeeplink: "Create Signhost deeplink",
     openDeeplink: "Open Signhost deeplink",
     noLocationSelected: "No location selected",
@@ -393,7 +393,8 @@ const editorCopyByLanguage: Record<
     renderUrl: "Render URL",
     escrowMember: "HISWA-RECRON member",
     escrowBuyerDetails: "Buyer details",
-    generateEscrowPdf: "Generate escrow PDF",
+    sendEscrowToSignhost: "Send escrow to Signhost",
+    sendToSignhost: "Send to Signhost",
   },
   nl: {
     dialogTitle: "Contractsjabloon bewerken",
@@ -444,7 +445,7 @@ const editorCopyByLanguage: Record<
     statusCancelled: "Geannuleerd",
     statusDraft: "Concept",
     editContract: "Contract bewerken",
-    printPdf: "PDF afdrukken / opslaan",
+    downloadPdf: "PDF downloaden",
     createDeeplink: "Signhost deeplink maken",
     openDeeplink: "Open Signhost deeplink",
     noLocationSelected: "Geen locatie geselecteerd",
@@ -455,7 +456,8 @@ const editorCopyByLanguage: Record<
     renderUrl: "Render-URL",
     escrowMember: "HISWA-RECRON-lid",
     escrowBuyerDetails: "Kopersgegevens",
-    generateEscrowPdf: "Escrow-PDF genereren",
+    sendEscrowToSignhost: "Escrow naar Signhost sturen",
+    sendToSignhost: "Naar Signhost sturen",
   },
   de: {
     dialogTitle: "Vertragsvorlage bearbeiten",
@@ -506,7 +508,7 @@ const editorCopyByLanguage: Record<
     statusCancelled: "Storniert",
     statusDraft: "Entwurf",
     editContract: "Vertrag bearbeiten",
-    printPdf: "PDF drucken / speichern",
+    downloadPdf: "PDF herunterladen",
     createDeeplink: "Signhost-Deeplink erstellen",
     openDeeplink: "Signhost-Deeplink öffnen",
     noLocationSelected: "Kein Standort ausgewählt",
@@ -517,7 +519,8 @@ const editorCopyByLanguage: Record<
     renderUrl: "Render-URL",
     escrowMember: "HISWA-RECRON-Mitglied",
     escrowBuyerDetails: "Käuferdaten",
-    generateEscrowPdf: "Escrow-PDF erzeugen",
+    sendEscrowToSignhost: "Escrow an Signhost senden",
+    sendToSignhost: "An Signhost senden",
   },
   fr: {
     dialogTitle: "Modifier le modele de contrat",
@@ -568,7 +571,7 @@ const editorCopyByLanguage: Record<
     statusCancelled: "Annule",
     statusDraft: "Brouillon",
     editContract: "Modifier le contrat",
-    printPdf: "Imprimer / enregistrer le PDF",
+    downloadPdf: "Telecharger le PDF",
     createDeeplink: "Creer le deeplink Signhost",
     openDeeplink: "Ouvrir le deeplink Signhost",
     noLocationSelected: "Aucun lieu selectionne",
@@ -579,7 +582,8 @@ const editorCopyByLanguage: Record<
     renderUrl: "URL de rendu",
     escrowMember: "Membre HISWA-RECRON",
     escrowBuyerDetails: "Coordonnees de l'acheteur",
-    generateEscrowPdf: "Generer le PDF escrow",
+    sendEscrowToSignhost: "Envoyer l'escrow a Signhost",
+    sendToSignhost: "Envoyer a Signhost",
   },
 };
 
@@ -594,7 +598,9 @@ function boolLabel(language: ContractLanguage, value: "yes" | "no") {
   return value === "yes" ? "Yes" : "No";
 }
 
-function resolveEscrowFormLanguage(language: ContractLanguage): "nl" | "en" | "de" {
+function resolveEscrowFormLanguage(
+  language: ContractLanguage,
+): "nl" | "en" | "de" {
   if (language === "de") return "de";
   if (language === "en" || language === "fr") return "en";
   return "nl";
@@ -808,13 +814,16 @@ function resolveLocationDefaults(location?: LocationOption | null) {
   for (const matcher of Object.keys(locationCompanyDefaults)) {
     if (key.includes(matcher)) {
       return {
-        companyName: locationCompanyDefaults[matcher].companyName || location?.name || "",
+        companyName:
+          locationCompanyDefaults[matcher].companyName || location?.name || "",
         companyAddress: locationCompanyDefaults[matcher].companyAddress || "",
-        companyPostalCode: locationCompanyDefaults[matcher].companyPostalCode || "",
+        companyPostalCode:
+          locationCompanyDefaults[matcher].companyPostalCode || "",
         companyCity: locationCompanyDefaults[matcher].companyCity || cityGuess,
         companyPhone: locationCompanyDefaults[matcher].companyPhone || "",
         companyEmail: locationCompanyDefaults[matcher].companyEmail || "",
-        agreementCity: locationCompanyDefaults[matcher].companyCity || cityGuess,
+        agreementCity:
+          locationCompanyDefaults[matcher].companyCity || cityGuess,
       };
     }
   }
@@ -841,69 +850,170 @@ function formatAgreementDate(language: ContractLanguage, value: string) {
   }).format(date);
 }
 
-function getPreviewHtml(draft: ContractDraft) {
-  const copy = copyByLanguage[draft.language];
-  const agreementCopy = getAgreementCopy(draft.language);
-  const dateLabel = formatAgreementDate(draft.language, draft.agreementDate);
-  const reference = `SK-${draft.language.toUpperCase()}-${draft.vesselName?.slice(0, 3).toUpperCase() || "DOC"}-${draft.agreementDate || "0000-00-00"}`;
-  const lineValue = (value?: string) => value?.trim() || "………";
-  const clauses = getAgreementClauses(draft)
-    .map((clause) => `<p class="clause">${clause}</p>`)
-    .join("");
+function getSpecificationRows(draft: ContractDraft) {
+  const registerValue = boolLabel(draft.language, draft.shipRegisterEntry);
+  const mortgageValue = boolLabel(draft.language, draft.hasMortgage);
+  const vatValue = boolLabel(draft.language, draft.vatDeclaration);
 
-  return `
-    <html>
-      <head>
-        <title>${agreementCopy.heading}</title>
-        <style>
-          @page { size: A4; margin: 22mm 18mm; }
-          body { font-family: "Times New Roman", Georgia, serif; color: #111827; font-size: 13px; line-height: 1.35; }
-          .page { max-width: 760px; margin: 0 auto; }
-          .topline { font-size: 12px; margin: 0 0 18px; white-space: pre-line; }
-          h1 { margin: 12px 0 16px; font-size: 28px; text-align: center; letter-spacing: 0.04em; }
-          .meta p { margin: 4px 0; }
-          .label { display: inline-block; min-width: 150px; }
-          .intro { margin: 12px 0 14px; }
-          .clause { margin: 0 0 12px; }
-          .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 36px; }
-          .sigline { border-top: 1px solid #111827; padding-top: 34px; }
-        </style>
-      </head>
-      <body>
-        <div class="page">
-          <p class="topline">__________\n\n______________________________\n\n____</p>
-          <h1>${agreementCopy.heading}</h1>
-          <div class="meta">
-            <p><span class="label">${agreementCopy.referenceLabel}:</span> ${reference}</p>
-            <p><span class="label">${agreementCopy.nameLabel}:</span> ${lineValue(draft.clientName)}</p>
-            <p><span class="label">${agreementCopy.addressLabel}:</span> ${lineValue(draft.clientAddress)}</p>
-            <p><span class="label">${agreementCopy.postalCityLabel}:</span> ${lineValue([draft.clientPostalCode, draft.clientCity].filter(Boolean).join(" "))}</p>
-            <p><span class="label">${agreementCopy.phoneLabel}:</span> ${lineValue(draft.clientPhone)}</p>
-            <p><span class="label">${agreementCopy.emailLabel}:</span> ${lineValue(draft.clientEmail)}</p>
-            <p><span class="label">${agreementCopy.passportLabel}:</span> ${lineValue(draft.passportNumber)}</p>
-            <p><span class="label">${agreementCopy.marriedLabel}:</span> ${boolLabel(draft.language, draft.married)}</p>
-          </div>
-          <p>${agreementCopy.clientCaption}</p>
-          <p>${agreementCopy.intermediaryConnector}</p>
-          <div class="meta">
-            <p><span class="label">${agreementCopy.companyLabel}:</span> ${lineValue(draft.companyName)}</p>
-            <p><span class="label">${agreementCopy.addressLabel}:</span> ${lineValue(draft.companyAddress)}</p>
-            <p><span class="label">${agreementCopy.postalCityLabel}:</span> ${lineValue([draft.companyPostalCode, draft.companyCity].filter(Boolean).join(" "))}</p>
-            <p><span class="label">${agreementCopy.phoneLabel}:</span> ${lineValue(draft.companyPhone)}</p>
-            <p><span class="label">${agreementCopy.emailLabel}:</span> ${lineValue(draft.companyEmail)}</p>
-          </div>
-          <p>${agreementCopy.intermediaryCaption}</p>
-          <p class="intro">${agreementCopy.introLabel}</p>
-          ${clauses}
-          <p>${copy.closingText(dateLabel, draft.agreementCity || draft.companyCity)}</p>
-          <div class="signatures">
-            <div class="sigline">${agreementCopy.signatureClient}</div>
-            <div class="sigline">${agreementCopy.signatureIntermediary}</div>
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
+  switch (draft.language) {
+    case "nl":
+      return [
+        { label: "Naam", value: draft.vesselName },
+        { label: "Merk / type vaartuig", value: draft.vesselBrandType },
+        { label: "Bouwjaar, circa", value: draft.buildYear },
+        { label: "Afmetingen, circa", value: draft.dimensions },
+        { label: "Bouwmateriaal", value: draft.buildingMaterial },
+        { label: "Bouwer", value: draft.builder },
+        { label: "Rompnummer / CIN nummer", value: draft.hullNumber },
+        { label: "Motor", value: draft.engine },
+        { label: "Motornummer", value: draft.engineNumber },
+        { label: "Registratienummer", value: draft.registrationNumber },
+        {
+          label: "Inschrijving scheepsregister",
+          value: `${registerValue}${draft.shipRegisterPlace ? `, te ${draft.shipRegisterPlace}` : ""}`,
+        },
+        {
+          label: "Scheepshypotheek",
+          value: `${mortgageValue}${draft.mortgageInFavorOf ? `, ten gunste van ${draft.mortgageInFavorOf}` : ""}`,
+        },
+        { label: "BTW-verklaring", value: vatValue },
+      ];
+    case "de":
+      return [
+        { label: "Name", value: draft.vesselName },
+        { label: "Marke / Typ Wasserfahrzeug", value: draft.vesselBrandType },
+        { label: "Baujahr, circa", value: draft.buildYear },
+        { label: "Abmessungen, circa", value: draft.dimensions },
+        { label: "Baumaterial", value: draft.buildingMaterial },
+        { label: "Werft / Hersteller", value: draft.builder },
+        { label: "Rumpfnummer / CIN-Nummer", value: draft.hullNumber },
+        { label: "Motor", value: draft.engine },
+        { label: "Motornummer", value: draft.engineNumber },
+        { label: "Registriernummer", value: draft.registrationNumber },
+        {
+          label: "Eintrag im Schiffsregister",
+          value: `${registerValue}${draft.shipRegisterPlace ? `, in ${draft.shipRegisterPlace}` : ""}`,
+        },
+        {
+          label: "Schiffshypothek",
+          value: `${mortgageValue}${draft.mortgageInFavorOf ? `, zugunsten von ${draft.mortgageInFavorOf}` : ""}`,
+        },
+        { label: "MwSt.-Erklärung", value: vatValue },
+      ];
+    case "fr":
+      return [
+        { label: "Nom", value: draft.vesselName },
+        { label: "Marque / type de bateau", value: draft.vesselBrandType },
+        { label: "Annee de construction, environ", value: draft.buildYear },
+        { label: "Dimensions, environ", value: draft.dimensions },
+        { label: "Materiau de construction", value: draft.buildingMaterial },
+        { label: "Constructeur", value: draft.builder },
+        { label: "Numero de coque / numero CIN", value: draft.hullNumber },
+        { label: "Moteur", value: draft.engine },
+        { label: "Numero du moteur", value: draft.engineNumber },
+        { label: "Numero d'immatriculation", value: draft.registrationNumber },
+        {
+          label: "Inscription au registre naval",
+          value: `${registerValue}${draft.shipRegisterPlace ? `, a ${draft.shipRegisterPlace}` : ""}`,
+        },
+        {
+          label: "Hypotheque maritime",
+          value: `${mortgageValue}${draft.mortgageInFavorOf ? `, au profit de ${draft.mortgageInFavorOf}` : ""}`,
+        },
+        { label: "Declaration TVA", value: vatValue },
+      ];
+    default:
+      return [
+        { label: "Name", value: draft.vesselName },
+        { label: "Brand / type vessel", value: draft.vesselBrandType },
+        { label: "Building year, circa", value: draft.buildYear },
+        { label: "Dimensions, circa", value: draft.dimensions },
+        { label: "Building material", value: draft.buildingMaterial },
+        { label: "Builder", value: draft.builder },
+        { label: "Hullnumber / CIN Number", value: draft.hullNumber },
+        { label: "Engine", value: draft.engine },
+        { label: "Engine number", value: draft.engineNumber },
+        { label: "Registration number", value: draft.registrationNumber },
+        {
+          label: "Entry ship register",
+          value: `${registerValue}${draft.shipRegisterPlace ? `, in ${draft.shipRegisterPlace}` : ""}`,
+        },
+        {
+          label: "Ship mortgage",
+          value: `${mortgageValue}${draft.mortgageInFavorOf ? `, in favor of ${draft.mortgageInFavorOf}` : ""}`,
+        },
+        { label: "VAT declaration", value: vatValue },
+      ];
+  }
+}
+
+function getClauseOneIntro(language: ContractLanguage) {
+  switch (language) {
+    case "nl":
+      return "1. dat de cliënt de bemiddelaar de exclusieve opdracht geeft om het vaartuig dat zijn eigendom is te verkopen met de volgende specificatie:";
+    case "de":
+      return "1. dass der Kunde dem Vermittler den exklusiven Auftrag erteilt, das in seinem Eigentum stehende Wasserfahrzeug mit folgender Spezifikation zu verkaufen:";
+    case "fr":
+      return "1. que le client confie a l'intermediaire la mission exclusive de vendre le bateau lui appartenant avec les caracteristiques suivantes :";
+    default:
+      return "1. that the client grants the intermediary the exclusive assignment to sell the vessel in his property with the following specification:";
+  }
+}
+
+function getClauseOneClosing(language: ContractLanguage) {
+  switch (language) {
+    case "nl":
+      return "welke opdracht de bemiddelaar aanvaardt door ondertekening van deze overeenkomst.";
+    case "de":
+      return "welchen Auftrag der Vermittler durch Unterzeichnung dieses Vertrags annimmt.";
+    case "fr":
+      return "mission acceptee par l'intermediaire lors de la signature du present contrat.";
+    default:
+      return "whichever assignment the intermediary accepts by signing this agreement.";
+  }
+}
+
+function renderClauseText(clause: string) {
+  return clause.split("<br />").map((part, index) => (
+    <Fragment key={`${index}-${part}`}>
+      {index > 0 ? <br /> : null}
+      {part}
+    </Fragment>
+  ));
+}
+
+function cleanupPdfGenerationArtifacts() {
+  document.querySelectorAll("iframe").forEach((node) => {
+    const frame = node as HTMLIFrameElement;
+    if (
+      frame.style.pointerEvents === "none" &&
+      frame.style.opacity === "0" &&
+      frame.style.position === "fixed"
+    ) {
+      frame.remove();
+    }
+  });
+
+  document
+    .querySelectorAll(".html2pdf__container, .html2pdf__overlay")
+    .forEach((node) => node.remove());
+
+  document.body.style.pointerEvents = "";
+  document.body.style.overflow = "";
+}
+
+async function fetchAssetDataUrl(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to load asset: ${url}`);
+  }
+  const blob = await response.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error(`Failed to read asset: ${url}`));
+    reader.readAsDataURL(blob);
+  });
 }
 
 function buildContractDraft(
@@ -976,23 +1086,60 @@ function SectionHeader({
   onEdit,
 }: {
   title: string;
-  onEdit: () => void;
+  onEdit?: () => void;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
       <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
         {title}
       </p>
-      <button
-        type="button"
-        onClick={onEdit}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-[#003566]"
-        aria-label={`Edit ${title}`}
-      >
-        <PencilLine size={14} />
-      </button>
+      {onEdit ? (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-[#003566]"
+          aria-label={`Edit ${title}`}
+        >
+          <PencilLine size={14} />
+        </button>
+      ) : null}
     </div>
   );
+}
+
+function addWrappedParagraph(
+  pdf: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+) {
+  const lines = pdf.splitTextToSize(text, maxWidth);
+  pdf.text(lines, x, y);
+  return y + lines.length * lineHeight;
+}
+
+function addLabelValueRows(
+  pdf: jsPDF,
+  rows: Array<{ label: string; value: string }>,
+  startY: number,
+  pageWidth: number,
+) {
+  let y = startY;
+  const labelX = pageWidth / 2 - 8;
+  const valueX = pageWidth / 2 + 4;
+  pdf.setFont("times", "bold");
+  rows.forEach((row) => {
+    pdf.text(`${row.label}:`, labelX, y, { align: "right" });
+    pdf.setFont("times", "normal");
+    const valueLines = pdf.splitTextToSize(row.value || "………", 70);
+    pdf.text(valueLines, valueX, y);
+    y += Math.max(5.5, valueLines.length * 5);
+    pdf.setFont("times", "bold");
+  });
+  pdf.setFont("times", "normal");
+  return y;
 }
 
 function FieldLabel({ children }: { children: string }) {
@@ -1000,6 +1147,25 @@ function FieldLabel({ children }: { children: string }) {
     <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">
       {children}
     </label>
+  );
+}
+
+function ContractMetaTable({
+  rows,
+}: {
+  rows: Array<{ label: string; value: string }>;
+}) {
+  return (
+    <div className="mx-auto w-full max-w-[38rem]">
+      <div className="grid grid-cols-[minmax(180px,1fr)_minmax(180px,1fr)] gap-x-6 gap-y-1 font-serif text-[15px] leading-6 text-slate-900 dark:text-slate-100">
+        {rows.map((row) => (
+          <Fragment key={row.label}>
+            <p className="text-right font-semibold">{row.label}:</p>
+            <p>{row.value}</p>
+          </Fragment>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1019,7 +1185,7 @@ export function SignhostFlow({
     () => locationOptions.find((option) => option.id === locationId) || null,
     [locationId, locationOptions],
   );
-  const storageKey = `contract_draft_${yachtId}`;
+  const storageKey = `contract_draft_${yachtId ?? "draft"}`;
 
   const [signRequest, setSignRequest] = useState<SignRequest | null>(null);
   const [draft, setDraft] = useState<ContractDraft>(() =>
@@ -1111,9 +1277,10 @@ export function SignhostFlow({
   const previewCopy = copyByLanguage[draft.language];
   const agreementCopy = getAgreementCopy(draft.language);
   const editorCopy = editorCopyByLanguage[draft.language];
-  const selectedTemplate = contractTemplateOptions.find(
-    (option) => option.value === contractTemplateKey,
-  ) ?? contractTemplateOptions[0];
+  const selectedTemplate =
+    contractTemplateOptions.find(
+      (option) => option.value === contractTemplateKey,
+    ) ?? contractTemplateOptions[0];
   const editorSectionTitle =
     editorSection === "seller"
       ? editorCopy.sellerSection
@@ -1134,43 +1301,248 @@ export function SignhostFlow({
     setDraft((prev) => ({ ...prev, [key]: value }));
   };
 
+  const resolvedRecipients = [
+    {
+      role: "buyer" as const,
+      name: draft.clientName.trim(),
+      email: draft.clientEmail.trim(),
+    },
+    {
+      role: "seller" as const,
+      name: draft.companyName.trim(),
+      email: draft.companyEmail.trim(),
+    },
+  ].filter((recipient) => recipient.name && recipient.email);
+
   const openEditor = (section?: string) => {
     setEditorSection(section ?? null);
     setEditorOpen(true);
   };
 
-  const handlePreviewPrint = () => {
+  const generatePdfFile = async () => {
     if (contractTemplateKey === "escrow_form") {
-      const escrowUrl = buildEscrowContractUrl(
-        window.location.origin,
-        locale,
-        draft.language,
-        draft,
-      );
-      const previewWindow = window.open(
-        escrowUrl,
-        "_blank",
-        "width=960,height=1280",
-      );
-      if (!previewWindow) {
-        toast.error("Popup blocked. Allow popups to print or save PDF.");
-      }
+      throw new Error("Escrow PDF upload is not supported yet.");
+    }
+
+    const pdfCopy = copyByLanguage[draft.language];
+    const [schepenkringLogo, nauticLogo] = await Promise.all([
+      fetchAssetDataUrl("/schepenkring-logo.png"),
+      fetchAssetDataUrl("/nautic.jpg"),
+    ]);
+
+    const pdf = new jsPDF({
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const marginX = 14;
+    const bottomLimit = pageHeight - 18;
+    const clauses = getAgreementClauses(draft);
+
+    const addLetterhead = () => {
+      pdf.addImage(schepenkringLogo, "PNG", 28, 20, 66, 31);
+      pdf.addImage(nauticLogo, "JPEG", 142, 18, 27, 40);
+      pdf.setDrawColor(201, 36, 36);
+      pdf.line(36, 55, 96, 55);
+      pdf.line(171, 55, 182, 55);
+    };
+
+    const ensureSpace = (currentY: number, required: number) => {
+      if (currentY + required <= bottomLimit) return currentY;
+      pdf.addPage();
+      pdf.setFont("times", "normal");
+      pdf.setFontSize(12);
+      return 20;
+    };
+
+    addLetterhead();
+    pdf.setFont("times", "bold");
+    pdf.setFontSize(18);
+    pdf.text(agreementCopy.heading, marginX + 12, 66);
+
+    pdf.setFontSize(12);
+    pdf.text(
+      `${agreementCopy.referenceLabel}: ${`SK-${draft.language.toUpperCase()}-${draft.vesselName?.slice(0, 3).toUpperCase() || "DOC"}-${draft.agreementDate || "0000-00-00"}`}`,
+      marginX + 12,
+      75,
+    );
+
+    let y = 86;
+    y = addLabelValueRows(
+      pdf,
+      [
+        { label: agreementCopy.nameLabel, value: draft.clientName || "………" },
+        {
+          label: agreementCopy.addressLabel,
+          value: draft.clientAddress || "………",
+        },
+        {
+          label: agreementCopy.postalCityLabel,
+          value:
+            [draft.clientPostalCode, draft.clientCity]
+              .filter(Boolean)
+              .join(" ") || "………",
+        },
+        { label: agreementCopy.phoneLabel, value: draft.clientPhone || "………" },
+        { label: agreementCopy.emailLabel, value: draft.clientEmail || "………" },
+        {
+          label: agreementCopy.passportLabel,
+          value: draft.passportNumber || "………",
+        },
+        {
+          label: agreementCopy.marriedLabel,
+          value: boolLabel(draft.language, draft.married),
+        },
+      ],
+      y,
+      pageWidth,
+    );
+
+    y += 4;
+    pdf.setFont("times", "bold");
+    pdf.text(agreementCopy.clientCaption, pageWidth / 2, y, {
+      align: "center",
+    });
+    y += 8;
+    pdf.setFont("times", "normal");
+    pdf.text(agreementCopy.intermediaryConnector, marginX, y);
+    y += 8;
+
+    y = addLabelValueRows(
+      pdf,
+      [
+        {
+          label: agreementCopy.companyLabel,
+          value: draft.companyName || "………",
+        },
+        {
+          label: agreementCopy.addressLabel,
+          value: draft.companyAddress || "………",
+        },
+        {
+          label: agreementCopy.postalCityLabel,
+          value:
+            [draft.companyPostalCode, draft.companyCity]
+              .filter(Boolean)
+              .join(" ") || "………",
+        },
+        { label: agreementCopy.phoneLabel, value: draft.companyPhone || "………" },
+        { label: agreementCopy.emailLabel, value: draft.companyEmail || "………" },
+      ],
+      y,
+      pageWidth,
+    );
+
+    y += 4;
+    pdf.setFont("times", "bold");
+    pdf.text(agreementCopy.intermediaryCaption, pageWidth / 2, y, {
+      align: "center",
+    });
+    y += 12;
+    pdf.text(agreementCopy.introLabel, marginX, y);
+    y += 8;
+
+    pdf.setFont("times", "normal");
+    y = addWrappedParagraph(
+      pdf,
+      getClauseOneIntro(draft.language),
+      marginX,
+      y,
+      180,
+      5.2,
+    );
+    y += 2;
+    y = addLabelValueRows(
+      pdf,
+      getSpecificationRows(draft).map((row) => ({
+        label: row.label,
+        value: row.value || "………",
+      })),
+      y,
+      pageWidth,
+    );
+    y += 2;
+    y = addWrappedParagraph(
+      pdf,
+      getClauseOneClosing(draft.language),
+      marginX,
+      y,
+      180,
+      5.2,
+    );
+    y += 4;
+
+    clauses.slice(1).forEach((clause) => {
+      const plain = clause.replaceAll("<br />", "\n");
+      const estimatedHeight = pdf.splitTextToSize(plain, 180).length * 5.2 + 4;
+      y = ensureSpace(y, estimatedHeight);
+      y = addWrappedParagraph(pdf, plain, marginX, y, 180, 5.2);
+      y += 2;
+    });
+
+    y = ensureSpace(y, 24);
+    y += 4;
+    pdf.text(
+      pdfCopy.closingText(
+        formatAgreementDate(draft.language, draft.agreementDate),
+        draft.agreementCity || draft.companyCity,
+      ),
+      marginX,
+      y,
+    );
+    y += 16;
+    pdf.setFont("times", "bold");
+    pdf.text(agreementCopy.signatureClient, marginX, y);
+    pdf.text(agreementCopy.signatureIntermediary, marginX + 95, y);
+
+    const blob = pdf.output("blob");
+    return new File(
+      [blob],
+      `${draft.vesselName || yachtName || "contract"}.pdf`,
+      {
+        type: "application/pdf",
+      },
+    );
+  };
+
+  const handleDownloadGeneratedPdf = async () => {
+    if (!yachtId) {
+      toast.error("Save the vessel first before downloading the contract PDF.");
       return;
     }
 
-    const previewWindow = window.open("", "_blank", "width=960,height=1280");
-    if (!previewWindow) {
-      toast.error("Popup blocked. Allow popups to print or save PDF.");
-      return;
+    setIsGenerating(true);
+    try {
+      const pdfFile = await generatePdfFile();
+      const downloadUrl = URL.createObjectURL(pdfFile);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = pdfFile.name;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(downloadUrl);
+      toast.success("Contract PDF downloaded.");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to download contract PDF.";
+      toast.error(message);
+    } finally {
+      setIsGenerating(false);
     }
-
-    previewWindow.document.write(getPreviewHtml(draft));
-    previewWindow.document.close();
-    previewWindow.focus();
-    previewWindow.print();
   };
 
   const handleGenerateContract = async () => {
+    if (!yachtId) {
+      toast.error("Save the vessel first before generating the contract PDF.");
+      return;
+    }
+
     if (!locationId) {
       toast.error("Select a sales location before generating the contract.");
       return;
@@ -1178,6 +1550,8 @@ export function SignhostFlow({
 
     setIsGenerating(true);
     try {
+      const pdfFile = await generatePdfFile();
+      const shouldSendToSignhost = resolvedRecipients.length > 0;
       const contractRenderUrl =
         contractTemplateKey === "escrow_form"
           ? buildEscrowContractUrl(
@@ -1197,6 +1571,11 @@ export function SignhostFlow({
             ? "Escrow account service form"
             : previewCopy.title
         } - ${draft.vesselName || yachtName}`,
+        send_to_signhost: shouldSendToSignhost,
+        recipients: shouldSendToSignhost ? resolvedRecipients : undefined,
+        pdf: pdfFile,
+        reference: `vessel-${yachtId}-contract`,
+        idempotencyKey: `contract_${yachtId}_${Date.now()}`,
         metadata: {
           boat_name: draft.vesselName || yachtName,
           contract_language: draft.language,
@@ -1212,10 +1591,33 @@ export function SignhostFlow({
         },
       });
       setSignRequest(res.sign_request);
-      toast.success("Contract PDF generated.");
-    } catch {
-      toast.error("Failed to generate contract PDF.");
+      const signUrl = res.sign_url || res.sign_request.sign_url;
+      if (shouldSendToSignhost && signUrl) {
+        window.open(signUrl, "_blank", "noopener,noreferrer");
+        toast.success("Contract generated and sent to Signhost.");
+      } else if (shouldSendToSignhost) {
+        toast.success("Contract generated. Signhost request created.");
+      } else {
+        toast.success(
+          "Contract PDF generated. Add recipient e-mail(s) to send to Signhost.",
+        );
+      }
+    } catch (error: unknown) {
+      cleanupPdfGenerationArtifacts();
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response!
+              .data!.message!
+          : error instanceof Error
+            ? error.message
+            : "Failed to generate contract PDF.";
+      toast.error(message);
     } finally {
+      cleanupPdfGenerationArtifacts();
       setIsGenerating(false);
     }
   };
@@ -1226,21 +1628,10 @@ export function SignhostFlow({
       return;
     }
 
-    const recipients = [
-      {
-        role: "buyer" as const,
-        name: draft.clientName.trim(),
-        email: draft.clientEmail.trim(),
-      },
-      {
-        role: "seller" as const,
-        name: draft.companyName.trim(),
-        email: draft.companyEmail.trim(),
-      },
-    ].filter((recipient) => recipient.name && recipient.email);
-
-    if (recipients.length === 0) {
-      toast.error("Add buyer or seller name and e-mail before creating the deeplink.");
+    if (resolvedRecipients.length === 0) {
+      toast.error(
+        "Add buyer or seller name and e-mail before creating the deeplink.",
+      );
       return;
     }
 
@@ -1249,7 +1640,7 @@ export function SignhostFlow({
       const res = await signhostApi.createRequest(
         {
           sign_request_id: signRequest.id,
-          recipients,
+          recipients: resolvedRecipients,
           reference: `vessel-${yachtId}`,
         },
         `signhost_${signRequest.id}_${Date.now()}`,
@@ -1261,9 +1652,10 @@ export function SignhostFlow({
         typeof error === "object" &&
         error !== null &&
         "response" in error &&
-        typeof (error as { response?: { data?: { message?: string } } }).response
-          ?.data?.message === "string"
-          ? (error as { response?: { data?: { message?: string } } }).response!.data!.message!
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response!
+              .data!.message!
           : "Failed to create Signhost deeplink.";
       toast.error(message);
     } finally {
@@ -1278,29 +1670,25 @@ export function SignhostFlow({
         return {
           label: editorCopy.statusSigned,
           icon: FileCheck,
-          tone:
-            "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-900",
+          tone: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-900",
         };
       case "SENT":
         return {
           label: editorCopy.statusSent,
           icon: Send,
-          tone:
-            "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-950/40 dark:border-blue-900",
+          tone: "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-950/40 dark:border-blue-900",
         };
       case "FAILED":
         return {
           label: editorCopy.statusCancelled,
           icon: XCircle,
-          tone:
-            "text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-950/40 dark:border-red-900",
+          tone: "text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-950/40 dark:border-red-900",
         };
       default:
         return {
           label: editorCopy.statusDraft,
           icon: FileText,
-          tone:
-            "text-slate-700 bg-slate-50 border-slate-200 dark:text-slate-300 dark:bg-slate-800/60 dark:border-slate-700",
+          tone: "text-slate-700 bg-slate-50 border-slate-200 dark:text-slate-300 dark:bg-slate-800/60 dark:border-slate-700",
         };
     }
   }, [editorCopy, signRequest?.status]);
@@ -1314,7 +1702,10 @@ export function SignhostFlow({
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/60 p-6 dark:border-slate-800 dark:bg-slate-900/80">
         <div>
           <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
-            <FilePenLine size={18} className="text-[#003566] dark:text-sky-300" />
+            <FilePenLine
+              size={18}
+              className="text-[#003566] dark:text-sky-300"
+            />
             {editorCopy.pageTitle}
           </h4>
           <p className="mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
@@ -1335,9 +1726,7 @@ export function SignhostFlow({
           <select
             value={contractTemplateKey}
             onChange={(event) =>
-              setContractTemplateKey(
-                event.target.value as ContractTemplateKey,
-              )
+              setContractTemplateKey(event.target.value as ContractTemplateKey)
             }
             className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
@@ -1347,21 +1736,10 @@ export function SignhostFlow({
               </option>
             ))}
           </select>
-          <select
-            value={draft.language}
-            disabled
-            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-          >
-            {languageOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
           <Button
             type="button"
             onClick={handleGenerateContract}
-            disabled={isGenerating || !locationId}
+            disabled={isGenerating || !locationId || !yachtId}
             className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
           >
             {isGenerating ? (
@@ -1370,8 +1748,8 @@ export function SignhostFlow({
               <RefreshCw className="mr-2 h-4 w-4" />
             )}
             {contractTemplateKey === "escrow_form"
-              ? editorCopy.generateEscrowPdf
-              : previewCopy.generateLabel}
+              ? editorCopy.sendEscrowToSignhost
+              : editorCopy.sendToSignhost}
           </Button>
           <Button
             type="button"
@@ -1383,11 +1761,12 @@ export function SignhostFlow({
           </Button>
           <Button
             type="button"
-            onClick={handlePreviewPrint}
+            onClick={handleDownloadGeneratedPdf}
+            disabled={isGenerating || !yachtId}
             className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
           >
-            <Printer className="mr-2 h-4 w-4" />
-            {editorCopy.printPdf}
+            <FileText className="mr-2 h-4 w-4" />
+            {editorCopy.downloadPdf}
           </Button>
           {signRequest && !signRequest.sign_url && (
             <Button
@@ -1419,258 +1798,300 @@ export function SignhostFlow({
       </div>
 
       <div className="p-6">
-        <div className="rounded-3xl border border-[#d7e3f1] bg-gradient-to-br from-[#f8fbff] to-white p-6 shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-blue-600 dark:text-sky-300">
-                {contractTemplateKey === "escrow_form"
-                  ? selectedTemplate.label
-                  : previewCopy.title}
-              </p>
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                <Globe2 size={14} />
-                {titleCase(draft.language)}
-                <span className="text-slate-300">•</span>
-                {selectedLocation?.name || editorCopy.noLocationSelected}
-              </div>
+        <div className="rounded-3xl border border-[#d7e3f1] bg-gradient-to-br from-[#f8fbff] to-white shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-950 overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-6">
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-blue-600 dark:text-sky-300">
+              {contractTemplateKey === "escrow_form"
+                ? selectedTemplate.label
+                : previewCopy.title}
+            </p>
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              <Globe2 size={14} />
+              {titleCase(draft.language)}
+              <span className="text-slate-300">•</span>
+              {selectedLocation?.name || editorCopy.noLocationSelected}
             </div>
+          </div>
 
-            {!locationId && (
-              <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          {!locationId && (
+            <div className="px-6 mt-5">
+              <div className=" flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                 <div>
                   <p className="font-bold">{editorCopy.locationRequired}</p>
                   <p>{editorCopy.locationRequiredHint}</p>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {contractTemplateKey === "escrow_form" ? (
-              <div className="mt-6 space-y-4">
+          {contractTemplateKey === "escrow_form" ? (
+            <div className="mt-6 space-y-4 px-6 pb-6">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                  {editorCopy.selectedTemplate}
+                </p>
+                <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {selectedTemplate.label}
+                </p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  {selectedTemplate.description}
+                </p>
+                <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
+                  {editorCopy.renderUrl}:
+                </p>
+                <p className="mt-1 break-all rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
+                  {typeof window !== "undefined"
+                    ? buildEscrowContractUrl(
+                        window.location.origin,
+                        locale,
+                        draft.language,
+                        draft,
+                      )
+                    : ""}
+                </p>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
                   <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                    {editorCopy.selectedTemplate}
+                    {editorCopy.escrowMember}
                   </p>
-                  <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    {selectedTemplate.label}
+                  <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                      {fieldValue(draft.companyName)}
+                    </p>
+                    <p>{fieldValue(draft.companyAddress)}</p>
+                    <p>
+                      {fieldValue(
+                        [draft.companyPostalCode, draft.companyCity]
+                          .filter(Boolean)
+                          .join(" "),
+                      )}
+                    </p>
+                    <p>{fieldValue(draft.companyPhone)}</p>
+                    <p>{fieldValue(draft.companyEmail)}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                    {editorCopy.escrowBuyerDetails}
                   </p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    {selectedTemplate.description}
-                  </p>
-                  <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
-                    {editorCopy.renderUrl}:
-                  </p>
-                  <p className="mt-1 break-all rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-                    {typeof window !== "undefined"
-                      ? buildEscrowContractUrl(
-                          window.location.origin,
-                          locale,
+                  <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                      {fieldValue(draft.clientName)}
+                    </p>
+                    <p>{fieldValue(draft.clientAddress)}</p>
+                    <p>
+                      {fieldValue(
+                        [draft.clientPostalCode, draft.clientCity]
+                          .filter(Boolean)
+                          .join(" "),
+                      )}
+                    </p>
+                    <p>{fieldValue(draft.clientPhone)}</p>
+                    <p>{fieldValue(draft.clientEmail)}</p>
+                    <p>{fieldValue(draft.vesselName || yachtName)}</p>
+                    <p>
+                      {previewCopy.priceText(
+                        draft.askingPrice || "0",
+                        draft.askingPriceWords,
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-6 bg-white px-6 py-8 shadow-sm0 dark:bg-slate-950">
+              <div className="mx-auto max-w-[920px] text-slate-900 dark:text-slate-100">
+                <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-end gap-6">
+                  <div className="flex justify-center">
+                    <Image
+                      src="/schepenkring-logo.png"
+                      alt="Schepenkring"
+                      className="h-auto w-[320px] max-w-full object-contain"
+                      width={320}
+                      height={151}
+                    />
+                  </div>
+                  <div className="flex justify-center">
+                    <Image
+                      src="/nautic.jpg"
+                      alt="Krekelberg Nautic"
+                      className="h-auto w-[96px] object-contain"
+                      width={96}
+                      height={153}
+                    />
+                  </div>
+                  <div />
+                </div>
+                <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-6">
+                  <div className="border-b border-[#c92424]" />
+                  <div />
+                  <div className="border-b border-[#c92424]" />
+                </div>
+
+                <div className="mt-8 space-y-7 font-serif text-[15px] leading-7">
+                  <section>
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h5 className="font-serif text-[2rem] font-bold tracking-wide text-slate-900 dark:text-slate-100">
+                        {agreementCopy.heading}
+                      </h5>
+                      <button
+                        type="button"
+                        onClick={() => openEditor("buyer")}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-[#003566]"
+                        aria-label={`Edit ${previewCopy.buyerLabel}`}
+                      >
+                        <PencilLine size={14} />
+                      </button>
+                    </div>
+                    <p className="font-semibold">
+                      {agreementCopy.referenceLabel}:{" "}
+                      {fieldValue(
+                        `SK-${draft.language.toUpperCase()}-${draft.vesselName?.slice(0, 3).toUpperCase() || "DOC"}-${draft.agreementDate || "0000-00-00"}`,
+                      )}
+                    </p>
+                    <div className="mt-6">
+                      <ContractMetaTable
+                        rows={[
+                          {
+                            label: agreementCopy.nameLabel,
+                            value: fieldValue(draft.clientName),
+                          },
+                          {
+                            label: agreementCopy.addressLabel,
+                            value: fieldValue(draft.clientAddress),
+                          },
+                          {
+                            label: agreementCopy.postalCityLabel,
+                            value: fieldValue(
+                              [draft.clientPostalCode, draft.clientCity]
+                                .filter(Boolean)
+                                .join(" "),
+                            ),
+                          },
+                          {
+                            label: agreementCopy.phoneLabel,
+                            value: fieldValue(draft.clientPhone),
+                          },
+                          {
+                            label: agreementCopy.emailLabel,
+                            value: fieldValue(draft.clientEmail),
+                          },
+                          {
+                            label: agreementCopy.passportLabel,
+                            value: fieldValue(draft.passportNumber),
+                          },
+                          {
+                            label: agreementCopy.marriedLabel,
+                            value: `${boolLabel(draft.language, draft.married)}${draft.spouseName ? ` • ${draft.spouseName}` : ""}`,
+                          },
+                        ]}
+                      />
+                    </div>
+                    <p className="mt-4 font-semibold">
+                      {agreementCopy.clientCaption}
+                    </p>
+                    <p>{agreementCopy.intermediaryConnector}</p>
+                    <div className="mt-4">
+                      <ContractMetaTable
+                        rows={[
+                          {
+                            label: agreementCopy.companyLabel,
+                            value: fieldValue(draft.companyName),
+                          },
+                          {
+                            label: agreementCopy.addressLabel,
+                            value: fieldValue(draft.companyAddress),
+                          },
+                          {
+                            label: agreementCopy.postalCityLabel,
+                            value: fieldValue(
+                              [draft.companyPostalCode, draft.companyCity]
+                                .filter(Boolean)
+                                .join(" "),
+                            ),
+                          },
+                          {
+                            label: agreementCopy.phoneLabel,
+                            value: fieldValue(draft.companyPhone),
+                          },
+                          {
+                            label: agreementCopy.emailLabel,
+                            value: fieldValue(draft.companyEmail),
+                          },
+                        ]}
+                      />
+                    </div>
+                    <p className="mt-4 font-semibold">
+                      {agreementCopy.intermediaryCaption}
+                    </p>
+                  </section>
+
+                  <section>
+                    <SectionHeader
+                      title={previewCopy.vesselLabel}
+                      onEdit={() => openEditor("vessel")}
+                    />
+                    <p className="mt-4 font-semibold">
+                      {agreementCopy.introLabel}
+                    </p>
+                    <div className="mt-3">
+                      <p>{getClauseOneIntro(draft.language)}</p>
+                      <div className="mt-3">
+                        <ContractMetaTable
+                          rows={getSpecificationRows(draft).map((row) => ({
+                            label: row.label,
+                            value: fieldValue(row.value),
+                          }))}
+                        />
+                      </div>
+                      <p className="mt-3">
+                        {getClauseOneClosing(draft.language)}
+                      </p>
+                    </div>
+                  </section>
+
+                  <section>
+                    <SectionHeader title={previewCopy.declarationsLabel} />
+                    <div className="mt-4 space-y-3">
+                      {getAgreementClauses(draft)
+                        .slice(1)
+                        .map((clause, index) => (
+                          <p key={`clause-${index + 2}`}>
+                            {renderClauseText(clause)}
+                          </p>
+                        ))}
+                    </div>
+                  </section>
+
+                  <section>
+                    <SectionHeader title={previewCopy.closingLabel} />
+                    <p className="mt-4">
+                      {previewCopy.closingText(
+                        formatAgreementDate(
                           draft.language,
-                          draft,
-                        )
-                      : ""}
-                  </p>
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                      {editorCopy.escrowMember}
+                          draft.agreementDate,
+                        ),
+                        draft.agreementCity || draft.companyCity,
+                      )}
                     </p>
-                    <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">
-                        {fieldValue(draft.companyName)}
+                    <div className="mt-8 grid grid-cols-2 gap-10 pt-4">
+                      <p className="font-semibold">
+                        {agreementCopy.signatureClient}
                       </p>
-                      <p>{fieldValue(draft.companyAddress)}</p>
-                      <p>
-                        {fieldValue(
-                          [draft.companyPostalCode, draft.companyCity]
-                            .filter(Boolean)
-                            .join(" "),
-                        )}
-                      </p>
-                      <p>{fieldValue(draft.companyPhone)}</p>
-                      <p>{fieldValue(draft.companyEmail)}</p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                      {editorCopy.escrowBuyerDetails}
-                    </p>
-                    <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">
-                        {fieldValue(draft.clientName)}
-                      </p>
-                      <p>{fieldValue(draft.clientAddress)}</p>
-                      <p>
-                        {fieldValue(
-                          [draft.clientPostalCode, draft.clientCity]
-                            .filter(Boolean)
-                            .join(" "),
-                        )}
-                      </p>
-                      <p>{fieldValue(draft.clientPhone)}</p>
-                      <p>{fieldValue(draft.clientEmail)}</p>
-                      <p>{fieldValue(draft.vesselName || yachtName)}</p>
-                      <p>
-                        {previewCopy.priceText(
-                          draft.askingPrice || "0",
-                          draft.askingPriceWords,
-                        )}
+                      <p className="font-semibold">
+                        {agreementCopy.signatureIntermediary}
                       </p>
                     </div>
-                  </div>
+                  </section>
                 </div>
               </div>
-            ) : (
-              <div className="mt-6 rounded-[28px] border border-slate-200 bg-white px-8 py-10 shadow-sm dark:border-slate-700 dark:bg-slate-950">
-                <div className="mx-auto max-w-4xl text-slate-900 dark:text-slate-100">
-                  <div className="mb-8 border-t border-slate-400 pt-4">
-                    <h5 className="text-center font-serif text-4xl font-bold tracking-wide text-[#0b2c5f] dark:text-slate-100">
-                      {agreementCopy.heading}
-                    </h5>
-                  </div>
-
-                  <div className="space-y-8 font-serif text-[15px] leading-7">
-                    <section>
-                      <SectionHeader
-                        title={previewCopy.sellerLabel}
-                        onEdit={() => openEditor("seller")}
-                      />
-                      <div className="mt-4 grid gap-2 md:grid-cols-[180px_1fr]">
-                        <p>{agreementCopy.companyLabel}:</p>
-                        <p>{fieldValue(draft.companyName)}</p>
-                        <p>{agreementCopy.addressLabel}:</p>
-                        <p>{fieldValue(draft.companyAddress)}</p>
-                        <p>{agreementCopy.postalCityLabel}:</p>
-                        <p>
-                          {fieldValue(
-                            [draft.companyPostalCode, draft.companyCity]
-                              .filter(Boolean)
-                              .join(" "),
-                          )}
-                        </p>
-                        <p>{agreementCopy.phoneLabel}:</p>
-                        <p>{fieldValue(draft.companyPhone)}</p>
-                        <p>{agreementCopy.emailLabel}:</p>
-                        <p>{fieldValue(draft.companyEmail)}</p>
-                      </div>
-                    </section>
-
-                    <section>
-                      <SectionHeader
-                        title={previewCopy.buyerLabel}
-                        onEdit={() => openEditor("buyer")}
-                      />
-                      <div className="mt-4 grid gap-2 md:grid-cols-[180px_1fr]">
-                        <p>{agreementCopy.nameLabel}:</p>
-                        <p>{fieldValue(draft.clientName)}</p>
-                        <p>{agreementCopy.addressLabel}:</p>
-                        <p>{fieldValue(draft.clientAddress)}</p>
-                        <p>{agreementCopy.postalCityLabel}:</p>
-                        <p>
-                          {fieldValue(
-                            [draft.clientPostalCode, draft.clientCity]
-                              .filter(Boolean)
-                              .join(" "),
-                          )}
-                        </p>
-                        <p>{agreementCopy.phoneLabel}:</p>
-                        <p>{fieldValue(draft.clientPhone)}</p>
-                        <p>{agreementCopy.emailLabel}:</p>
-                        <p>{fieldValue(draft.clientEmail)}</p>
-                        <p>{agreementCopy.passportLabel}:</p>
-                        <p>{fieldValue(draft.passportNumber)}</p>
-                        <p>{agreementCopy.marriedLabel}:</p>
-                        <p>
-                          {boolLabel(draft.language, draft.married)}
-                          {draft.spouseName ? ` • ${draft.spouseName}` : ""}
-                        </p>
-                      </div>
-                    </section>
-
-                    <section>
-                      <SectionHeader
-                        title={previewCopy.vesselLabel}
-                        onEdit={() => openEditor("vessel")}
-                      />
-                      <div className="mt-4 space-y-4">
-                        <p>
-                          1. that the client grants the intermediary the exclusive assignment to sell the vessel in his property with the following specification:
-                        </p>
-                        <div className="grid gap-2 md:grid-cols-[220px_1fr]">
-                          <p>{editorCopy.name}:</p>
-                          <p>{fieldValue(draft.vesselName)}</p>
-                          <p>{editorCopy.brandType}:</p>
-                          <p>{fieldValue(draft.vesselBrandType)}</p>
-                          <p>{editorCopy.buildYear}:</p>
-                          <p>{fieldValue(draft.buildYear)}</p>
-                          <p>{editorCopy.dimensions}:</p>
-                          <p>{fieldValue(draft.dimensions)}</p>
-                          <p>{editorCopy.buildingMaterial}:</p>
-                          <p>{fieldValue(draft.buildingMaterial)}</p>
-                          <p>{editorCopy.builder}:</p>
-                          <p>{fieldValue(draft.builder)}</p>
-                          <p>{editorCopy.hullCinNumber}:</p>
-                          <p>{fieldValue(draft.hullNumber)}</p>
-                          <p>{editorCopy.engine}:</p>
-                          <p>{fieldValue(draft.engine)}</p>
-                          <p>{editorCopy.engineNumber}:</p>
-                          <p>{fieldValue(draft.engineNumber)}</p>
-                          <p>{editorCopy.registrationNumber}:</p>
-                          <p>{fieldValue(draft.registrationNumber)}</p>
-                        </div>
-                      </div>
-                    </section>
-
-                    <section>
-                      <SectionHeader
-                        title={previewCopy.declarationsLabel}
-                        onEdit={() => openEditor("declarations")}
-                      />
-                      <div className="mt-4 space-y-3">
-                        <p>
-                          {previewCopy.registerText(
-                            boolLabel(draft.language, draft.shipRegisterEntry),
-                            draft.shipRegisterPlace,
-                          )}
-                        </p>
-                        <p>
-                          {previewCopy.mortgageText(
-                            boolLabel(draft.language, draft.hasMortgage),
-                            draft.mortgageInFavorOf,
-                          )}
-                        </p>
-                        <p>
-                          {previewCopy.vatText(
-                            boolLabel(draft.language, draft.vatDeclaration),
-                          )}
-                        </p>
-                        <p>
-                          {previewCopy.priceText(
-                            draft.askingPrice || "0",
-                            draft.askingPriceWords,
-                          )}
-                        </p>
-                      </div>
-                    </section>
-
-                    <section>
-                      <SectionHeader
-                        title={previewCopy.closingLabel}
-                        onEdit={() => openEditor("closing")}
-                      />
-                      <p className="mt-4">
-                        {previewCopy.closingText(
-                          formatAgreementDate(draft.language, draft.agreementDate),
-                          draft.agreementCity || draft.companyCity,
-                        )}
-                      </p>
-                    </section>
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1682,7 +2103,9 @@ export function SignhostFlow({
                 ? `${editorCopy.editSectionPrefix} ${editorSectionTitle}`
                 : editorCopy.dialogTitle}
             </DialogTitle>
-            <DialogDescription>{editorCopy.dialogDescription}</DialogDescription>
+            <DialogDescription>
+              {editorCopy.dialogDescription}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-6 py-2">
@@ -1718,7 +2141,10 @@ export function SignhostFlow({
                       <Input
                         value={draft.companyPostalCode}
                         onChange={(event) =>
-                          handleFieldChange("companyPostalCode", event.target.value)
+                          handleFieldChange(
+                            "companyPostalCode",
+                            event.target.value,
+                          )
                         }
                         placeholder={editorCopy.postalCode}
                       />
@@ -1790,7 +2216,10 @@ export function SignhostFlow({
                       <Input
                         value={draft.clientPostalCode}
                         onChange={(event) =>
-                          handleFieldChange("clientPostalCode", event.target.value)
+                          handleFieldChange(
+                            "clientPostalCode",
+                            event.target.value,
+                          )
                         }
                         placeholder={editorCopy.postalCode}
                       />
@@ -1834,7 +2263,10 @@ export function SignhostFlow({
                       <Input
                         value={draft.passportNumber}
                         onChange={(event) =>
-                          handleFieldChange("passportNumber", event.target.value)
+                          handleFieldChange(
+                            "passportNumber",
+                            event.target.value,
+                          )
                         }
                         placeholder={editorCopy.passportNumber}
                       />
@@ -1970,7 +2402,10 @@ export function SignhostFlow({
                   <Input
                     value={draft.registrationNumber}
                     onChange={(event) =>
-                      handleFieldChange("registrationNumber", event.target.value)
+                      handleFieldChange(
+                        "registrationNumber",
+                        event.target.value,
+                      )
                     }
                     placeholder={editorCopy.registrationNumber}
                   />
@@ -1984,7 +2419,9 @@ export function SignhostFlow({
               </p>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 <div>
-                  <FieldLabel>{previewCopy.registerText("", "").split(":")[0]}</FieldLabel>
+                  <FieldLabel>
+                    {previewCopy.registerText("", "").split(":")[0]}
+                  </FieldLabel>
                   <select
                     value={draft.shipRegisterEntry}
                     onChange={(event) =>
@@ -1996,7 +2433,9 @@ export function SignhostFlow({
                     className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
                   >
                     <option value="no">{editorCopy.noShipRegisterEntry}</option>
-                    <option value="yes">{editorCopy.yesShipRegisterEntry}</option>
+                    <option value="yes">
+                      {editorCopy.yesShipRegisterEntry}
+                    </option>
                   </select>
                 </div>
                 <div>
@@ -2010,7 +2449,9 @@ export function SignhostFlow({
                   />
                 </div>
                 <div>
-                  <FieldLabel>{previewCopy.mortgageText("", "").split(":")[0]}</FieldLabel>
+                  <FieldLabel>
+                    {previewCopy.mortgageText("", "").split(":")[0]}
+                  </FieldLabel>
                   <select
                     value={draft.hasMortgage}
                     onChange={(event) =>
@@ -2036,7 +2477,9 @@ export function SignhostFlow({
                   />
                 </div>
                 <div>
-                  <FieldLabel>{previewCopy.vatText("").split(":")[0]}</FieldLabel>
+                  <FieldLabel>
+                    {previewCopy.vatText("").split(":")[0]}
+                  </FieldLabel>
                   <select
                     value={draft.vatDeclaration}
                     onChange={(event) =>
@@ -2098,11 +2541,11 @@ export function SignhostFlow({
           <DialogFooter>
             <Button
               type="button"
-              onClick={handlePreviewPrint}
+              onClick={handleDownloadGeneratedPdf}
               className="rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
             >
-              <Printer className="mr-2 h-4 w-4" />
-              Print / Save PDF
+              <FileText className="mr-2 h-4 w-4" />
+              {editorCopy.downloadPdf}
             </Button>
             <Button
               type="button"
