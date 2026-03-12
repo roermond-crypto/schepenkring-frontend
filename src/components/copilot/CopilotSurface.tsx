@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Loader2,
   Mic,
+  PanelTopOpen,
   Search,
   Settings2,
   Volume2,
@@ -175,6 +176,7 @@ export function CopilotSurface({
       rate: isNl ? "Snelheid" : isDe ? "Geschwindigkeit" : "Rate",
       save: isNl ? "Opslaan" : isDe ? "Speichern" : "Save",
       cancel: isNl ? "Annuleren" : isDe ? "Abbrechen" : "Cancel",
+      openPage: isNl ? "Open Copilot-pagina" : isDe ? "Copilot-Seite offnen" : "Open Copilot page",
       saved: isNl
         ? "Copilot-steminstellingen opgeslagen."
         : isDe
@@ -211,6 +213,12 @@ export function CopilotSurface({
   const [rate, setRate] = useState(1);
   const [voiceOptions, setVoiceOptions] = useState<VoiceOption[]>([]);
   const [pendingAction, setPendingAction] = useState<CopilotAction | null>(null);
+
+  const copilotPageHref = useMemo(() => {
+    const match = pathname.match(/^\/(en|nl|de|fr)\/dashboard\/([^/]+)/);
+    const currentLocale = match?.[1] || locale;
+    return `/${currentLocale}/dashboard/admin/copilot`;
+  }, [locale, pathname]);
 
   useEffect(() => {
     let mounted = true;
@@ -676,6 +684,12 @@ export function CopilotSurface({
             </label>
           </div>
           <DialogFooter className="border-t border-slate-100 px-6 py-5 dark:border-slate-700">
+            <Button asChild type="button" variant="outline" className="rounded-2xl">
+              <a href={copilotPageHref} className="inline-flex items-center gap-2">
+                <PanelTopOpen size={14} />
+                {copy.openPage}
+              </a>
+            </Button>
             <Button type="button" variant="outline" onClick={() => setVoiceSettingsOpen(false)} className="rounded-2xl">
               {copy.cancel}
             </Button>

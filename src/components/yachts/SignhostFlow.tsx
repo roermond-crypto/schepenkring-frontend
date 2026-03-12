@@ -2,22 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import {
   AlertCircle,
   ExternalLink,
-  Eye,
   FileCheck,
   FilePenLine,
   FileText,
   Globe2,
   Loader2,
-  Mail,
   PencilLine,
   Printer,
   RefreshCw,
   Send,
-  User,
   XCircle,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -34,13 +31,18 @@ import {
 import { cn } from "@/lib/utils";
 import {
   signhostApi,
-  type SignhostDocument,
-  type SignRecipient,
   type SignRequest,
 } from "@/lib/api/signhost";
 
 type ContractLanguage = "nl" | "en" | "de" | "fr";
 type ContractTemplateKey = "sale_agreement" | "escrow_form";
+
+function resolveContractLanguage(locale: string): ContractLanguage {
+  if (locale === "nl" || locale === "en" || locale === "de" || locale === "fr") {
+    return locale;
+  }
+  return "en";
+}
 
 type LocationOption = {
   id: number;
@@ -268,25 +270,316 @@ const copyByLanguage: Record<
   },
 };
 
-const attachmentByLanguage: Record<
+const editorCopyByLanguage: Record<
   ContractLanguage,
-  { href: string; name: string }
+  {
+    dialogTitle: string;
+    dialogDescription: string;
+    editSectionPrefix: string;
+    sellerSection: string;
+    buyerSection: string;
+    vesselSection: string;
+    declarationsSection: string;
+    saveDetails: string;
+    company: string;
+    address: string;
+    postalCode: string;
+    city: string;
+    phone: string;
+    email: string;
+    name: string;
+    passportNumber: string;
+    partnerName: string;
+    notMarried: string;
+    married: string;
+    brandType: string;
+    buildYear: string;
+    dimensions: string;
+    buildingMaterial: string;
+    builder: string;
+    hullCinNumber: string;
+    engine: string;
+    engineNumber: string;
+    registrationNumber: string;
+    noShipRegisterEntry: string;
+    yesShipRegisterEntry: string;
+    registerPlace: string;
+    noShipMortgage: string;
+    yesShipMortgage: string;
+    mortgageParty: string;
+    noVatDeclaration: string;
+    yesVatDeclaration: string;
+    askingPrice: string;
+    askingPriceWords: string;
+    agreementDate: string;
+    agreementCity: string;
+    pageTitle: string;
+    pageSubtitle: string;
+    statusSigned: string;
+    statusSent: string;
+    statusCancelled: string;
+    statusDraft: string;
+    editContract: string;
+    printPdf: string;
+    createDeeplink: string;
+    openDeeplink: string;
+    noLocationSelected: string;
+    locationRequired: string;
+    locationRequiredHint: string;
+    selectedTemplate: string;
+    renderUrl: string;
+    escrowMember: string;
+    escrowBuyerDetails: string;
+    generateEscrowPdf: string;
+  }
 > = {
+  en: {
+    dialogTitle: "Edit contract template",
+    dialogDescription:
+      "Update the company, client, vessel, and agreement values before generating the PDF.",
+    editSectionPrefix: "Edit",
+    sellerSection: "Seller / location",
+    buyerSection: "Buyer",
+    vesselSection: "Vessel",
+    declarationsSection: "Declarations",
+    saveDetails: "Save details",
+    company: "Company",
+    address: "Address",
+    postalCode: "Postal code",
+    city: "City",
+    phone: "Phone",
+    email: "E-mail",
+    name: "Name",
+    passportNumber: "Passport number",
+    partnerName: "Partner name",
+    notMarried: "Not married",
+    married: "Married",
+    brandType: "Brand / type",
+    buildYear: "Build year",
+    dimensions: "Dimensions",
+    buildingMaterial: "Building material",
+    builder: "Builder",
+    hullCinNumber: "Hull / CIN number",
+    engine: "Engine",
+    engineNumber: "Engine number",
+    registrationNumber: "Registration number",
+    noShipRegisterEntry: "No ship register entry",
+    yesShipRegisterEntry: "Yes, ship register entry",
+    registerPlace: "If yes, in...",
+    noShipMortgage: "No ship mortgage",
+    yesShipMortgage: "Yes, ship mortgage",
+    mortgageParty: "If yes, in favor of...",
+    noVatDeclaration: "No VAT declaration",
+    yesVatDeclaration: "Yes, VAT declaration",
+    askingPrice: "Asking price",
+    askingPriceWords: "Asking price in full words",
+    agreementDate: "Agreement date",
+    agreementCity: "Agreement city",
+    pageTitle: "Digital Signhost signing",
+    pageSubtitle: "Contract lifecycle management",
+    statusSigned: "Signed",
+    statusSent: "Sent for signing",
+    statusCancelled: "Cancelled",
+    statusDraft: "Draft",
+    editContract: "Edit contract",
+    printPdf: "Print / Save PDF",
+    createDeeplink: "Create Signhost deeplink",
+    openDeeplink: "Open Signhost deeplink",
+    noLocationSelected: "No location selected",
+    locationRequired: "Location required",
+    locationRequiredHint:
+      "Select a sales location in step 2 before generating this contract.",
+    selectedTemplate: "Selected template",
+    renderUrl: "Render URL",
+    escrowMember: "HISWA-RECRON member",
+    escrowBuyerDetails: "Buyer details",
+    generateEscrowPdf: "Generate escrow PDF",
+  },
   nl: {
-    href: "/contracts/bemiddelingsvoorwaarden-nl.pdf",
-    name: "A. Bemiddelingsvoorwaarden (NL)",
+    dialogTitle: "Contractsjabloon bewerken",
+    dialogDescription:
+      "Werk de bedrijfs-, klant-, vaartuig- en overeenkomstgegevens bij voordat je de PDF genereert.",
+    editSectionPrefix: "Bewerk",
+    sellerSection: "Verkoper / locatie",
+    buyerSection: "Koper",
+    vesselSection: "Vaartuig",
+    declarationsSection: "Verklaringen",
+    saveDetails: "Gegevens opslaan",
+    company: "Bedrijf",
+    address: "Adres",
+    postalCode: "Postcode",
+    city: "Plaats",
+    phone: "Telefoon",
+    email: "E-mail",
+    name: "Naam",
+    passportNumber: "Paspoortnummer",
+    partnerName: "Partnernaam",
+    notMarried: "Niet gehuwd",
+    married: "Gehuwd",
+    brandType: "Merk / type",
+    buildYear: "Bouwjaar",
+    dimensions: "Afmetingen",
+    buildingMaterial: "Bouwmateriaal",
+    builder: "Bouwer",
+    hullCinNumber: "Romp / CIN-nummer",
+    engine: "Motor",
+    engineNumber: "Motornummer",
+    registrationNumber: "Registratienummer",
+    noShipRegisterEntry: "Geen scheepsregisterinschrijving",
+    yesShipRegisterEntry: "Ja, scheepsregisterinschrijving",
+    registerPlace: "Zo ja, te...",
+    noShipMortgage: "Geen scheepshypotheek",
+    yesShipMortgage: "Ja, scheepshypotheek",
+    mortgageParty: "Zo ja, ten gunste van...",
+    noVatDeclaration: "Geen btw-verklaring",
+    yesVatDeclaration: "Ja, btw-verklaring",
+    askingPrice: "Vraagprijs",
+    askingPriceWords: "Vraagprijs voluit",
+    agreementDate: "Overeenkomstsdatum",
+    agreementCity: "Plaats overeenkomst",
+    pageTitle: "Digitale ondertekening via Signhost",
+    pageSubtitle: "Contract lifecycle management",
+    statusSigned: "Ondertekend",
+    statusSent: "Verzonden voor ondertekening",
+    statusCancelled: "Geannuleerd",
+    statusDraft: "Concept",
+    editContract: "Contract bewerken",
+    printPdf: "PDF afdrukken / opslaan",
+    createDeeplink: "Signhost deeplink maken",
+    openDeeplink: "Open Signhost deeplink",
+    noLocationSelected: "Geen locatie geselecteerd",
+    locationRequired: "Locatie vereist",
+    locationRequiredHint:
+      "Selecteer eerst een verkooplocatie in stap 2 voordat je dit contract genereert.",
+    selectedTemplate: "Geselecteerd sjabloon",
+    renderUrl: "Render-URL",
+    escrowMember: "HISWA-RECRON-lid",
+    escrowBuyerDetails: "Kopersgegevens",
+    generateEscrowPdf: "Escrow-PDF genereren",
   },
   de: {
-    href: "/contracts/bemiddelingsvoorwaarden-de.pdf",
-    name: "B. Bemiddelingsvoorwaarden (DE)",
-  },
-  en: {
-    href: "/contracts/bemiddelingsvoorwaarden-en.pdf",
-    name: "C. Bemiddelingsvoorwaarden (EN)",
+    dialogTitle: "Vertragsvorlage bearbeiten",
+    dialogDescription:
+      "Aktualisieren Sie die Firmen-, Kunden-, Schiffs- und Vertragsdaten, bevor Sie das PDF erzeugen.",
+    editSectionPrefix: "Bearbeite",
+    sellerSection: "Verkäufer / Standort",
+    buyerSection: "Käufer",
+    vesselSection: "Fahrzeug",
+    declarationsSection: "Erklärungen",
+    saveDetails: "Details speichern",
+    company: "Unternehmen",
+    address: "Adresse",
+    postalCode: "Postleitzahl",
+    city: "Ort",
+    phone: "Telefon",
+    email: "E-Mail",
+    name: "Name",
+    passportNumber: "Passnummer",
+    partnerName: "Partnername",
+    notMarried: "Nicht verheiratet",
+    married: "Verheiratet",
+    brandType: "Marke / Typ",
+    buildYear: "Baujahr",
+    dimensions: "Abmessungen",
+    buildingMaterial: "Baumaterial",
+    builder: "Werft / Hersteller",
+    hullCinNumber: "Rumpf- / CIN-Nummer",
+    engine: "Motor",
+    engineNumber: "Motornummer",
+    registrationNumber: "Registriernummer",
+    noShipRegisterEntry: "Kein Schiffsregistereintrag",
+    yesShipRegisterEntry: "Ja, Schiffsregistereintrag",
+    registerPlace: "Falls ja, in...",
+    noShipMortgage: "Keine Schiffshypothek",
+    yesShipMortgage: "Ja, Schiffshypothek",
+    mortgageParty: "Falls ja, zugunsten von...",
+    noVatDeclaration: "Keine MwSt.-Erklärung",
+    yesVatDeclaration: "Ja, MwSt.-Erklärung",
+    askingPrice: "Angebotspreis",
+    askingPriceWords: "Angebotspreis ausgeschrieben",
+    agreementDate: "Vertragsdatum",
+    agreementCity: "Vertragsort",
+    pageTitle: "Digitale Signhost-Unterzeichnung",
+    pageSubtitle: "Contract lifecycle management",
+    statusSigned: "Unterzeichnet",
+    statusSent: "Zur Unterschrift versendet",
+    statusCancelled: "Storniert",
+    statusDraft: "Entwurf",
+    editContract: "Vertrag bearbeiten",
+    printPdf: "PDF drucken / speichern",
+    createDeeplink: "Signhost-Deeplink erstellen",
+    openDeeplink: "Signhost-Deeplink öffnen",
+    noLocationSelected: "Kein Standort ausgewählt",
+    locationRequired: "Standort erforderlich",
+    locationRequiredHint:
+      "Wählen Sie zuerst in Schritt 2 einen Verkaufsstandort aus, bevor Sie diesen Vertrag erzeugen.",
+    selectedTemplate: "Ausgewählte Vorlage",
+    renderUrl: "Render-URL",
+    escrowMember: "HISWA-RECRON-Mitglied",
+    escrowBuyerDetails: "Käuferdaten",
+    generateEscrowPdf: "Escrow-PDF erzeugen",
   },
   fr: {
-    href: "/contracts/bemiddelingsvoorwaarden-en.pdf",
-    name: "C. Bemiddelingsvoorwaarden (EN)",
+    dialogTitle: "Modifier le modele de contrat",
+    dialogDescription:
+      "Mettez a jour les donnees de l'entreprise, du client, du bateau et du contrat avant de generer le PDF.",
+    editSectionPrefix: "Modifier",
+    sellerSection: "Vendeur / site",
+    buyerSection: "Acheteur",
+    vesselSection: "Bateau",
+    declarationsSection: "Declarations",
+    saveDetails: "Enregistrer les details",
+    company: "Societe",
+    address: "Adresse",
+    postalCode: "Code postal",
+    city: "Ville",
+    phone: "Telephone",
+    email: "E-mail",
+    name: "Nom",
+    passportNumber: "Numero de passeport",
+    partnerName: "Nom du partenaire",
+    notMarried: "Non marie",
+    married: "Marie",
+    brandType: "Marque / type",
+    buildYear: "Annee de construction",
+    dimensions: "Dimensions",
+    buildingMaterial: "Materiau",
+    builder: "Constructeur",
+    hullCinNumber: "Numero de coque / CIN",
+    engine: "Moteur",
+    engineNumber: "Numero de moteur",
+    registrationNumber: "Numero d'immatriculation",
+    noShipRegisterEntry: "Pas d'inscription au registre naval",
+    yesShipRegisterEntry: "Oui, inscription au registre naval",
+    registerPlace: "Si oui, a...",
+    noShipMortgage: "Pas d'hypotheque maritime",
+    yesShipMortgage: "Oui, hypotheque maritime",
+    mortgageParty: "Si oui, au profit de...",
+    noVatDeclaration: "Pas de declaration TVA",
+    yesVatDeclaration: "Oui, declaration TVA",
+    askingPrice: "Prix demande",
+    askingPriceWords: "Prix demande en toutes lettres",
+    agreementDate: "Date du contrat",
+    agreementCity: "Ville du contrat",
+    pageTitle: "Signature numerique Signhost",
+    pageSubtitle: "Contract lifecycle management",
+    statusSigned: "Signe",
+    statusSent: "Envoye pour signature",
+    statusCancelled: "Annule",
+    statusDraft: "Brouillon",
+    editContract: "Modifier le contrat",
+    printPdf: "Imprimer / enregistrer le PDF",
+    createDeeplink: "Creer le deeplink Signhost",
+    openDeeplink: "Ouvrir le deeplink Signhost",
+    noLocationSelected: "Aucun lieu selectionne",
+    locationRequired: "Lieu requis",
+    locationRequiredHint:
+      "Selectionnez d'abord un lieu de vente a l'etape 2 avant de generer ce contrat.",
+    selectedTemplate: "Modele selectionne",
+    renderUrl: "URL de rendu",
+    escrowMember: "Membre HISWA-RECRON",
+    escrowBuyerDetails: "Coordonnees de l'acheteur",
+    generateEscrowPdf: "Generer le PDF escrow",
   },
 };
 
@@ -299,10 +592,6 @@ function boolLabel(language: ContractLanguage, value: "yes" | "no") {
   if (language === "de") return value === "yes" ? "Ja" : "Nein";
   if (language === "fr") return value === "yes" ? "Oui" : "Non";
   return value === "yes" ? "Yes" : "No";
-}
-
-function resolveAttachmentLanguage(language: ContractLanguage): ContractLanguage | "en" {
-  return language === "fr" ? "en" : language;
 }
 
 function resolveEscrowFormLanguage(language: ContractLanguage): "nl" | "en" | "de" {
@@ -621,6 +910,7 @@ function buildContractDraft(
   yachtName: string,
   yachtData: YachtContractData | null | undefined,
   location: LocationOption | null | undefined,
+  language: ContractLanguage,
 ): ContractDraft {
   const locationDefaults = resolveLocationDefaults(location);
   const askingPrice =
@@ -636,7 +926,7 @@ function buildContractDraft(
     .join(" ");
 
   return {
-    language: "nl",
+    language,
     companyName: locationDefaults.companyName || "",
     companyAddress: locationDefaults.companyAddress || "",
     companyPostalCode: locationDefaults.companyPostalCode || "",
@@ -681,6 +971,38 @@ function fieldValue(value?: string) {
   return value?.trim() || "—";
 }
 
+function SectionHeader({
+  title,
+  onEdit,
+}: {
+  title: string;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
+      <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+        {title}
+      </p>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-[#003566]"
+        aria-label={`Edit ${title}`}
+      >
+        <PencilLine size={14} />
+      </button>
+    </div>
+  );
+}
+
+function FieldLabel({ children }: { children: string }) {
+  return (
+    <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+      {children}
+    </label>
+  );
+}
+
 export function SignhostFlow({
   yachtId,
   yachtName,
@@ -688,8 +1010,8 @@ export function SignhostFlow({
   yachtData,
   locationOptions = [],
 }: SignhostFlowProps) {
-  const t = useTranslations("DashboardSignhostFlow");
   const locale = useLocale();
+  const localeContractLanguage = resolveContractLanguage(locale);
   const params = useParams<{ role?: string }>();
   const role = params?.role?.toLowerCase();
   const canManageContract = role !== "client";
@@ -700,22 +1022,28 @@ export function SignhostFlow({
   const storageKey = `contract_draft_${yachtId}`;
 
   const [signRequest, setSignRequest] = useState<SignRequest | null>(null);
-  const [documents, setDocuments] = useState<SignhostDocument[]>([]);
-  const [recipients, setRecipients] = useState<SignRecipient[]>([
-    { role: "buyer", name: "", email: "" },
-    { role: "seller", name: "", email: "" },
-  ]);
   const [draft, setDraft] = useState<ContractDraft>(() =>
-    buildContractDraft(yachtName, yachtData, selectedLocation),
+    buildContractDraft(
+      yachtName,
+      yachtData,
+      selectedLocation,
+      localeContractLanguage,
+    ),
   );
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorSection, setEditorSection] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [contractTemplateKey, setContractTemplateKey] =
     useState<ContractTemplateKey>("sale_agreement");
 
   useEffect(() => {
-    const nextDraft = buildContractDraft(yachtName, yachtData, selectedLocation);
+    const nextDraft = buildContractDraft(
+      yachtName,
+      yachtData,
+      selectedLocation,
+      localeContractLanguage,
+    );
 
     try {
       const raw = localStorage.getItem(storageKey);
@@ -725,11 +1053,29 @@ export function SignhostFlow({
       }
 
       const parsed = JSON.parse(raw) as Partial<ContractDraft>;
-      setDraft({ ...nextDraft, ...parsed });
+      setDraft({
+        ...nextDraft,
+        ...parsed,
+        language: localeContractLanguage,
+      });
     } catch {
       setDraft(nextDraft);
     }
-  }, [selectedLocation, storageKey, yachtData, yachtName]);
+  }, [
+    localeContractLanguage,
+    selectedLocation,
+    storageKey,
+    yachtData,
+    yachtName,
+  ]);
+
+  useEffect(() => {
+    setDraft((prev) =>
+      prev.language === localeContractLanguage
+        ? prev
+        : { ...prev, language: localeContractLanguage },
+    );
+  }, [localeContractLanguage]);
 
   useEffect(() => {
     try {
@@ -748,8 +1094,6 @@ export function SignhostFlow({
           if (res.sign_request.status !== signRequest.status) {
             setSignRequest(res.sign_request);
             if (res.sign_request.status === "SIGNED") {
-              const docs = await signhostApi.getDocuments(res.sign_request.id);
-              setDocuments(docs.documents);
               toast.success("Contract signed successfully.");
             }
           }
@@ -765,15 +1109,23 @@ export function SignhostFlow({
   }, [signRequest]);
 
   const previewCopy = copyByLanguage[draft.language];
-  const localeLanguage =
-    locale === "nl" || locale === "de" || locale === "fr" || locale === "en"
-      ? locale
-      : "en";
-  const languageAttachment =
-    attachmentByLanguage[resolveAttachmentLanguage(draft.language)];
+  const agreementCopy = getAgreementCopy(draft.language);
+  const editorCopy = editorCopyByLanguage[draft.language];
   const selectedTemplate = contractTemplateOptions.find(
     (option) => option.value === contractTemplateKey,
   ) ?? contractTemplateOptions[0];
+  const editorSectionTitle =
+    editorSection === "seller"
+      ? editorCopy.sellerSection
+      : editorSection === "buyer"
+        ? editorCopy.buyerSection
+        : editorSection === "vessel"
+          ? editorCopy.vesselSection
+          : editorSection === "declarations"
+            ? editorCopy.declarationsSection
+            : editorSection === "closing"
+              ? previewCopy.closingLabel
+              : null;
 
   const handleFieldChange = <K extends keyof ContractDraft>(
     key: K,
@@ -782,16 +1134,9 @@ export function SignhostFlow({
     setDraft((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleRecipientChange = (
-    index: number,
-    field: keyof SignRecipient,
-    value: string,
-  ) => {
-    setRecipients((prev) =>
-      prev.map((recipient, currentIndex) =>
-        currentIndex === index ? { ...recipient, [field]: value } : recipient,
-      ),
-    );
+  const openEditor = (section?: string) => {
+    setEditorSection(section ?? null);
+    setEditorOpen(true);
   };
 
   const handlePreviewPrint = () => {
@@ -866,9 +1211,7 @@ export function SignhostFlow({
           location_snapshot: selectedLocation,
         },
       });
-
       setSignRequest(res.sign_request);
-      setDocuments(res.sign_request.documents || []);
       toast.success("Contract PDF generated.");
     } catch {
       toast.error("Failed to generate contract PDF.");
@@ -877,19 +1220,27 @@ export function SignhostFlow({
     }
   };
 
-  const handleSendRequest = async () => {
-    if (!signRequest) return;
+  const handleCreateSignhostDeeplink = async () => {
+    if (!signRequest) {
+      toast.error("Generate the contract PDF first.");
+      return;
+    }
 
-    const validRecipients = recipients
-      .map((recipient) => ({
-        ...recipient,
-        name: recipient.name?.trim() || "",
-        email: recipient.email?.trim() || "",
-      }))
-      .filter((recipient) => recipient.name && recipient.email);
+    const recipients = [
+      {
+        role: "buyer" as const,
+        name: draft.clientName.trim(),
+        email: draft.clientEmail.trim(),
+      },
+      {
+        role: "seller" as const,
+        name: draft.companyName.trim(),
+        email: draft.companyEmail.trim(),
+      },
+    ].filter((recipient) => recipient.name && recipient.email);
 
-    if (validRecipients.length < 1) {
-      toast.error("Add at least one recipient with name and e-mail.");
+    if (recipients.length === 0) {
+      toast.error("Add buyer or seller name and e-mail before creating the deeplink.");
       return;
     }
 
@@ -898,14 +1249,13 @@ export function SignhostFlow({
       const res = await signhostApi.createRequest(
         {
           sign_request_id: signRequest.id,
-          recipients: validRecipients,
+          recipients,
           reference: `vessel-${yachtId}`,
         },
         `signhost_${signRequest.id}_${Date.now()}`,
       );
-
       setSignRequest(res.sign_request);
-      toast.success("Signature request sent.");
+      toast.success("Signhost deeplink created.");
     } catch (error: unknown) {
       const message =
         typeof error === "object" &&
@@ -914,7 +1264,7 @@ export function SignhostFlow({
         typeof (error as { response?: { data?: { message?: string } } }).response
           ?.data?.message === "string"
           ? (error as { response?: { data?: { message?: string } } }).response!.data!.message!
-          : "Failed to send request.";
+          : "Failed to create Signhost deeplink.";
       toast.error(message);
     } finally {
       setIsSending(false);
@@ -926,34 +1276,34 @@ export function SignhostFlow({
     switch (status) {
       case "SIGNED":
         return {
-          label: "Signed",
+          label: editorCopy.statusSigned,
           icon: FileCheck,
           tone:
             "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-900",
         };
       case "SENT":
         return {
-          label: "Sent for signing",
+          label: editorCopy.statusSent,
           icon: Send,
           tone:
             "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-950/40 dark:border-blue-900",
         };
       case "FAILED":
         return {
-          label: "Cancelled",
+          label: editorCopy.statusCancelled,
           icon: XCircle,
           tone:
             "text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-950/40 dark:border-red-900",
         };
       default:
         return {
-          label: "Draft",
+          label: editorCopy.statusDraft,
           icon: FileText,
           tone:
             "text-slate-700 bg-slate-50 border-slate-200 dark:text-slate-300 dark:bg-slate-800/60 dark:border-slate-700",
         };
     }
-  }, [signRequest?.status]);
+  }, [editorCopy, signRequest?.status]);
 
   if (!canManageContract) {
     return null;
@@ -965,10 +1315,10 @@ export function SignhostFlow({
         <div>
           <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
             <FilePenLine size={18} className="text-[#003566] dark:text-sky-300" />
-            Signhost Digitale Ondertekening
+            {editorCopy.pageTitle}
           </h4>
           <p className="mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
-            Contract Lifecycle Management
+            {editorCopy.pageSubtitle}
           </p>
         </div>
 
@@ -999,9 +1349,7 @@ export function SignhostFlow({
           </select>
           <select
             value={draft.language}
-            onChange={(event) =>
-              handleFieldChange("language", event.target.value as ContractLanguage)
-            }
+            disabled
             className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
             {languageOptions.map((option) => (
@@ -1012,11 +1360,26 @@ export function SignhostFlow({
           </select>
           <Button
             type="button"
-            onClick={() => setEditorOpen(true)}
+            onClick={handleGenerateContract}
+            disabled={isGenerating || !locationId}
+            className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
+          >
+            {isGenerating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            {contractTemplateKey === "escrow_form"
+              ? editorCopy.generateEscrowPdf
+              : previewCopy.generateLabel}
+          </Button>
+          <Button
+            type="button"
+            onClick={() => openEditor()}
             className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
           >
             <PencilLine className="mr-2 h-4 w-4" />
-            Edit contract
+            {editorCopy.editContract}
           </Button>
           <Button
             type="button"
@@ -1024,41 +1387,50 @@ export function SignhostFlow({
             className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
           >
             <Printer className="mr-2 h-4 w-4" />
-            Print / Save PDF
+            {editorCopy.printPdf}
           </Button>
+          {signRequest && !signRequest.sign_url && (
+            <Button
+              type="button"
+              onClick={handleCreateSignhostDeeplink}
+              disabled={isSending}
+              className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              {isSending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              {editorCopy.createDeeplink}
+            </Button>
+          )}
+          {signRequest?.sign_url && (
+            <a
+              href={signRequest.sign_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              {editorCopy.openDeeplink}
+            </a>
+          )}
         </div>
       </div>
 
-      <div className="grid gap-6 p-6 xl:grid-cols-[1.4fr_0.9fr]">
-        <div className="space-y-5">
-          <div className="rounded-3xl border border-[#d7e3f1] bg-gradient-to-br from-[#f8fbff] to-white p-6 shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-blue-600 dark:text-sky-300">
-                  {contractTemplateKey === "escrow_form"
-                    ? selectedTemplate.label
-                    : previewCopy.title}
-                </p>
-                <h5 className="mt-2 text-3xl font-black italic text-[#003566] dark:text-slate-100">
-                  {contractTemplateKey === "escrow_form"
-                    ? "HISWA-RECRON Escrow"
-                    : draft.vesselName || yachtName}
-                </h5>
-                <p className="mt-3 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-                  {contractTemplateKey === "escrow_form"
-                    ? "This template uses the standalone language-specific escrow route so the backend can render the final PDF from a stable URL."
-                    : previewCopy.previewHint}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-100">
-                  <Globe2 size={14} />
-                  {titleCase(draft.language)}
-                </div>
-                <p className="mt-2">
-                  {selectedLocation?.name || "No location selected"}
-                </p>
+      <div className="p-6">
+        <div className="rounded-3xl border border-[#d7e3f1] bg-gradient-to-br from-[#f8fbff] to-white p-6 shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-950">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-blue-600 dark:text-sky-300">
+                {contractTemplateKey === "escrow_form"
+                  ? selectedTemplate.label
+                  : previewCopy.title}
+              </p>
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                <Globe2 size={14} />
+                {titleCase(draft.language)}
+                <span className="text-slate-300">•</span>
+                {selectedLocation?.name || editorCopy.noLocationSelected}
               </div>
             </div>
 
@@ -1066,10 +1438,8 @@ export function SignhostFlow({
               <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                 <div>
-                  <p className="font-bold">Location required</p>
-                  <p>
-                    Select a sales location in step 2 before generating this contract.
-                  </p>
+                  <p className="font-bold">{editorCopy.locationRequired}</p>
+                  <p>{editorCopy.locationRequiredHint}</p>
                 </div>
               </div>
             )}
@@ -1078,7 +1448,7 @@ export function SignhostFlow({
               <div className="mt-6 space-y-4">
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
                   <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                    Selected template
+                    {editorCopy.selectedTemplate}
                   </p>
                   <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
                     {selectedTemplate.label}
@@ -1087,7 +1457,7 @@ export function SignhostFlow({
                     {selectedTemplate.description}
                   </p>
                   <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
-                    Render URL:
+                    {editorCopy.renderUrl}:
                   </p>
                   <p className="mt-1 break-all rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
                     {typeof window !== "undefined"
@@ -1104,7 +1474,7 @@ export function SignhostFlow({
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
                     <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                      HISWA-RECRON member
+                      {editorCopy.escrowMember}
                     </p>
                     <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
                       <p className="font-semibold text-slate-900 dark:text-slate-100">
@@ -1125,7 +1495,7 @@ export function SignhostFlow({
 
                   <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
                     <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                      Buyer details
+                      {editorCopy.escrowBuyerDetails}
                     </p>
                     <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
                       <p className="font-semibold text-slate-900 dark:text-slate-100">
@@ -1153,666 +1523,574 @@ export function SignhostFlow({
                 </div>
               </div>
             ) : (
-              <>
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                  {previewCopy.sellerLabel}
-                </p>
-                <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">
-                    {fieldValue(draft.companyName)}
-                  </p>
-                  <p>{fieldValue(draft.companyAddress)}</p>
-                  <p>
-                    {fieldValue(
-                      [draft.companyPostalCode, draft.companyCity]
-                        .filter(Boolean)
-                        .join(" "),
-                    )}
-                  </p>
-                  <p>{fieldValue(draft.companyPhone)}</p>
-                  <p>{fieldValue(draft.companyEmail)}</p>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                  {previewCopy.buyerLabel}
-                </p>
-                <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">
-                    {fieldValue(draft.clientName)}
-                  </p>
-                  <p>{fieldValue(draft.clientAddress)}</p>
-                  <p>
-                    {fieldValue(
-                      [draft.clientPostalCode, draft.clientCity]
-                        .filter(Boolean)
-                        .join(" "),
-                    )}
-                  </p>
-                  <p>{fieldValue(draft.clientPhone)}</p>
-                  <p>{fieldValue(draft.clientEmail)}</p>
-                  <p>Passport: {fieldValue(draft.passportNumber)}</p>
-                  <p>
-                    Married: {boolLabel(draft.language, draft.married)}
-                    {draft.spouseName ? ` • ${draft.spouseName}` : ""}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                {previewCopy.vesselLabel}
-              </p>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {[
-                  ["Name", draft.vesselName],
-                  ["Brand / type vessel", draft.vesselBrandType],
-                  ["Building year, circa", draft.buildYear],
-                  ["Dimensions, circa", draft.dimensions],
-                  ["Building material", draft.buildingMaterial],
-                  ["Builder", draft.builder],
-                  ["Hullnumber / CIN Number", draft.hullNumber],
-                  ["Engine", draft.engine],
-                  ["Engine number", draft.engineNumber],
-                  ["Registration number", draft.registrationNumber],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/50"
-                  >
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                      {label}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                      {fieldValue(value)}
-                    </p>
+              <div className="mt-6 rounded-[28px] border border-slate-200 bg-white px-8 py-10 shadow-sm dark:border-slate-700 dark:bg-slate-950">
+                <div className="mx-auto max-w-4xl text-slate-900 dark:text-slate-100">
+                  <div className="mb-8 border-t border-slate-400 pt-4">
+                    <h5 className="text-center font-serif text-4xl font-bold tracking-wide text-[#0b2c5f] dark:text-slate-100">
+                      {agreementCopy.heading}
+                    </h5>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                {previewCopy.declarationsLabel}
-              </p>
-              <div className="mt-4 space-y-2 text-sm leading-7 text-slate-700 dark:text-slate-300">
-                <p>
-                  {previewCopy.registerText(
-                    boolLabel(draft.language, draft.shipRegisterEntry),
-                    draft.shipRegisterPlace,
-                  )}
-                </p>
-                <p>
-                  {previewCopy.mortgageText(
-                    boolLabel(draft.language, draft.hasMortgage),
-                    draft.mortgageInFavorOf,
-                  )}
-                </p>
-                <p>{previewCopy.vatText(boolLabel(draft.language, draft.vatDeclaration))}</p>
-                <p>
-                  {previewCopy.priceText(
-                    draft.askingPrice || "0",
-                    draft.askingPriceWords,
-                  )}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                {previewCopy.closingLabel}
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
-                {previewCopy.closingText(
-                  formatAgreementDate(draft.language, draft.agreementDate),
-                  draft.agreementCity || draft.companyCity,
-                )}
-              </p>
-              <div className="mt-10 grid gap-6 md:grid-cols-2">
-                <div className="border-t border-slate-300 pt-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">
-                  {previewCopy.sellerLabel}
-                </div>
-                <div className="border-t border-slate-300 pt-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">
-                  {previewCopy.buyerLabel}
-                </div>
-              </div>
-            </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex items-start gap-3">
-              <div className="rounded-2xl bg-blue-50 p-3 text-blue-600 dark:bg-slate-800 dark:text-sky-300">
-                <FileText size={22} />
-              </div>
-              <div>
-                <h5 className="text-lg font-black text-slate-900 dark:text-slate-100">
-                  {contractTemplateKey === "escrow_form"
-                    ? "Generate escrow PDF"
-                    : previewCopy.generateLabel}
-                </h5>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  {contractTemplateKey === "escrow_form"
-                    ? "Generate the PDF from the dedicated escrow route, then send it to Signhost."
-                    : "Generate the PDF from this contract template, then send it to Signhost."}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-3">
-              <Button
-                type="button"
-                onClick={handleGenerateContract}
-                disabled={isGenerating || !locationId}
-                className="h-11 rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
-              >
-                {isGenerating ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                )}
-                {contractTemplateKey === "escrow_form"
-                  ? "Generate escrow PDF"
-                  : previewCopy.generateLabel}
-              </Button>
-              <Button
-                type="button"
-                onClick={() => setEditorOpen(true)}
-                className="h-11 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
-              >
-                <PencilLine className="mr-2 h-4 w-4" />
-                Update contract values
-              </Button>
-            </div>
-          </div>
-
-          {signRequest && (
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <h5 className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                Signature recipients
-              </h5>
-              <div className="mt-4 space-y-3">
-                {recipients.map((recipient, index) => (
-                  <div
-                    key={`${recipient.role}-${index}`}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
-                  >
-                    <div className="mb-3 inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#003566] dark:border-slate-700 dark:bg-slate-900 dark:text-sky-300">
-                      {recipient.role}
-                    </div>
-                    <div className="grid gap-3">
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <Input
-                          value={recipient.name}
-                          onChange={(event) =>
-                            handleRecipientChange(index, "name", event.target.value)
-                          }
-                          placeholder="Full name"
-                          className="h-10 pl-9"
-                        />
+                  <div className="space-y-8 font-serif text-[15px] leading-7">
+                    <section>
+                      <SectionHeader
+                        title={previewCopy.sellerLabel}
+                        onEdit={() => openEditor("seller")}
+                      />
+                      <div className="mt-4 grid gap-2 md:grid-cols-[180px_1fr]">
+                        <p>{agreementCopy.companyLabel}:</p>
+                        <p>{fieldValue(draft.companyName)}</p>
+                        <p>{agreementCopy.addressLabel}:</p>
+                        <p>{fieldValue(draft.companyAddress)}</p>
+                        <p>{agreementCopy.postalCityLabel}:</p>
+                        <p>
+                          {fieldValue(
+                            [draft.companyPostalCode, draft.companyCity]
+                              .filter(Boolean)
+                              .join(" "),
+                          )}
+                        </p>
+                        <p>{agreementCopy.phoneLabel}:</p>
+                        <p>{fieldValue(draft.companyPhone)}</p>
+                        <p>{agreementCopy.emailLabel}:</p>
+                        <p>{fieldValue(draft.companyEmail)}</p>
                       </div>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <Input
-                          value={recipient.email}
-                          onChange={(event) =>
-                            handleRecipientChange(index, "email", event.target.value)
-                          }
-                          placeholder="E-mail address"
-                          className="h-10 pl-9"
-                        />
+                    </section>
+
+                    <section>
+                      <SectionHeader
+                        title={previewCopy.buyerLabel}
+                        onEdit={() => openEditor("buyer")}
+                      />
+                      <div className="mt-4 grid gap-2 md:grid-cols-[180px_1fr]">
+                        <p>{agreementCopy.nameLabel}:</p>
+                        <p>{fieldValue(draft.clientName)}</p>
+                        <p>{agreementCopy.addressLabel}:</p>
+                        <p>{fieldValue(draft.clientAddress)}</p>
+                        <p>{agreementCopy.postalCityLabel}:</p>
+                        <p>
+                          {fieldValue(
+                            [draft.clientPostalCode, draft.clientCity]
+                              .filter(Boolean)
+                              .join(" "),
+                          )}
+                        </p>
+                        <p>{agreementCopy.phoneLabel}:</p>
+                        <p>{fieldValue(draft.clientPhone)}</p>
+                        <p>{agreementCopy.emailLabel}:</p>
+                        <p>{fieldValue(draft.clientEmail)}</p>
+                        <p>{agreementCopy.passportLabel}:</p>
+                        <p>{fieldValue(draft.passportNumber)}</p>
+                        <p>{agreementCopy.marriedLabel}:</p>
+                        <p>
+                          {boolLabel(draft.language, draft.married)}
+                          {draft.spouseName ? ` • ${draft.spouseName}` : ""}
+                        </p>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    </section>
 
-              {signRequest.status === "DRAFT" && (
-                <Button
-                  type="button"
-                  onClick={handleSendRequest}
-                  disabled={isSending}
-                  className="mt-4 h-11 w-full rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
-                >
-                  {isSending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="mr-2 h-4 w-4" />
-                  )}
-                  Send for signing
-                </Button>
-              )}
+                    <section>
+                      <SectionHeader
+                        title={previewCopy.vesselLabel}
+                        onEdit={() => openEditor("vessel")}
+                      />
+                      <div className="mt-4 space-y-4">
+                        <p>
+                          1. that the client grants the intermediary the exclusive assignment to sell the vessel in his property with the following specification:
+                        </p>
+                        <div className="grid gap-2 md:grid-cols-[220px_1fr]">
+                          <p>{editorCopy.name}:</p>
+                          <p>{fieldValue(draft.vesselName)}</p>
+                          <p>{editorCopy.brandType}:</p>
+                          <p>{fieldValue(draft.vesselBrandType)}</p>
+                          <p>{editorCopy.buildYear}:</p>
+                          <p>{fieldValue(draft.buildYear)}</p>
+                          <p>{editorCopy.dimensions}:</p>
+                          <p>{fieldValue(draft.dimensions)}</p>
+                          <p>{editorCopy.buildingMaterial}:</p>
+                          <p>{fieldValue(draft.buildingMaterial)}</p>
+                          <p>{editorCopy.builder}:</p>
+                          <p>{fieldValue(draft.builder)}</p>
+                          <p>{editorCopy.hullCinNumber}:</p>
+                          <p>{fieldValue(draft.hullNumber)}</p>
+                          <p>{editorCopy.engine}:</p>
+                          <p>{fieldValue(draft.engine)}</p>
+                          <p>{editorCopy.engineNumber}:</p>
+                          <p>{fieldValue(draft.engineNumber)}</p>
+                          <p>{editorCopy.registrationNumber}:</p>
+                          <p>{fieldValue(draft.registrationNumber)}</p>
+                        </div>
+                      </div>
+                    </section>
 
-              {signRequest.status === "SENT" && signRequest.sign_url && (
-                <a
-                  href={signRequest.sign_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-800"
-                >
-                  View Signhost status <ExternalLink size={14} />
-                </a>
-              )}
-            </div>
-          )}
+                    <section>
+                      <SectionHeader
+                        title={previewCopy.declarationsLabel}
+                        onEdit={() => openEditor("declarations")}
+                      />
+                      <div className="mt-4 space-y-3">
+                        <p>
+                          {previewCopy.registerText(
+                            boolLabel(draft.language, draft.shipRegisterEntry),
+                            draft.shipRegisterPlace,
+                          )}
+                        </p>
+                        <p>
+                          {previewCopy.mortgageText(
+                            boolLabel(draft.language, draft.hasMortgage),
+                            draft.mortgageInFavorOf,
+                          )}
+                        </p>
+                        <p>
+                          {previewCopy.vatText(
+                            boolLabel(draft.language, draft.vatDeclaration),
+                          )}
+                        </p>
+                        <p>
+                          {previewCopy.priceText(
+                            draft.askingPrice || "0",
+                            draft.askingPriceWords,
+                          )}
+                        </p>
+                      </div>
+                    </section>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex items-center justify-between gap-3">
-              <h5 className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                Documents
-              </h5>
-              <span className="text-xs font-semibold text-slate-400">
-                {documents.length}
-              </span>
-            </div>
-            <div className="mt-4 space-y-3">
-              {documents.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 p-5 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                  No generated documents yet.
-                </div>
-              ) : (
-                documents.map((document) => (
-                  <div
-                    key={document.id}
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "rounded-xl p-3",
-                          document.type === "signed"
-                            ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-300"
-                            : "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-300",
+                    <section>
+                      <SectionHeader
+                        title={previewCopy.closingLabel}
+                        onEdit={() => openEditor("closing")}
+                      />
+                      <p className="mt-4">
+                        {previewCopy.closingText(
+                          formatAgreementDate(draft.language, draft.agreementDate),
+                          draft.agreementCity || draft.companyCity,
                         )}
-                      >
-                        <FileText size={18} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                          {document.type === "signed"
-                            ? "Signed contract"
-                            : "Original contract"}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {document.type === "signed"
-                            ? "Sealed by Signhost"
-                            : "Draft PDF"}
-                        </p>
-                      </div>
-                    </div>
-                    <a
-                      href={document.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-full p-2 text-slate-400 transition hover:bg-white hover:text-blue-600 dark:hover:bg-slate-900"
-                    >
-                      <Eye size={16} />
-                    </a>
+                      </p>
+                    </section>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex items-start gap-3">
-              <div className="rounded-2xl bg-slate-100 p-3 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                <FileText size={20} />
-              </div>
-              <div className="flex-1">
-                <h5 className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                  {t("agreement.title")}
-                </h5>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  {t("agreement.description")}
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                      {languageAttachment.name}
-                    </p>
-                      <p className="text-xs text-slate-400">
-                        {t("agreement.activeLanguage", {
-                        language: titleCase(localeLanguage),
-                      })}
-                    </p>
-                  </div>
-                  <a
-                    href={languageAttachment.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-                  >
-                    <Eye size={14} />
-                    {t("agreement.view")}
-                  </a>
-                  <a
-                    href={languageAttachment.href}
-                    download
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#003566] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#00284d]"
-                  >
-                    <ExternalLink size={14} />
-                    {t("agreement.download")}
-                  </a>
                 </div>
               </div>
-            </div>
-          </div>
+            )}
         </div>
       </div>
 
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-5xl dark:border-slate-700 dark:bg-slate-950">
           <DialogHeader>
-            <DialogTitle>Edit contract template</DialogTitle>
-            <DialogDescription>
-              Update the company, client, vessel, and agreement values before generating the PDF.
-            </DialogDescription>
+            <DialogTitle>
+              {editorSection
+                ? `${editorCopy.editSectionPrefix} ${editorSectionTitle}`
+                : editorCopy.dialogTitle}
+            </DialogTitle>
+            <DialogDescription>{editorCopy.dialogDescription}</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-6 py-2">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                  Seller / location
+                  {editorCopy.sellerSection}
                 </p>
                 <div className="mt-4 grid gap-3">
-                  <Input
-                    value={draft.companyName}
-                    onChange={(event) =>
-                      handleFieldChange("companyName", event.target.value)
-                    }
-                    placeholder="Company"
-                  />
-                  <Input
-                    value={draft.companyAddress}
-                    onChange={(event) =>
-                      handleFieldChange("companyAddress", event.target.value)
-                    }
-                    placeholder="Address"
-                  />
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <FieldLabel>{editorCopy.company}</FieldLabel>
                     <Input
-                      value={draft.companyPostalCode}
+                      value={draft.companyName}
                       onChange={(event) =>
-                        handleFieldChange("companyPostalCode", event.target.value)
+                        handleFieldChange("companyName", event.target.value)
                       }
-                      placeholder="Postal code"
+                      placeholder={editorCopy.company}
                     />
+                  </div>
+                  <div>
+                    <FieldLabel>{editorCopy.address}</FieldLabel>
                     <Input
-                      value={draft.companyCity}
+                      value={draft.companyAddress}
                       onChange={(event) =>
-                        handleFieldChange("companyCity", event.target.value)
+                        handleFieldChange("companyAddress", event.target.value)
                       }
-                      placeholder="City"
+                      placeholder={editorCopy.address}
                     />
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
-                    <Input
-                      value={draft.companyPhone}
-                      onChange={(event) =>
-                        handleFieldChange("companyPhone", event.target.value)
-                      }
-                      placeholder="Phone"
-                    />
-                    <Input
-                      value={draft.companyEmail}
-                      onChange={(event) =>
-                        handleFieldChange("companyEmail", event.target.value)
-                      }
-                      placeholder="E-mail"
-                    />
+                    <div>
+                      <FieldLabel>{editorCopy.postalCode}</FieldLabel>
+                      <Input
+                        value={draft.companyPostalCode}
+                        onChange={(event) =>
+                          handleFieldChange("companyPostalCode", event.target.value)
+                        }
+                        placeholder={editorCopy.postalCode}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>{editorCopy.city}</FieldLabel>
+                      <Input
+                        value={draft.companyCity}
+                        onChange={(event) =>
+                          handleFieldChange("companyCity", event.target.value)
+                        }
+                        placeholder={editorCopy.city}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div>
+                      <FieldLabel>{editorCopy.phone}</FieldLabel>
+                      <Input
+                        value={draft.companyPhone}
+                        onChange={(event) =>
+                          handleFieldChange("companyPhone", event.target.value)
+                        }
+                        placeholder={editorCopy.phone}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>{editorCopy.email}</FieldLabel>
+                      <Input
+                        value={draft.companyEmail}
+                        onChange={(event) =>
+                          handleFieldChange("companyEmail", event.target.value)
+                        }
+                        placeholder={editorCopy.email}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                  Buyer
+                  {editorCopy.buyerSection}
                 </p>
                 <div className="mt-4 grid gap-3">
-                  <Input
-                    value={draft.clientName}
-                    onChange={(event) =>
-                      handleFieldChange("clientName", event.target.value)
-                    }
-                    placeholder="Name"
-                  />
-                  <Input
-                    value={draft.clientAddress}
-                    onChange={(event) =>
-                      handleFieldChange("clientAddress", event.target.value)
-                    }
-                    placeholder="Address"
-                  />
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <FieldLabel>{editorCopy.name}</FieldLabel>
                     <Input
-                      value={draft.clientPostalCode}
+                      value={draft.clientName}
                       onChange={(event) =>
-                        handleFieldChange("clientPostalCode", event.target.value)
+                        handleFieldChange("clientName", event.target.value)
                       }
-                      placeholder="Postal code"
+                      placeholder={editorCopy.name}
                     />
+                  </div>
+                  <div>
+                    <FieldLabel>{editorCopy.address}</FieldLabel>
                     <Input
-                      value={draft.clientCity}
+                      value={draft.clientAddress}
                       onChange={(event) =>
-                        handleFieldChange("clientCity", event.target.value)
+                        handleFieldChange("clientAddress", event.target.value)
                       }
-                      placeholder="City"
+                      placeholder={editorCopy.address}
                     />
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
-                    <Input
-                      value={draft.clientPhone}
-                      onChange={(event) =>
-                        handleFieldChange("clientPhone", event.target.value)
-                      }
-                      placeholder="Phone"
-                    />
-                    <Input
-                      value={draft.clientEmail}
-                      onChange={(event) =>
-                        handleFieldChange("clientEmail", event.target.value)
-                      }
-                      placeholder="E-mail"
-                    />
+                    <div>
+                      <FieldLabel>{editorCopy.postalCode}</FieldLabel>
+                      <Input
+                        value={draft.clientPostalCode}
+                        onChange={(event) =>
+                          handleFieldChange("clientPostalCode", event.target.value)
+                        }
+                        placeholder={editorCopy.postalCode}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>{editorCopy.city}</FieldLabel>
+                      <Input
+                        value={draft.clientCity}
+                        onChange={(event) =>
+                          handleFieldChange("clientCity", event.target.value)
+                        }
+                        placeholder={editorCopy.city}
+                      />
+                    </div>
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
-                    <Input
-                      value={draft.passportNumber}
-                      onChange={(event) =>
-                        handleFieldChange("passportNumber", event.target.value)
-                      }
-                      placeholder="Passport number"
-                    />
-                    <Input
-                      value={draft.spouseName}
-                      onChange={(event) =>
-                        handleFieldChange("spouseName", event.target.value)
-                      }
-                      placeholder="Partner name"
-                    />
+                    <div>
+                      <FieldLabel>{editorCopy.phone}</FieldLabel>
+                      <Input
+                        value={draft.clientPhone}
+                        onChange={(event) =>
+                          handleFieldChange("clientPhone", event.target.value)
+                        }
+                        placeholder={editorCopy.phone}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>{editorCopy.email}</FieldLabel>
+                      <Input
+                        value={draft.clientEmail}
+                        onChange={(event) =>
+                          handleFieldChange("clientEmail", event.target.value)
+                        }
+                        placeholder={editorCopy.email}
+                      />
+                    </div>
                   </div>
-                  <select
-                    value={draft.married}
-                    onChange={(event) =>
-                      handleFieldChange("married", event.target.value as "yes" | "no")
-                    }
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
-                  >
-                    <option value="no">Not married</option>
-                    <option value="yes">Married</option>
-                  </select>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div>
+                      <FieldLabel>{editorCopy.passportNumber}</FieldLabel>
+                      <Input
+                        value={draft.passportNumber}
+                        onChange={(event) =>
+                          handleFieldChange("passportNumber", event.target.value)
+                        }
+                        placeholder={editorCopy.passportNumber}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>{editorCopy.partnerName}</FieldLabel>
+                      <Input
+                        value={draft.spouseName}
+                        onChange={(event) =>
+                          handleFieldChange("spouseName", event.target.value)
+                        }
+                        placeholder={editorCopy.partnerName}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <FieldLabel>{agreementCopy.marriedLabel}</FieldLabel>
+                    <select
+                      value={draft.married}
+                      onChange={(event) =>
+                        handleFieldChange(
+                          "married",
+                          event.target.value as "yes" | "no",
+                        )
+                      }
+                      className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+                    >
+                      <option value="no">{editorCopy.notMarried}</option>
+                      <option value="yes">{editorCopy.married}</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                Vessel
+                {editorCopy.vesselSection}
               </p>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <Input
-                  value={draft.vesselName}
-                  onChange={(event) =>
-                    handleFieldChange("vesselName", event.target.value)
-                  }
-                  placeholder="Name"
-                />
-                <Input
-                  value={draft.vesselBrandType}
-                  onChange={(event) =>
-                    handleFieldChange("vesselBrandType", event.target.value)
-                  }
-                  placeholder="Brand / type"
-                />
-                <Input
-                  value={draft.buildYear}
-                  onChange={(event) =>
-                    handleFieldChange("buildYear", event.target.value)
-                  }
-                  placeholder="Build year"
-                />
-                <Input
-                  value={draft.dimensions}
-                  onChange={(event) =>
-                    handleFieldChange("dimensions", event.target.value)
-                  }
-                  placeholder="Dimensions"
-                />
-                <Input
-                  value={draft.buildingMaterial}
-                  onChange={(event) =>
-                    handleFieldChange("buildingMaterial", event.target.value)
-                  }
-                  placeholder="Building material"
-                />
-                <Input
-                  value={draft.builder}
-                  onChange={(event) =>
-                    handleFieldChange("builder", event.target.value)
-                  }
-                  placeholder="Builder"
-                />
-                <Input
-                  value={draft.hullNumber}
-                  onChange={(event) =>
-                    handleFieldChange("hullNumber", event.target.value)
-                  }
-                  placeholder="Hull / CIN number"
-                />
-                <Input
-                  value={draft.engine}
-                  onChange={(event) =>
-                    handleFieldChange("engine", event.target.value)
-                  }
-                  placeholder="Engine"
-                />
-                <Input
-                  value={draft.engineNumber}
-                  onChange={(event) =>
-                    handleFieldChange("engineNumber", event.target.value)
-                  }
-                  placeholder="Engine number"
-                />
-                <Input
-                  value={draft.registrationNumber}
-                  onChange={(event) =>
-                    handleFieldChange("registrationNumber", event.target.value)
-                  }
-                  placeholder="Registration number"
-                />
+                <div>
+                  <FieldLabel>{editorCopy.name}</FieldLabel>
+                  <Input
+                    value={draft.vesselName}
+                    onChange={(event) =>
+                      handleFieldChange("vesselName", event.target.value)
+                    }
+                    placeholder={editorCopy.name}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.brandType}</FieldLabel>
+                  <Input
+                    value={draft.vesselBrandType}
+                    onChange={(event) =>
+                      handleFieldChange("vesselBrandType", event.target.value)
+                    }
+                    placeholder={editorCopy.brandType}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.buildYear}</FieldLabel>
+                  <Input
+                    value={draft.buildYear}
+                    onChange={(event) =>
+                      handleFieldChange("buildYear", event.target.value)
+                    }
+                    placeholder={editorCopy.buildYear}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.dimensions}</FieldLabel>
+                  <Input
+                    value={draft.dimensions}
+                    onChange={(event) =>
+                      handleFieldChange("dimensions", event.target.value)
+                    }
+                    placeholder={editorCopy.dimensions}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.buildingMaterial}</FieldLabel>
+                  <Input
+                    value={draft.buildingMaterial}
+                    onChange={(event) =>
+                      handleFieldChange("buildingMaterial", event.target.value)
+                    }
+                    placeholder={editorCopy.buildingMaterial}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.builder}</FieldLabel>
+                  <Input
+                    value={draft.builder}
+                    onChange={(event) =>
+                      handleFieldChange("builder", event.target.value)
+                    }
+                    placeholder={editorCopy.builder}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.hullCinNumber}</FieldLabel>
+                  <Input
+                    value={draft.hullNumber}
+                    onChange={(event) =>
+                      handleFieldChange("hullNumber", event.target.value)
+                    }
+                    placeholder={editorCopy.hullCinNumber}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.engine}</FieldLabel>
+                  <Input
+                    value={draft.engine}
+                    onChange={(event) =>
+                      handleFieldChange("engine", event.target.value)
+                    }
+                    placeholder={editorCopy.engine}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.engineNumber}</FieldLabel>
+                  <Input
+                    value={draft.engineNumber}
+                    onChange={(event) =>
+                      handleFieldChange("engineNumber", event.target.value)
+                    }
+                    placeholder={editorCopy.engineNumber}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.registrationNumber}</FieldLabel>
+                  <Input
+                    value={draft.registrationNumber}
+                    onChange={(event) =>
+                      handleFieldChange("registrationNumber", event.target.value)
+                    }
+                    placeholder={editorCopy.registrationNumber}
+                  />
+                </div>
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                Declarations
+                {editorCopy.declarationsSection}
               </p>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <select
-                  value={draft.shipRegisterEntry}
-                  onChange={(event) =>
-                    handleFieldChange(
-                      "shipRegisterEntry",
-                      event.target.value as "yes" | "no",
-                    )
-                  }
-                  className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
-                >
-                  <option value="no">No ship register entry</option>
-                  <option value="yes">Yes, ship register entry</option>
-                </select>
-                <Input
-                  value={draft.shipRegisterPlace}
-                  onChange={(event) =>
-                    handleFieldChange("shipRegisterPlace", event.target.value)
-                  }
-                  placeholder="If yes, in..."
-                />
-                <select
-                  value={draft.hasMortgage}
-                  onChange={(event) =>
-                    handleFieldChange("hasMortgage", event.target.value as "yes" | "no")
-                  }
-                  className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
-                >
-                  <option value="no">No ship mortgage</option>
-                  <option value="yes">Yes, ship mortgage</option>
-                </select>
-                <Input
-                  value={draft.mortgageInFavorOf}
-                  onChange={(event) =>
-                    handleFieldChange("mortgageInFavorOf", event.target.value)
-                  }
-                  placeholder="If yes, in favor of..."
-                />
-                <select
-                  value={draft.vatDeclaration}
-                  onChange={(event) =>
-                    handleFieldChange("vatDeclaration", event.target.value as "yes" | "no")
-                  }
-                  className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
-                >
-                  <option value="no">No VAT declaration</option>
-                  <option value="yes">Yes, VAT declaration</option>
-                </select>
-                <Input
-                  value={draft.askingPrice}
-                  onChange={(event) =>
-                    handleFieldChange("askingPrice", event.target.value)
-                  }
-                  placeholder="Asking price"
-                />
-                <Input
-                  value={draft.askingPriceWords}
-                  onChange={(event) =>
-                    handleFieldChange("askingPriceWords", event.target.value)
-                  }
-                  placeholder="Asking price in full words"
-                />
-                <Input
-                  type="date"
-                  value={draft.agreementDate}
-                  onChange={(event) =>
-                    handleFieldChange("agreementDate", event.target.value)
-                  }
-                />
-                <Input
-                  value={draft.agreementCity}
-                  onChange={(event) =>
-                    handleFieldChange("agreementCity", event.target.value)
-                  }
-                  placeholder="Agreement city"
-                />
+                <div>
+                  <FieldLabel>{previewCopy.registerText("", "").split(":")[0]}</FieldLabel>
+                  <select
+                    value={draft.shipRegisterEntry}
+                    onChange={(event) =>
+                      handleFieldChange(
+                        "shipRegisterEntry",
+                        event.target.value as "yes" | "no",
+                      )
+                    }
+                    className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <option value="no">{editorCopy.noShipRegisterEntry}</option>
+                    <option value="yes">{editorCopy.yesShipRegisterEntry}</option>
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.registerPlace}</FieldLabel>
+                  <Input
+                    value={draft.shipRegisterPlace}
+                    onChange={(event) =>
+                      handleFieldChange("shipRegisterPlace", event.target.value)
+                    }
+                    placeholder={editorCopy.registerPlace}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{previewCopy.mortgageText("", "").split(":")[0]}</FieldLabel>
+                  <select
+                    value={draft.hasMortgage}
+                    onChange={(event) =>
+                      handleFieldChange(
+                        "hasMortgage",
+                        event.target.value as "yes" | "no",
+                      )
+                    }
+                    className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <option value="no">{editorCopy.noShipMortgage}</option>
+                    <option value="yes">{editorCopy.yesShipMortgage}</option>
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.mortgageParty}</FieldLabel>
+                  <Input
+                    value={draft.mortgageInFavorOf}
+                    onChange={(event) =>
+                      handleFieldChange("mortgageInFavorOf", event.target.value)
+                    }
+                    placeholder={editorCopy.mortgageParty}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{previewCopy.vatText("").split(":")[0]}</FieldLabel>
+                  <select
+                    value={draft.vatDeclaration}
+                    onChange={(event) =>
+                      handleFieldChange(
+                        "vatDeclaration",
+                        event.target.value as "yes" | "no",
+                      )
+                    }
+                    className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <option value="no">{editorCopy.noVatDeclaration}</option>
+                    <option value="yes">{editorCopy.yesVatDeclaration}</option>
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.askingPrice}</FieldLabel>
+                  <Input
+                    value={draft.askingPrice}
+                    onChange={(event) =>
+                      handleFieldChange("askingPrice", event.target.value)
+                    }
+                    placeholder={editorCopy.askingPrice}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.askingPriceWords}</FieldLabel>
+                  <Input
+                    value={draft.askingPriceWords}
+                    onChange={(event) =>
+                      handleFieldChange("askingPriceWords", event.target.value)
+                    }
+                    placeholder={editorCopy.askingPriceWords}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.agreementDate}</FieldLabel>
+                  <Input
+                    type="date"
+                    value={draft.agreementDate}
+                    onChange={(event) =>
+                      handleFieldChange("agreementDate", event.target.value)
+                    }
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.agreementCity}</FieldLabel>
+                  <Input
+                    value={draft.agreementCity}
+                    onChange={(event) =>
+                      handleFieldChange("agreementCity", event.target.value)
+                    }
+                    placeholder={editorCopy.agreementCity}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1831,7 +2109,7 @@ export function SignhostFlow({
               onClick={() => setEditorOpen(false)}
               className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d]"
             >
-              Save details
+              {editorCopy.saveDetails}
             </Button>
           </DialogFooter>
         </DialogContent>

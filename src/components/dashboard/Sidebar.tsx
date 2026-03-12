@@ -7,7 +7,6 @@ import {
   Anchor,
   BarChart3,
   ClipboardList,
-  Bot,
   Gauge,
   ChevronLeft,
   ChevronRight,
@@ -20,6 +19,8 @@ import {
   Users,
   Wifi,
   WifiOff,
+  ShieldCheck,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -95,7 +96,6 @@ export function Sidebar({
 
     if (role === "admin") {
       items.push({ title: t.users, href: `${root}/users`, icon: Users });
-      items.push({ title: t.copilot, href: `${root}/copilot`, icon: Bot });
       items.push({
         title: t.locations,
         href: `${root}/locations`,
@@ -110,6 +110,11 @@ export function Sidebar({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,
+      });
+      items.push({
+        title: "FAQ",
+        href: `${root}/faq`,
+        icon: HelpCircle,
       });
       items.push({
         title: t.socialAutomation,

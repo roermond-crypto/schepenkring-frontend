@@ -8,7 +8,7 @@ import {
   SyntheticEvent,
   useMemo,
 } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import {
   Camera,
@@ -138,6 +138,7 @@ const WIZARD_STEP_IDS = [
   { id: 3, key: "text", icon: FileText },
   { id: 4, key: "display", icon: Eye },
   { id: 5, key: "review", icon: CheckCircle },
+  { id: 6, key: "contract", icon: Key },
 ] as const;
 
 const DRAFT_KEY_PREFIX = "yacht_draft_";
@@ -273,8 +274,727 @@ function hasObjectValues(value: unknown): boolean {
 function clampWizardStep(value: unknown, fallback = 1): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(5, Math.max(1, Math.trunc(parsed)));
+  return Math.min(6, Math.max(1, Math.trunc(parsed)));
 }
+
+const YACHT_FORM_TEXT = {
+  en: {
+    common: { yes: "Yes", no: "No", unknown: "Unknown", confirm: "confirm" },
+    sections: {
+      electricalSystem: "Electrical System",
+      kitchenComfort: "Kitchen & Comfort",
+    },
+    labels: {
+      airConditioning: "Air Conditioning",
+      flybridge: "Flybridge",
+      cockpitType: "Cockpit Type",
+      waterTank: "Water Tank",
+      waterTankGauge: "Water Tank Gauge",
+      waterMaker: "Water Maker",
+      wasteWaterTank: "Waste Water Tank",
+      wasteWaterGauge: "Waste Water Gauge",
+      wasteTankDrainPump: "Waste Tank Drain Pump",
+      deckSuction: "Deck Suction",
+      waterSystem: "Water System",
+      hotWater: "Hot Water",
+      seaWaterPump: "Sea Water Pump",
+      deckWashPump: "Deck Wash Pump",
+      deckShower: "Deck Shower",
+      battery: "Batteries",
+      batteryCharger: "Battery Charger",
+      generator: "Generator",
+      inverter: "Inverter",
+      shorepower: "Shorepower",
+      solarPanel: "Solar Panel",
+      windGenerator: "Wind Generator",
+      voltage: "Voltage",
+      dynamo: "Dynamo",
+      accumonitor: "Accumonitor",
+      voltmeter: "Voltmeter",
+      shorePowerCable: "Shore Power Cable",
+      consumptionMonitor: "Consumption Monitor",
+      controlPanel: "Control Panel",
+      fuelTankGauge: "Fuel Tank Gauge",
+      tachometer: "Tachometer",
+      oilPressureGauge: "Oil Pressure Gauge",
+      temperatureGauge: "Temperature Gauge",
+      oven: "Oven",
+      microwave: "Microwave",
+      fridge: "Fridge",
+      freezer: "Freezer",
+      cooker: "Cooker",
+      television: "Television",
+      cdPlayer: "Radio / CD Player",
+      dvdPlayer: "DVD Player",
+      satelliteReception: "Satellite Reception",
+      hotAir: "Hot Air Heating",
+      stove: "Stove Heating",
+      centralHeating: "Central Heating",
+      essentialRegistryData: "Essential Registry Data",
+      technicalDossier: "Technical Dossier",
+      hullDimensions: "Hull & Dimensions",
+      enginePerformance: "Engine & Performance",
+      accommodationFacilities: "Accommodation & Facilities",
+      navigationElectronics: "Navigation & Electronics",
+      safetyEquipment: "Safety Equipment",
+      deckEquipment: "Deck Equipment",
+      riggingSails: "Rigging & Sails",
+      registryComments: "Registry & Comments",
+      schedulingAuthority: "Scheduling Authority",
+      vesselDescription: "Vessel Description",
+      daysOfWeek: "Days of Week",
+      startTime: "Start Time",
+      endTime: "End Time",
+      reviewSummary: "Review all steps before submitting. Completed steps are marked with a blue checkmark in the tab bar above.",
+      vesselName: "Vessel Name *",
+      manufacturer: "Manufacturer / Make",
+      model: "Model",
+      ballast: "Ballast",
+      designer: "Designer",
+      builder: "Builder",
+      controlType: "Control Type",
+      newTitle: "Register New Vessel",
+      editTitle: "Edit Vessel",
+      loadingName: "Loading...",
+      stepImages: "Images",
+      stepSpecs: "Specifications",
+      stepText: "Description",
+      stepDisplay: "Display",
+      stepReview: "Review",
+      stepContract: "Contract",
+      stepOneTitle: "Vessel Assets & AI Extraction",
+      stepOneDescription: "Upload images -> system auto-optimizes -> approve -> then AI fills all form fields.",
+      imagesApproved: "Images Approved",
+      vesselDescriptionHelp: "Vessel Description",
+      optionalRecommended: "(optional but recommended)",
+      createVessel: "Create Vessel",
+      updateVessel: "Update Vessel",
+      previous: "Previous",
+      next: "Next",
+      approveImagesFirst: "Approve Images First",
+      completed: "Completed",
+      pending: "Pending",
+      continueToContract: "Save and Continue to Contract",
+      contractStepDescription:
+        "Manage the contract template, print the PDF, and generate the Signhost-ready contract from this step.",
+      reviewContractNotice:
+        "Save this vessel first. The contract flow opens in the next step after the vessel record is stored.",
+      harborLocation: "Sales Location (Harbor) *",
+      price: "Price (€)",
+      minBidAmount: "Minimum Bid Amount (€)",
+      yearBuilt: "Year Built",
+      boatType: "Boat Type",
+      boatCategory: "Boat Category",
+      newOrUsed: "New or Used",
+      loa: "LOA (Length Overall)",
+      lwl: "LWL (Waterline Length)",
+      shipyard: "Shipyard / Werf",
+      ceCategory: "CE Category",
+      status: "Status",
+      passengerCapacity: "Passenger Capacity",
+      beam: "Beam (Width)",
+      draft: "Draft (Depth)",
+      airDraft: "Air Draft (Clearance)",
+      hullType: "Hull Type",
+      hullConstruction: "Hull Construction",
+      hullColour: "Hull Colour",
+      hullNumber: "Hull Number",
+      deckColour: "Deck Colour",
+      deckConstruction: "Deck Construction",
+      superStructureColour: "Superstructure Colour",
+      superStructureConstruction: "Superstructure Construction",
+      engineManufacturer: "Engine Manufacturer",
+      engineModel: "Engine Model",
+      engineType: "Engine Type",
+      horsePower: "Horse Power",
+      engineHours: "Engine Hours",
+      fuelType: "Fuel Type",
+      engineQuantity: "Engine Quantity",
+      engineYear: "Engine Year",
+      maxSpeed: "Max Speed",
+      cruisingSpeed: "Cruising Speed",
+      driveType: "Drive Type",
+      gallonsPerHour: "Gallons per Hour",
+      cabins: "Cabins",
+      berthsFixed: "Berths (Fixed)",
+      berthsExtra: "Berths (Extra)",
+      berthsCrew: "Berths (Crew)",
+      interiorType: "Interior Type",
+      separateDiningArea: "Separate Dining Area",
+      upholsteryColor: "Upholstery Color",
+      cookingFuel: "Cooking Fuel",
+      ownerComment: "Owner's Comment",
+      knownDefects: "Known Defects",
+      registrationDetails: "Registration Details",
+      lastServiced: "Last Serviced",
+    },
+    placeholders: {
+      battery: "e.g. 4x 12V 125Ah AGM",
+      batteryCharger: "e.g. Victron Blue Smart 30A",
+      generator: "e.g. Onan 9kW",
+      inverter: "e.g. Victron Phoenix 3000W",
+      shorepower: "e.g. 230V 16A",
+      solarPanel: "e.g. 2x 100W flexible",
+      windGenerator: "e.g. Silentwind 400+",
+      voltage: "e.g. 12V / 230V",
+      cockpitType: "Aft cockpit",
+      waterTank: "200L",
+      waterTankGauge: "Yes",
+      waterMaker: "60 L/h",
+      wasteWaterTank: "80L",
+      wasteWaterGauge: "Yes",
+      wasteTankDrainPump: "Electric",
+      deckSuction: "Yes",
+      waterSystem: "Pressurized",
+      hotWater: "Boiler",
+      seaWaterPump: "Yes",
+      television: 'e.g. Samsung 32" Smart TV',
+      cdPlayer: "e.g. Fusion MS-RA770",
+      dvdPlayer: "e.g. Sony DVP-SR210P",
+      satelliteReception: "e.g. KVH TracVision TV5",
+      hotAir: "Yes",
+      stove: "Yes",
+      centralHeating: "Yes",
+    },
+  },
+  nl: {
+    common: { yes: "Ja", no: "Nee", unknown: "Onbekend", confirm: "controleren" },
+    sections: {
+      electricalSystem: "Elektrisch systeem",
+      kitchenComfort: "Keuken & comfort",
+    },
+    labels: {
+      airConditioning: "Airconditioning",
+      flybridge: "Flybridge",
+      cockpitType: "Cockpit-type",
+      waterTank: "Watertank",
+      waterTankGauge: "Watertankmeter",
+      waterMaker: "Watermaker",
+      wasteWaterTank: "Vuilwatertank",
+      wasteWaterGauge: "Vuilwatermeter",
+      wasteTankDrainPump: "Vuilwatertank afvoerpomp",
+      deckSuction: "Dekafzuiging",
+      waterSystem: "Watersysteem",
+      hotWater: "Warm water",
+      seaWaterPump: "Zeewaterpomp",
+      deckWashPump: "Dekwaspomp",
+      deckShower: "Dekdouche",
+      battery: "Batterijen",
+      batteryCharger: "Batterijlader",
+      generator: "Generator",
+      inverter: "Omvormer",
+      shorepower: "Walstroom",
+      solarPanel: "Zonnepaneel",
+      windGenerator: "Windgenerator",
+      voltage: "Spanning",
+      dynamo: "Dynamo",
+      accumonitor: "Accumonitor",
+      voltmeter: "Voltmeter",
+      shorePowerCable: "Walstroomkabel",
+      consumptionMonitor: "Verbruiksmonitor",
+      controlPanel: "Bedieningspaneel",
+      fuelTankGauge: "Brandstoftankmeter",
+      tachometer: "Toerenteller",
+      oilPressureGauge: "Oliedrukmeter",
+      temperatureGauge: "Temperatuurmeter",
+      oven: "Oven",
+      microwave: "Magnetron",
+      fridge: "Koelkast",
+      freezer: "Vriezer",
+      cooker: "Kooktoestel",
+      television: "Televisie",
+      cdPlayer: "Radio / CD-speler",
+      dvdPlayer: "DVD-speler",
+      satelliteReception: "Satellietontvangst",
+      hotAir: "Heteluchtverwarming",
+      stove: "Kachelverwarming",
+      centralHeating: "Centrale verwarming",
+      essentialRegistryData: "Essentiele registratiedata",
+      technicalDossier: "Technisch dossier",
+      hullDimensions: "Romp & afmetingen",
+      enginePerformance: "Motor & prestaties",
+      accommodationFacilities: "Accommodatie & faciliteiten",
+      navigationElectronics: "Navigatie & elektronica",
+      safetyEquipment: "Veiligheidsuitrusting",
+      deckEquipment: "Dekuitrusting",
+      riggingSails: "Tuigage & zeilen",
+      registryComments: "Registratie & opmerkingen",
+      schedulingAuthority: "Planning",
+      vesselDescription: "Vaartuigbeschrijving",
+      daysOfWeek: "Dagen van de week",
+      startTime: "Starttijd",
+      endTime: "Eindtijd",
+      reviewSummary: "Controleer alle stappen voordat je indient. Voltooide stappen krijgen bovenaan een blauw vinkje.",
+      vesselName: "Vaartuignaam *",
+      manufacturer: "Merk / fabrikant",
+      model: "Model",
+      ballast: "Ballast",
+      designer: "Ontwerper",
+      builder: "Bouwer",
+      controlType: "Besturingstype",
+      newTitle: "Nieuw vaartuig registreren",
+      editTitle: "Vaartuig bewerken",
+      loadingName: "Laden...",
+      stepImages: "Afbeeldingen",
+      stepSpecs: "Specificaties",
+      stepText: "Beschrijving",
+      stepDisplay: "Weergave",
+      stepReview: "Controle",
+      stepContract: "Contract",
+      stepOneTitle: "Vaartuigmedia & AI-extractie",
+      stepOneDescription: "Upload afbeeldingen -> systeem optimaliseert automatisch -> keur goed -> daarna vult AI alle velden in.",
+      imagesApproved: "Afbeeldingen goedgekeurd",
+      vesselDescriptionHelp: "Vaartuigbeschrijving",
+      optionalRecommended: "(optioneel maar aanbevolen)",
+      createVessel: "Vaartuig aanmaken",
+      updateVessel: "Vaartuig bijwerken",
+      previous: "Vorige",
+      next: "Volgende",
+      approveImagesFirst: "Keur eerst afbeeldingen goed",
+      completed: "Voltooid",
+      pending: "Open",
+      continueToContract: "Opslaan en naar contract",
+      contractStepDescription:
+        "Beheer het contractsjabloon, druk de PDF af en genereer vanuit deze stap het Signhost-klare contract.",
+      reviewContractNotice:
+        "Sla dit vaartuig eerst op. De contractflow opent in de volgende stap zodra het vaartuigrecord is opgeslagen.",
+      harborLocation: "Verkooplocatie (haven) *",
+      price: "Prijs (€)",
+      minBidAmount: "Minimum biedbedrag (€)",
+      yearBuilt: "Bouwjaar",
+      boatType: "Boottype",
+      boatCategory: "Bootcategorie",
+      newOrUsed: "Nieuw of gebruikt",
+      loa: "LOA (lengte over alles)",
+      lwl: "LWL (waterlijnlengte)",
+      shipyard: "Werf",
+      ceCategory: "CE-categorie",
+      status: "Status",
+      passengerCapacity: "Passagierscapaciteit",
+      beam: "Breedte",
+      draft: "Diepgang",
+      airDraft: "Doorvaarthoogte",
+      hullType: "Rompvorm",
+      hullConstruction: "Rompconstructie",
+      hullColour: "Rompkleur",
+      hullNumber: "Rompnummer",
+      deckColour: "Dekkleur",
+      deckConstruction: "Dekconstructie",
+      superStructureColour: "Opbouwkleur",
+      superStructureConstruction: "Opbouwconstructie",
+      engineManufacturer: "Motorfabrikant",
+      engineModel: "Motormodel",
+      engineType: "Motortype",
+      horsePower: "Vermogen",
+      engineHours: "Motoruren",
+      fuelType: "Brandstoftype",
+      engineQuantity: "Aantal motoren",
+      engineYear: "Motorjaar",
+      maxSpeed: "Topsnelheid",
+      cruisingSpeed: "Kruissnelheid",
+      driveType: "Aandrijving",
+      gallonsPerHour: "Gallons per uur",
+      cabins: "Cabines",
+      berthsFixed: "Slaapplaatsen (vast)",
+      berthsExtra: "Slaapplaatsen (extra)",
+      berthsCrew: "Slaapplaatsen (crew)",
+      interiorType: "Interieurtype",
+      separateDiningArea: "Aparte eethoek",
+      upholsteryColor: "Kleur bekleding",
+      cookingFuel: "Kookbrandstof",
+      ownerComment: "Opmerking van eigenaar",
+      knownDefects: "Bekende gebreken",
+      registrationDetails: "Registratiegegevens",
+      lastServiced: "Laatste onderhoud",
+    },
+    placeholders: {
+      battery: "bijv. 4x 12V 125Ah AGM",
+      batteryCharger: "bijv. Victron Blue Smart 30A",
+      generator: "bijv. Onan 9 kW",
+      inverter: "bijv. Victron Phoenix 3000 W",
+      shorepower: "bijv. 230V 16A",
+      solarPanel: "bijv. 2x 100W flexibel",
+      windGenerator: "bijv. Silentwind 400+",
+      voltage: "bijv. 12V / 230V",
+      cockpitType: "Achtercockpit",
+      waterTank: "200L",
+      waterTankGauge: "Ja",
+      waterMaker: "60 L/u",
+      wasteWaterTank: "80L",
+      wasteWaterGauge: "Ja",
+      wasteTankDrainPump: "Elektrisch",
+      deckSuction: "Ja",
+      waterSystem: "Onder druk",
+      hotWater: "Boiler",
+      seaWaterPump: "Ja",
+      television: 'bijv. Samsung 32" Smart TV',
+      cdPlayer: "bijv. Fusion MS-RA770",
+      dvdPlayer: "bijv. Sony DVP-SR210P",
+      satelliteReception: "bijv. KVH TracVision TV5",
+      hotAir: "Ja",
+      stove: "Ja",
+      centralHeating: "Ja",
+    },
+  },
+  de: {
+    common: { yes: "Ja", no: "Nein", unknown: "Unbekannt", confirm: "prufen" },
+    sections: {
+      electricalSystem: "Elektrisches System",
+      kitchenComfort: "Kuche und Komfort",
+    },
+    labels: {
+      airConditioning: "Klimaanlage",
+      flybridge: "Flybridge",
+      cockpitType: "Kokpit-Typ",
+      waterTank: "Wassertank",
+      waterTankGauge: "Wassertankanzeige",
+      waterMaker: "Wassermacher",
+      wasteWaterTank: "Abwassertank",
+      wasteWaterGauge: "Abwasseranzeige",
+      wasteTankDrainPump: "Abwassertank-Ablasspumpe",
+      deckSuction: "Deckabsaugung",
+      waterSystem: "Wassersystem",
+      hotWater: "Warmwasser",
+      seaWaterPump: "Seewasserpumpe",
+      deckWashPump: "Deckwaschpumpe",
+      deckShower: "Deckdusche",
+      battery: "Batterien",
+      batteryCharger: "Batterieladegerat",
+      generator: "Generator",
+      inverter: "Wechselrichter",
+      shorepower: "Landstrom",
+      solarPanel: "Solarpanel",
+      windGenerator: "Windgenerator",
+      voltage: "Spannung",
+      dynamo: "Dynamo",
+      accumonitor: "Batteriemonitor",
+      voltmeter: "Voltmeter",
+      shorePowerCable: "Landstromkabel",
+      consumptionMonitor: "Verbrauchsmonitor",
+      controlPanel: "Bedienfeld",
+      fuelTankGauge: "Kraftstoffanzeige",
+      tachometer: "Drehzahlmesser",
+      oilPressureGauge: "Oldruckanzeige",
+      temperatureGauge: "Temperaturanzeige",
+      oven: "Backofen",
+      microwave: "Mikrowelle",
+      fridge: "Kuhlschrank",
+      freezer: "Gefrierschrank",
+      cooker: "Kochfeld",
+      television: "Fernseher",
+      cdPlayer: "Radio / CD-Player",
+      dvdPlayer: "DVD-Player",
+      satelliteReception: "Satellitenempfang",
+      hotAir: "Warmluftheizung",
+      stove: "Ofenheizung",
+      centralHeating: "Zentralheizung",
+      essentialRegistryData: "Wichtige Registrierungsdaten",
+      technicalDossier: "Technisches Dossier",
+      hullDimensions: "Rumpf und Abmessungen",
+      enginePerformance: "Motor und Leistung",
+      accommodationFacilities: "Unterkunft und Einrichtungen",
+      navigationElectronics: "Navigation und Elektronik",
+      safetyEquipment: "Sicherheitsausrustung",
+      deckEquipment: "Deckausrustung",
+      riggingSails: "Takelage und Segel",
+      registryComments: "Registrierung und Kommentare",
+      schedulingAuthority: "Terminplanung",
+      vesselDescription: "Schiffsbeschreibung",
+      daysOfWeek: "Wochentage",
+      startTime: "Startzeit",
+      endTime: "Endzeit",
+      reviewSummary: "Prufen Sie alle Schritte vor dem Speichern. Abgeschlossene Schritte sind oben mit einem blauen Haken markiert.",
+      vesselName: "Schiffsname *",
+      manufacturer: "Hersteller / Marke",
+      model: "Modell",
+      ballast: "Ballast",
+      designer: "Designer",
+      builder: "Werft",
+      controlType: "Steuerungstyp",
+      newTitle: "Neues Schiff registrieren",
+      editTitle: "Schiff bearbeiten",
+      loadingName: "Wird geladen...",
+      stepImages: "Bilder",
+      stepSpecs: "Spezifikationen",
+      stepText: "Beschreibung",
+      stepDisplay: "Anzeige",
+      stepReview: "Prufung",
+      stepContract: "Vertrag",
+      stepOneTitle: "Schiffsmedien & KI-Extraktion",
+      stepOneDescription: "Bilder hochladen -> System optimiert automatisch -> freigeben -> danach fullt die KI alle Felder aus.",
+      imagesApproved: "Bilder freigegeben",
+      vesselDescriptionHelp: "Schiffsbeschreibung",
+      optionalRecommended: "(optional, aber empfohlen)",
+      createVessel: "Schiff erstellen",
+      updateVessel: "Schiff aktualisieren",
+      previous: "Zuruck",
+      next: "Weiter",
+      approveImagesFirst: "Bilder zuerst freigeben",
+      completed: "Abgeschlossen",
+      pending: "Offen",
+      continueToContract: "Speichern und weiter zum Vertrag",
+      contractStepDescription:
+        "Verwalten Sie die Vertragsvorlage, drucken Sie das PDF und erzeugen Sie in diesem Schritt den Signhost-bereiten Vertrag.",
+      reviewContractNotice:
+        "Speichern Sie dieses Schiff zuerst. Der Vertragsablauf wird im nächsten Schritt geöffnet, sobald der Datensatz gespeichert ist.",
+      harborLocation: "Verkaufsstandort (Hafen) *",
+      price: "Preis (€)",
+      minBidAmount: "Mindestgebot (€)",
+      yearBuilt: "Baujahr",
+      boatType: "Bootstyp",
+      boatCategory: "Bootskategorie",
+      newOrUsed: "Neu oder gebraucht",
+      loa: "LOA (Gesamtlange)",
+      lwl: "LWL (Wasserlinienlange)",
+      shipyard: "Werft",
+      ceCategory: "CE-Kategorie",
+      status: "Status",
+      passengerCapacity: "Passagierkapazitat",
+      beam: "Breite",
+      draft: "Tiefgang",
+      airDraft: "Durchfahrtshohe",
+      hullType: "Rumpftyp",
+      hullConstruction: "Rumpfkonstruktion",
+      hullColour: "Rumpffarbe",
+      hullNumber: "Rumpfnummer",
+      deckColour: "Deckfarbe",
+      deckConstruction: "Deckkonstruktion",
+      superStructureColour: "Aufbaufarbe",
+      superStructureConstruction: "Aufbaukonstruktion",
+      engineManufacturer: "Motorhersteller",
+      engineModel: "Motormodell",
+      engineType: "Motortyp",
+      horsePower: "PS",
+      engineHours: "Motorstunden",
+      fuelType: "Kraftstoffart",
+      engineQuantity: "Anzahl Motoren",
+      engineYear: "Motorjahr",
+      maxSpeed: "Hochstgeschwindigkeit",
+      cruisingSpeed: "Reisegeschwindigkeit",
+      driveType: "Antriebsart",
+      gallonsPerHour: "Gallonen pro Stunde",
+      cabins: "Kabinen",
+      berthsFixed: "Kojen (fest)",
+      berthsExtra: "Kojen (zusatzlich)",
+      berthsCrew: "Kojen (Crew)",
+      interiorType: "Interieurtyp",
+      separateDiningArea: "Separater Essbereich",
+      upholsteryColor: "Polsterfarbe",
+      cookingFuel: "Kochbrennstoff",
+      ownerComment: "Kommentar des Eigentumers",
+      knownDefects: "Bekannte Mangel",
+      registrationDetails: "Registrierungsdetails",
+      lastServiced: "Letzte Wartung",
+    },
+    placeholders: {
+      battery: "z. B. 4x 12 V 125 Ah AGM",
+      batteryCharger: "z. B. Victron Blue Smart 30 A",
+      generator: "z. B. Onan 9 kW",
+      inverter: "z. B. Victron Phoenix 3000 W",
+      shorepower: "z. B. 230 V 16 A",
+      solarPanel: "z. B. 2x 100 W flexibel",
+      windGenerator: "z. B. Silentwind 400+",
+      voltage: "z. B. 12 V / 230 V",
+      cockpitType: "Achtercockpit",
+      waterTank: "200L",
+      waterTankGauge: "Ja",
+      waterMaker: "60 L/h",
+      wasteWaterTank: "80L",
+      wasteWaterGauge: "Ja",
+      wasteTankDrainPump: "Elektrisch",
+      deckSuction: "Ja",
+      waterSystem: "Druckwassersystem",
+      hotWater: "Boiler",
+      seaWaterPump: "Ja",
+      television: 'z. B. Samsung 32" Smart TV',
+      cdPlayer: "z. B. Fusion MS-RA770",
+      dvdPlayer: "z. B. Sony DVP-SR210P",
+      satelliteReception: "z. B. KVH TracVision TV5",
+      hotAir: "Ja",
+      stove: "Ja",
+      centralHeating: "Ja",
+    },
+  },
+  fr: {
+    common: { yes: "Oui", no: "Non", unknown: "Inconnu", confirm: "verifier" },
+    sections: {
+      electricalSystem: "Systeme electrique",
+      kitchenComfort: "Cuisine et confort",
+    },
+    labels: {
+      airConditioning: "Climatisation",
+      flybridge: "Flybridge",
+      cockpitType: "Type de cockpit",
+      waterTank: "Reservoir d'eau",
+      waterTankGauge: "Jauge du reservoir d'eau",
+      waterMaker: "Dessalinisateur",
+      wasteWaterTank: "Reservoir d'eaux usees",
+      wasteWaterGauge: "Jauge d'eaux usees",
+      wasteTankDrainPump: "Pompe de vidange des eaux usees",
+      deckSuction: "Aspiration de pont",
+      waterSystem: "Systeme d'eau",
+      hotWater: "Eau chaude",
+      seaWaterPump: "Pompe a eau de mer",
+      deckWashPump: "Pompe de lavage du pont",
+      deckShower: "Douche de pont",
+      battery: "Batteries",
+      batteryCharger: "Chargeur de batterie",
+      generator: "Generateur",
+      inverter: "Onduleur",
+      shorepower: "Alimentation de quai",
+      solarPanel: "Panneau solaire",
+      windGenerator: "Generateur eolien",
+      voltage: "Tension",
+      dynamo: "Dynamo",
+      accumonitor: "Moniteur de batterie",
+      voltmeter: "Voltmetre",
+      shorePowerCable: "Cable d'alimentation de quai",
+      consumptionMonitor: "Moniteur de consommation",
+      controlPanel: "Panneau de commande",
+      fuelTankGauge: "Jauge de carburant",
+      tachometer: "Compte-tours",
+      oilPressureGauge: "Jauge de pression d'huile",
+      temperatureGauge: "Jauge de temperature",
+      oven: "Four",
+      microwave: "Micro-ondes",
+      fridge: "Refrigerateur",
+      freezer: "Congelateur",
+      cooker: "Cuisiniere",
+      television: "Televiseur",
+      cdPlayer: "Radio / Lecteur CD",
+      dvdPlayer: "Lecteur DVD",
+      satelliteReception: "Reception satellite",
+      hotAir: "Chauffage a air pulse",
+      stove: "Chauffage par poele",
+      centralHeating: "Chauffage central",
+      essentialRegistryData: "Donnees d'immatriculation essentielles",
+      technicalDossier: "Dossier technique",
+      hullDimensions: "Coque et dimensions",
+      enginePerformance: "Moteur et performances",
+      accommodationFacilities: "Hebergement et equipements",
+      navigationElectronics: "Navigation et electronique",
+      safetyEquipment: "Equipement de securite",
+      deckEquipment: "Equipement de pont",
+      riggingSails: "Greement et voiles",
+      registryComments: "Immatriculation et commentaires",
+      schedulingAuthority: "Planification",
+      vesselDescription: "Description du navire",
+      daysOfWeek: "Jours de la semaine",
+      startTime: "Heure de debut",
+      endTime: "Heure de fin",
+      reviewSummary: "Verifiez toutes les etapes avant l'envoi. Les etapes terminees sont marquees d'une coche bleue.",
+      vesselName: "Nom du bateau *",
+      manufacturer: "Fabricant / marque",
+      model: "Modele",
+      ballast: "Ballast",
+      designer: "Designer",
+      builder: "Constructeur",
+      controlType: "Type de commande",
+      newTitle: "Enregistrer un nouveau bateau",
+      editTitle: "Modifier le bateau",
+      loadingName: "Chargement...",
+      stepImages: "Images",
+      stepSpecs: "Specifications",
+      stepText: "Description",
+      stepDisplay: "Affichage",
+      stepReview: "Revision",
+      stepContract: "Contrat",
+      stepOneTitle: "Medias du bateau et extraction IA",
+      stepOneDescription: "Telechargez des images -> le systeme optimise automatiquement -> approuvez -> puis l'IA remplit les champs.",
+      imagesApproved: "Images approuvees",
+      vesselDescriptionHelp: "Description du bateau",
+      optionalRecommended: "(optionnel mais recommande)",
+      createVessel: "Creer le bateau",
+      updateVessel: "Mettre a jour le bateau",
+      previous: "Precedent",
+      next: "Suivant",
+      approveImagesFirst: "Approuver d'abord les images",
+      completed: "Termine",
+      pending: "En attente",
+      continueToContract: "Enregistrer et continuer vers le contrat",
+      contractStepDescription:
+        "Gerez le modele de contrat, imprimez le PDF et generez depuis cette etape le contrat pret pour Signhost.",
+      reviewContractNotice:
+        "Enregistrez d'abord ce bateau. Le flux du contrat s'ouvre a l'etape suivante une fois la fiche enregistree.",
+      harborLocation: "Lieu de vente (port) *",
+      price: "Prix (€)",
+      minBidAmount: "Montant minimum de l'offre (€)",
+      yearBuilt: "Annee de construction",
+      boatType: "Type de bateau",
+      boatCategory: "Categorie de bateau",
+      newOrUsed: "Neuf ou occasion",
+      loa: "LOA (longueur hors tout)",
+      lwl: "LWL (longueur a la flottaison)",
+      shipyard: "Chantier naval",
+      ceCategory: "Categorie CE",
+      status: "Statut",
+      passengerCapacity: "Capacite passagers",
+      beam: "Largeur",
+      draft: "Tirant d'eau",
+      airDraft: "Tirant d'air",
+      hullType: "Type de coque",
+      hullConstruction: "Construction de coque",
+      hullColour: "Couleur de coque",
+      hullNumber: "Numero de coque",
+      deckColour: "Couleur du pont",
+      deckConstruction: "Construction du pont",
+      superStructureColour: "Couleur de superstructure",
+      superStructureConstruction: "Construction de superstructure",
+      engineManufacturer: "Fabricant du moteur",
+      engineModel: "Modele moteur",
+      engineType: "Type de moteur",
+      horsePower: "Puissance",
+      engineHours: "Heures moteur",
+      fuelType: "Type de carburant",
+      engineQuantity: "Nombre de moteurs",
+      engineYear: "Annee moteur",
+      maxSpeed: "Vitesse maximale",
+      cruisingSpeed: "Vitesse de croisiere",
+      driveType: "Type de transmission",
+      gallonsPerHour: "Gallons par heure",
+      cabins: "Cabines",
+      berthsFixed: "Couchettes (fixes)",
+      berthsExtra: "Couchettes (supplementaires)",
+      berthsCrew: "Couchettes (equipage)",
+      interiorType: "Type d'interieur",
+      separateDiningArea: "Coin repas separe",
+      upholsteryColor: "Couleur de sellerie",
+      cookingFuel: "Combustible de cuisson",
+      ownerComment: "Commentaire du proprietaire",
+      knownDefects: "Defauts connus",
+      registrationDetails: "Details d'immatriculation",
+      lastServiced: "Dernier entretien",
+    },
+    placeholders: {
+      battery: "p. ex. 4x 12V 125Ah AGM",
+      batteryCharger: "p. ex. Victron Blue Smart 30A",
+      generator: "p. ex. Onan 9kW",
+      inverter: "p. ex. Victron Phoenix 3000W",
+      shorepower: "p. ex. 230V 16A",
+      solarPanel: "p. ex. 2x 100W flexible",
+      windGenerator: "p. ex. Silentwind 400+",
+      voltage: "p. ex. 12V / 230V",
+      cockpitType: "Cockpit arriere",
+      waterTank: "200L",
+      waterTankGauge: "Oui",
+      waterMaker: "60 L/h",
+      wasteWaterTank: "80L",
+      wasteWaterGauge: "Oui",
+      wasteTankDrainPump: "Electrique",
+      deckSuction: "Oui",
+      waterSystem: "Sous pression",
+      hotWater: "Boiler",
+      seaWaterPump: "Oui",
+      television: 'p. ex. Samsung 32" Smart TV',
+      cdPlayer: "p. ex. Fusion MS-RA770",
+      dvdPlayer: "p. ex. Sony DVP-SR210P",
+      satelliteReception: "p. ex. KVH TracVision TV5",
+      hotAir: "Oui",
+      stove: "Oui",
+      centralHeating: "Oui",
+    },
+  },
+} as const;
 
 function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
   if (typeof value === "boolean") return value ? "yes" : "no";
@@ -376,20 +1096,34 @@ function hasThinDescriptions(texts: { nl: string; en: string; de: string }): boo
 
 export default function YachtEditorPage() {
   const params = useParams<{ id: string; role?: string }>();
+  const searchParams = useSearchParams();
   // We can't safely extract locale from params directly if it's missing or async,
   // so we'll grab it safely using our hook that reads the pathname
   const locale = useLocale();
   const role = normalizeRole(params?.role) ?? "admin";
   const dict = getDictionary(locale) as any;
-  const t = dict?.YachtWizard || ({} as any);
+  const t = dict?.YachtWizard || dict?.DashboardAdminYachtEditor || ({} as any);
   const router = useRouter();
+  const yachtFormText =
+    YACHT_FORM_TEXT[locale as keyof typeof YACHT_FORM_TEXT] ?? YACHT_FORM_TEXT.en;
+  const labelText = (key: keyof typeof yachtFormText.labels, fallback: string) =>
+    t?.labels?.[key] || yachtFormText.labels[key] || fallback;
+  const placeholderText = (
+    key: keyof typeof yachtFormText.placeholders,
+    fallback: string,
+  ) => t?.placeholders?.[key] || yachtFormText.placeholders[key] || fallback;
+  const sectionText = (
+    key: keyof typeof yachtFormText.sections,
+    fallback: string,
+  ) => t?.sections?.[key] || yachtFormText.sections[key] || fallback;
 
   const stepFallbacks: Record<string, string> = {
-    images: "Images",
-    specs: "Specifications",
-    text: "Description",
-    display: "Display",
-    review: "Review",
+    images: labelText("stepImages", "Images"),
+    specs: labelText("stepSpecs", "Specifications"),
+    text: labelText("stepText", "Description"),
+    display: labelText("stepDisplay", "Display"),
+    review: labelText("stepReview", "Review"),
+    contract: labelText("stepContract", "Contract"),
   };
 
   const wizardSteps = WIZARD_STEP_IDS.map((step) => ({
@@ -406,6 +1140,7 @@ export default function YachtEditorPage() {
     { value: 0, label: t?.weekdays?.sunday || "Sunday" },
   ];
   const isNewMode = params.id === "new";
+  const requestedStep = clampWizardStep(searchParams.get("step"), 0);
   const yachtId = params.id;
   const { isOnline } = useNetworkStatus();
   const { user } = useUser();
@@ -459,6 +1194,10 @@ export default function YachtEditorPage() {
 
   // Image Pipeline Hook (server-side processing)
   const [createdYachtId, setCreatedYachtId] = useState<number | null>(null);
+  const selectedYachtId =
+    selectedYacht?.id && Number.isFinite(Number(selectedYacht.id))
+      ? Number(selectedYacht.id)
+      : undefined;
   const activeYachtId = isNewMode
     ? createdYachtId
       ? String(createdYachtId)
@@ -874,6 +1613,11 @@ export default function YachtEditorPage() {
       setActiveStep(draft.currentStep);
     }
   }, [isDraftLoaded, draft.currentStep, isNewMode, canProceedFromStep1]);
+
+  useEffect(() => {
+    if (!isDraftLoaded || requestedStep < 1) return;
+    setActiveStep(requestedStep);
+  }, [isDraftLoaded, requestedStep]);
 
   // Keep current wizard step synced to draft metadata.
   useEffect(() => {
@@ -3163,7 +3907,9 @@ export default function YachtEditorPage() {
           ? "Vessel Registered Successfully"
           : "Manifest Updated Successfully",
       );
-      router.push(`/${locale}/dashboard/${role}/yachts`);
+      router.push(
+        `/${locale}/dashboard/${role}/yachts/${finalYachtId}?step=6`,
+      );
     } catch (err: any) {
       console.error("Submission error:", err);
 
@@ -3245,7 +3991,11 @@ export default function YachtEditorPage() {
                   type="button"
                   onClick={() => handleStepChange(step.id)}
                   disabled={isLocked}
-                  title={isLocked ? "Approve images first" : step.label}
+                  title={
+                    isLocked
+                      ? labelText("approveImagesFirst", "Approve Images First")
+                      : step.label
+                  }
                   className={`
                     w-[54px] h-[54px] rounded-full flex items-center justify-center
                     text-[18px] font-bold border-[3px] transition-all duration-300
@@ -3283,11 +4033,16 @@ export default function YachtEditorPage() {
           <div>
             <h1 className="text-xl lg:text-2xl font-serif italic text-white">
               {isNewMode
-                ? t?.header?.newTitle || "Register New Vessel"
-                : (t?.header?.editTitle || "Edit Vessel")?.replace(
-                  "{name}",
-                  selectedYacht?.boat_name || "Loading...",
-                )}
+                ? t?.header?.newTitle ||
+                  labelText("newTitle", "Register New Vessel")
+                : (
+                    t?.header?.editTitle ||
+                    labelText("editTitle", "Edit Vessel")
+                  )?.replace(
+                    "{name}",
+                    selectedYacht?.boat_name ||
+                      labelText("loadingName", "Loading..."),
+                  )}
             </h1>
             <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider mt-0.5">
               Step {activeStep} of {wizardSteps.length} &middot;{" "}
@@ -3326,17 +4081,23 @@ export default function YachtEditorPage() {
                 <div className="flex justify-between items-end border-b border-slate-200 pb-4">
                   <div>
                     <h3 className="text-lg font-bold text-[#003566] flex items-center gap-3">
-                      <Images size={22} className="text-blue-600" /> Vessel
-                      Assets & AI Extraction
+                      <Images size={22} className="text-blue-600" />{" "}
+                      {labelText(
+                        "stepOneTitle",
+                        "Vessel Assets & AI Extraction",
+                      )}
                     </h3>
                     <p className="text-sm text-slate-500 mt-1">
-                      Upload images → instant previews → approve → then AI
-                      fills all form fields while optimization runs in the background.
+                      {labelText(
+                        "stepOneDescription",
+                        "Upload images -> system auto-optimizes -> approve -> then AI fills all form fields.",
+                      )}
                     </p>
                   </div>
                   {imagesApproved && (
                     <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-4 py-2 rounded-lg">
-                      <CheckCircle size={14} /> Images Approved
+                      <CheckCircle size={14} />{" "}
+                      {labelText("imagesApproved", "Images Approved")}
                     </div>
                   )}
                 </div>
@@ -3345,9 +4106,12 @@ export default function YachtEditorPage() {
                 <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-3">
                   <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                     <FileText size={14} className="text-blue-500" />
-                    Vessel Description{" "}
+                    {labelText("vesselDescriptionHelp", "Vessel Description")}{" "}
                     <span className="text-slate-400 font-normal">
-                      (optional but recommended)
+                      {labelText(
+                        "optionalRecommended",
+                        "(optional but recommended)",
+                      )}
                     </span>
                   </label>
                   <textarea
@@ -4378,14 +5142,14 @@ export default function YachtEditorPage() {
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
                   <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                    <Coins size={20} className="text-blue-600" /> Essential
-                    Registry Data
+                    <Coins size={20} className="text-blue-600" />{" "}
+                    {labelText("essentialRegistryData", "Essential Registry Data")}
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2 group">
-                    <Label>Vessel Name *</Label>
+                    <Label>{labelText("vesselName", "Vessel Name *")}</Label>
                     <Input
                       name="boat_name"
                       defaultValue={selectedYacht?.boat_name}
@@ -4395,7 +5159,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>Manufacturer / Make</Label>
+                    <Label>{labelText("manufacturer", "Manufacturer / Make")}</Label>
                     <CatalogAutocomplete
                       endpoint="/api/autocomplete/brands"
                       name="manufacturer"
@@ -4412,7 +5176,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>Model</Label>
+                    <Label>{labelText("model", "Model")}</Label>
                     <CatalogAutocomplete
                       endpoint="/api/autocomplete/models"
                       name="model"
@@ -4432,7 +5196,7 @@ export default function YachtEditorPage() {
                   </div>
 
                   <div className="space-y-2 group">
-                    <Label>Verkooplocatie (Haven) *</Label>
+                    <Label>{labelText("harborLocation", "Sales Location (Harbor) *")}</Label>
                     <Select
                       value={selectedYacht?.ref_harbor_id?.toString() || ""}
                       onValueChange={(val) => {
@@ -4502,7 +5266,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>Price (€)</Label>
+                    <Label>{labelText("price", "Price (€)")}</Label>
                     <Input
                       name="price"
                       type="number"
@@ -4512,7 +5276,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>Minimum Bid Amount (€)</Label>
+                    <Label>{labelText("minBidAmount", "Minimum Bid Amount (€)")}</Label>
                     <Input
                       name="min_bid_amount"
                       type="number"
@@ -4522,7 +5286,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>Year Built</Label>
+                    <Label>{labelText("yearBuilt", "Year Built")}</Label>
                     <Input
                       name="year"
                       type="number"
@@ -4532,7 +5296,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>Boat Type</Label>
+                    <Label>{labelText("boatType", "Boat Type")}</Label>
                     <CatalogAutocomplete
                       endpoint="/api/autocomplete/types"
                       name="boat_type"
@@ -4542,7 +5306,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>Boat Category</Label>
+                    <Label>{labelText("boatCategory", "Boat Category")}</Label>
                     <Input
                       name="boat_category"
                       defaultValue={selectedYacht?.boat_category}
@@ -4551,7 +5315,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>New or Used</Label>
+                    <Label>{labelText("newOrUsed", "New or Used")}</Label>
                     <select
                       name="new_or_used"
                       defaultValue={selectedYacht?.new_or_used || ""}
@@ -4567,7 +5331,7 @@ export default function YachtEditorPage() {
                     </select>
                   </div>
                   <div className="space-y-2 group">
-                    <Label>LOA (Length Overall)</Label>
+                    <Label>{labelText("loa", "LOA (Length Overall)")}</Label>
                     <Input
                       name="loa"
                       defaultValue={selectedYacht?.loa}
@@ -4576,7 +5340,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>LWL (Waterline Length)</Label>
+                    <Label>{labelText("lwl", "LWL (Waterline Length)")}</Label>
                     <Input
                       name="lwl"
                       defaultValue={selectedYacht?.lwl}
@@ -4584,7 +5348,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>Shipyard / Werf</Label>
+                    <Label>{labelText("shipyard", "Shipyard / Werf")}</Label>
                     <Input
                       name="where"
                       defaultValue={selectedYacht?.where}
@@ -4592,7 +5356,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>CE Category</Label>
+                    <Label>{labelText("ceCategory", "CE Category")}</Label>
                     <select
                       name="ce_category"
                       defaultValue={selectedYacht?.ce_category || ""}
@@ -4610,7 +5374,7 @@ export default function YachtEditorPage() {
                     </select>
                   </div>
                   <div className="space-y-2 group">
-                    <Label>Status</Label>
+                    <Label>{labelText("status", "Status")}</Label>
                     <select
                       name="status"
                       defaultValue={selectedYacht?.status || "Draft"}
@@ -4627,7 +5391,7 @@ export default function YachtEditorPage() {
                     </select>
                   </div>
                   <div className="space-y-2 group">
-                    <Label>Passenger Capacity</Label>
+                    <Label>{labelText("passengerCapacity", "Passenger Capacity")}</Label>
                     <Input
                       name="passenger_capacity"
                       type="number"
@@ -4641,8 +5405,8 @@ export default function YachtEditorPage() {
               {/* --- SECTION 3: TECHNICAL DOSSIER --- */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-10">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-                  <Waves size={20} className="text-blue-600" /> Technical
-                  Dossier
+                  <Waves size={20} className="text-blue-600" />{" "}
+                  {labelText("technicalDossier", "Technical Dossier")}
                 </h3>
 
                 {/* Sub-Section: General & Hull */}
@@ -4650,11 +5414,11 @@ export default function YachtEditorPage() {
                   <div className="space-y-5">
                     <SectionHeader
                       icon={<Ship size={16} />}
-                      title="Hull & Dimensions"
+                      title={labelText("hullDimensions", "Hull & Dimensions")}
                     />
                     <div className="grid grid-cols-2 gap-5">
                       <div className="space-y-1 group">
-                        <Label>Beam (Width)</Label>
+                        <Label>{labelText("beam", "Beam (Width)")}</Label>
                         <Input
                           name="beam"
                           defaultValue={selectedYacht?.beam}
@@ -4662,7 +5426,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Draft (Depth)</Label>
+                        <Label>{labelText("draft", "Draft (Depth)")}</Label>
                         <Input
                           name="draft"
                           defaultValue={selectedYacht?.draft}
@@ -4670,7 +5434,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Air Draft (Clearance)</Label>
+                        <Label>{labelText("airDraft", "Air Draft (Clearance)")}</Label>
                         <Input
                           name="air_draft"
                           defaultValue={selectedYacht?.air_draft}
@@ -4686,7 +5450,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Ballast</Label>
+                        <Label>{labelText("ballast", "Ballast")}</Label>
                         <Input
                           name="ballast"
                           defaultValue={selectedYacht?.ballast}
@@ -4695,7 +5459,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Hull Type</Label>
+                        <Label>{labelText("hullType", "Hull Type")}</Label>
                         <Input
                           name="hull_type"
                           defaultValue={selectedYacht?.hull_type}
@@ -4703,7 +5467,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Hull Construction</Label>
+                        <Label>{labelText("hullConstruction", "Hull Construction")}</Label>
                         <Input
                           name="hull_construction"
                           defaultValue={selectedYacht?.hull_construction}
@@ -4711,7 +5475,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Hull Colour</Label>
+                        <Label>{labelText("hullColour", "Hull Colour")}</Label>
                         <Input
                           name="hull_colour"
                           defaultValue={selectedYacht?.hull_colour}
@@ -4719,7 +5483,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Hull Number</Label>
+                        <Label>{labelText("hullNumber", "Hull Number")}</Label>
                         <Input
                           name="hull_number"
                           defaultValue={selectedYacht?.hull_number}
@@ -4727,7 +5491,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Designer</Label>
+                        <Label>{labelText("designer", "Designer")}</Label>
                         <Input
                           name="designer"
                           defaultValue={selectedYacht?.designer}
@@ -4736,7 +5500,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Builder</Label>
+                        <Label>{labelText("builder", "Builder")}</Label>
                         <Input
                           name="builder"
                           defaultValue={selectedYacht?.builder}
@@ -4745,7 +5509,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Deck Colour</Label>
+                        <Label>{labelText("deckColour", "Deck Colour")}</Label>
                         <Input
                           name="deck_colour"
                           defaultValue={selectedYacht?.deck_colour}
@@ -4754,7 +5518,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Deck Construction</Label>
+                        <Label>{labelText("deckConstruction", "Deck Construction")}</Label>
                         <Input
                           name="deck_construction"
                           defaultValue={selectedYacht?.deck_construction}
@@ -4763,7 +5527,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Superstructure Colour</Label>
+                        <Label>{labelText("superStructureColour", "Superstructure Colour")}</Label>
                         <Input
                           name="super_structure_colour"
                           defaultValue={selectedYacht?.super_structure_colour}
@@ -4774,7 +5538,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Superstructure Construction</Label>
+                        <Label>{labelText("superStructureConstruction", "Superstructure Construction")}</Label>
                         <Input
                           name="super_structure_construction"
                           defaultValue={
@@ -4792,11 +5556,11 @@ export default function YachtEditorPage() {
                   <div className="space-y-5">
                     <SectionHeader
                       icon={<Zap size={16} />}
-                      title="Engine & Performance"
+                      title={labelText("enginePerformance", "Engine & Performance")}
                     />
                     <div className="grid grid-cols-2 gap-5">
                       <div className="space-y-1 group">
-                        <Label>Engine Manufacturer</Label>
+                        <Label>{labelText("engineManufacturer", "Engine Manufacturer")}</Label>
                         <Input
                           name="engine_manufacturer"
                           defaultValue={selectedYacht?.engine_manufacturer}
@@ -4807,7 +5571,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Engine Model</Label>
+                        <Label>{labelText("engineModel", "Engine Model")}</Label>
                         <Input
                           name="engine_model"
                           defaultValue={selectedYacht?.engine_model}
@@ -4816,7 +5580,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Engine Type</Label>
+                        <Label>{labelText("engineType", "Engine Type")}</Label>
                         <select
                           name="engine_type"
                           defaultValue={selectedYacht?.engine_type || ""}
@@ -4834,7 +5598,7 @@ export default function YachtEditorPage() {
                         </select>
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Horse Power</Label>
+                        <Label>{labelText("horsePower", "Horse Power")}</Label>
                         <Input
                           name="horse_power"
                           defaultValue={selectedYacht?.horse_power}
@@ -4843,7 +5607,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Engine Hours</Label>
+                        <Label>{labelText("engineHours", "Engine Hours")}</Label>
                         <Input
                           name="hours"
                           defaultValue={selectedYacht?.hours}
@@ -4852,7 +5616,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Fuel Type</Label>
+                        <Label>{labelText("fuelType", "Fuel Type")}</Label>
                         <Input
                           name="fuel"
                           defaultValue={selectedYacht?.fuel}
@@ -4861,7 +5625,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Engine Quantity</Label>
+                        <Label>{labelText("engineQuantity", "Engine Quantity")}</Label>
                         <Input
                           name="engine_quantity"
                           defaultValue={selectedYacht?.engine_quantity}
@@ -4870,7 +5634,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Engine Year</Label>
+                        <Label>{labelText("engineYear", "Engine Year")}</Label>
                         <Input
                           name="engine_year"
                           type="number"
@@ -4880,7 +5644,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Max Speed</Label>
+                        <Label>{labelText("maxSpeed", "Max Speed")}</Label>
                         <Input
                           name="max_speed"
                           defaultValue={selectedYacht?.max_speed}
@@ -4889,7 +5653,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Cruising Speed</Label>
+                        <Label>{labelText("cruisingSpeed", "Cruising Speed")}</Label>
                         <Input
                           name="cruising_speed"
                           defaultValue={selectedYacht?.cruising_speed}
@@ -4898,7 +5662,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Drive Type</Label>
+                        <Label>{labelText("driveType", "Drive Type")}</Label>
                         <Input
                           name="drive_type"
                           defaultValue={selectedYacht?.drive_type}
@@ -4916,7 +5680,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Gallons per Hour</Label>
+                        <Label>{labelText("gallonsPerHour", "Gallons per Hour")}</Label>
                         <Input
                           name="gallons_per_hour"
                           defaultValue={selectedYacht?.gallons_per_hour}
@@ -4938,18 +5702,22 @@ export default function YachtEditorPage() {
               {/* --- SECTION 2: CORE SPECS --- */}
               <div className="bg-white p-8 lg:p-10 border border-slate-200 shadow-sm space-y-8">
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.3em] flex items-center gap-2 border-b border-slate-200 pb-4 italic">
-                  <Coins size={18} /> Essential Registry Data
+                  <Coins size={18} />{" "}
+                  {labelText("essentialRegistryData", "Essential Registry Data")}
                 </h3>
 
                 {/* Sub-Section: Accommodation */}
                 <div className="space-y-5">
                   <SectionHeader
                     icon={<Bed size={16} />}
-                    title="Accommodation & Facilities"
+                    title={labelText(
+                      "accommodationFacilities",
+                      "Accommodation & Facilities",
+                    )}
                   />
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                     <div className="space-y-1 group">
-                      <Label>Cabins</Label>
+                      <Label>{labelText("cabins", "Cabins")}</Label>
                       <Input
                         name="cabins"
                         type="number"
@@ -4974,7 +5742,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Berths (Fixed)</Label>
+                      <Label>{labelText("berthsFixed", "Berths (Fixed)")}</Label>
                       <Input
                         name="berths_fixed"
                         type="number"
@@ -4983,7 +5751,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Berths (Extra)</Label>
+                      <Label>{labelText("berthsExtra", "Berths (Extra)")}</Label>
                       <Input
                         name="berths_extra"
                         type="number"
@@ -4992,7 +5760,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Berths (Crew)</Label>
+                      <Label>{labelText("berthsCrew", "Berths (Crew)")}</Label>
                       <Input
                         name="berths_crew"
                         type="number"
@@ -5017,7 +5785,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Interior Type</Label>
+                      <Label>{labelText("interiorType", "Interior Type")}</Label>
                       <Input
                         name="interior_type"
                         defaultValue={selectedYacht?.interior_type}
@@ -5041,7 +5809,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Separate Dining Area</Label>
+                      <Label>{labelText("separateDiningArea", "Separate Dining Area")}</Label>
                       <Input
                         name="separate_dining_area"
                         defaultValue={selectedYacht?.separate_dining_area}
@@ -5065,7 +5833,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Upholstery Color</Label>
+                      <Label>{labelText("upholsteryColor", "Upholstery Color")}</Label>
                       <Input
                         name="upholstery_color"
                         defaultValue={selectedYacht?.upholstery_color}
@@ -5104,148 +5872,101 @@ export default function YachtEditorPage() {
                         needsConfirmation={needsConfirm("heating")}
                       />
                     </div>
-                    <div className="space-y-1 group flex items-center gap-3 pt-5">
-                      <input
-                        type="checkbox"
-                        name="air_conditioning"
-                        defaultChecked={
-                          selectedYacht?.air_conditioning === true ||
-                          selectedYacht?.air_conditioning === "true" ||
-                          selectedYacht?.air_conditioning === 1
-                        }
-                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <Label>Air Conditioning</Label>
-                    </div>
-                    <div className="space-y-1 group flex items-center gap-3 pt-5">
-                      <input
-                        type="checkbox"
-                        name="flybridge"
-                        defaultChecked={
-                          selectedYacht?.flybridge === true ||
-                          selectedYacht?.flybridge === "true" ||
-                          selectedYacht?.flybridge === 1
-                        }
-                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <Label>Flybridge</Label>
-                    </div>
                     <div className="space-y-1 group">
-                      <Label>Cockpit Type</Label>
+                      <Label>{labelText("cockpitType", "Cockpit Type")}</Label>
                       <Input
                         name="cockpit_type"
                         defaultValue={selectedYacht?.cockpit_type}
-                        placeholder="Aft cockpit"
+                        placeholder={placeholderText("cockpitType", "Aft cockpit")}
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Water Tank</Label>
+                      <Label>{labelText("waterTank", "Water Tank")}</Label>
                       <Input
                         name="water_tank"
                         defaultValue={selectedYacht?.water_tank}
-                        placeholder="200L"
+                        placeholder={placeholderText("waterTank", "200L")}
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Water Tank Gauge</Label>
+                      <Label>{labelText("waterTankGauge", "Water Tank Gauge")}</Label>
                       <Input
                         name="water_tank_gauge"
                         defaultValue={selectedYacht?.water_tank_gauge}
-                        placeholder="Yes"
+                        placeholder={placeholderText("waterTankGauge", "Yes")}
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Water Maker</Label>
+                      <Label>{labelText("waterMaker", "Water Maker")}</Label>
                       <Input
                         name="water_maker"
                         defaultValue={selectedYacht?.water_maker}
-                        placeholder="60 L/h"
+                        placeholder={placeholderText("waterMaker", "60 L/h")}
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Waste Water Tank</Label>
+                      <Label>{labelText("wasteWaterTank", "Waste Water Tank")}</Label>
                       <Input
                         name="waste_water_tank"
                         defaultValue={selectedYacht?.waste_water_tank}
-                        placeholder="80L"
+                        placeholder={placeholderText("wasteWaterTank", "80L")}
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Waste Water Gauge</Label>
+                      <Label>{labelText("wasteWaterGauge", "Waste Water Gauge")}</Label>
                       <Input
                         name="waste_water_tank_gauge"
                         defaultValue={selectedYacht?.waste_water_tank_gauge}
-                        placeholder="Yes"
+                        placeholder={placeholderText("wasteWaterGauge", "Yes")}
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Waste Tank Drain Pump</Label>
+                      <Label>
+                        {labelText("wasteTankDrainPump", "Waste Tank Drain Pump")}
+                      </Label>
                       <Input
                         name="waste_water_tank_drainpump"
                         defaultValue={selectedYacht?.waste_water_tank_drainpump}
-                        placeholder="Electric"
+                        placeholder={placeholderText(
+                          "wasteTankDrainPump",
+                          "Electric",
+                        )}
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Deck Suction</Label>
+                      <Label>{labelText("deckSuction", "Deck Suction")}</Label>
                       <Input
                         name="deck_suction"
                         defaultValue={selectedYacht?.deck_suction}
-                        placeholder="Yes"
+                        placeholder={placeholderText("deckSuction", "Yes")}
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Water System</Label>
+                      <Label>{labelText("waterSystem", "Water System")}</Label>
                       <Input
                         name="water_system"
                         defaultValue={selectedYacht?.water_system}
-                        placeholder="Pressurized"
+                        placeholder={placeholderText("waterSystem", "Pressurized")}
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Hot Water</Label>
+                      <Label>{labelText("hotWater", "Hot Water")}</Label>
                       <Input
                         name="hot_water"
                         defaultValue={selectedYacht?.hot_water}
-                        placeholder="Boiler"
+                        placeholder={placeholderText("hotWater", "Boiler")}
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Sea Water Pump</Label>
+                      <Label>{labelText("seaWaterPump", "Sea Water Pump")}</Label>
                       <Input
                         name="sea_water_pump"
                         defaultValue={selectedYacht?.sea_water_pump}
-                        placeholder="Yes"
+                        placeholder={placeholderText("seaWaterPump", "Yes")}
                       />
-                    </div>
-                    <div className="space-y-1 group flex items-center gap-3 pt-5">
-                      <input
-                        type="checkbox"
-                        name="deck_wash_pump"
-                        defaultChecked={
-                          selectedYacht?.deck_wash_pump === true ||
-                          selectedYacht?.deck_wash_pump === "true" ||
-                          selectedYacht?.deck_wash_pump === 1
-                        }
-                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <Label>Deck Wash Pump</Label>
-                    </div>
-                    <div className="space-y-1 group flex items-center gap-3 pt-5">
-                      <input
-                        type="checkbox"
-                        name="deck_shower"
-                        defaultChecked={
-                          selectedYacht?.deck_shower === true ||
-                          selectedYacht?.deck_shower === "true" ||
-                          selectedYacht?.deck_shower === 1
-                        }
-                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <Label>Deck Shower</Label>
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Television</Label>
+                      <Label>{labelText("television", "Television")}</Label>
                       <TriStateSelect
                         name="television"
                         defaultValue={selectedYacht?.television}
@@ -5253,7 +5974,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Radio / CD Player</Label>
+                      <Label>{labelText("cdPlayer", "Radio / CD Player")}</Label>
                       <Input
                         name="cd_player"
                         defaultValue={selectedYacht?.cd_player}
@@ -5261,7 +5982,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Satellite Reception</Label>
+                      <Label>{labelText("satelliteReception", "Satellite Reception")}</Label>
                       <Input
                         name="satellite_reception"
                         defaultValue={selectedYacht?.satellite_reception}
@@ -5269,7 +5990,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Cooker</Label>
+                      <Label>{labelText("cooker", "Cooker")}</Label>
                       <Input
                         name="cooker"
                         defaultValue={selectedYacht?.cooker}
@@ -5277,7 +5998,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Cooking Fuel</Label>
+                      <Label>{labelText("cookingFuel", "Cooking Fuel")}</Label>
                       <Input
                         name="cooking_fuel"
                         defaultValue={selectedYacht?.cooking_fuel}
@@ -5285,7 +6006,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Oven</Label>
+                      <Label>{labelText("oven", "Oven")}</Label>
                       <TriStateSelect
                         name="oven"
                         defaultValue={selectedYacht?.oven}
@@ -5293,7 +6014,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Microwave</Label>
+                      <Label>{labelText("microwave", "Microwave")}</Label>
                       <TriStateSelect
                         name="microwave"
                         defaultValue={selectedYacht?.microwave}
@@ -5301,7 +6022,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Fridge</Label>
+                      <Label>{labelText("fridge", "Fridge")}</Label>
                       <TriStateSelect
                         name="fridge"
                         defaultValue={selectedYacht?.fridge}
@@ -5309,7 +6030,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Freezer</Label>
+                      <Label>{labelText("freezer", "Freezer")}</Label>
                       <TriStateSelect
                         name="freezer"
                         defaultValue={selectedYacht?.freezer}
@@ -5317,7 +6038,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Hot Air Heating</Label>
+                      <Label>{labelText("hotAir", "Hot Air Heating")}</Label>
                       <Input
                         name="hot_air"
                         defaultValue={selectedYacht?.hot_air}
@@ -5325,7 +6046,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Stove Heating</Label>
+                      <Label>{labelText("stove", "Stove Heating")}</Label>
                       <Input
                         name="stove"
                         defaultValue={selectedYacht?.stove}
@@ -5333,7 +6054,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Central Heating</Label>
+                      <Label>{labelText("centralHeating", "Central Heating")}</Label>
                       <Input
                         name="central_heating"
                         defaultValue={selectedYacht?.central_heating}
@@ -5341,12 +6062,52 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Control Type</Label>
+                      <Label>{labelText("controlType", "Control Type")}</Label>
                       <Input
                         name="control_type"
                         defaultValue={selectedYacht?.control_type}
                         placeholder="e.g. Wheel / Joystick"
                       />
+                    </div>
+                    <div className="col-span-2 md:col-span-4 border-t border-slate-100 pt-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <CheckboxField
+                          name="air_conditioning"
+                          label={labelText("airConditioning", "Air Conditioning")}
+                          defaultChecked={
+                            selectedYacht?.air_conditioning === true ||
+                            selectedYacht?.air_conditioning === "true" ||
+                            selectedYacht?.air_conditioning === 1
+                          }
+                        />
+                        <CheckboxField
+                          name="flybridge"
+                          label={labelText("flybridge", "Flybridge")}
+                          defaultChecked={
+                            selectedYacht?.flybridge === true ||
+                            selectedYacht?.flybridge === "true" ||
+                            selectedYacht?.flybridge === 1
+                          }
+                        />
+                        <CheckboxField
+                          name="deck_wash_pump"
+                          label={labelText("deckWashPump", "Deck Wash Pump")}
+                          defaultChecked={
+                            selectedYacht?.deck_wash_pump === true ||
+                            selectedYacht?.deck_wash_pump === "true" ||
+                            selectedYacht?.deck_wash_pump === 1
+                          }
+                        />
+                        <CheckboxField
+                          name="deck_shower"
+                          label={labelText("deckShower", "Deck Shower")}
+                          defaultChecked={
+                            selectedYacht?.deck_shower === true ||
+                            selectedYacht?.deck_shower === "true" ||
+                            selectedYacht?.deck_shower === 1
+                          }
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -5355,8 +6116,8 @@ export default function YachtEditorPage() {
               {/* Sub-Section: Navigation Equipment */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-                  <Compass size={20} className="text-blue-600" /> Navigation &
-                  Electronics
+                  <Compass size={20} className="text-blue-600" />{" "}
+                  {labelText("navigationElectronics", "Navigation & Electronics")}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[
@@ -5465,7 +6226,7 @@ export default function YachtEditorPage() {
                     <YachtFieldWrapper
                       key={f.name}
                       label={f.label}
-                      yachtId={Number(selectedYacht?.id)}
+                      yachtId={selectedYachtId}
                       fieldName={f.name}
                       correctionLabel={fieldCorrectionLabels[f.name]}
                       onCorrectionLabelChange={(label) =>
@@ -5497,8 +6258,8 @@ export default function YachtEditorPage() {
               {/* Sub-Section: Safety Equipment */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-                  <Shield size={20} className="text-blue-600" /> Safety
-                  Equipment
+                  <Shield size={20} className="text-blue-600" />{" "}
+                  {labelText("safetyEquipment", "Safety Equipment")}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[
@@ -5572,7 +6333,7 @@ export default function YachtEditorPage() {
                     <YachtFieldWrapper
                       key={f.name}
                       label={f.label}
-                      yachtId={Number(selectedYacht?.id)}
+                      yachtId={selectedYachtId}
                       fieldName={f.name}
                       correctionLabel={fieldCorrectionLabels[f.name]}
                       onCorrectionLabelChange={(label) =>
@@ -5604,105 +6365,109 @@ export default function YachtEditorPage() {
               {/* Sub-Section: Electrical System */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-                  <Zap size={20} className="text-blue-600" /> Electrical System
+                  <Zap size={20} className="text-blue-600" />{" "}
+                  {sectionText("electricalSystem", "Electrical System")}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[
                     {
                       name: "battery",
-                      label: "Batteries",
-                      ph: "e.g. 4x 12V 125Ah AGM",
+                      label: labelText("battery", "Batteries"),
+                      ph: placeholderText("battery", "e.g. 4x 12V 125Ah AGM"),
                     },
                     {
                       name: "battery_charger",
-                      label: "Battery Charger",
-                      ph: "e.g. Victron Blue Smart 30A",
+                      label: labelText("batteryCharger", "Battery Charger"),
+                      ph: placeholderText(
+                        "batteryCharger",
+                        "e.g. Victron Blue Smart 30A",
+                      ),
                     },
                     {
                       name: "generator",
-                      label: "Generator",
-                      ph: "e.g. Onan 9kW",
+                      label: labelText("generator", "Generator"),
+                      ph: placeholderText("generator", "e.g. Onan 9kW"),
                     },
                     {
                       name: "inverter",
-                      label: "Inverter",
-                      ph: "e.g. Victron Phoenix 3000W",
+                      label: labelText("inverter", "Inverter"),
+                      ph: placeholderText("inverter", "e.g. Victron Phoenix 3000W"),
                     },
                     {
                       name: "shorepower",
-                      label: "Shorepower",
-                      ph: "e.g. 230V 16A",
+                      label: labelText("shorepower", "Shorepower"),
+                      ph: placeholderText("shorepower", "e.g. 230V 16A"),
                     },
                     {
                       name: "solar_panel",
-                      label: "Solar Panel",
-                      ph: "e.g. 2x 100W flexible",
+                      label: labelText("solarPanel", "Solar Panel"),
+                      ph: placeholderText("solarPanel", "e.g. 2x 100W flexible"),
                     },
                     {
                       name: "wind_generator",
-                      label: "Wind Generator",
-                      ph: "e.g. Silentwind 400+",
+                      label: labelText("windGenerator", "Wind Generator"),
+                      ph: placeholderText("windGenerator", "e.g. Silentwind 400+"),
                     },
                     {
                       name: "voltage",
-                      label: "Voltage",
-                      ph: "e.g. 12V / 230V",
+                      label: labelText("voltage", "Voltage"),
+                      ph: placeholderText("voltage", "e.g. 12V / 230V"),
                     },
                     {
                       name: "dynamo",
-                      label: "Dynamo",
-                      ph: "Yes",
+                      label: labelText("dynamo", "Dynamo"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "accumonitor",
-                      label: "Accumonitor",
-                      ph: "Yes",
+                      label: labelText("accumonitor", "Accumonitor"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "voltmeter",
-                      label: "Voltmeter",
-                      ph: "Yes",
+                      label: labelText("voltmeter", "Voltmeter"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "shore_power_cable",
-                      label: "Shore Power Cable",
-                      ph: "Yes",
+                      label: labelText("shorePowerCable", "Shore Power Cable"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "consumption_monitor",
-                      label: "Consumption Monitor",
-                      ph: "Yes",
+                      label: labelText("consumptionMonitor", "Consumption Monitor"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "control_panel",
-                      label: "Control Panel",
-                      ph: "Yes",
+                      label: labelText("controlPanel", "Control Panel"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "fuel_tank_gauge",
-                      label: "Fuel Tank Gauge",
-                      ph: "Yes",
+                      label: labelText("fuelTankGauge", "Fuel Tank Gauge"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "tachometer",
-                      label: "Tachometer",
-                      ph: "Yes",
+                      label: labelText("tachometer", "Tachometer"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "oil_pressure_gauge",
-                      label: "Oil Pressure Gauge",
-                      ph: "Yes",
+                      label: labelText("oilPressureGauge", "Oil Pressure Gauge"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "temperature_gauge",
-                      label: "Temperature Gauge",
-                      ph: "Yes",
+                      label: labelText("temperatureGauge", "Temperature Gauge"),
+                      ph: yachtFormText.common.yes,
                     },
                   ].map((f) => (
                     <YachtFieldWrapper
                       key={f.name}
                       label={f.label}
-                      yachtId={Number(selectedYacht?.id)}
+                      yachtId={selectedYachtId}
                       fieldName={f.name}
                       correctionLabel={fieldCorrectionLabels[f.name]}
                       onCorrectionLabelChange={(label) =>
@@ -5734,129 +6499,133 @@ export default function YachtEditorPage() {
               {/* Sub-Section: Kitchen & Comfort */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-                  <Box size={20} className="text-blue-600" /> Kitchen & Comfort
+                  <Box size={20} className="text-blue-600" />{" "}
+                  {sectionText("kitchenComfort", "Kitchen & Comfort")}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[
                     {
                       name: "oven",
-                      label: "Oven",
+                      label: labelText("oven", "Oven"),
                       ph: "e.g. Force 10 gas oven",
                     },
                     {
                       name: "microwave",
-                      label: "Microwave",
+                      label: labelText("microwave", "Microwave"),
                       ph: "e.g. Samsung 23L",
                     },
                     {
                       name: "fridge",
-                      label: "Fridge",
+                      label: labelText("fridge", "Fridge"),
                       ph: "e.g. Isotherm Cruise 130L",
                     },
                     {
                       name: "freezer",
-                      label: "Freezer",
+                      label: labelText("freezer", "Freezer"),
                       ph: "e.g. Isotherm 65L top-loading",
                     },
                     {
                       name: "cooker",
-                      label: "Cooker",
+                      label: labelText("cooker", "Cooker"),
                       ph: "e.g. 4-burner gas",
                     },
                     {
                       name: "television",
-                      label: "Television",
-                      ph: 'e.g. Samsung 32" Smart TV',
+                      label: labelText("television", "Television"),
+                      ph: placeholderText("television", 'e.g. Samsung 32" Smart TV'),
                     },
                     {
                       name: "cd_player",
-                      label: "Radio / CD Player",
-                      ph: "e.g. Fusion MS-RA770",
+                      label: labelText("cdPlayer", "Radio / CD Player"),
+                      ph: placeholderText("cdPlayer", "e.g. Fusion MS-RA770"),
                     },
                     {
                       name: "dvd_player",
-                      label: "DVD Player",
-                      ph: "e.g. Sony DVP-SR210P",
+                      label: labelText("dvdPlayer", "DVD Player"),
+                      ph: placeholderText("dvdPlayer", "e.g. Sony DVP-SR210P"),
                     },
                     {
                       name: "satellite_reception",
-                      label: "Satellite Reception",
-                      ph: "e.g. KVH TracVision TV5",
+                      label: labelText("satelliteReception", "Satellite Reception"),
+                      ph: placeholderText(
+                        "satelliteReception",
+                        "e.g. KVH TracVision TV5",
+                      ),
                     },
                     {
                       name: "water_tank",
-                      label: "Water Tank",
-                      ph: "200L",
+                      label: labelText("waterTank", "Water Tank"),
+                      ph: placeholderText("waterTank", "200L"),
                     },
                     {
                       name: "water_tank_gauge",
-                      label: "Water Tank Gauge",
-                      ph: "Yes",
+                      label: labelText("waterTankGauge", "Water Tank Gauge"),
+                      ph: placeholderText("waterTankGauge", "Yes"),
                     },
                     {
                       name: "water_maker",
-                      label: "Water Maker",
-                      ph: "60 L/h",
+                      label: labelText("waterMaker", "Water Maker"),
+                      ph: placeholderText("waterMaker", "60 L/h"),
                     },
                     {
                       name: "waste_water_tank",
-                      label: "Waste Water Tank",
-                      ph: "80L",
+                      label: labelText("wasteWaterTank", "Waste Water Tank"),
+                      ph: placeholderText("wasteWaterTank", "80L"),
                     },
                     {
                       name: "waste_water_tank_gauge",
-                      label: "Waste Water Gauge",
-                      ph: "Yes",
+                      label: labelText("wasteWaterGauge", "Waste Water Gauge"),
+                      ph: placeholderText("wasteWaterGauge", "Yes"),
                     },
                     {
                       name: "waste_water_tank_drainpump",
-                      label: "Waste Tank Drain Pump",
-                      ph: "Yes",
+                      label: labelText("wasteTankDrainPump", "Waste Tank Drain Pump"),
+                      ph: placeholderText("wasteTankDrainPump", "Yes"),
                     },
                     {
                       name: "deck_suction",
-                      label: "Deck Suction",
-                      ph: "Yes",
+                      label: labelText("deckSuction", "Deck Suction"),
+                      ph: placeholderText("deckSuction", "Yes"),
                     },
                     {
                       name: "water_system",
-                      label: "Water System",
-                      ph: "Pressurized",
+                      label: labelText("waterSystem", "Water System"),
+                      ph: placeholderText("waterSystem", "Pressurized"),
                     },
                     {
                       name: "hot_water",
-                      label: "Hot Water",
-                      ph: "Boiler",
+                      label: labelText("hotWater", "Hot Water"),
+                      ph: placeholderText("hotWater", "Boiler"),
                     },
                     {
                       name: "sea_water_pump",
-                      label: "Sea Water Pump",
-                      ph: "Yes",
+                      label: labelText("seaWaterPump", "Sea Water Pump"),
+                      ph: placeholderText("seaWaterPump", "Yes"),
                     },
                     {
                       name: "deck_wash_pump",
-                      label: "Deck Wash Pump",
-                      ph: "Yes",
+                      label: labelText("deckWashPump", "Deck Wash Pump"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "deck_shower",
-                      label: "Deck Shower",
-                      ph: "Yes",
+                      label: labelText("deckShower", "Deck Shower"),
+                      ph: yachtFormText.common.yes,
                     },
                     {
                       name: "hot_air",
-                      label: "Hot Air Heating",
-                      ph: "Yes",
+                      label: labelText("hotAir", "Hot Air Heating"),
+                      ph: placeholderText("hotAir", "Yes"),
                     },
                     {
                       name: "stove",
-                      label: "Stove Heating",
-                      ph: "Yes",
+                      label: labelText("stove", "Stove Heating"),
+                      ph: placeholderText("stove", "Yes"),
                     },
                     {
                       name: "central_heating",
-                      label: "Central Heating",
-                      ph: "Yes",
+                      label: labelText("centralHeating", "Central Heating"),
+                      ph: placeholderText("centralHeating", "Yes"),
                     },
                   ].map((f) => (
                     <div key={f.name} className="space-y-1 group">
@@ -6013,7 +6782,7 @@ export default function YachtEditorPage() {
                     <YachtFieldWrapper
                       key={f.name}
                       label={f.label}
-                      yachtId={Number(selectedYacht?.id)}
+                      yachtId={selectedYachtId}
                       fieldName={f.name}
                       correctionLabel={fieldCorrectionLabels[f.name]}
                       onCorrectionLabelChange={(label) =>
@@ -6096,7 +6865,7 @@ export default function YachtEditorPage() {
                     <YachtFieldWrapper
                       key={f.name}
                       label={f.label}
-                      yachtId={Number(selectedYacht?.id)}
+                      yachtId={selectedYachtId}
                       fieldName={f.name}
                       correctionLabel={fieldCorrectionLabels[f.name]}
                       onCorrectionLabelChange={(label) =>
@@ -6128,12 +6897,12 @@ export default function YachtEditorPage() {
               {/* Sub-Section: Registry & Comments */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-                  <FileText size={20} className="text-blue-600" /> Registry &
-                  Comments
+                  <FileText size={20} className="text-blue-600" />{" "}
+                  {labelText("registryComments", "Registry & Comments")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1 group">
-                    <Label>Owner{"'s"} Comment</Label>
+                    <Label>{labelText("ownerComment", "Owner's Comment")}</Label>
                     <textarea
                       name="owners_comment"
                       defaultValue={selectedYacht?.owners_comment || ""}
@@ -6142,7 +6911,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-1 group">
-                    <Label>Known Defects</Label>
+                    <Label>{labelText("knownDefects", "Known Defects")}</Label>
                     <textarea
                       name="known_defects"
                       defaultValue={selectedYacht?.known_defects || ""}
@@ -6151,7 +6920,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-1 group">
-                    <Label>Registration Details</Label>
+                    <Label>{labelText("registrationDetails", "Registration Details")}</Label>
                     <Input
                       name="reg_details"
                       defaultValue={selectedYacht?.reg_details}
@@ -6160,7 +6929,7 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-1 group">
-                    <Label>Last Serviced</Label>
+                    <Label>{labelText("lastServiced", "Last Serviced")}</Label>
                     <Input
                       name="last_serviced"
                       defaultValue={selectedYacht?.last_serviced}
@@ -6179,8 +6948,8 @@ export default function YachtEditorPage() {
               <div className="bg-white rounded-lg border border-slate-200 p-8 space-y-8">
                 <div className="flex justify-between items-center border-b border-slate-100 pb-4">
                   <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                    <Globe size={18} className="text-blue-500" /> Vessel
-                    Description
+                    <Globe size={18} className="text-blue-500" />{" "}
+                    {labelText("vesselDescription", "Vessel Description")}
                   </h3>
 
                   {/* Language Tabs */}
@@ -6388,8 +7157,8 @@ export default function YachtEditorPage() {
               <div className="space-y-8 bg-slate-50 p-10 border border-slate-200 shadow-sm">
                 <div className="flex justify-between items-center border-b border-slate-200 pb-4">
                   <h3 className="text-[12px] font-black uppercase text-[#003566] tracking-[0.4em] flex items-center gap-3 italic">
-                    <Calendar size={20} className="text-blue-600" /> 04.
-                    Scheduling Authority
+                    <Calendar size={20} className="text-blue-600" /> 04.{" "}
+                    {labelText("schedulingAuthority", "Scheduling Authority")}
                   </h3>
                   <Button
                     type="button"
@@ -6407,16 +7176,16 @@ export default function YachtEditorPage() {
                       className="flex flex-wrap items-center gap-6 bg-white p-4 border border-slate-100 shadow-sm relative group"
                     >
                       <div className="flex-1 min-w-[300px]">
-                        <Label>Days of Week</Label>
+                        <Label>{labelText("daysOfWeek", "Days of Week")}</Label>
                         <div className="flex flex-wrap gap-2 mt-2">
                           {[
-                            { val: 1, label: "Mon" },
-                            { val: 2, label: "Tue" },
-                            { val: 3, label: "Wed" },
-                            { val: 4, label: "Thu" },
-                            { val: 5, label: "Fri" },
-                            { val: 6, label: "Sat" },
-                            { val: 0, label: "Sun" },
+                            { val: 1, label: t?.weekdays?.monday || "Mon" },
+                            { val: 2, label: t?.weekdays?.tuesday || "Tue" },
+                            { val: 3, label: t?.weekdays?.wednesday || "Wed" },
+                            { val: 4, label: t?.weekdays?.thursday || "Thu" },
+                            { val: 5, label: t?.weekdays?.friday || "Fri" },
+                            { val: 6, label: t?.weekdays?.saturday || "Sat" },
+                            { val: 0, label: t?.weekdays?.sunday || "Sun" },
                           ].map((day) => {
                             const isSelected = rule.days_of_week.includes(
                               day.val,
@@ -6454,7 +7223,7 @@ export default function YachtEditorPage() {
 
                       <div className="flex-1 min-w-[120px]">
                         <Label>
-                          {t?.scheduling?.startTime || "Start Time"}
+                          {labelText("startTime", t?.scheduling?.startTime || "Start Time")}
                         </Label>
                         <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
                           <Clock size={12} className="text-slate-400" />
@@ -6475,7 +7244,7 @@ export default function YachtEditorPage() {
                       </div>
 
                       <div className="flex-1 min-w-[120px]">
-                        <Label>{t?.scheduling?.endTime || "End Time"}</Label>
+                        <Label>{labelText("endTime", t?.scheduling?.endTime || "End Time")}</Label>
                         <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
                           <Clock size={12} className="text-slate-400" />
                           <input
@@ -6526,11 +7295,15 @@ export default function YachtEditorPage() {
             <div className="space-y-8">
               <div className="bg-white border border-slate-200 p-8 shadow-sm">
                 <h3 className="text-[12px] font-black text-[#003566] uppercase tracking-[0.3em] flex items-center gap-3 border-b-2 border-[#003566] pb-4 mb-6">
-                  <FileText size={18} /> {t?.wizard?.review?.title || "Review"}
+                  <FileText size={18} />{" "}
+                  {t?.wizard?.review?.title ||
+                    labelText("stepReview", "Review")}
                 </h3>
                 <p className="text-sm text-slate-600 mb-6">
-                  Review all steps before submitting. Completed steps are marked
-                  with a blue checkmark in the tab bar above.
+                  {labelText(
+                    "reviewSummary",
+                    "Review all steps before submitting. Completed steps are marked with a blue checkmark in the tab bar above.",
+                  )}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                   {wizardSteps.slice(0, 4).map((step) => (
@@ -6564,8 +7337,10 @@ export default function YachtEditorPage() {
                         </p>
                         <p className="text-[9px] text-slate-500">
                           {!isNewMode || isStepComplete(step.id)
-                            ? t?.wizard?.review?.completed || "Completed"
-                            : t?.wizard?.review?.notCompleted || "Pending"}
+                            ? t?.wizard?.review?.completed ||
+                              labelText("completed", "Completed")
+                            : t?.wizard?.review?.notCompleted ||
+                              labelText("pending", "Pending")}
                         </p>
                       </div>
                     </div>
@@ -6734,31 +7509,12 @@ export default function YachtEditorPage() {
                   </div>
                 </div>
 
-                {/* ── SIGNHOST INTEGRATION ── */}
-                {activeYachtId && (
-                  <div className="mb-8">
-                    <SignhostFlow
-                      yachtId={Number(activeYachtId)}
-                      yachtName={
-                        selectedYacht?.boat_name ||
-                        (draft?.data as any)?.step2?.selectedYacht?.boat_name ||
-                        "Unnamed Vessel"
-                      }
-                      locationId={
-                        selectedYacht?.ref_harbor_id ||
-                        (draft?.data as any)?.step2?.selectedYacht
-                          ?.ref_harbor_id ||
-                        null
-                      }
-                      yachtData={
-                        selectedYacht ||
-                        (draft?.data as any)?.step2?.selectedYacht ||
-                        null
-                      }
-                      locationOptions={harbors}
-                    />
-                  </div>
-                )}
+                <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
+                  {labelText(
+                    "reviewContractNotice",
+                    "Save this vessel first. The contract flow opens in the next step after the vessel record is stored.",
+                  )}
+                </div>
 
                 <Button
                   type="submit"
@@ -6771,9 +7527,53 @@ export default function YachtEditorPage() {
                     <Save className="mr-2 w-5 h-5" />
                   )}
                   {isNewMode
-                    ? t?.wizard?.review?.create || "Create Vessel"
-                    : t?.wizard?.review?.update || "Update Vessel"}
+                    ? t?.wizard?.review?.create ||
+                      labelText("createVessel", "Create Vessel")
+                    : t?.wizard?.review?.update ||
+                      labelText("updateVessel", "Update Vessel")}
                 </Button>
+              </div>
+            </div>
+          )}
+
+          {activeStep === 6 && (
+            <div className="space-y-8">
+              <div className="bg-white border border-slate-200 p-8 shadow-sm">
+                <h3 className="text-[12px] font-black text-[#003566] uppercase tracking-[0.3em] flex items-center gap-3 border-b-2 border-[#003566] pb-4 mb-6">
+                  <FileText size={18} /> {labelText("stepContract", "Contract")}
+                </h3>
+                <p className="text-sm text-slate-600 mb-6">
+                  {labelText(
+                    "contractStepDescription",
+                    "Manage the contract template, print the PDF, and generate the Signhost-ready contract from this step.",
+                  )}
+                </p>
+
+                {activeYachtId ? (
+                  <SignhostFlow
+                    yachtId={Number(activeYachtId)}
+                    yachtName={
+                      selectedYacht?.boat_name ||
+                      (draft?.data as any)?.step2?.selectedYacht?.boat_name ||
+                      "Unnamed Vessel"
+                    }
+                    locationId={
+                      selectedYacht?.ref_harbor_id ||
+                      (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id ||
+                      null
+                    }
+                    yachtData={
+                      selectedYacht ||
+                      (draft?.data as any)?.step2?.selectedYacht ||
+                      null
+                    }
+                    locationOptions={harbors}
+                  />
+                ) : (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+                    Save the vessel in Step 5 before opening the contract flow.
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -6787,12 +7587,12 @@ export default function YachtEditorPage() {
               className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 h-11 px-6 text-xs font-bold uppercase tracking-wider disabled:opacity-30"
             >
               <ChevronLeft size={16} className="mr-1" />{" "}
-              {t?.wizard?.nav?.previous || "Previous"}
+              {t?.wizard?.nav?.previous || labelText("previous", "Previous")}
             </Button>
             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
               Step {activeStep} of {wizardSteps.length}
             </span>
-            {activeStep < 5 ? (
+            {activeStep < wizardSteps.length && activeStep !== 5 ? (
               <Button
                 type="button"
                 onClick={() => {
@@ -6810,13 +7610,29 @@ export default function YachtEditorPage() {
                 {isNewMode && !canProceedFromStep1 && activeStep === 1 ? (
                   <>
                     {t?.wizard?.nav?.runExtractionFirst ||
-                      "Approve Images First"}
+                      labelText("approveImagesFirst", "Approve Images First")}
                   </>
                 ) : (
                   <>
-                    {t?.wizard?.nav?.next || "Next"}{" "}
+                    {t?.wizard?.nav?.next || labelText("next", "Next")}{" "}
                     <ChevronRight size={16} className="ml-1" />
                   </>
+                )}
+              </Button>
+            ) : activeStep === 5 ? (
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-11 px-6 text-xs font-bold uppercase tracking-wider bg-[#003566] text-white hover:bg-blue-800 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ChevronRight size={16} className="mr-1" />
+                )}
+                {labelText(
+                  "continueToContract",
+                  "Save and Continue to Contract",
                 )}
               </Button>
             ) : (
@@ -6926,6 +7742,28 @@ function Label({
   );
 }
 
+function CheckboxField({
+  name,
+  label,
+  defaultChecked,
+}: {
+  name: string;
+  label: string;
+  defaultChecked?: boolean;
+}) {
+  return (
+    <label className="flex min-h-[46px] items-center gap-3 rounded-md border border-slate-200 px-3.5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300">
+      <input
+        type="checkbox"
+        name={name}
+        defaultChecked={defaultChecked}
+        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+      />
+      <span>{label}</span>
+    </label>
+  );
+}
+
 function Input(
   props: React.InputHTMLAttributes<HTMLInputElement> & {
     needsConfirmation?: boolean;
@@ -7008,6 +7846,9 @@ function TriStateSelect(
     label?: string;
   },
 ) {
+  const locale = useLocale();
+  const formText =
+    YACHT_FORM_TEXT[locale as keyof typeof YACHT_FORM_TEXT] ?? YACHT_FORM_TEXT.en;
   const {
     needsConfirmation,
     defaultValue,
@@ -7042,13 +7883,13 @@ function TriStateSelect(
           selectProps.className,
         )}
       >
-        <option value="yes">Yes</option>
-        <option value="no">No</option>
-        <option value="unknown">Unknown</option>
+        <option value="yes">{formText.common.yes}</option>
+        <option value="no">{formText.common.no}</option>
+        <option value="unknown">{formText.common.unknown}</option>
       </select>
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
-          ⚠ confirm
+          ⚠ {formText.common.confirm}
         </span>
       )}
     </div>

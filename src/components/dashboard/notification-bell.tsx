@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { Bell, BellOff, CheckCheck, Trash2 } from "lucide-react";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 import type { UserRole } from "@/lib/auth/roles";
@@ -75,7 +74,8 @@ const mapNotification = (
   read: Boolean(item.read ?? item.pivot?.read ?? false),
 });
 
-export function NotificationBell({ locale, role }: NotificationBellProps) {
+export function NotificationBell({ locale, role: _role }: NotificationBellProps) {
+  void _role;
   const dictionary = getDictionary(locale);
   const t = dictionary.dashboard.notifications;
   const text = {
@@ -94,7 +94,6 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
     delete: "Delete",
   };
 
-  const notificationsPath = `/${locale}/dashboard/${role}/emails`;
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
@@ -158,11 +157,26 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
   };
 
   const markAllAsRead = async () => {
+    const previous = notifications;
+    setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
+
     try {
       await apiRequest({ url: "/notifications/read-all", method: "POST" });
-      setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
     } catch {
-      // Ignore endpoint errors to avoid breaking interaction.
+      try {
+        await Promise.all(
+          previous
+            .filter((item) => !item.read)
+            .map((item) =>
+              apiRequest({
+                url: `/notifications/${item.id}/read`,
+                method: "POST",
+              }),
+            ),
+        );
+      } catch {
+        setNotifications(previous);
+      }
     }
   };
 
@@ -176,12 +190,25 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
   };
 
   const deleteAllNotifications = async () => {
+    const previous = notifications;
+    setNotifications([]);
+
     try {
       setDeletingAll(true);
       await apiRequest({ url: "/notifications", method: "DELETE" });
-      setNotifications([]);
     } catch {
-      // Ignore endpoint errors to avoid breaking interaction.
+      try {
+        await Promise.all(
+          previous.map((item) =>
+            apiRequest({
+              url: `/notifications/${item.id}`,
+              method: "DELETE",
+            }),
+          ),
+        );
+      } catch {
+        setNotifications(previous);
+      }
     } finally {
       setDeletingAll(false);
     }
@@ -246,7 +273,7 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
                   <>
                     <button
                       type="button"
-                      onClick={markAllAsRead}
+                      onClick={() => void markAllAsRead()}
                       className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                       aria-label={text.markAllRead}
                       title={text.markAllRead}
@@ -255,7 +282,7 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
                     </button>
                     <button
                       type="button"
-                      onClick={deleteAllNotifications}
+                      onClick={() => void deleteAllNotifications()}
                       disabled={deletingAll}
                       className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-red-600 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
                       aria-label="Delete all"
