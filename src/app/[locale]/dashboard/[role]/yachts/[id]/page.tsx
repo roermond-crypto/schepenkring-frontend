@@ -300,6 +300,80 @@ function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
   return null;
 }
 
+type DescriptionFormValue = string | number | boolean;
+
+const DESCRIPTION_CONTEXT_IGNORED_FIELDS = new Set([
+  "id",
+  "user_id",
+  "created_at",
+  "updated_at",
+  "deleted_at",
+  "main_image",
+  "images",
+  "availability_rules",
+  "availabilityRules",
+  "short_description_en",
+  "short_description_nl",
+  "short_description_de",
+  "short_description_fr",
+]);
+
+function stripRichText(value: string): string {
+  return value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildDescriptionFormValues(
+  value: unknown,
+): Record<string, DescriptionFormValue> {
+  const record = toObjectRecord(value);
+  const entries = Object.entries(record)
+    .filter(([key, rawValue]) => {
+      if (DESCRIPTION_CONTEXT_IGNORED_FIELDS.has(key)) return false;
+      if (rawValue === null || rawValue === undefined) return false;
+      if (Array.isArray(rawValue)) return false;
+      if (typeof rawValue === "object") return false;
+      if (typeof rawValue === "string") {
+        const trimmed = rawValue.trim();
+        return trimmed !== "" && trimmed.toLowerCase() !== "undefined";
+      }
+      if (typeof rawValue === "number") {
+        return Number.isFinite(rawValue);
+      }
+      return typeof rawValue === "boolean";
+    })
+    .map(([key, rawValue]) => [
+      key,
+      typeof rawValue === "string" ? rawValue.trim() : rawValue,
+    ])
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
+
+  return Object.fromEntries(entries);
+}
+
+function buildDescriptionRequestSignature(
+  formValues: Record<string, DescriptionFormValue>,
+  tone: string,
+  minWords: number | "",
+  maxWords: number | "",
+): string {
+  return JSON.stringify({
+    tone,
+    minWords: minWords || 200,
+    maxWords: maxWords || 500,
+    formValues,
+  });
+}
+
+function hasThinDescriptions(texts: { nl: string; en: string; de: string }): boolean {
+  return (["nl", "en", "de"] as const).some(
+    (lang) => stripRichText(texts[lang]).length < 140,
+  );
+}
+
 export default function YachtEditorPage() {
   const params = useParams<{ id: string; role?: string }>();
   // We can't safely extract locale from params directly if it's missing or async,
@@ -498,10 +572,42 @@ export default function YachtEditorPage() {
   const [aiMinWords, setAiMinWords] = useState<number | "">(200);
   const [aiMaxWords, setAiMaxWords] = useState<number | "">(500);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const lastDescriptionRequestSignatureRef = useRef<string | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>("");
   const [isDictating, setIsDictating] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
+  const descriptionFormValues = useMemo(
+    () => buildDescriptionFormValues(selectedYacht),
+    [selectedYacht],
+  );
+  const descriptionRequestSignature = useMemo(
+    () =>
+      buildDescriptionRequestSignature(
+        descriptionFormValues,
+        aiTone,
+        aiMinWords,
+        aiMaxWords,
+      ),
+    [descriptionFormValues, aiTone, aiMinWords, aiMaxWords],
+  );
+  const hasDescriptionContext = useMemo(() => {
+    const keys = Object.keys(descriptionFormValues);
+    return (
+      keys.length >= 5 ||
+      Boolean(
+        descriptionFormValues.boat_name ||
+          descriptionFormValues.manufacturer ||
+          descriptionFormValues.model ||
+          descriptionFormValues.boat_type ||
+          descriptionFormValues.boat_category,
+      )
+    );
+  }, [descriptionFormValues]);
+  const needsAutoDescriptionGeneration = useMemo(
+    () => hasThinDescriptions(aiTexts),
+    [aiTexts],
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -2293,6 +2399,25 @@ export default function YachtEditorPage() {
           }));
         }
 
+        const mergedDescriptionState = {
+          ...toObjectRecord(selectedYacht),
+          ...fieldsToMerge,
+        };
+        const extractedDescriptionFormValues =
+          buildDescriptionFormValues(mergedDescriptionState);
+        if (Object.keys(extractedDescriptionFormValues).length > 0) {
+          void handleRegenerateDescription({
+            silent: true,
+            signature: buildDescriptionRequestSignature(
+              extractedDescriptionFormValues,
+              aiTone,
+              aiMinWords,
+              aiMaxWords,
+            ),
+            formValuesOverride: extractedDescriptionFormValues,
+          });
+        }
+
         const fieldCount = Object.keys(fieldsToMerge).length;
         const confPct = Math.round((meta?.overall_confidence || 0) * 100);
         const removedCount = meta?.removed_fields?.length || 0;
@@ -2362,43 +2487,112 @@ export default function YachtEditorPage() {
     }
   };
 
-  const handleRegenerateDescription = async () => {
+  const handleRegenerateDescription = useCallback(
+    async (options?: {
+      silent?: boolean;
+      signature?: string;
+      formValuesOverride?: Record<string, DescriptionFormValue>;
+    }) => {
+      const targetId = isNewMode ? createdYachtId : yachtId;
+      if (!targetId) {
+        toast.error("Please save the yacht first before regenerating text.");
+        return;
+      }
+
+      const requestFormValues =
+        options?.formValuesOverride || descriptionFormValues;
+      const toastId = options?.silent
+        ? null
+        : toast.loading("🪄 Building broker-grade descriptions...");
+      const requestSignature =
+        options?.signature ||
+        buildDescriptionRequestSignature(
+          requestFormValues,
+          aiTone,
+          aiMinWords,
+          aiMaxWords,
+        );
+
+      setIsRegenerating(true);
+
+      try {
+        const res = await api.post("/ai/generate-description", {
+          yacht_id: targetId,
+          tone: aiTone,
+          min_words: aiMinWords || 200,
+          max_words: aiMaxWords || 500,
+          form_values: requestFormValues,
+        });
+
+        if (res.data?.success && res.data?.descriptions) {
+          setAiTexts({
+            en: res.data.descriptions.en || "",
+            nl: res.data.descriptions.nl || "",
+            de: res.data.descriptions.de || "",
+          });
+          lastDescriptionRequestSignatureRef.current = requestSignature;
+          if (toastId) {
+            toast.success("Descriptions updated from step 2 data.", {
+              id: toastId,
+            });
+          }
+        } else {
+          throw new Error("Failed to generate descriptions.");
+        }
+      } catch (e: any) {
+        console.error(e);
+        lastDescriptionRequestSignatureRef.current = null;
+        if (toastId) {
+          toast.error(
+            e?.response?.data?.error || "Failed to regenerate text.",
+            {
+              id: toastId,
+            },
+          );
+        }
+      } finally {
+        setIsRegenerating(false);
+      }
+    },
+    [
+      isNewMode,
+      createdYachtId,
+      yachtId,
+      aiTone,
+      aiMinWords,
+      aiMaxWords,
+      descriptionFormValues,
+      toast,
+    ],
+  );
+
+  useEffect(() => {
+    if (activeStep !== 3) return;
     const targetId = isNewMode ? createdYachtId : yachtId;
-    if (!targetId) {
-      toast.error("Please save the yacht first before regenerating text.");
+    if (!targetId || isRegenerating) return;
+    if (!hasDescriptionContext || !needsAutoDescriptionGeneration) return;
+    if (
+      lastDescriptionRequestSignatureRef.current === descriptionRequestSignature
+    ) {
       return;
     }
 
-    setIsRegenerating(true);
-    const toastId = toast.loading("🪄 Generating new descriptions...");
-
-    try {
-      const res = await api.post("/ai/generate-description", {
-        yacht_id: targetId,
-        tone: aiTone,
-        min_words: aiMinWords || 200,
-        max_words: aiMaxWords || 500,
-      });
-
-      if (res.data?.success && res.data?.descriptions) {
-        setAiTexts({
-          en: res.data.descriptions.en || "",
-          nl: res.data.descriptions.nl || "",
-          de: res.data.descriptions.de || "",
-        });
-        toast.success("Descriptions updated!", { id: toastId });
-      } else {
-        throw new Error("Failed to generate descriptions.");
-      }
-    } catch (e: any) {
-      console.error(e);
-      toast.error(e?.response?.data?.error || "Failed to regenerate text.", {
-        id: toastId,
-      });
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
+    lastDescriptionRequestSignatureRef.current = descriptionRequestSignature;
+    void handleRegenerateDescription({
+      silent: true,
+      signature: descriptionRequestSignature,
+    });
+  }, [
+    activeStep,
+    isNewMode,
+    createdYachtId,
+    yachtId,
+    isRegenerating,
+    hasDescriptionContext,
+    needsAutoDescriptionGeneration,
+    descriptionRequestSignature,
+    handleRegenerateDescription,
+  ]);
 
   const toggleDictation = () => {
     if (!recognition) {
