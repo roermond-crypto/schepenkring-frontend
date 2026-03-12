@@ -6253,7 +6253,7 @@ export default function YachtEditorPage() {
                     </div>
                     <Button
                       type="button"
-                      onClick={handleRegenerateDescription}
+                      onClick={() => handleRegenerateDescription()}
                       disabled={isRegenerating}
                       className="bg-blue-600 hover:bg-blue-700 text-white gap-2 mt-1 h-9"
                     >
