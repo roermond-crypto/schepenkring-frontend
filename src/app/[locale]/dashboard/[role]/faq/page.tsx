@@ -23,6 +23,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { normalizeRole } from "@/lib/auth/roles";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface Faq {
   id: number;
@@ -44,6 +45,7 @@ interface FaqStats {
 }
 
 interface FaqResponse {
+  data?: Faq[];
   faqs?: { data?: Faq[] } | Faq[];
   categories?: string[];
 }
@@ -54,13 +56,58 @@ interface AiAnswerResponse {
   timestamp: string;
 }
 
+interface LocationOption {
+  id: number;
+  name: string;
+}
+
 type ApiErrorResponse = {
   message?: string;
 };
 
 function extractFaqItems(payload?: FaqResponse["faqs"]): Faq[] {
   if (!payload) return [];
-  return Array.isArray(payload) ? payload : payload.data ?? [];
+  return Array.isArray(payload) ? payload : (payload.data ?? []);
+}
+
+function extractFaqResponseItems(payload?: FaqResponse): Faq[] {
+  if (!payload) return [];
+  if (Array.isArray(payload.data)) return payload.data;
+  return extractFaqItems(payload.faqs);
+}
+
+function getCurrentLocationId() {
+  if (typeof window === "undefined") return null;
+  const userDataRaw = localStorage.getItem("user_data");
+  if (!userDataRaw) return null;
+
+  try {
+    const userData = JSON.parse(userDataRaw) as {
+      location_id?: number | string;
+      locationId?: number | string;
+      location?: { id?: number | string };
+      client_location_id?: number | string;
+    };
+
+    const locationValue =
+      userData.location_id ??
+      userData.locationId ??
+      userData.client_location_id ??
+      userData.location?.id;
+
+    if (
+      locationValue === null ||
+      locationValue === undefined ||
+      locationValue === ""
+    ) {
+      return null;
+    }
+
+    const parsed = Number(locationValue);
+    return Number.isNaN(parsed) ? null : parsed;
+  } catch {
+    return null;
+  }
 }
 
 export default function FAQPage() {
@@ -94,8 +141,12 @@ export default function FAQPage() {
     question: "",
     answer: "",
     category: "General",
+    location_id: "",
   });
   const [isAdmin, setIsAdmin] = useState(role === "admin");
+  const [locations, setLocations] = useState<LocationOption[]>([]);
+  const [faqToDelete, setFaqToDelete] = useState<number | null>(null);
+  const [deletingFaq, setDeletingFaq] = useState(false);
 
   const checkAdminStatus = useCallback(() => {
     setIsAdmin(role === "admin");
@@ -136,7 +187,7 @@ export default function FAQPage() {
       }
 
       const response = await api.get<FaqResponse>(`/faqs?${params.toString()}`);
-      setFaqs(extractFaqItems(response.data.faqs));
+      setFaqs(extractFaqResponseItems(response.data));
       setCategories(
         response.data.categories || [
           "General",
@@ -162,14 +213,44 @@ export default function FAQPage() {
     }
   }, []);
 
+  const fetchLocations = useCallback(async () => {
+    try {
+      const response = await api.get("/public/locations");
+      const list = (
+        Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.data)
+            ? response.data.data
+            : []
+      ) as LocationOption[];
+      setLocations(list);
+
+      const currentLocationId = getCurrentLocationId();
+      if (list.length > 0) {
+        const fallbackLocationId =
+          currentLocationId && list.some((location) => location.id === currentLocationId)
+            ? String(currentLocationId)
+            : String(list[0].id);
+
+        setNewFaq((prev) =>
+          prev.location_id ? prev : { ...prev, location_id: fallbackLocationId },
+        );
+      }
+    } catch (error: unknown) {
+      console.error("Error fetching FAQ locations:", error);
+      setLocations([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchFaqs();
-  }, [fetchFaqs]);
+  }, []);
 
   useEffect(() => {
     fetchStats();
     checkAdminStatus();
-  }, [checkAdminStatus, fetchStats]);
+    fetchLocations();
+  }, []);
 
   const askGemini = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,11 +301,26 @@ export default function FAQPage() {
 
   const handleAddFaq = async (e: React.FormEvent) => {
     e.preventDefault();
+    const locationId = Number(newFaq.location_id);
+
+    if (!Number.isFinite(locationId) || locationId <= 0) {
+      toast.error("Select a location first.");
+      return;
+    }
+
     try {
-      await api.post("/faqs", newFaq);
+      await api.post("/faqs", {
+        ...newFaq,
+        location_id: locationId,
+      });
 
       toast.success(t("toastFaqAdded"));
-      setNewFaq({ question: "", answer: "", category: "General" });
+      setNewFaq((prev) => ({
+        question: "",
+        answer: "",
+        category: "General",
+        location_id: prev.location_id,
+      }));
       setShowAddForm(false);
       fetchFaqs();
       fetchStats();
@@ -238,16 +334,18 @@ export default function FAQPage() {
   };
 
   const handleDeleteFaq = async (id: number) => {
-    if (!confirm(t("confirmDelete"))) return;
-
     try {
+      setDeletingFaq(true);
       await api.delete(`/faqs/${id}`);
 
       toast.success(t("toastFaqDeleted"));
+      setFaqToDelete(null);
       fetchFaqs();
       fetchStats();
     } catch {
       toast.error(t("toastFailedDelete"));
+    } finally {
+      setDeletingFaq(false);
     }
   };
 
@@ -500,6 +598,29 @@ export default function FAQPage() {
                     </select>
                   </div>
 
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-slate-600 font-black block mb-2">
+                      Location
+                    </label>
+                    <select
+                      value={newFaq.location_id}
+                      onChange={(e) =>
+                        setNewFaq({ ...newFaq, location_id: e.target.value })
+                      }
+                      className="w-full border border-slate-200 p-3 text-sm outline-none rounded"
+                      required
+                    >
+                      <option value="" disabled>
+                        Select location
+                      </option>
+                      {locations.map((location) => (
+                        <option key={location.id} value={location.id}>
+                          {location.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="flex items-end gap-4">
                     <button
                       type="submit"
@@ -614,7 +735,7 @@ export default function FAQPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteFaq(faq.id);
+                          setFaqToDelete(faq.id);
                         }}
                         className="text-red-400 hover:text-red-600 transition-colors"
                         title={t("deleteFaq")}
@@ -691,6 +812,23 @@ export default function FAQPage() {
           <p className="text-sm text-slate-600 mt-2">{t("support.contact")}</p>
         </div>
       </div>
+      <ConfirmDialog
+        open={faqToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !deletingFaq) setFaqToDelete(null);
+        }}
+        title={t("confirmDelete")}
+        description={t("confirmDelete")}
+        confirmText={t("deleteFaq")}
+        cancelText={t("cancel")}
+        variant="destructive"
+        isLoading={deletingFaq}
+        onConfirm={() => {
+          if (faqToDelete !== null) {
+            void handleDeleteFaq(faqToDelete);
+          }
+        }}
+      />
     </div>
   );
 }
