@@ -20,7 +20,6 @@ import {
   Users,
   Wifi,
   WifiOff,
-  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -122,11 +121,6 @@ export function Sidebar({
         title: t.errors,
         href: `${root}/errors`,
         icon: TriangleAlert,
-      });
-      items.push({
-        title: "Boat Audit",
-        href: `${root}/boat-audit`,
-        icon: ShieldCheck, // Reusing ShieldCheck or Bot for AI audit
       });
     }
 

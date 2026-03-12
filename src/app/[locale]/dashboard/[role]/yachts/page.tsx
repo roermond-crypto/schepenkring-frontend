@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, SyntheticEvent } from "react";
+import { useState, useEffect, SyntheticEvent, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useLocale } from "next-intl";
@@ -20,11 +20,15 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Filter,
   BarChart3,
   RefreshCw,
   Eye,
+  ShieldCheck,
   Settings,
   MoreHorizontal,
   Grid3x3,
@@ -39,6 +43,26 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 const STORAGE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || "https://app.schepen-kring.nl/storage/";
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=600&q=80";
+
+type FleetStats = {
+  total: number;
+  forSale: number;
+  forBid: number;
+  sold: number;
+  draft: number;
+  active: number;
+  inactive: number;
+  maintenance: number;
+};
+
+type PaginationMeta = {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from: number;
+  to: number;
+};
 
 // Status badge configuration
 const statusConfig: Record<string, { color: string; bg: string; border: string }> = {
@@ -88,6 +112,7 @@ export default function FleetManagementPage() {
   const t = dict.DashboardYachts || {} as any;
   const [fleet, setFleet] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -95,7 +120,7 @@ export default function FleetManagementPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("boat_name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<FleetStats>({
     total: 0,
     forSale: 0,
     forBid: 0,
@@ -103,6 +128,15 @@ export default function FleetManagementPage() {
     draft: 0,
     active: 0,
     inactive: 0,
+    maintenance: 0,
+  });
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    current_page: 1,
+    last_page: 1,
+    per_page: 25,
+    total: 0,
+    from: 0,
+    to: 0,
   });
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const statusOptions = [
@@ -141,11 +175,32 @@ export default function FleetManagementPage() {
     return map[status.toLowerCase()] || status;
   };
 
+  const deriveStats = (yachts: any[]): FleetStats => ({
+    total: yachts.length,
+    forSale: yachts.filter((y: any) => y.status === "For Sale").length,
+    forBid: yachts.filter((y: any) => y.status === "For Bid").length,
+    sold: yachts.filter((y: any) => y.status === "Sold").length,
+    draft: yachts.filter((y: any) => y.status === "Draft").length,
+    active: yachts.filter((y: any) => y.status === "Active").length,
+    inactive: yachts.filter((y: any) => y.status === "Inactive").length,
+    maintenance: yachts.filter((y: any) => y.status === "Maintenance").length,
+  });
+
   // Fetch fleet
-  const fetchFleet = async () => {
+  const fetchFleet = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get("/yachts");
+      const params = new URLSearchParams({
+        page: String(pagination.current_page),
+        per_page: String(pagination.per_page),
+        sort_by: sortBy,
+        sort_dir: sortOrder,
+      });
+
+      if (searchQuery) params.set("search", searchQuery);
+      if (selectedStatus !== "all") params.set("status", selectedStatus);
+
+      const res = await api.get(`/yachts?${params.toString()}`);
       const resolveFallbackImage = (yacht: any): string | null => {
         const images = Array.isArray(yacht?.images) ? yacht.images : [];
         const preferred =
@@ -160,8 +215,11 @@ export default function FleetManagementPage() {
         return candidate ? String(candidate) : null;
       };
 
+      const payload = res.data;
+      const rawYachts = Array.isArray(payload) ? payload : payload?.data || [];
+
       // Normalize status on all yachts before using them
-      const yachts = (res.data || []).map((y: any) => ({
+      const yachts = rawYachts.map((y: any) => ({
         ...y,
         status: normalizeStatus(y.status),
         main_image: y.main_image || resolveFallbackImage(y) || null,
@@ -172,28 +230,86 @@ export default function FleetManagementPage() {
       }));
       setFleet(yachts);
 
-      // Calculate stats
-      const statsData = {
-        total: yachts.length,
-        forSale: yachts.filter((y: any) => y.status === "For Sale").length,
-        forBid: yachts.filter((y: any) => y.status === "For Bid").length,
-        sold: yachts.filter((y: any) => y.status === "Sold").length,
-        draft: yachts.filter((y: any) => y.status === "Draft").length,
-        active: yachts.filter((y: any) => y.status === "Active").length,
-        inactive: yachts.filter((y: any) => y.status === "Inactive").length,
+      const nextStats = Array.isArray(payload) ? deriveStats(yachts) : {
+        total: Number(payload?.stats?.total || 0),
+        forSale: Number(payload?.stats?.forSale || 0),
+        forBid: Number(payload?.stats?.forBid || 0),
+        sold: Number(payload?.stats?.sold || 0),
+        draft: Number(payload?.stats?.draft || 0),
+        active: Number(payload?.stats?.active || 0),
+        inactive: Number(payload?.stats?.inactive || 0),
+        maintenance: Number(payload?.stats?.maintenance || 0),
       };
-      setStats(statsData);
+      setStats(nextStats);
+
+      const nextMeta: PaginationMeta = Array.isArray(payload)
+        ? {
+            current_page: 1,
+            last_page: 1,
+            per_page: yachts.length || pagination.per_page,
+            total: yachts.length,
+            from: yachts.length > 0 ? 1 : 0,
+            to: yachts.length,
+          }
+        : {
+            current_page: Number(payload?.meta?.current_page || pagination.current_page),
+            last_page: Number(payload?.meta?.last_page || 1),
+            per_page: Number(payload?.meta?.per_page || pagination.per_page),
+            total: Number(payload?.meta?.total || 0),
+            from: Number(payload?.meta?.from || 0),
+            to: Number(payload?.meta?.to || 0),
+          };
+
+      if (
+        nextMeta.last_page > 0 &&
+        pagination.current_page > nextMeta.last_page
+      ) {
+        setPagination((prev) => ({
+          ...prev,
+          current_page: nextMeta.last_page,
+          last_page: nextMeta.last_page,
+          total: nextMeta.total,
+          from: nextMeta.from,
+          to: nextMeta.to,
+        }));
+        return;
+      }
+
+      setPagination((prev) => ({
+        ...prev,
+        ...nextMeta,
+      }));
     } catch (err: any) {
       console.error("API Sync Error", err);
       toast.error(t?.toasts?.loadFailed || "Failed to load fleet");
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    pagination.current_page,
+    pagination.per_page,
+    searchQuery,
+    selectedStatus,
+    sortBy,
+    sortOrder,
+    t?.toasts?.loadFailed,
+  ]);
 
   useEffect(() => {
     fetchFleet();
-  }, []);
+  }, [fetchFleet]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const nextQuery = searchInput.trim();
+      setSearchQuery((prev) => (prev === nextQuery ? prev : nextQuery));
+      setPagination((prev) =>
+        prev.current_page === 1 ? prev : { ...prev, current_page: 1 },
+      );
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchInput]);
 
   const handleImageError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = PLACEHOLDER_IMAGE;
@@ -253,66 +369,10 @@ export default function FleetManagementPage() {
     return String(value).trim();
   };
 
-  // Filter and sort fleet
-  const filteredAndSortedFleet = fleet
-    .filter((yacht) => {
-      if (!yacht) return false;
-
-      // Search filter - safe with null checks
-      const boatName = safeString(yacht.boat_name).toLowerCase();
-      const vesselId = safeString(yacht.vessel_id).toLowerCase();
-      const location = safeString(yacht.where).toLowerCase();
-      const query = searchQuery.toLowerCase();
-
-      const matchesSearch =
-        boatName.includes(query) ||
-        vesselId.includes(query) ||
-        location.includes(query);
-
-      // Status filter
-      const yachtStatus = yacht.status || "Draft";
-      const matchesStatus =
-        selectedStatus === "all" || yachtStatus === selectedStatus;
-
-      return matchesSearch && matchesStatus;
-    })
-    .sort((a, b) => {
-      // Sorting logic with null checks
-      let aValue: any = "";
-      let bValue: any = "";
-
-      if (sortBy.includes(".")) {
-        // Handle nested properties if needed
-        const keys = sortBy.split(".");
-        aValue = keys.reduce((obj, key) => obj?.[key], a) || "";
-        bValue = keys.reduce((obj, key) => obj?.[key], b) || "";
-      } else {
-        aValue = a[sortBy] || "";
-        bValue = b[sortBy] || "";
-      }
-
-      // Handle numeric sorting for price, year, etc.
-      if (sortBy === "price" || sortBy === "year") {
-        const aNum = parseFloat(aValue) || 0;
-        const bNum = parseFloat(bValue) || 0;
-        return sortOrder === "asc" ? aNum - bNum : bNum - aNum;
-      }
-
-      // Handle date sorting
-      if (sortBy.includes("_at")) {
-        const aDate = new Date(aValue || 0).getTime();
-        const bDate = new Date(bValue || 0).getTime();
-        return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
-      }
-
-      // Handle string sorting
-      const aStr = safeString(aValue);
-      const bStr = safeString(bValue);
-
-      return sortOrder === "asc"
-        ? aStr.localeCompare(bStr)
-        : bStr.localeCompare(aStr);
-    });
+  const meaningfulString = (value: any): string => {
+    const normalized = safeString(value);
+    return /^-+$/.test(normalized) ? "" : normalized;
+  };
 
   const formatCurrency = (amount: number | string | null | undefined) => {
     if (amount === null || amount === undefined || amount === "") return t?.fallbacks?.price || "Price on request";
@@ -375,6 +435,7 @@ export default function FleetManagementPage() {
     const [newSortBy, newSortOrder] = value.split("-");
     setSortBy(newSortBy);
     setSortOrder(newSortOrder as "asc" | "desc");
+    setPagination((prev) => ({ ...prev, current_page: 1 }));
   };
 
   // View toggle buttons
@@ -419,8 +480,48 @@ export default function FleetManagementPage() {
       .replace(/^-+|-+$/g, ""); // trim hyphens
   };
 
+  const getPublicListingId = (yacht: any): string => {
+    const externalUrl = safeString(yacht.external_url);
+    const externalMatch = externalUrl.match(/\/aanbod-boten\/(\d+)(?:\/|$)/i);
+    if (externalMatch?.[1]) {
+      return externalMatch[1];
+    }
+
+    const sourceIdentifier = safeString(yacht.source_identifier);
+    const sourceMatch = sourceIdentifier.match(/(\d{5,})/);
+    if (sourceMatch?.[1]) {
+      return sourceMatch[1];
+    }
+
+    const vesselId = safeString(yacht.vessel_id);
+    const vesselMatch = vesselId.match(/(\d{5,})/i);
+
+    return vesselMatch?.[1] || "";
+  };
+
   const getPublicUrl = (yacht: any): string => {
-    return yacht.external_url || "";
+    const directUrl = safeString(yacht.external_url);
+    if (directUrl) {
+      return directUrl.endsWith("/") ? directUrl : `${directUrl}/`;
+    }
+
+    const listingId = getPublicListingId(yacht);
+    if (!listingId) {
+      return "";
+    }
+
+    const slugSource =
+      meaningfulString(yacht.boat_name) ||
+      meaningfulString(yacht.name) ||
+      [meaningfulString(yacht.manufacturer), meaningfulString(yacht.model)]
+        .filter(Boolean)
+        .join(" ") ||
+      meaningfulString(yacht.vessel_id);
+    const slug = slugify(slugSource);
+
+    return slug
+      ? `https://www.schepenkring.nl/aanbod-boten/${listingId}/${slug}/`
+      : `https://www.schepenkring.nl/aanbod-boten/${listingId}/`;
   };
 
   return (
@@ -438,6 +539,13 @@ export default function FleetManagementPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <Button
+              onClick={() => router.push(`/${locale}/dashboard/${role}/boat-audit`)}
+              className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
+            >
+              <ShieldCheck size={14} />
+              Boat Audit
+            </Button>
             <Button
               onClick={fetchFleet}
               className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
@@ -560,8 +668,8 @@ export default function FleetManagementPage() {
                 type="text"
                 placeholder={t?.filters?.searchPlaceholder || "Search vessels..."}
                 className="w-full bg-slate-50 border border-slate-200 p-3 pl-12 text-[11px] font-black tracking-widest outline-none focus:ring-1 focus:ring-blue-600 transition-all"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
               />
             </div>
 
@@ -573,7 +681,10 @@ export default function FleetManagementPage() {
               <select
                 className="w-full bg-slate-50 border border-slate-200 p-3 pl-12 text-[11px] font-black tracking-widest outline-none appearance-none"
                 value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
+                onChange={(e) => {
+                  setSelectedStatus(e.target.value);
+                  setPagination((prev) => ({ ...prev, current_page: 1 }));
+                }}
               >
                 {statusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -597,7 +708,21 @@ export default function FleetManagementPage() {
               </select>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end items-center gap-3">
+              <select
+                className="bg-slate-50 border border-slate-200 px-3 h-11 text-[11px] font-black tracking-widest outline-none"
+                value={pagination.per_page}
+                onChange={(e) =>
+                  setPagination((prev) => ({
+                    ...prev,
+                    per_page: Number(e.target.value),
+                    current_page: 1,
+                  }))
+                }
+              >
+                <option value={25}>25 / page</option>
+                <option value={50}>50 / page</option>
+              </select>
               <ViewToggle />
             </div>
           </div>
@@ -613,7 +738,7 @@ export default function FleetManagementPage() {
         </div>
       )}
       {/* EMPTY STATE */}
-      {!loading && filteredAndSortedFleet.length === 0 && (
+      {!loading && fleet.length === 0 && (
         <div className="text-center py-20">
           <Ship className="mx-auto text-slate-300 mb-4" size={48} />
           <p className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-2">
@@ -634,154 +759,157 @@ export default function FleetManagementPage() {
         </div>
       )}
       {/* GRID VIEW */}
-      {!loading && viewMode === "grid" && filteredAndSortedFleet.length > 0 && (
+      {!loading && viewMode === "grid" && fleet.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredAndSortedFleet.map((yacht) => (
-            <div
-              key={yacht.id}
-              className="bg-white border border-slate-200 group overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300"
-            >
+          {fleet.map((yacht) => {
+            const publicUrl =
+              getPublicUrl(yacht) || "https://www.schepenkring.nl/aanbod-boten/";
+
+            return (
+              <div
+                key={yacht.id}
+                className="bg-white border border-slate-200 group overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300"
+              >
               {/* IMAGE SECTION */}
-              <div className="h-64 bg-slate-100 overflow-hidden relative">
-                <img
-                  src={getImageUrl(yacht.main_image)}
-                  onError={handleImageError}
-                  alt={getYachtName(yacht)}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+                <div className="h-64 bg-slate-100 overflow-hidden relative">
+                  <img
+                    src={getImageUrl(yacht.main_image)}
+                    onError={handleImageError}
+                    alt={getYachtName(yacht)}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
 
-                {/* VESSEL ID BADGE */}
-                {yacht.vessel_id && (
-                  <div className="absolute top-3 left-3 bg-black/80 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1">
-                    {yacht.vessel_id}
+                  {/* VESSEL ID BADGE */}
+                  {yacht.vessel_id && (
+                    <div className="absolute top-3 left-3 bg-black/80 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1">
+                      {yacht.vessel_id}
+                    </div>
+                  )}
+
+                  {/* STATUS BADGE */}
+                  <div className="absolute top-3 right-3">
+                    <span
+                      className={cn(
+                        "text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
+                        getStatusConfig(yacht.status).color,
+                        getStatusConfig(yacht.status).bg,
+                        getStatusConfig(yacht.status).border,
+                      )}
+                    >
+                      {getYachtStatus(yacht)}
+                    </span>
                   </div>
-                )}
 
-                {/* STATUS BADGE */}
-                <div className="absolute top-3 right-3">
-                  <span
-                    className={cn(
-                      "text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
-                      getStatusConfig(yacht.status).color,
-                      getStatusConfig(yacht.status).bg,
-                      getStatusConfig(yacht.status).border,
-                    )}
-                  >
-                    {getYachtStatus(yacht)}
-                  </span>
-                </div>
-
-                {/* ACTION OVERLAY */}
-                <div className="absolute inset-0 bg-[#003566]/90 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-6">
-                  <button
-                    onClick={() =>
-                      router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
-                    }
-                    className="w-full max-w-[200px] bg-white text-[#003566] px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2"
-                  >
-                    <Edit3 size={12} />
-                    {t?.actions?.editManifest || "Edit Manifest"}
-                  </button>
-
-                  {getPublicUrl(yacht) && (
+                  {/* ACTION OVERLAY */}
+                  <div className="absolute inset-0 bg-[#003566]/90 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-6">
                     <button
-                      onClick={() => window.open(getPublicUrl(yacht), "_blank")}
+                      onClick={() =>
+                        router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
+                      }
+                      className="w-full max-w-[200px] bg-white text-[#003566] px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2"
+                    >
+                      <Edit3 size={12} />
+                      {t?.actions?.editManifest || "Edit Manifest"}
+                    </button>
+
+                    <button
+                      onClick={() => window.open(publicUrl, "_blank")}
                       className="w-full max-w-[200px] bg-blue-600 text-white px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                     >
                       <Eye size={12} />
                       {t?.actions?.viewDetails || "View Details"}
                     </button>
-                  )}
 
-                  <button
-                    onClick={() => handleDelete(yacht)}
-                    disabled={isSubmitting}
-                    className="w-full max-w-[200px] bg-red-600 text-white px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-red-700 transition-all flex items-center justify-center gap-2"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="animate-spin" size={12} />
-                    ) : (
-                      <Trash size={12} />
-                    )}
-                    {t?.actions?.deleteVessel || "Delete Vessel"}
-                  </button>
-                </div>
-              </div>
-
-              {/* DETAILS SECTION */}
-              <div className="p-5 space-y-4 flex-1 flex flex-col">
-                <div>
-                  <h3 className="text-lg font-serif italic mb-1 line-clamp-1">
-                    {getYachtName(yacht)}
-                  </h3>
-                  <p className="text-lg font-bold text-blue-900">
-                    {formatCurrency(yacht.price)}
-                  </p>
+                    <button
+                      onClick={() => handleDelete(yacht)}
+                      disabled={isSubmitting}
+                      className="w-full max-w-[200px] bg-red-600 text-white px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="animate-spin" size={12} />
+                      ) : (
+                        <Trash size={12} />
+                      )}
+                      {t?.actions?.deleteVessel || "Delete Vessel"}
+                    </button>
+                  </div>
                 </div>
 
-                {/* SPECIFICATIONS */}
-                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+                {/* DETAILS SECTION */}
+                <div className="p-5 space-y-4 flex-1 flex flex-col">
                   <div className="space-y-1">
-                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
-                      {t?.sections?.dimensions || "Dimensions"}
+                    <h3 className="text-lg font-serif italic mb-1 line-clamp-1">
+                      {getYachtName(yacht)}
+                    </h3>
+                    <p className="text-lg font-bold text-blue-900">
+                      {formatCurrency(yacht.price)}
                     </p>
+                  </div>
+
+                  {/* SPECIFICATIONS */}
+                  <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-[10px] text-slate-600">
-                        <Maximize2 size={12} className="text-blue-600" />
-                        <span className="font-medium">LOA: {yacht.loa ?? "--"}m</span>
+                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                        {t?.sections?.dimensions || "Dimensions"}
+                      </p>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-[10px] text-slate-600">
+                          <Maximize2 size={12} className="text-blue-600" />
+                          <span className="font-medium">LOA: {yacht.loa ?? "--"}m</span>
+                        </div>
+                        {yacht.beam && (
+                          <div className="flex items-center gap-2 text-[10px] text-slate-600">
+                            <Maximize2
+                              size={12}
+                              className="text-blue-600 rotate-90"
+                            />
+                            <span>Beam: {yacht.beam}m</span>
+                          </div>
+                        )}
                       </div>
-                      {yacht.beam && (
-                        <div className="flex items-center gap-2 text-[10px] text-slate-600">
-                          <Maximize2
-                            size={12}
-                            className="text-blue-600 rotate-90"
-                          />
-                          <span>Beam: {yacht.beam}m</span>
-                        </div>
-                      )}
                     </div>
-                  </div>
 
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
-                      {t?.sections?.details || "Details"}
-                    </p>
                     <div className="space-y-1">
-                      {yacht.year && (
-                        <div className="flex items-center gap-2 text-[10px] text-slate-600">
-                          <Calendar size={12} className="text-blue-600" />
-                          <span>{yacht.year}</span>
-                        </div>
-                      )}
-                      {yacht.where && (
-                        <div className="flex items-center gap-2 text-[10px] text-slate-600 line-clamp-1">
-                          <MapPin size={12} className="text-blue-600" />
-                          <span>{yacht.where}</span>
-                        </div>
-                      )}
+                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                        {t?.sections?.details || "Details"}
+                      </p>
+                      <div className="space-y-1">
+                        {yacht.year && (
+                          <div className="flex items-center gap-2 text-[10px] text-slate-600">
+                            <Calendar size={12} className="text-blue-600" />
+                            <span>{yacht.year}</span>
+                          </div>
+                        )}
+                        {yacht.where && (
+                          <div className="flex items-center gap-2 text-[10px] text-slate-600 line-clamp-1">
+                            <MapPin size={12} className="text-blue-600" />
+                            <span>{yacht.where}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* FOOTER */}
-                <div className="pt-4 border-t border-slate-100 mt-auto">
-                  <button
-                    onClick={() =>
-                      router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
-                    }
-                    className="w-full text-[9px] font-black uppercase text-blue-600 tracking-widest hover:text-blue-800 transition-colors flex items-center justify-center gap-1"
-                  >
-                    {t?.actions?.manageVessel || "Manage Vessel"}
-                    <ChevronRight size={12} />
-                  </button>
+                  {/* FOOTER */}
+                  <div className="pt-4 border-t border-slate-100 mt-auto">
+                    <button
+                      onClick={() =>
+                        router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
+                      }
+                      className="w-full text-[9px] font-black uppercase text-blue-600 tracking-widest hover:text-blue-800 transition-colors flex items-center justify-center gap-1"
+                    >
+                      {t?.actions?.manageVessel || "Manage Vessel"}
+                      <ChevronRight size={12} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {/* LIST VIEW */}
-      {!loading && viewMode === "list" && filteredAndSortedFleet.length > 0 && (
+      {!loading && viewMode === "list" && fleet.length > 0 && (
         <div className="bg-white border border-slate-200">
           {/* TABLE HEADER */}
           <div className="grid grid-cols-12 gap-4 p-4 border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-500">
@@ -794,123 +922,187 @@ export default function FleetManagementPage() {
           </div>
 
           {/* TABLE ROWS */}
-          {filteredAndSortedFleet.map((yacht) => (
-            <div
-              key={yacht.id}
-              className="grid grid-cols-12 gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors"
-            >
+          {fleet.map((yacht) => {
+            const publicUrl =
+              getPublicUrl(yacht) || "https://www.schepenkring.nl/aanbod-boten/";
+
+            return (
+              <div
+                key={yacht.id}
+                className="grid grid-cols-12 gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors"
+              >
               {/* VESSEL */}
-              <div className="col-span-3 flex items-center gap-3">
-                <div className="w-16 h-12 bg-slate-100 overflow-hidden flex-shrink-0">
-                  <img
-                    src={getImageUrl(yacht.main_image)}
-                    onError={handleImageError}
-                    alt={getYachtName(yacht)}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <p className="font-medium text-[#003566]">
-                    {getYachtName(yacht)}
-                  </p>
-                  {yacht.vessel_id && (
-                    <p className="text-[9px] text-slate-500 font-medium">
-                      ID: {yacht.vessel_id}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* PRICE */}
-              <div className="col-span-2 flex items-center">
-                <p className="font-bold text-blue-900">
-                  {formatCurrency(yacht.price)}
-                </p>
-              </div>
-
-              {/* SPECIFICATIONS */}
-              <div className="col-span-2 flex items-center">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-[11px] text-slate-600">
-                    <Maximize2 size={12} className="text-blue-600" />
-                    <span>{formatLength(yacht.loa)}</span>
+                <div className="col-span-3 flex items-center gap-3">
+                  <div className="w-16 h-12 bg-slate-100 overflow-hidden flex-shrink-0">
+                    <img
+                      src={getImageUrl(yacht.main_image)}
+                      onError={handleImageError}
+                      alt={getYachtName(yacht)}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  {yacht.where && (
-                    <div className="flex items-center gap-2 text-[11px] text-slate-600">
-                      <MapPin size={12} className="text-blue-600" />
-                      <span className="truncate">{yacht.where}</span>
-                    </div>
-                  )}
+                  <div>
+                    <p className="font-medium text-[#003566]">
+                      {getYachtName(yacht)}
+                    </p>
+                    {yacht.vessel_id && (
+                      <p className="text-[9px] text-slate-500 font-medium">
+                        ID: {yacht.vessel_id}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* STATUS */}
-              <div className="col-span-2 flex items-center">
-                <span
-                  className={cn(
-                    "inline-flex text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
-                    getStatusConfig(yacht.status).color,
-                    getStatusConfig(yacht.status).bg,
-                    getStatusConfig(yacht.status).border,
-                  )}
-                >
-                  {getYachtStatus(yacht)}
-                </span>
-              </div>
+                {/* PRICE */}
+                <div className="col-span-2 flex items-center">
+                  <p className="font-bold text-blue-900">
+                    {formatCurrency(yacht.price)}
+                  </p>
+                </div>
 
-              {/* YEAR */}
-              <div className="col-span-1 flex items-center">
-                <span className="text-[11px] font-medium text-slate-600">
-                  {yacht.year || "--"}
-                </span>
-              </div>
+                {/* SPECIFICATIONS */}
+                <div className="col-span-2 flex items-center">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                      <Maximize2 size={12} className="text-blue-600" />
+                      <span>{formatLength(yacht.loa)}</span>
+                    </div>
+                    {yacht.where && (
+                      <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                        <MapPin size={12} className="text-blue-600" />
+                        <span className="truncate">{yacht.where}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-              {/* ACTIONS */}
-              <div className="col-span-2 flex items-center justify-end gap-2">
-                <button
-                  onClick={() =>
-                    router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
-                  }
-                  className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
-                  title="Edit"
-                >
-                  <Edit3 size={16} />
-                </button>
-                {getPublicUrl(yacht) && (
+                {/* STATUS */}
+                <div className="col-span-2 flex items-center">
+                  <span
+                    className={cn(
+                      "inline-flex text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
+                      getStatusConfig(yacht.status).color,
+                      getStatusConfig(yacht.status).bg,
+                      getStatusConfig(yacht.status).border,
+                    )}
+                  >
+                    {getYachtStatus(yacht)}
+                  </span>
+                </div>
+
+                {/* YEAR */}
+                <div className="col-span-1 flex items-center">
+                  <span className="text-[11px] font-medium text-slate-600">
+                    {yacht.year || "--"}
+                  </span>
+                </div>
+
+                {/* ACTIONS */}
+                <div className="col-span-2 flex items-center justify-end gap-2">
                   <button
                     onClick={() =>
-                      window.open(getPublicUrl(yacht), "_blank")
+                      router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
                     }
+                    className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
+                    title="Edit"
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                  <button
+                    onClick={() => window.open(publicUrl, "_blank")}
                     className="p-2 text-emerald-600 hover:text-emerald-800 transition-colors"
                     title="View"
                   >
                     <Eye size={16} />
                   </button>
-                )}
-                <button
-                  onClick={() => handleDelete(yacht)}
-                  disabled={isSubmitting}
-                  className="p-2 text-red-600 hover:text-red-800 transition-colors"
-                  title="Delete"
-                >
-                  <Trash size={16} />
-                </button>
+                  <button
+                    onClick={() => handleDelete(yacht)}
+                    disabled={isSubmitting}
+                    className="p-2 text-red-600 hover:text-red-800 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash size={16} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {/* FOOTER */}
-      {!loading && filteredAndSortedFleet.length > 0 && (
+      {!loading && pagination.total > 0 && (
         <div className="mt-8 pt-6 border-t border-slate-200">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Showing{" "}
               <span className="text-blue-600">
-                {filteredAndSortedFleet.length}
+                {pagination.from}
               </span>{" "}
-              of {fleet.length} vessels
+              to{" "}
+              <span className="text-blue-600">
+                {pagination.to}
+              </span>{" "}
+              of {pagination.total} vessels
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() =>
+                    setPagination((prev) => ({ ...prev, current_page: 1 }))
+                  }
+                  disabled={pagination.current_page <= 1 || loading}
+                  className="p-2 rounded-sm border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="First page"
+                >
+                  <ChevronsLeft size={14} />
+                </button>
+                <button
+                  onClick={() =>
+                    setPagination((prev) => ({
+                      ...prev,
+                      current_page: Math.max(1, prev.current_page - 1),
+                    }))
+                  }
+                  disabled={pagination.current_page <= 1 || loading}
+                  className="p-2 rounded-sm border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <div className="px-3 h-9 inline-flex items-center border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-600">
+                  Page {pagination.current_page} of {pagination.last_page}
+                </div>
+                <button
+                  onClick={() =>
+                    setPagination((prev) => ({
+                      ...prev,
+                      current_page: Math.min(prev.last_page, prev.current_page + 1),
+                    }))
+                  }
+                  disabled={
+                    pagination.current_page >= pagination.last_page || loading
+                  }
+                  className="p-2 rounded-sm border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Next page"
+                >
+                  <ChevronRight size={14} />
+                </button>
+                <button
+                  onClick={() =>
+                    setPagination((prev) => ({
+                      ...prev,
+                      current_page: prev.last_page,
+                    }))
+                  }
+                  disabled={
+                    pagination.current_page >= pagination.last_page || loading
+                  }
+                  className="p-2 rounded-sm border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Last page"
+                >
+                  <ChevronsRight size={14} />
+                </button>
+              </div>
               <Button
                 onClick={fetchFleet}
                 variant="outline"

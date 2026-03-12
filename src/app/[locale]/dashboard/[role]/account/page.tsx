@@ -14,9 +14,12 @@ import {
   Lock,
   Save,
   Loader2,
+  ChevronLeft,
 } from "lucide-react";
 import {
+  getAdminUser,
   getMe,
+  updateAdminUser,
   updateMeAddress,
   updateMePassword,
   updateMePersonal,
@@ -27,7 +30,7 @@ import {
 } from "@/lib/api/account";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { setClientSession, getClientToken } from "@/lib/auth/client-session";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
@@ -66,17 +69,26 @@ function normalizeAvatarUrl(value?: string | null) {
 export default function DashboardAccountPage() {
   const t = useTranslations("DashboardAccount");
   const router = useRouter();
+  const params = useParams<{ role?: string; locale?: string }>();
+  const searchParams = useSearchParams();
   const { updateUser } = useClientSession();
+  const role = params?.role ?? "admin";
+  const locale = params?.locale ?? "en";
+  const selectedUserId = searchParams.get("userId");
+  const isAdminSelectedUserView = role === "admin" && Boolean(selectedUserId);
 
   const placeInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<AccountTab>("profile");
+  const canEditCurrentTab =
+    !isAdminSelectedUserView || activeTab === "profile" || activeTab === "personal";
   const [user, setUser] = useState<MeUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isAdminSelectedUserView) return;
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
 
@@ -183,7 +195,10 @@ export default function DashboardAccountPage() {
       setLoading(true);
       setError(null);
       try {
-        const response = await getMe();
+        const response =
+          isAdminSelectedUserView && selectedUserId
+            ? await getAdminUser(selectedUserId)
+            : await getMe();
         if (!active) return;
 
         const nextUser = {
@@ -191,12 +206,14 @@ export default function DashboardAccountPage() {
           avatar: normalizeAvatarUrl(response.data.avatar),
         };
         setUser(nextUser);
-        updateUser({
-          id: String(nextUser.id),
-          name: nextUser.name,
-          email: nextUser.email,
-          avatar: nextUser.avatar || undefined,
-        });
+        if (!isAdminSelectedUserView) {
+          updateUser({
+            id: String(nextUser.id),
+            name: nextUser.name,
+            email: nextUser.email,
+            avatar: nextUser.avatar || undefined,
+          });
+        }
         setProfile({
           name: nextUser.name || "",
           timezone: nextUser.timezone || "",
@@ -230,7 +247,7 @@ export default function DashboardAccountPage() {
     return () => {
       active = false;
     };
-  }, [updateUser]);
+  }, [isAdminSelectedUserView, selectedUserId, updateUser]);
 
   useEffect(() => {
     if (activeTab !== "address") return;
@@ -350,7 +367,29 @@ export default function DashboardAccountPage() {
     setError(null);
     setSuccess(null);
     try {
-      if (activeTab === "profile") {
+      if (isAdminSelectedUserView && selectedUserId) {
+        if (activeTab === "profile") {
+          const response = await updateAdminUser(selectedUserId, {
+            name: profile.name,
+            status: user?.status || "ACTIVE",
+          });
+          setUser({
+            ...response.data,
+            avatar: normalizeAvatarUrl(response.data.avatar),
+          });
+        } else if (activeTab === "personal") {
+          const response = await updateAdminUser(selectedUserId, {
+            email: personal.email || null,
+            phone: personal.phone || null,
+          });
+          setUser({
+            ...response.data,
+            avatar: normalizeAvatarUrl(response.data.avatar),
+          });
+        } else {
+          throw new Error("This section is read-only for selected users.");
+        }
+      } else if (activeTab === "profile") {
         const response = await updateMeProfile({
           name: profile.name,
           timezone: profile.timezone || null,
@@ -426,6 +465,22 @@ export default function DashboardAccountPage() {
         className="mx-auto max-w-6xl"
       >
         <div className="relative mt-2 overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-[#F7FAFF] to-[#E7F0FF] px-6 py-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 sm:px-8">
+          {isAdminSelectedUserView ? (
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(`/${locale}/dashboard/admin/users`)}
+                className="h-10 rounded-2xl border-slate-200 bg-white/80 px-4 text-xs font-bold uppercase tracking-[0.16em]"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Back to Users
+              </Button>
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700">
+                Viewing selected user account
+              </div>
+            </div>
+          ) : null}
           <p className="text-[10px] font-black uppercase tracking-[0.38em] text-blue-600 dark:text-blue-300">
             {t("header.subtitle")}
           </p>
@@ -556,7 +611,7 @@ export default function DashboardAccountPage() {
                           <Button
                             type="button"
                             variant="outline"
-                            disabled={uploadingAvatar}
+                            disabled={uploadingAvatar || isAdminSelectedUserView}
                             className="h-9 relative overflow-hidden text-xs"
                           >
                             {uploadingAvatar ? t("actions.uploading") || "Uploading..." : t("actions.uploadImage") || "Upload Image"}
@@ -565,7 +620,7 @@ export default function DashboardAccountPage() {
                               accept="image/jpeg,image/png,image/webp"
                               className="absolute inset-0 cursor-pointer opacity-0"
                               onChange={handleAvatarUpload}
-                              disabled={uploadingAvatar}
+                              disabled={uploadingAvatar || isAdminSelectedUserView}
                             />
                           </Button>
                         </div>
@@ -577,13 +632,31 @@ export default function DashboardAccountPage() {
                         <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><User size={12} /> {t("fields.fullName")}</span>
                         <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.name} onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))} />
                       </label>
+                      {isAdminSelectedUserView ? (
+                        <label className="space-y-2">
+                          <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Shield size={12} /> Status</span>
+                          <select
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            value={user?.status || "ACTIVE"}
+                            onChange={(e) =>
+                              setUser((prev) =>
+                                prev ? { ...prev, status: e.target.value as MeUser["status"] } : prev,
+                              )
+                            }
+                          >
+                            <option value="ACTIVE">Active</option>
+                            <option value="DISABLED">Inactive</option>
+                            <option value="BLOCKED">Blocked</option>
+                          </select>
+                        </label>
+                      ) : null}
                       <label className="space-y-2">
                         <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.locale")}</span>
-                        <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.locale} onChange={(e) => setProfile((p) => ({ ...p, locale: e.target.value }))} />
+                        <input disabled={isAdminSelectedUserView} className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.locale} onChange={(e) => setProfile((p) => ({ ...p, locale: e.target.value }))} />
                       </label>
                       <label className="space-y-2 sm:col-span-2">
                         <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.timezone")}</span>
-                        <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.timezone} onChange={(e) => setProfile((p) => ({ ...p, timezone: e.target.value }))} />
+                        <input disabled={isAdminSelectedUserView} className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.timezone} onChange={(e) => setProfile((p) => ({ ...p, timezone: e.target.value }))} />
                       </label>
                     </div>
                   </div>
@@ -593,11 +666,11 @@ export default function DashboardAccountPage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><User size={12} /> {t("fields.firstName")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.first_name} onChange={(e) => setPersonal((p) => ({ ...p, first_name: e.target.value }))} />
+                      <input disabled={isAdminSelectedUserView} className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.first_name} onChange={(e) => setPersonal((p) => ({ ...p, first_name: e.target.value }))} />
                     </label>
                     <label className="space-y-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><User size={12} /> {t("fields.lastName")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.last_name} onChange={(e) => setPersonal((p) => ({ ...p, last_name: e.target.value }))} />
+                      <input disabled={isAdminSelectedUserView} className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.last_name} onChange={(e) => setPersonal((p) => ({ ...p, last_name: e.target.value }))} />
                     </label>
                     <label className="space-y-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Mail size={12} /> {t("fields.emailAddress")}</span>
@@ -609,13 +682,13 @@ export default function DashboardAccountPage() {
                     </label>
                     <label className="space-y-2 sm:col-span-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><User size={12} /> {t("fields.dateOfBirth")}</span>
-                      <input type="date" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.date_of_birth} onChange={(e) => setPersonal((p) => ({ ...p, date_of_birth: e.target.value }))} />
+                      <input disabled={isAdminSelectedUserView} type="date" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.date_of_birth} onChange={(e) => setPersonal((p) => ({ ...p, date_of_birth: e.target.value }))} />
                     </label>
                   </div>
                 ) : null}
 
                 {activeTab === "address" ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <fieldset disabled={isAdminSelectedUserView} className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60">
                     <label className="space-y-2 sm:col-span-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><MapPin size={12} /> {t("fields.addressLine1")}</span>
                       <input ref={placeInputRef} autoComplete="off" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={address.address_line1} onChange={(e) => setAddress((p) => ({ ...p, address_line1: e.target.value }))} />
@@ -640,11 +713,11 @@ export default function DashboardAccountPage() {
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.country")}</span>
                       <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={address.country} onChange={(e) => setAddress((p) => ({ ...p, country: e.target.value }))} />
                     </label>
-                  </div>
+                  </fieldset>
                 ) : null}
 
                 {activeTab === "security" ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <fieldset disabled={isAdminSelectedUserView} className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60">
                     <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
                       <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                         <Shield size={14} />
@@ -667,11 +740,11 @@ export default function DashboardAccountPage() {
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Shield size={12} /> {t("fields.otpCode")}</span>
                       <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={security.otp_code} onChange={(e) => setSecurity((p) => ({ ...p, otp_code: e.target.value }))} />
                     </label>
-                  </div>
+                  </fieldset>
                 ) : null}
 
                 {activeTab === "password" ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <fieldset disabled={isAdminSelectedUserView} className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60">
                     <label className="space-y-2 sm:col-span-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Lock size={12} /> {t("fields.currentPassword")}</span>
                       <input type="password" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={password.current_password} onChange={(e) => setPassword((p) => ({ ...p, current_password: e.target.value }))} />
@@ -684,6 +757,12 @@ export default function DashboardAccountPage() {
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Lock size={12} /> {t("fields.confirmPassword")}</span>
                       <input type="password" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={password.password_confirmation} onChange={(e) => setPassword((p) => ({ ...p, password_confirmation: e.target.value }))} />
                     </label>
+                  </fieldset>
+                ) : null}
+
+                {isAdminSelectedUserView && !canEditCurrentTab ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                    This section is view-only for selected users. Admin editing is currently limited to name, email, phone, and status.
                   </div>
                 ) : null}
 
@@ -691,7 +770,7 @@ export default function DashboardAccountPage() {
                   <Button
                     type="button"
                     onClick={() => void saveCurrentTab()}
-                    disabled={saving}
+                    disabled={saving || !canEditCurrentTab}
                     className="h-11 rounded-2xl bg-[#003566] px-5 text-xs font-bold uppercase tracking-[0.16em] text-white hover:bg-[#00284d]"
                   >
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
