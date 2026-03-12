@@ -349,7 +349,7 @@ function buildDescriptionFormValues(
       key,
       typeof rawValue === "string" ? rawValue.trim() : rawValue,
     ])
-    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
+    .sort(([leftKey], [rightKey]) => (leftKey as string).localeCompare(rightKey as string));
 
   return Object.fromEntries(entries);
 }
