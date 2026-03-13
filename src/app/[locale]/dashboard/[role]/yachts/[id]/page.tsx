@@ -2809,6 +2809,8 @@ export default function YachtEditorPage() {
     const previousStats = pipeline.stats;
     const previousStep2Unlocked = pipeline.isStep2Unlocked;
 
+    let optimisticImages: PipelineImage[] = [];
+
     try {
       const fileArray = Array.from(files);
       const filesToUpload = fileArray;
@@ -3022,10 +3024,13 @@ export default function YachtEditorPage() {
       toast.error("Failed to upload images", { id: toastId });
       setPendingUploadPreviews((prev) =>
         prev.filter(
-          (image) => !optimisticImages.some((optimistic) => optimistic.id === image.id),
+          (image: PipelineImage) => !optimisticImages.some((optimistic: PipelineImage) => optimistic.id === image.id),
         ),
       );
-      optimisticUrls.forEach((url) => URL.revokeObjectURL(url));
+      const optimisticUrls: string[] = optimisticImages
+        .map((img: PipelineImage) => img.client_preview_url)
+        .filter((url): url is string => typeof url === "string");
+      optimisticUrls.forEach((url: string) => URL.revokeObjectURL(url));
       pipeline.setImagesDirectly?.({
         images: previousImages,
         stats: previousStats,
