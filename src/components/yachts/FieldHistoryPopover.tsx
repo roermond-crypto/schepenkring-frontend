@@ -17,6 +17,11 @@ type HistoryEntry = {
     reason: string | null;
     correction_label: string | null;
     created_at: string;
+    meta?: {
+        ai_proposed_value?: unknown;
+        ai_field_source?: string | null;
+        model_version?: string | null;
+    } | null;
     user?: {
         name: string;
         avatar?: string;
@@ -134,6 +139,15 @@ export function FieldHistoryPopover({ yachtId, fieldName, label }: FieldHistoryP
                                                 {parseValue(entry.new_value)}
                                             </div>
                                         </div>
+
+                                        {entry.meta?.ai_proposed_value !== undefined && (
+                                            <div className="text-[9px] text-slate-500">
+                                                AI suggested: <span className="font-semibold text-slate-700">{parseValue(JSON.stringify(entry.meta.ai_proposed_value) ?? null)}</span>
+                                                {entry.meta.ai_field_source ? (
+                                                    <span className="ml-1 text-slate-400">from {entry.meta.ai_field_source}</span>
+                                                ) : null}
+                                            </div>
+                                        )}
 
                                         {entry.correction_label && (
                                             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-50 border border-red-100 w-fit">
