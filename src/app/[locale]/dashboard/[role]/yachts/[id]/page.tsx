@@ -345,7 +345,8 @@ const YACHT_FORM_TEXT = {
       daysOfWeek: "Days of Week",
       startTime: "Start Time",
       endTime: "End Time",
-      reviewSummary: "Review all steps before submitting. Completed steps are marked with a blue checkmark in the tab bar above.",
+      reviewSummary:
+        "Review all steps before submitting. Completed steps are marked with a blue checkmark in the tab bar above.",
       vesselName: "Vessel Name *",
       manufacturer: "Manufacturer / Make",
       model: "Model",
@@ -363,7 +364,8 @@ const YACHT_FORM_TEXT = {
       stepReview: "Review",
       stepContract: "Contract",
       stepOneTitle: "Vessel Assets & AI Extraction",
-      stepOneDescription: "Upload images -> system auto-optimizes -> approve -> then AI fills all form fields.",
+      stepOneDescription:
+        "Upload images -> system auto-optimizes -> approve -> then AI fills all form fields.",
       imagesApproved: "Images Approved",
       vesselDescriptionHelp: "Vessel Description",
       optionalRecommended: "(optional but recommended)",
@@ -459,7 +461,12 @@ const YACHT_FORM_TEXT = {
     },
   },
   nl: {
-    common: { yes: "Ja", no: "Nee", unknown: "Onbekend", confirm: "controleren" },
+    common: {
+      yes: "Ja",
+      no: "Nee",
+      unknown: "Onbekend",
+      confirm: "controleren",
+    },
     sections: {
       electricalSystem: "Elektrisch systeem",
       kitchenComfort: "Keuken & comfort",
@@ -525,7 +532,8 @@ const YACHT_FORM_TEXT = {
       daysOfWeek: "Dagen van de week",
       startTime: "Starttijd",
       endTime: "Eindtijd",
-      reviewSummary: "Controleer alle stappen voordat je indient. Voltooide stappen krijgen bovenaan een blauw vinkje.",
+      reviewSummary:
+        "Controleer alle stappen voordat je indient. Voltooide stappen krijgen bovenaan een blauw vinkje.",
       vesselName: "Vaartuignaam *",
       manufacturer: "Merk / fabrikant",
       model: "Model",
@@ -543,7 +551,8 @@ const YACHT_FORM_TEXT = {
       stepReview: "Controle",
       stepContract: "Contract",
       stepOneTitle: "Vaartuigmedia & AI-extractie",
-      stepOneDescription: "Upload afbeeldingen -> systeem optimaliseert automatisch -> keur goed -> daarna vult AI alle velden in.",
+      stepOneDescription:
+        "Upload afbeeldingen -> systeem optimaliseert automatisch -> keur goed -> daarna vult AI alle velden in.",
       imagesApproved: "Afbeeldingen goedgekeurd",
       vesselDescriptionHelp: "Vaartuigbeschrijving",
       optionalRecommended: "(optioneel maar aanbevolen)",
@@ -705,7 +714,8 @@ const YACHT_FORM_TEXT = {
       daysOfWeek: "Wochentage",
       startTime: "Startzeit",
       endTime: "Endzeit",
-      reviewSummary: "Prufen Sie alle Schritte vor dem Speichern. Abgeschlossene Schritte sind oben mit einem blauen Haken markiert.",
+      reviewSummary:
+        "Prufen Sie alle Schritte vor dem Speichern. Abgeschlossene Schritte sind oben mit einem blauen Haken markiert.",
       vesselName: "Schiffsname *",
       manufacturer: "Hersteller / Marke",
       model: "Modell",
@@ -723,7 +733,8 @@ const YACHT_FORM_TEXT = {
       stepReview: "Prufung",
       stepContract: "Vertrag",
       stepOneTitle: "Schiffsmedien & KI-Extraktion",
-      stepOneDescription: "Bilder hochladen -> System optimiert automatisch -> freigeben -> danach fullt die KI alle Felder aus.",
+      stepOneDescription:
+        "Bilder hochladen -> System optimiert automatisch -> freigeben -> danach fullt die KI alle Felder aus.",
       imagesApproved: "Bilder freigegeben",
       vesselDescriptionHelp: "Schiffsbeschreibung",
       optionalRecommended: "(optional, aber empfohlen)",
@@ -885,7 +896,8 @@ const YACHT_FORM_TEXT = {
       daysOfWeek: "Jours de la semaine",
       startTime: "Heure de debut",
       endTime: "Heure de fin",
-      reviewSummary: "Verifiez toutes les etapes avant l'envoi. Les etapes terminees sont marquees d'une coche bleue.",
+      reviewSummary:
+        "Verifiez toutes les etapes avant l'envoi. Les etapes terminees sont marquees d'une coche bleue.",
       vesselName: "Nom du bateau *",
       manufacturer: "Fabricant / marque",
       model: "Modele",
@@ -903,7 +915,8 @@ const YACHT_FORM_TEXT = {
       stepReview: "Revision",
       stepContract: "Contrat",
       stepOneTitle: "Medias du bateau et extraction IA",
-      stepOneDescription: "Telechargez des images -> le systeme optimise automatiquement -> approuvez -> puis l'IA remplit les champs.",
+      stepOneDescription:
+        "Telechargez des images -> le systeme optimise automatiquement -> approuvez -> puis l'IA remplit les champs.",
       imagesApproved: "Images approuvees",
       vesselDescriptionHelp: "Description du bateau",
       optionalRecommended: "(optionnel mais recommande)",
@@ -1029,16 +1042,9 @@ function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
   )
     return "no";
   if (
-    [
-      "yes",
-      "y",
-      "true",
-      "1",
-      "present",
-      "included",
-      "ja",
-      "oui",
-    ].includes(normalized)
+    ["yes", "y", "true", "1", "present", "included", "ja", "oui"].includes(
+      normalized,
+    )
   )
     return "yes";
   if (/\b(without|not visible|not present|missing)\b/.test(normalized))
@@ -1119,7 +1125,9 @@ function buildDescriptionFormValues(
       key,
       typeof rawValue === "string" ? rawValue.trim() : rawValue,
     ])
-    .sort(([leftKey], [rightKey]) => (leftKey as string).localeCompare(rightKey as string));
+    .sort(([leftKey], [rightKey]) =>
+      (leftKey as string).localeCompare(rightKey as string),
+    );
 
   return Object.fromEntries(entries);
 }
@@ -1155,9 +1163,12 @@ export default function YachtEditorPage() {
   const t = dict?.YachtWizard || dict?.DashboardAdminYachtEditor || ({} as any);
   const router = useRouter();
   const yachtFormText =
-    YACHT_FORM_TEXT[locale as keyof typeof YACHT_FORM_TEXT] ?? YACHT_FORM_TEXT.en;
-  const labelText = (key: keyof typeof yachtFormText.labels, fallback: string) =>
-    t?.labels?.[key] || yachtFormText.labels[key] || fallback;
+    YACHT_FORM_TEXT[locale as keyof typeof YACHT_FORM_TEXT] ??
+    YACHT_FORM_TEXT.en;
+  const labelText = (
+    key: keyof typeof yachtFormText.labels,
+    fallback: string,
+  ) => t?.labels?.[key] || yachtFormText.labels[key] || fallback;
   const placeholderText = (
     key: keyof typeof yachtFormText.placeholders,
     fallback: string,
@@ -1257,29 +1268,34 @@ export default function YachtEditorPage() {
   // Gemini Extraction State (Step 1)
   const [isExtracting, setIsExtracting] = useState(false);
 
-  const pipeline = useImagePipeline(activeYachtId, { pausePolling: isExtracting });
+  const pipeline = useImagePipeline(activeYachtId, {
+    pausePolling: isExtracting,
+  });
   const imagesApproved = pipeline.isStep2Unlocked;
   const [reviewImages, setReviewImages] = useState<PipelineImage[]>([]);
+  const [pendingUploadPreviews, setPendingUploadPreviews] = useState<
+    PipelineImage[]
+  >([]);
 
   const loadMarketingVideos = useCallback(
     async (targetYachtId: number | string) => {
       try {
         const response = await api.get("/social/videos");
-        const payload =
-          Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response.data?.videos)
-              ? response.data.videos
-              : Array.isArray(response.data?.data?.videos)
-                ? response.data.data.videos
-                : Array.isArray(response.data?.data)
-                  ? response.data.data
-                  : [];
+        const payload = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.videos)
+            ? response.data.videos
+            : Array.isArray(response.data?.data?.videos)
+              ? response.data.data.videos
+              : Array.isArray(response.data?.data)
+                ? response.data.data
+                : [];
 
         setMarketingVideos(
           payload.filter(
             (video: any) =>
-              Number(video?.yacht_id ?? video?.boat_id) === Number(targetYachtId),
+              Number(video?.yacht_id ?? video?.boat_id) ===
+              Number(targetYachtId),
           ),
         );
       } catch (error) {
@@ -1306,8 +1322,8 @@ export default function YachtEditorPage() {
   const [mainFile, setMainFile] = useState<File | null>(null);
   const hasInFlightImageUploads = isUploading || pipeline.isUploading;
   const shouldShowImageUploadDropzone =
-    pipeline.images.length === 0 || hasInFlightImageUploads;
-  const shouldShowImageGrid = pipeline.images.length > 0;
+    reviewImages.length === 0 || hasInFlightImageUploads;
+  const shouldShowImageGrid = reviewImages.length > 0;
 
   // AI Pipeline State
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
@@ -1412,10 +1428,10 @@ export default function YachtEditorPage() {
       keys.length >= 5 ||
       Boolean(
         descriptionFormValues.boat_name ||
-          descriptionFormValues.manufacturer ||
-          descriptionFormValues.model ||
-          descriptionFormValues.boat_type ||
-          descriptionFormValues.boat_category,
+        descriptionFormValues.manufacturer ||
+        descriptionFormValues.model ||
+        descriptionFormValues.boat_type ||
+        descriptionFormValues.boat_category,
       )
     );
   }, [descriptionFormValues]);
@@ -1454,8 +1470,29 @@ export default function YachtEditorPage() {
   }, [selectedLang]);
 
   useEffect(() => {
-    setReviewImages(pipeline.images);
-  }, [pipeline.images]);
+    const pipelineImageNames = new Set(
+      pipeline.images
+        .map((image) => image.original_name?.trim().toLowerCase())
+        .filter(Boolean),
+    );
+    const mergedPendingPreviews = pendingUploadPreviews.filter((image) => {
+      const imageName = image.original_name?.trim().toLowerCase();
+      if (!imageName) return true;
+      return !pipelineImageNames.has(imageName);
+    });
+
+    setReviewImages([...pipeline.images, ...mergedPendingPreviews]);
+  }, [pendingUploadPreviews, pipeline.images]);
+
+  useEffect(() => {
+    return () => {
+      pendingUploadPreviews.forEach((image) => {
+        if (image.url?.startsWith("blob:")) {
+          URL.revokeObjectURL(image.url);
+        }
+      });
+    };
+  }, [pendingUploadPreviews]);
 
   useEffect(() => {
     if (!isDraftLoaded) return;
@@ -1976,11 +2013,11 @@ export default function YachtEditorPage() {
           const uiState = toObjectRecord(remoteDraft.ui_state_json);
           const serverCompletedSteps = Array.isArray(uiState.completedSteps)
             ? uiState.completedSteps
-              .map((value) => Number(value))
-              .filter(
-                (value) =>
-                  Number.isInteger(value) && value >= 1 && value <= 5,
-              )
+                .map((value) => Number(value))
+                .filter(
+                  (value) =>
+                    Number.isInteger(value) && value >= 1 && value <= 5,
+                )
             : [];
 
           flushDraft({
@@ -2244,7 +2281,6 @@ export default function YachtEditorPage() {
           de: yacht.short_description_de || "",
           fr: yacht.short_description_fr || "",
         });
-
       } catch (err) {
         console.error("Failed to fetch yacht details", err);
         toast.error("Failed to load yacht details");
@@ -2338,7 +2374,7 @@ export default function YachtEditorPage() {
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||
-        "Could not queue marketing video generation.",
+          "Could not queue marketing video generation.",
       );
     } finally {
       setIsGeneratingMarketingVideo(false);
@@ -2475,8 +2511,8 @@ export default function YachtEditorPage() {
       selectedLightboxImageId === null
         ? -1
         : reviewImages.findIndex(
-          (image) => image.id === selectedLightboxImageId,
-        ),
+            (image) => image.id === selectedLightboxImageId,
+          ),
     [reviewImages, selectedLightboxImageId],
   );
 
@@ -2692,6 +2728,7 @@ export default function YachtEditorPage() {
     setIsUploading(true);
     const toastId = toast.loading(`Uploading ${files.length} image(s)...`);
     const optimisticUrls: string[] = [];
+    let optimisticImages: PipelineImage[] = [];
     const previousImages = pipeline.images;
     const previousStats = pipeline.stats;
     const previousStep2Unlocked = pipeline.isStep2Unlocked;
@@ -2703,7 +2740,7 @@ export default function YachtEditorPage() {
       let shouldSetCreatedYachtId = false;
 
       const optimisticBaseId = -Date.now();
-      const optimisticImages: PipelineImage[] = fileArray.map((file, index) => {
+      optimisticImages = fileArray.map((file, index) => {
         const previewUrl = URL.createObjectURL(file);
         optimisticUrls.push(previewUrl);
         return {
@@ -2730,6 +2767,7 @@ export default function YachtEditorPage() {
           updated_at: new Date().toISOString(),
         };
       });
+      setPendingUploadPreviews((prev) => [...prev, ...optimisticImages]);
 
       // Render instant previews while upload/process is still running.
       pipeline.setImagesDirectly?.({
@@ -2841,9 +2879,61 @@ export default function YachtEditorPage() {
       try {
         const refreshRes = await api.get(`/yachts/${targetId}/images`);
         if (refreshRes.data?.images) {
-          pipeline.setImagesDirectly?.(refreshRes.data);
+          const serverImages = Array.isArray(refreshRes.data.images)
+            ? refreshRes.data.images
+            : [];
+          const serverImageNames = new Set(
+            serverImages
+              .map((image: PipelineImage) =>
+                image.original_name?.trim().toLowerCase(),
+              )
+              .filter(Boolean),
+          );
+          const pendingOptimisticImages = optimisticImages.filter((image) => {
+            const imageName = image.original_name?.trim().toLowerCase();
+            if (!imageName) return true;
+            return !serverImageNames.has(imageName);
+          });
+          setPendingUploadPreviews((prev) =>
+            prev.filter(
+              (image) =>
+                !optimisticImages.some((optimistic) => optimistic.id === image.id) ||
+                pendingOptimisticImages.some((pending) => pending.id === image.id),
+            ),
+          );
+          const mergedImages = [...serverImages, ...pendingOptimisticImages];
+          const mergedStats = refreshRes.data.stats
+            ? {
+                ...refreshRes.data.stats,
+                total: Math.max(
+                  refreshRes.data.stats.total ?? serverImages.length,
+                  mergedImages.length,
+                ),
+                processing:
+                  (refreshRes.data.stats.processing ?? 0) +
+                  pendingOptimisticImages.length,
+              }
+            : {
+                total: mergedImages.length,
+                approved: serverImages.filter(
+                  (image: PipelineImage) => image.status === "approved",
+                ).length,
+                processing: pendingOptimisticImages.length,
+                ready: serverImages.filter(
+                  (image: PipelineImage) =>
+                    image.status === "ready_for_review" ||
+                    image.status === "approved",
+                ).length,
+                min_required: previousStats.min_required,
+              };
+
+          pipeline.setImagesDirectly?.({
+            ...refreshRes.data,
+            images: mergedImages,
+            stats: mergedStats,
+          });
         }
-      } catch { }
+      } catch {}
       if (pipeline.refreshImages) await pipeline.refreshImages();
       if (shouldSetCreatedYachtId) {
         setCreatedYachtId(Number(targetId));
@@ -2851,6 +2941,12 @@ export default function YachtEditorPage() {
     } catch (err) {
       console.error("Upload failed:", err);
       toast.error("Failed to upload images", { id: toastId });
+      setPendingUploadPreviews((prev) =>
+        prev.filter(
+          (image) => !optimisticImages.some((optimistic) => optimistic.id === image.id),
+        ),
+      );
+      optimisticUrls.forEach((url) => URL.revokeObjectURL(url));
       pipeline.setImagesDirectly?.({
         images: previousImages,
         stats: previousStats,
@@ -2859,7 +2955,6 @@ export default function YachtEditorPage() {
       // Reset to backend truth if optimistic previews were shown.
       if (pipeline.refreshImages) await pipeline.refreshImages();
     } finally {
-      optimisticUrls.forEach((url) => URL.revokeObjectURL(url));
       setIsUploading(false);
       e.target.value = "";
     }
@@ -3017,8 +3112,8 @@ export default function YachtEditorPage() {
       if (!res.ok) {
         throw new Error(
           responseData?.error ||
-          responseData?.message ||
-          `AI extraction request failed (HTTP ${res.status})`,
+            responseData?.message ||
+            `AI extraction request failed (HTTP ${res.status})`,
         );
       }
 
@@ -3032,7 +3127,10 @@ export default function YachtEditorPage() {
         // AI models sometimes ignore prompt instructions. This guarantees
         // "unknown" never appears in any form field.
         for (const key of Object.keys(formValues)) {
-          if (typeof formValues[key] === "string" && formValues[key].toLowerCase().trim() === "unknown") {
+          if (
+            typeof formValues[key] === "string" &&
+            formValues[key].toLowerCase().trim() === "unknown"
+          ) {
             formValues[key] = "";
           }
         }
@@ -3258,8 +3356,9 @@ export default function YachtEditorPage() {
           ...toObjectRecord(selectedYacht),
           ...fieldsToMerge,
         };
-        const extractedDescriptionFormValues =
-          buildDescriptionFormValues(mergedDescriptionState);
+        const extractedDescriptionFormValues = buildDescriptionFormValues(
+          mergedDescriptionState,
+        );
         if (Object.keys(extractedDescriptionFormValues).length > 0) {
           void handleRegenerateDescription({
             silent: true,
@@ -3460,8 +3559,7 @@ export default function YachtEditorPage() {
       recognition.stop();
       setIsDictating(false);
     } else {
-      recognition.lang =
-        DESCRIPTION_LANGUAGE_LOCALES[selectedLang];
+      recognition.lang = DESCRIPTION_LANGUAGE_LOCALES[selectedLang];
       recognition.start();
       setIsDictating(true);
       toast.success("Listening... Speak now");
@@ -4115,17 +4213,21 @@ export default function YachtEditorPage() {
                     isLocked
                       ? isNewMode && step.id === 6 && !createdYachtId
                         ? labelText("saveVesselFirst", "Save Vessel First")
-                        : labelText("approveImagesFirst", "Approve Images First")
+                        : labelText(
+                            "approveImagesFirst",
+                            "Approve Images First",
+                          )
                       : step.label
                   }
                   className={`
                     w-[54px] h-[54px] rounded-full flex items-center justify-center
                     text-[18px] font-bold border-[3px] transition-all duration-300
-                    ${isLocked
-                      ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
-                      : isPast
-                        ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
-                        : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
+                    ${
+                      isLocked
+                        ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
+                        : isPast
+                          ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
+                          : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
                     }
                   `}
                 >
@@ -4133,8 +4235,9 @@ export default function YachtEditorPage() {
                 </button>
                 {index < wizardSteps.length - 1 && (
                   <div
-                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${step.id < activeStep ? "bg-[#2563eb]" : "bg-[#d4d8de]"
-                      }`}
+                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${
+                      step.id < activeStep ? "bg-[#2563eb]" : "bg-[#d4d8de]"
+                    }`}
                   />
                 )}
               </div>
@@ -4228,7 +4331,10 @@ export default function YachtEditorPage() {
                 <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-3">
                   <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                     <FileText size={14} className="text-blue-500" />
-                    {labelText("vesselDescriptionHelp", "Vessel Description")}{" "}
+                    {labelText(
+                      "vesselDescriptionHelp",
+                      "Vessel Description",
+                    )}{" "}
                     <span className="text-slate-400 font-normal">
                       {labelText(
                         "optionalRecommended",
@@ -4468,7 +4574,11 @@ export default function YachtEditorPage() {
                                   statusConfig.processing;
 
                                 return (
-                                  <Draggable key={img.id} draggableId={`pipeline-image-${img.id}`} index={index}>
+                                  <Draggable
+                                    key={img.id}
+                                    draggableId={`pipeline-image-${img.id}`}
+                                    index={index}
+                                  >
                                     {(dragProvided) => (
                                       <div
                                         ref={dragProvided.innerRef}
@@ -4481,7 +4591,7 @@ export default function YachtEditorPage() {
                                               ? "border-amber-300"
                                               : img.status === "processing"
                                                 ? "border-blue-200"
-                                                : "border-red-300"
+                                                : "border-red-300",
                                         )}
                                       >
                                         {/* Image */}
@@ -4496,22 +4606,32 @@ export default function YachtEditorPage() {
                                               img.original_temp_url ||
                                               PLACEHOLDER_IMAGE
                                             }
-                                            alt={img.original_name || `Yacht image ${index + 1}`}
-                                            onClick={() => setSelectedLightboxImageId(img.id)}
+                                            alt={
+                                              img.original_name ||
+                                              `Yacht image ${index + 1}`
+                                            }
+                                            onClick={() =>
+                                              setSelectedLightboxImageId(img.id)
+                                            }
                                             className={cn(
                                               "w-full h-full cursor-zoom-in object-cover transition-opacity",
-                                              img.enhancement_method === "pending" &&
-                                              "opacity-80 grayscale-[0.2]",
-                                              img.status === "processing" && "opacity-60"
+                                              img.enhancement_method ===
+                                                "pending" &&
+                                                "opacity-80 grayscale-[0.2]",
+                                              img.status === "processing" &&
+                                                "opacity-60",
                                             )}
                                             onError={handleImageError}
                                           />
 
                                           {/* Loading Overlay for Processing */}
                                           {img.status === "processing" && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
-                                              <Loader2 size={24} className="animate-spin text-blue-600" />
-                                            </div>
+                                              <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
+                                                <Loader2
+                                                  size={24}
+                                                  className="animate-spin text-blue-600"
+                                                />
+                                              </div>
                                           )}
 
                                           {/* Status badge */}
@@ -4582,7 +4702,7 @@ export default function YachtEditorPage() {
                                                       img.quality_score >= 70
                                                         ? "bg-emerald-500"
                                                         : img.quality_score >=
-                                                          40
+                                                            40
                                                           ? "bg-amber-500"
                                                           : "bg-red-500",
                                                     )}
@@ -4642,16 +4762,16 @@ export default function YachtEditorPage() {
                                           <div className="flex gap-2">
                                             {img.status ===
                                               "ready_for_review" && (
-                                                <button
-                                                  type="button"
-                                                  onClick={() =>
-                                                    pipeline.approveImage(img.id)
-                                                  }
-                                                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
-                                                >
-                                                  <Check size={12} /> Approve
-                                                </button>
-                                              )}
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  pipeline.approveImage(img.id)
+                                                }
+                                                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
+                                              >
+                                                <Check size={12} /> Approve
+                                              </button>
+                                            )}
                                             <button
                                               type="button"
                                               onClick={() =>
@@ -4799,7 +4919,7 @@ export default function YachtEditorPage() {
                                         0) >= 70
                                         ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                                         : (selectedLightboxImage.quality_score ??
-                                          0) >= 40
+                                              0) >= 40
                                           ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
                                           : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300",
                                     )}
@@ -4808,7 +4928,7 @@ export default function YachtEditorPage() {
                                       0) >= 70
                                       ? "Gallery ready"
                                       : (selectedLightboxImage.quality_score ??
-                                        0) >= 40
+                                            0) >= 40
                                         ? "Needs review"
                                         : "Needs correction"}
                                   </span>
@@ -4831,7 +4951,7 @@ export default function YachtEditorPage() {
                                         0) >= 70
                                         ? "from-emerald-400 to-emerald-500"
                                         : (selectedLightboxImage.quality_score ??
-                                          0) >= 40
+                                              0) >= 40
                                           ? "from-amber-400 to-orange-500"
                                           : "from-rose-400 to-red-500",
                                     )}
@@ -4947,71 +5067,71 @@ export default function YachtEditorPage() {
                 {(pipeline.stats.total > 0 ||
                   imagesApproved ||
                   (!isOnline && offlineImages.length > 0)) && (
-                    <div className="flex flex-col items-center gap-4 py-4">
-                      {/* Offline Skip Button */}
-                      {!isOnline ? (
-                        <div className="flex flex-col items-center gap-3 w-full max-w-lg">
-                          <div className="bg-amber-50 text-amber-700 border border-amber-200 rounded-lg p-4 text-sm w-full flex gap-3 shadow-sm mb-2">
-                            <WifiOff className="shrink-0" size={18} />
-                            <div>
-                              <p className="font-semibold mb-1">
-                                AI Extraction Not Available Offline
-                              </p>
-                              <p>
-                                You can skip this step and fill in the boat
-                                details manually. Images are saved locally.
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setActiveStep(2)}
-                            disabled={isExtracting}
-                            className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
-                          >
-                            Skip to Step 2 (Manual Fill) <ArrowRight size={20} />
-                          </button>
-                        </div>
-                      ) : (
-                        isExtracting && (
-                          <div className="w-full max-w-lg flex flex-col items-center justify-center gap-3 py-6 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
-                            <Loader2
-                              size={32}
-                              className="animate-spin text-blue-600"
-                            />
-                            <p className="text-blue-800 font-medium">
-                              Gemini is analyzing your images...
+                  <div className="flex flex-col items-center gap-4 py-4">
+                    {/* Offline Skip Button */}
+                    {!isOnline ? (
+                      <div className="flex flex-col items-center gap-3 w-full max-w-lg">
+                        <div className="bg-amber-50 text-amber-700 border border-amber-200 rounded-lg p-4 text-sm w-full flex gap-3 shadow-sm mb-2">
+                          <WifiOff className="shrink-0" size={18} />
+                          <div>
+                            <p className="font-semibold mb-1">
+                              AI Extraction Not Available Offline
+                            </p>
+                            <p>
+                              You can skip this step and fill in the boat
+                              details manually. Images are saved locally.
                             </p>
                           </div>
-                        )
-                      )}
-                      {!geminiExtracted && !isExtracting && isOnline && (
-                        <div className="flex flex-col items-center gap-3">
-                          <p className="text-xs text-slate-400 text-center">
-                            {imagesApproved
-                              ? `AI is ready to analyze ${pipeline.stats.approved} approved optimized images`
-                              : `Upload and approve images first, then AI will analyze them`}
-                          </p>
-
-                          {/* Manual Trigger for Edit Mode or Retries */}
-                          {imagesApproved && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                toast("Extracting data from images...", {
-                                  icon: "🪄",
-                                });
-                                void handleAiExtract();
-                              }}
-                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <Sparkles size={16} /> Run AI Extraction Manually
-                            </button>
-                          )}
                         </div>
-                      )}
-                    </div>
-                  )}
+                        <button
+                          type="button"
+                          onClick={() => setActiveStep(2)}
+                          disabled={isExtracting}
+                          className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
+                        >
+                          Skip to Step 2 (Manual Fill) <ArrowRight size={20} />
+                        </button>
+                      </div>
+                    ) : (
+                      isExtracting && (
+                        <div className="w-full max-w-lg flex flex-col items-center justify-center gap-3 py-6 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                          <Loader2
+                            size={32}
+                            className="animate-spin text-blue-600"
+                          />
+                          <p className="text-blue-800 font-medium">
+                            Gemini is analyzing your images...
+                          </p>
+                        </div>
+                      )
+                    )}
+                    {!geminiExtracted && !isExtracting && isOnline && (
+                      <div className="flex flex-col items-center gap-3">
+                        <p className="text-xs text-slate-400 text-center">
+                          {imagesApproved
+                            ? `AI is ready to analyze ${pipeline.stats.approved} approved optimized images`
+                            : `Upload and approve images first, then AI will analyze them`}
+                        </p>
+
+                        {/* Manual Trigger for Edit Mode or Retries */}
+                        {imagesApproved && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              toast("Extracting data from images...", {
+                                icon: "🪄",
+                              });
+                              void handleAiExtract();
+                            }}
+                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Sparkles size={16} /> Run AI Extraction Manually
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Extracted Fields Preview intentionally hidden */}
               </div>
@@ -5019,7 +5139,7 @@ export default function YachtEditorPage() {
           )}
 
           {/* ── VIDEO SECTION (After Image Pipeline but inside Step 1) ── */}
-          {activeStep === 1 && (
+          {/* {activeStep === 1 && (
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mt-8 mb-4">
               <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
                 <div>
@@ -5276,7 +5396,7 @@ export default function YachtEditorPage() {
                 )}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* ── STEP 2: SPECS (Analyzed by AI) ──────────────── */}
           {activeStep === 2 && (
@@ -5291,7 +5411,10 @@ export default function YachtEditorPage() {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
                   <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
                     <Coins size={20} className="text-blue-600" />{" "}
-                    {labelText("essentialRegistryData", "Essential Registry Data")}
+                    {labelText(
+                      "essentialRegistryData",
+                      "Essential Registry Data",
+                    )}
                   </h3>
                 </div>
 
@@ -5307,7 +5430,9 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("manufacturer", "Manufacturer / Make")}</Label>
+                    <Label>
+                      {labelText("manufacturer", "Manufacturer / Make")}
+                    </Label>
                     <CatalogAutocomplete
                       endpoint="/api/autocomplete/brands"
                       name="manufacturer"
@@ -5344,7 +5469,9 @@ export default function YachtEditorPage() {
                   </div>
 
                   <div className="space-y-2 group">
-                    <Label>{labelText("harborLocation", "Sales Location (Harbor) *")}</Label>
+                    <Label>
+                      {labelText("harborLocation", "Sales Location (Harbor) *")}
+                    </Label>
                     <Select
                       value={selectedYacht?.ref_harbor_id?.toString() || ""}
                       onValueChange={(val) => {
@@ -5430,7 +5557,9 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("minBidAmount", "Minimum Bid Amount (€)")}</Label>
+                    <Label>
+                      {labelText("minBidAmount", "Minimum Bid Amount (€)")}
+                    </Label>
                     <Input
                       name="min_bid_amount"
                       type="number"
@@ -5530,7 +5659,9 @@ export default function YachtEditorPage() {
                     </SelectField>
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("passengerCapacity", "Passenger Capacity")}</Label>
+                    <Label>
+                      {labelText("passengerCapacity", "Passenger Capacity")}
+                    </Label>
                     <Input
                       name="passenger_capacity"
                       type="number"
@@ -5573,7 +5704,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("airDraft", "Air Draft (Clearance)")}</Label>
+                        <Label>
+                          {labelText("airDraft", "Air Draft (Clearance)")}
+                        </Label>
                         <Input
                           name="air_draft"
                           defaultValue={selectedYacht?.air_draft}
@@ -5606,7 +5739,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("hullConstruction", "Hull Construction")}</Label>
+                        <Label>
+                          {labelText("hullConstruction", "Hull Construction")}
+                        </Label>
                         <Input
                           name="hull_construction"
                           defaultValue={selectedYacht?.hull_construction}
@@ -5657,7 +5792,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("deckConstruction", "Deck Construction")}</Label>
+                        <Label>
+                          {labelText("deckConstruction", "Deck Construction")}
+                        </Label>
                         <Input
                           name="deck_construction"
                           defaultValue={selectedYacht?.deck_construction}
@@ -5666,7 +5803,12 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("superStructureColour", "Superstructure Colour")}</Label>
+                        <Label>
+                          {labelText(
+                            "superStructureColour",
+                            "Superstructure Colour",
+                          )}
+                        </Label>
                         <Input
                           name="super_structure_colour"
                           defaultValue={selectedYacht?.super_structure_colour}
@@ -5677,7 +5819,12 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("superStructureConstruction", "Superstructure Construction")}</Label>
+                        <Label>
+                          {labelText(
+                            "superStructureConstruction",
+                            "Superstructure Construction",
+                          )}
+                        </Label>
                         <Input
                           name="super_structure_construction"
                           defaultValue={
@@ -5695,11 +5842,19 @@ export default function YachtEditorPage() {
                   <div className="space-y-5">
                     <SectionHeader
                       icon={<Zap size={16} />}
-                      title={labelText("enginePerformance", "Engine & Performance")}
+                      title={labelText(
+                        "enginePerformance",
+                        "Engine & Performance",
+                      )}
                     />
                     <div className="grid grid-cols-2 gap-5">
                       <div className="space-y-1 group">
-                        <Label>{labelText("engineManufacturer", "Engine Manufacturer")}</Label>
+                        <Label>
+                          {labelText(
+                            "engineManufacturer",
+                            "Engine Manufacturer",
+                          )}
+                        </Label>
                         <Input
                           name="engine_manufacturer"
                           defaultValue={selectedYacht?.engine_manufacturer}
@@ -5710,7 +5865,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("engineModel", "Engine Model")}</Label>
+                        <Label>
+                          {labelText("engineModel", "Engine Model")}
+                        </Label>
                         <Input
                           name="engine_model"
                           defaultValue={selectedYacht?.engine_model}
@@ -5741,7 +5898,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("engineHours", "Engine Hours")}</Label>
+                        <Label>
+                          {labelText("engineHours", "Engine Hours")}
+                        </Label>
                         <Input
                           name="hours"
                           defaultValue={selectedYacht?.hours}
@@ -5759,7 +5918,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("engineQuantity", "Engine Quantity")}</Label>
+                        <Label>
+                          {labelText("engineQuantity", "Engine Quantity")}
+                        </Label>
                         <Input
                           name="engine_quantity"
                           defaultValue={selectedYacht?.engine_quantity}
@@ -5787,7 +5948,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("cruisingSpeed", "Cruising Speed")}</Label>
+                        <Label>
+                          {labelText("cruisingSpeed", "Cruising Speed")}
+                        </Label>
                         <Input
                           name="cruising_speed"
                           defaultValue={selectedYacht?.cruising_speed}
@@ -5814,7 +5977,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("gallonsPerHour", "Gallons per Hour")}</Label>
+                        <Label>
+                          {labelText("gallonsPerHour", "Gallons per Hour")}
+                        </Label>
                         <Input
                           name="gallons_per_hour"
                           defaultValue={selectedYacht?.gallons_per_hour}
@@ -5837,7 +6002,10 @@ export default function YachtEditorPage() {
               <div className="bg-white p-8 lg:p-10 border border-slate-200 shadow-sm space-y-8">
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.3em] flex items-center gap-2 border-b border-slate-200 pb-4 italic">
                   <Coins size={18} />{" "}
-                  {labelText("essentialRegistryData", "Essential Registry Data")}
+                  {labelText(
+                    "essentialRegistryData",
+                    "Essential Registry Data",
+                  )}
                 </h3>
 
                 {/* Sub-Section: Accommodation */}
@@ -5876,7 +6044,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("berthsFixed", "Berths (Fixed)")}</Label>
+                      <Label>
+                        {labelText("berthsFixed", "Berths (Fixed)")}
+                      </Label>
                       <Input
                         name="berths_fixed"
                         type="number"
@@ -5885,7 +6055,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("berthsExtra", "Berths (Extra)")}</Label>
+                      <Label>
+                        {labelText("berthsExtra", "Berths (Extra)")}
+                      </Label>
                       <Input
                         name="berths_extra"
                         type="number"
@@ -5919,7 +6091,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("interiorType", "Interior Type")}</Label>
+                      <Label>
+                        {labelText("interiorType", "Interior Type")}
+                      </Label>
                       <Input
                         name="interior_type"
                         defaultValue={selectedYacht?.interior_type}
@@ -5943,7 +6117,12 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("separateDiningArea", "Separate Dining Area")}</Label>
+                      <Label>
+                        {labelText(
+                          "separateDiningArea",
+                          "Separate Dining Area",
+                        )}
+                      </Label>
                       <Input
                         name="separate_dining_area"
                         defaultValue={selectedYacht?.separate_dining_area}
@@ -5967,7 +6146,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("upholsteryColor", "Upholstery Color")}</Label>
+                      <Label>
+                        {labelText("upholsteryColor", "Upholstery Color")}
+                      </Label>
                       <Input
                         name="upholstery_color"
                         defaultValue={selectedYacht?.upholstery_color}
@@ -6011,7 +6192,10 @@ export default function YachtEditorPage() {
                       <Input
                         name="cockpit_type"
                         defaultValue={selectedYacht?.cockpit_type}
-                        placeholder={placeholderText("cockpitType", "Aft cockpit")}
+                        placeholder={placeholderText(
+                          "cockpitType",
+                          "Aft cockpit",
+                        )}
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -6023,7 +6207,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("waterTankGauge", "Water Tank Gauge")}</Label>
+                      <Label>
+                        {labelText("waterTankGauge", "Water Tank Gauge")}
+                      </Label>
                       <Input
                         name="water_tank_gauge"
                         defaultValue={selectedYacht?.water_tank_gauge}
@@ -6039,7 +6225,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("wasteWaterTank", "Waste Water Tank")}</Label>
+                      <Label>
+                        {labelText("wasteWaterTank", "Waste Water Tank")}
+                      </Label>
                       <Input
                         name="waste_water_tank"
                         defaultValue={selectedYacht?.waste_water_tank}
@@ -6047,7 +6235,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("wasteWaterGauge", "Waste Water Gauge")}</Label>
+                      <Label>
+                        {labelText("wasteWaterGauge", "Waste Water Gauge")}
+                      </Label>
                       <Input
                         name="waste_water_tank_gauge"
                         defaultValue={selectedYacht?.waste_water_tank_gauge}
@@ -6056,7 +6246,10 @@ export default function YachtEditorPage() {
                     </div>
                     <div className="space-y-1 group">
                       <Label>
-                        {labelText("wasteTankDrainPump", "Waste Tank Drain Pump")}
+                        {labelText(
+                          "wasteTankDrainPump",
+                          "Waste Tank Drain Pump",
+                        )}
                       </Label>
                       <Input
                         name="waste_water_tank_drainpump"
@@ -6080,7 +6273,10 @@ export default function YachtEditorPage() {
                       <Input
                         name="water_system"
                         defaultValue={selectedYacht?.water_system}
-                        placeholder={placeholderText("waterSystem", "Pressurized")}
+                        placeholder={placeholderText(
+                          "waterSystem",
+                          "Pressurized",
+                        )}
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -6092,7 +6288,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("seaWaterPump", "Sea Water Pump")}</Label>
+                      <Label>
+                        {labelText("seaWaterPump", "Sea Water Pump")}
+                      </Label>
                       <Input
                         name="sea_water_pump"
                         defaultValue={selectedYacht?.sea_water_pump}
@@ -6108,7 +6306,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("cdPlayer", "Radio / CD Player")}</Label>
+                      <Label>
+                        {labelText("cdPlayer", "Radio / CD Player")}
+                      </Label>
                       <Input
                         name="cd_player"
                         defaultValue={selectedYacht?.cd_player}
@@ -6116,7 +6316,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("satelliteReception", "Satellite Reception")}</Label>
+                      <Label>
+                        {labelText("satelliteReception", "Satellite Reception")}
+                      </Label>
                       <Input
                         name="satellite_reception"
                         defaultValue={selectedYacht?.satellite_reception}
@@ -6188,7 +6390,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("centralHeating", "Central Heating")}</Label>
+                      <Label>
+                        {labelText("centralHeating", "Central Heating")}
+                      </Label>
                       <Input
                         name="central_heating"
                         defaultValue={selectedYacht?.central_heating}
@@ -6207,7 +6411,10 @@ export default function YachtEditorPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                         <CheckboxField
                           name="air_conditioning"
-                          label={labelText("airConditioning", "Air Conditioning")}
+                          label={labelText(
+                            "airConditioning",
+                            "Air Conditioning",
+                          )}
                           defaultChecked={
                             selectedYacht?.air_conditioning === true ||
                             selectedYacht?.air_conditioning === "true" ||
@@ -6251,7 +6458,10 @@ export default function YachtEditorPage() {
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
                   <Compass size={20} className="text-blue-600" />{" "}
-                  {labelText("navigationElectronics", "Navigation & Electronics")}
+                  {labelText(
+                    "navigationElectronics",
+                    "Navigation & Electronics",
+                  )}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[
@@ -6525,7 +6735,10 @@ export default function YachtEditorPage() {
                     {
                       name: "inverter",
                       label: labelText("inverter", "Inverter"),
-                      ph: placeholderText("inverter", "e.g. Victron Phoenix 3000W"),
+                      ph: placeholderText(
+                        "inverter",
+                        "e.g. Victron Phoenix 3000W",
+                      ),
                     },
                     {
                       name: "shorepower",
@@ -6535,12 +6748,18 @@ export default function YachtEditorPage() {
                     {
                       name: "solar_panel",
                       label: labelText("solarPanel", "Solar Panel"),
-                      ph: placeholderText("solarPanel", "e.g. 2x 100W flexible"),
+                      ph: placeholderText(
+                        "solarPanel",
+                        "e.g. 2x 100W flexible",
+                      ),
                     },
                     {
                       name: "wind_generator",
                       label: labelText("windGenerator", "Wind Generator"),
-                      ph: placeholderText("windGenerator", "e.g. Silentwind 400+"),
+                      ph: placeholderText(
+                        "windGenerator",
+                        "e.g. Silentwind 400+",
+                      ),
                     },
                     {
                       name: "voltage",
@@ -6569,7 +6788,10 @@ export default function YachtEditorPage() {
                     },
                     {
                       name: "consumption_monitor",
-                      label: labelText("consumptionMonitor", "Consumption Monitor"),
+                      label: labelText(
+                        "consumptionMonitor",
+                        "Consumption Monitor",
+                      ),
                       ph: yachtFormText.common.yes,
                     },
                     {
@@ -6589,7 +6811,10 @@ export default function YachtEditorPage() {
                     },
                     {
                       name: "oil_pressure_gauge",
-                      label: labelText("oilPressureGauge", "Oil Pressure Gauge"),
+                      label: labelText(
+                        "oilPressureGauge",
+                        "Oil Pressure Gauge",
+                      ),
                       ph: yachtFormText.common.yes,
                     },
                     {
@@ -6666,7 +6891,10 @@ export default function YachtEditorPage() {
                     {
                       name: "television",
                       label: labelText("television", "Television"),
-                      ph: placeholderText("television", 'e.g. Samsung 32" Smart TV'),
+                      ph: placeholderText(
+                        "television",
+                        'e.g. Samsung 32" Smart TV',
+                      ),
                     },
                     {
                       name: "cd_player",
@@ -6680,7 +6908,10 @@ export default function YachtEditorPage() {
                     },
                     {
                       name: "satellite_reception",
-                      label: labelText("satelliteReception", "Satellite Reception"),
+                      label: labelText(
+                        "satelliteReception",
+                        "Satellite Reception",
+                      ),
                       ph: placeholderText(
                         "satelliteReception",
                         "e.g. KVH TracVision TV5",
@@ -6713,7 +6944,10 @@ export default function YachtEditorPage() {
                     },
                     {
                       name: "waste_water_tank_drainpump",
-                      label: labelText("wasteTankDrainPump", "Waste Tank Drain Pump"),
+                      label: labelText(
+                        "wasteTankDrainPump",
+                        "Waste Tank Drain Pump",
+                      ),
                       ph: placeholderText("wasteTankDrainPump", "Yes"),
                     },
                     {
@@ -7036,7 +7270,9 @@ export default function YachtEditorPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1 group">
-                    <Label>{labelText("ownerComment", "Owner's Comment")}</Label>
+                    <Label>
+                      {labelText("ownerComment", "Owner's Comment")}
+                    </Label>
                     <textarea
                       name="owners_comment"
                       defaultValue={selectedYacht?.owners_comment || ""}
@@ -7054,7 +7290,9 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-1 group">
-                    <Label>{labelText("registrationDetails", "Registration Details")}</Label>
+                    <Label>
+                      {labelText("registrationDetails", "Registration Details")}
+                    </Label>
                     <Input
                       name="reg_details"
                       defaultValue={selectedYacht?.reg_details}
@@ -7319,22 +7557,23 @@ export default function YachtEditorPage() {
                                 onClick={() => {
                                   const newDays = isSelected
                                     ? rule.days_of_week.filter(
-                                      (d) => d !== day.val,
-                                    )
+                                        (d) => d !== day.val,
+                                      )
                                     : [...rule.days_of_week, day.val].sort(
-                                      (a, b) =>
-                                        (a === 0 ? 7 : a) - (b === 0 ? 7 : b),
-                                    );
+                                        (a, b) =>
+                                          (a === 0 ? 7 : a) - (b === 0 ? 7 : b),
+                                      );
                                   updateAvailabilityRule(
                                     idx,
                                     "days_of_week",
                                     newDays,
                                   );
                                 }}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${isSelected
-                                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                  }`}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${
+                                  isSelected
+                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                                }`}
                               >
                                 {day.label}
                               </button>
@@ -7345,7 +7584,10 @@ export default function YachtEditorPage() {
 
                       <div className="flex-1 min-w-[120px]">
                         <Label>
-                          {labelText("startTime", t?.scheduling?.startTime || "Start Time")}
+                          {labelText(
+                            "startTime",
+                            t?.scheduling?.startTime || "Start Time",
+                          )}
                         </Label>
                         <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
                           <Clock size={12} className="text-slate-400" />
@@ -7366,7 +7608,12 @@ export default function YachtEditorPage() {
                       </div>
 
                       <div className="flex-1 min-w-[120px]">
-                        <Label>{labelText("endTime", t?.scheduling?.endTime || "End Time")}</Label>
+                        <Label>
+                          {labelText(
+                            "endTime",
+                            t?.scheduling?.endTime || "End Time",
+                          )}
+                        </Label>
                         <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
                           <Clock size={12} className="text-slate-400" />
                           <input
@@ -7634,7 +7881,8 @@ export default function YachtEditorPage() {
                     }
                     locationId={
                       selectedYacht?.ref_harbor_id ||
-                      (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id ||
+                      (draft?.data as any)?.step2?.selectedYacht
+                        ?.ref_harbor_id ||
                       null
                     }
                     yachtData={
@@ -7795,7 +8043,7 @@ export default function YachtEditorPage() {
         variant="destructive"
         onConfirm={handleDeleteAllImages}
       />
-    </div >
+    </div>
   );
 }
 
@@ -7873,7 +8121,9 @@ function Input(
   );
 
   useEffect(() => {
-    setHasValue(hasFilledFieldValue(inputProps.value ?? inputProps.defaultValue));
+    setHasValue(
+      hasFilledFieldValue(inputProps.value ?? inputProps.defaultValue),
+    );
   }, [inputProps.value, inputProps.defaultValue]);
 
   const highlighted = Boolean(needsConfirmation) || hasValue;
@@ -7891,9 +8141,7 @@ function Input(
           "hover:border-slate-300",
           "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
           "placeholder:text-slate-400 placeholder:font-normal",
-          highlighted
-            ? "border-amber-300 bg-amber-50/50"
-            : "border-slate-200",
+          highlighted ? "border-amber-300 bg-amber-50/50" : "border-slate-200",
           inputProps.className,
         )}
       />
@@ -7922,9 +8170,7 @@ function SelectField(
     children,
     ...selectProps
   } = props;
-  const [currentValue, setCurrentValue] = useState(
-    value ?? defaultValue ?? "",
-  );
+  const [currentValue, setCurrentValue] = useState(value ?? defaultValue ?? "");
 
   useEffect(() => {
     setCurrentValue(value ?? defaultValue ?? "");
@@ -8016,7 +8262,8 @@ function TriStateSelect(
 ) {
   const locale = useLocale();
   const formText =
-    YACHT_FORM_TEXT[locale as keyof typeof YACHT_FORM_TEXT] ?? YACHT_FORM_TEXT.en;
+    YACHT_FORM_TEXT[locale as keyof typeof YACHT_FORM_TEXT] ??
+    YACHT_FORM_TEXT.en;
   const {
     needsConfirmation,
     defaultValue,
@@ -8060,9 +8307,7 @@ function TriStateSelect(
           "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
           "hover:border-slate-300",
           "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
-          highlighted
-            ? "border-amber-300 bg-amber-50/50"
-            : "border-slate-200",
+          highlighted ? "border-amber-300 bg-amber-50/50" : "border-slate-200",
           selectProps.className,
         )}
       >

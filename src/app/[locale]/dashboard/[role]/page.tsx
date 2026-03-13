@@ -782,13 +782,6 @@ export default function AdminDashboardHome() {
                   {t("actions.createFirstListing")}
                   <ArrowRight size={14} />
                 </Link>
-                <Link
-                  href={`/${locale}`}
-                  className="inline-flex items-center gap-2 rounded-lg border border-[#BED0EE] bg-[#EFF4FF] px-4 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-[#dfe9ff] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                >
-                  {t("actions.browseMarketplace")}
-                  <ArrowRight size={14} />
-                </Link>
               </div>
             </div>
           </div>
