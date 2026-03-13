@@ -132,7 +132,7 @@ export default function RichTextEditor({
 
                 <div className="w-px h-5 bg-slate-200 mx-1" />
 
-                {[1, 2, 3, 4].map((level) => (
+                {([1, 2, 3, 4] as const).map((level) => (
                     <ToolbarButton
                         key={level}
                         onClick={() => applyHeading(editor, level)}
