@@ -214,6 +214,8 @@ export default function BoatAuditPage() {
                     <option value="wrong_image_detection">Wrong Image Detection</option>
                     <option value="wrong_text_interpretation">Wrong Text Info</option>
                     <option value="guessed_too_much">AI Hallucination</option>
+                    <option value="duplicate_data_issue">Duplicate Data Issue</option>
+                    <option value="import_mismatch">Import Mismatch</option>
                     <option value="other">Other Correction</option>
                 </select>
             </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import {
   Plus,
@@ -81,6 +81,8 @@ interface Task {
   updated_at: string;
   column_id?: number | null;
   position?: number;
+  yacht_id?: number | null;
+  yacht?: { id: number; boat_name: string };
 }
 
 interface BoardColumn {
@@ -1519,7 +1521,8 @@ function TaskModal({
 // ============================================
 export default function AdminTaskBoardPage() {
   const t = useTranslations("DashboardAdminTasks");
-  const params = useParams<{ role?: string }>();
+  const locale = useLocale();
+  const params = useParams<{ role?: string; locale?: string }>();
   const role = normalizeRole(params?.role) ?? "admin";
   const canManageTaskWorkspace = role === "admin" || role === "location";
   const canConfigureAutomation = canManageTaskWorkspace;
@@ -2501,6 +2504,7 @@ export default function AdminTaskBoardPage() {
                                 {t("status.pending")}
                               </span>
                             )}
+
                           </div>
 
                           {task.description && (

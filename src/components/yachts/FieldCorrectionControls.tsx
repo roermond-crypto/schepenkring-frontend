@@ -22,6 +22,8 @@ const LABELS: { value: CorrectionLabel; label: string; color: string }[] = [
     { value: "wrong_image_detection", label: "Wrong Image Detection", color: "bg-orange-50 text-orange-700 border-orange-200" },
     { value: "wrong_text_interpretation", label: "Wrong Text Info", color: "bg-blue-50 text-blue-700 border-blue-200" },
     { value: "guessed_too_much", label: "AI Hallucination/Guess", color: "bg-purple-50 text-purple-700 border-purple-200" },
+    { value: "duplicate_data_issue", label: "Duplicate Data Issue", color: "bg-amber-50 text-amber-700 border-amber-200" },
+    { value: "import_mismatch", label: "Import Mismatch", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
     { value: "other", label: "Other", color: "bg-slate-50 text-slate-700 border-slate-200" },
 ];
 

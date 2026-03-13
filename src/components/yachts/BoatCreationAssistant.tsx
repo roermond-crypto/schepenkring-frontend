@@ -92,7 +92,54 @@ export function BoatCreationAssistant({
     if (!suggestions && !isLoading) return null;
 
     const consensus = suggestions?.consensus_values || {};
-    const hasSuggestions = Object.keys(consensus).length > 0;
+    const fieldConfidence = suggestions?.field_confidence || {};
+    const hasRenderableValue = (value: unknown) =>
+        value !== null && value !== undefined && value !== "";
+    const formatValue = (field: string, value: unknown) => {
+        if (!hasRenderableValue(value)) return null;
+
+        switch (field) {
+            case "loa":
+            case "beam":
+            case "draft":
+                return `${value} m`;
+            case "price":
+                return new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "EUR",
+                    maximumFractionDigits: 0,
+                }).format(Number(value));
+            case "horse_power":
+                return `${value} hp`;
+            case "engine_quantity":
+                return `${value} engine${Number(value) === 1 ? "" : "s"}`;
+            default:
+                return String(value);
+        }
+    };
+
+    const items = [
+        { field: "year", label: "Year" },
+        { field: "loa", label: "Length" },
+        { field: "beam", label: "Beam" },
+        { field: "draft", label: "Draft" },
+        { field: "fuel", label: "Fuel" },
+        { field: "engine_quantity", label: "Engines" },
+        { field: "horse_power", label: "Power" },
+        { field: "engine_manufacturer", label: "Engine" },
+        { field: "price", label: "Price" },
+    ]
+        .map((item) => ({
+            ...item,
+            value: formatValue(item.field, consensus[item.field]),
+            confidence: typeof fieldConfidence[item.field] === "number"
+                ? Math.round(fieldConfidence[item.field] * 100)
+                : null,
+        }))
+        .filter((item) => item.value !== null);
+
+    const hasSuggestions = items.length > 0;
+    const warnings = Array.isArray(suggestions?.warnings) ? suggestions.warnings : [];
 
     if (!hasSuggestions && !isLoading) return null;
 
@@ -112,32 +159,34 @@ export function BoatCreationAssistant({
                         Based on similar sold boats, we found some typical specs:
                     </p>
 
-                    <div className="grid grid-cols-2 gap-2">
-                        {consensus.loa && (
-                            <div className="text-xs bg-white border border-blue-100 rounded-md p-2 flex justify-between items-center">
-                                <span className="text-slate-500 font-medium text-[10px] uppercase tracking-wider">Length</span>
-                                <span className="text-blue-700 font-semibold">{consensus.loa} m</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {items.map((item) => (
+                            <div
+                                key={item.field}
+                                className="text-xs bg-white border border-blue-100 rounded-md p-2 flex justify-between items-center gap-3"
+                            >
+                                <div className="min-w-0">
+                                    <span className="text-slate-500 font-medium text-[10px] uppercase tracking-wider block">
+                                        {item.label}
+                                    </span>
+                                    {item.confidence !== null && (
+                                        <span className="text-[9px] text-slate-400">
+                                            {item.confidence}% confidence
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-blue-700 font-semibold truncate text-right">
+                                    {item.value}
+                                </span>
                             </div>
-                        )}
-                        {consensus.beam && (
-                            <div className="text-xs bg-white border border-blue-100 rounded-md p-2 flex justify-between items-center">
-                                <span className="text-slate-500 font-medium text-[10px] uppercase tracking-wider">Beam</span>
-                                <span className="text-blue-700 font-semibold">{consensus.beam} m</span>
-                            </div>
-                        )}
-                        {consensus.draft && (
-                            <div className="text-xs bg-white border border-blue-100 rounded-md p-2 flex justify-between items-center">
-                                <span className="text-slate-500 font-medium text-[10px] uppercase tracking-wider">Draft</span>
-                                <span className="text-blue-700 font-semibold">{consensus.draft} m</span>
-                            </div>
-                        )}
-                        {consensus.engine_manufacturer && (
-                            <div className="text-xs bg-white border border-blue-100 rounded-md p-2 flex justify-between items-center col-span-2">
-                                <span className="text-slate-500 font-medium text-[10px] uppercase tracking-wider">Engine</span>
-                                <span className="text-blue-700 font-semibold truncate ml-2 text-right">{consensus.engine_manufacturer}</span>
-                            </div>
-                        )}
+                        ))}
                     </div>
+
+                    {warnings.length > 0 && (
+                        <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-3 py-2">
+                            {warnings[0]}
+                        </p>
+                    )}
 
                     <Button
                         size="sm"

@@ -1757,6 +1757,12 @@ export default function YachtEditorPage() {
       aiStatePatch: {
         extracted: geminiExtracted,
         extracting: isExtracting,
+        aiSessionId: confidenceMeta?.ai_session_id ?? null,
+        modelName: confidenceMeta?.model_name ?? null,
+        needsConfirmation: confidenceMeta?.needs_user_confirmation ?? [],
+        warnings: confidenceMeta?.warnings ?? [],
+        correctionLabel,
+        fieldCorrectionLabels,
       } as Record<string, unknown>,
     };
   }, [
@@ -1786,6 +1792,7 @@ export default function YachtEditorPage() {
     pipeline.images,
     offlineImages,
     isExtracting,
+    fieldCorrectionLabels,
   ]);
 
   const syncDraftToServer = useCallback(

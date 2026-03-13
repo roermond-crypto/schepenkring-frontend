@@ -44,6 +44,13 @@ type RelatedModelType =
   | "App\\Models\\Booking"
   | "App\\Models\\Deal";
 
+interface AutomationRuleItem {
+  title: string;
+  description: string;
+  priority: PriorityLevel;
+  position: number;
+}
+
 interface AutomationRule {
   id: string;
   name: string;
@@ -63,6 +70,8 @@ interface AutomationRule {
   relatedBoatId: string;
   internalCode: string;
   status: RuleStatus;
+  boatTypeFilter: string[];
+  items: AutomationRuleItem[];
 }
 
 const copyByLocale = {
@@ -100,6 +109,12 @@ const copyByLocale = {
       titleTemplate: "Task title template",
       bodyTemplate: "Task body template",
       internalCode: "Reference code",
+      boatTypes: "Boat types (Filter)",
+      taskItems: "Task items (Multi-task template)",
+      addItem: "Add task item",
+      itemTitle: "Task title",
+      itemDescription: "Task description",
+      itemPriority: "Priority",
     },
     hints: {
       after: "Creates the task after a delay from the selected trigger.",
@@ -149,6 +164,12 @@ const copyByLocale = {
       titleTemplate: "Taaktitel template",
       bodyTemplate: "Taaktekst template",
       internalCode: "Referentiecode",
+      boatTypes: "Boot types (Filter)",
+      taskItems: "Taak items (Multi-taak template)",
+      addItem: "Voeg taak item toe",
+      itemTitle: "Taak titel",
+      itemDescription: "Taak omschrijving",
+      itemPriority: "Prioriteit",
     },
     hints: {
       after: "Maakt de taak aan na een vertraging vanaf de gekozen trigger.",
@@ -198,6 +219,12 @@ const copyByLocale = {
       titleTemplate: "Task-Titel Vorlage",
       bodyTemplate: "Task-Text Vorlage",
       internalCode: "Referenzcode",
+      boatTypes: "Bootstypen (Filter)",
+      taskItems: "Aufgabenelemente (Multi-Task-Vorlage)",
+      addItem: "Aufgabenelement hinzufügen",
+      itemTitle: "Aufgabentitel",
+      itemDescription: "Aufgabenbeschreibung",
+      itemPriority: "Priorität",
     },
     hints: {
       after: "Erstellt die Task verzogert nach dem gewahlten Trigger.",
@@ -255,6 +282,16 @@ const relatedTypeOptions: { value: RelatedModelType; label: string }[] = [
   { value: "App\\Models\\Deal", label: "Deal" },
 ];
 
+const boatTypeOptions = [
+  "Sailship",
+  "Speedboat",
+  "Motorboat",
+  "Catamaran",
+  "Rib",
+  "Trawler",
+  "Sloop",
+] as const;
+
 const starterRules: Pick<
   AutomationRule,
   | "name"
@@ -273,6 +310,8 @@ const starterRules: Pick<
   | "relatedType"
   | "relatedBoatId"
   | "internalCode"
+  | "boatTypeFilter"
+  | "items"
 >[] = [
   {
     name: "Boat onboarding follow-up",
@@ -292,6 +331,8 @@ const starterRules: Pick<
     relatedType: "App\\Models\\Yacht",
     relatedBoatId: "",
     internalCode: "AUTO-BOAT-10D",
+    boatTypeFilter: [],
+    items: [],
   },
   {
     name: "Booking payment reminder",
@@ -311,6 +352,8 @@ const starterRules: Pick<
     relatedType: "App\\Models\\Booking",
     relatedBoatId: "",
     internalCode: "AUTO-BOOK-REM",
+    boatTypeFilter: [],
+    items: [],
   },
   {
     name: "Accepted bid contract push",
@@ -330,6 +373,8 @@ const starterRules: Pick<
     relatedType: "App\\Models\\Deal",
     relatedBoatId: "",
     internalCode: "AUTO-BID-CLOSE",
+    boatTypeFilter: [],
+    items: [],
   },
 ];
 
@@ -353,6 +398,8 @@ const initialRule = (): AutomationRule => ({
   relatedBoatId: "",
   internalCode: "AUTO-REM-001",
   status: "draft",
+  boatTypeFilter: [],
+  items: [],
 });
 
 const normalizeTriggerType = (value: unknown): TriggerType => {
@@ -435,6 +482,40 @@ export default function TaskAutomationPage() {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
+  const addItem = () => {
+    setDraft((current) => ({
+      ...current,
+      items: [
+        ...current.items,
+        {
+          title: "",
+          description: "",
+          priority: "Medium",
+          position: current.items.length,
+        },
+      ],
+    }));
+  };
+
+  const removeItem = (index: number) => {
+    setDraft((current) => ({
+      ...current,
+      items: current.items.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateItem = (
+    index: number,
+    field: keyof AutomationRuleItem,
+    value: any,
+  ) => {
+    setDraft((current) => {
+      const newItems = [...current.items];
+      newItems[index] = { ...newItems[index], [field]: value };
+      return { ...current, items: newItems };
+    });
+  };
+
   const mapTemplateToRule = (template: any): AutomationRule => ({
     id: String(template?.id || `template-${Date.now()}`),
     name: String(template?.name || template?.title || "Automation rule"),
@@ -470,6 +551,15 @@ export default function TaskAutomationPage() {
       template?.internal_code || `AUTO-${String(template?.id || "").padStart(3, "0")}`,
     ),
     status: template?.is_active === false ? "draft" : "active",
+    boatTypeFilter: Array.isArray(template?.boat_type_filter) ? template.boat_type_filter : [],
+    items: Array.isArray(template?.items) 
+      ? template.items.map((item: any) => ({
+          title: String(item.title || ""),
+          description: String(item.description || ""),
+          priority: (item.priority || "Medium") as PriorityLevel,
+          position: Number(item.position || 0),
+        }))
+      : [],
   });
 
   useEffect(() => {
@@ -563,6 +653,11 @@ export default function TaskAutomationPage() {
         notification_enabled: true,
         email_enabled: true,
         is_active: status === "active",
+        boat_type_filter: draft.trigger === "boat_created" ? draft.boatTypeFilter : [],
+        items: draft.items.map((item, index) => ({
+          ...item,
+          position: index,
+        })),
       };
 
       const { data } = await api.post("/task-automation-templates", payload);
@@ -745,6 +840,45 @@ export default function TaskAutomationPage() {
                   ))}
                 </select>
               </Field>
+
+              {draft.trigger === "boat_created" && (
+                <div className="md:col-span-2">
+                  <Field label={copy.labels.boatTypes}>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {boatTypeOptions.map((type) => {
+                        const isSelected = draft.boatTypeFilter.includes(type);
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => {
+                              const next = isSelected
+                                ? draft.boatTypeFilter.filter((t) => t !== type)
+                                : [...draft.boatTypeFilter, type];
+                              setField("boatTypeFilter", next);
+                            }}
+                            className={`rounded-xl border px-3 py-1 text-sm font-medium transition-colors ${
+                              isSelected
+                                ? "border-sky-600 bg-sky-50 text-sky-700 dark:border-sky-500/50 dark:bg-sky-950/20 dark:text-sky-300"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+                            }`}
+                          >
+                            {isSelected && (
+                              <CheckCircle2 className="mr-1 inline h-3 w-3" />
+                            )}
+                            {type}
+                          </button>
+                        );
+                      })}
+                      {draft.boatTypeFilter.length === 0 && (
+                        <p className="mt-1 w-full text-xs text-slate-500 italic">
+                          No filter: applies to all boat types.
+                        </p>
+                      )}
+                    </div>
+                  </Field>
+                </div>
+              )}
             </div>
 
             {draft.scheduleMode === "after" && (
@@ -986,6 +1120,86 @@ export default function TaskAutomationPage() {
                   }
                 />
               </Field>
+
+              <div className="mt-4 space-y-4 rounded-3xl border border-slate-200 bg-slate-50/50 p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Layers3 className="h-5 w-5 text-sky-600" />
+                    <h3 className="font-bold text-slate-900">
+                      {copy.labels.taskItems}
+                    </h3>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 rounded-xl bg-white text-sky-600 shadow-sm transition-all hover:bg-sky-50"
+                    onClick={addItem}
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    {copy.labels.addItem}
+                  </Button>
+                </div>
+
+                {draft.items.length === 0 ? (
+                  <p className="text-center text-sm italic text-slate-500 py-4">
+                    Direct task creation (single task)
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {draft.items.map((item, index) => (
+                      <div
+                        key={index}
+                        className="relative space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => removeItem(index)}
+                          className="absolute right-3 top-3 text-slate-400 transition-colors hover:text-rose-500"
+                        >
+                          <Plus className="h-4 w-4 rotate-45" />
+                        </button>
+
+                        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                          <input
+                            className="input-base border-transparent bg-slate-50 p-2 text-sm font-semibold focus:bg-white"
+                            placeholder={copy.labels.itemTitle}
+                            value={item.title}
+                            onChange={(e) =>
+                              updateItem(index, "title", e.target.value)
+                            }
+                          />
+                          <select
+                            className="input-base w-32 border-transparent bg-slate-50 p-2 text-xs focus:bg-white"
+                            value={item.priority}
+                            onChange={(e) =>
+                              updateItem(
+                                index,
+                                "priority",
+                                e.target.value as PriorityLevel,
+                              )
+                            }
+                          >
+                            {priorityOptions.map((p) => (
+                              <option key={p.value} value={p.value}>
+                                {p.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <textarea
+                          className="input-base border-transparent bg-slate-50 p-2 text-xs focus:bg-white"
+                          placeholder={copy.labels.itemDescription}
+                          value={item.description}
+                          onChange={(e) =>
+                            updateItem(index, "description", e.target.value)
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-3">
