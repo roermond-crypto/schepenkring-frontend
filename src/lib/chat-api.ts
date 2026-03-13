@@ -79,6 +79,16 @@ interface PaginatedResponse<T> {
   total: number;
 }
 
+interface TranslateChatResponse {
+  conversation_id: string;
+  original_text: string;
+  translated_text: string;
+  source_language: string;
+  target_language: string;
+  provider: string;
+  model: string;
+}
+
 // ── Mappers ─────────────────────────────────────────────────────────
 
 function mapLeadToConversation(lead: BackendLead): Conversation {
@@ -269,6 +279,7 @@ export async function updateConversationStatus(
   status: ConversationStatus,
   leadId?: string
 ): Promise<boolean> {
+  void conversationId;
   if (!leadId) return false;
 
   const statusMap: Record<string, string> = {
@@ -291,6 +302,7 @@ export async function sendSupportMessage(
   text: string,
   attachments?: File[]
 ): Promise<SupportMessage> {
+  void attachments;
   const clientMessageId = `crm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   const response = await apiRequest<{ message: BackendMessage }>({
@@ -303,6 +315,28 @@ export async function sendSupportMessage(
   });
 
   return mapBackendMessage(response.message);
+}
+
+export async function translateSupportMessage(
+  conversationId: string,
+  text: string,
+  targetLanguage: string,
+  acceptLanguage?: string,
+): Promise<TranslateChatResponse> {
+  return apiRequest<TranslateChatResponse>({
+    method: "POST",
+    url: "/chat/translate",
+    headers: acceptLanguage
+      ? {
+          "Accept-Language": acceptLanguage,
+        }
+      : undefined,
+    data: {
+      conversation_id: conversationId,
+      text,
+      target_language: targetLanguage,
+    },
+  });
 }
 
 export async function startSupportCall(

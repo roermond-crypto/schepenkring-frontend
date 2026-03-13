@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Send,
   Paperclip,
@@ -15,6 +15,7 @@ import {
   Video,
   Info,
   Loader2,
+  Languages,
 } from "lucide-react";
 import type {
   ContactInfo,
@@ -23,6 +24,7 @@ import type {
   SupportMessage,
 } from "@/types/chat";
 import { cn } from "@/lib/utils";
+import { translateSupportMessage } from "@/lib/chat-api";
 
 interface ConversationMessagesProps {
   conversation: Conversation;
@@ -244,9 +246,13 @@ export function ConversationMessages({
   onOpenDetails,
 }: ConversationMessagesProps) {
   const t = useTranslations("DashboardChat");
+  const locale = useLocale();
   const [input, setInput] = useState("");
   const [callStarting, setCallStarting] = useState(false);
   const [callError, setCallError] = useState("");
+  const [translateTarget, setTranslateTarget] = useState("en");
+  const [translateError, setTranslateError] = useState("");
+  const [translating, setTranslating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -273,9 +279,40 @@ export function ConversationMessages({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
+    if (translateError) {
+      setTranslateError("");
+    }
     const el = e.target;
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  };
+
+  const handleTranslate = async () => {
+    const text = input.trim();
+    if (!text || translating) return;
+
+    setTranslating(true);
+    setTranslateError("");
+
+    try {
+      const response = await translateSupportMessage(
+        conversation.id,
+        text,
+        translateTarget,
+        `${locale}-${locale.toUpperCase()}`,
+      );
+      setInput(response.translated_text);
+
+      if (inputRef.current) {
+        inputRef.current.style.height = "auto";
+        inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
+      }
+    } catch (error) {
+      console.error(error);
+      setTranslateError(t("messages.translateFailed"));
+    } finally {
+      setTranslating(false);
+    }
   };
 
   const cycleStatus = () => {
@@ -431,6 +468,11 @@ export function ConversationMessages({
             {callError}
           </div>
         )}
+        {translateError && (
+          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
+            {translateError}
+          </div>
+        )}
         {/* AI suggestion bar */}
         <div className="flex items-center gap-2 mb-3">
           <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200/60 text-xs font-semibold text-violet-700 hover:from-violet-100 hover:to-purple-100 transition-all">
@@ -439,6 +481,45 @@ export function ConversationMessages({
           </button>
           <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200/60 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors">
             {t("messages.summarize")}
+          </button>
+        </div>
+
+        <div className="mb-3 flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <Languages size={14} className="text-slate-500" />
+            <span className="text-xs font-semibold text-slate-600">
+              {t("messages.translateTo")}
+            </span>
+            <select
+              value={translateTarget}
+              onChange={(e) => setTranslateTarget(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="en">{t("messages.languages.en")}</option>
+              <option value="nl">{t("messages.languages.nl")}</option>
+              <option value="de">{t("messages.languages.de")}</option>
+              <option value="fr">{t("messages.languages.fr")}</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={handleTranslate}
+            disabled={!input.trim() || translating}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors",
+              input.trim() && !translating
+                ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                : "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed",
+            )}
+          >
+            {translating ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Languages size={13} />
+            )}
+            {translating
+              ? t("messages.translating")
+              : t("messages.translateButton")}
           </button>
         </div>
 
