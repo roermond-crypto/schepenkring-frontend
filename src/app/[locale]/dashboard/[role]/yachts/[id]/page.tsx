@@ -143,8 +143,8 @@ const WIZARD_STEP_IDS = [
 
 const DRAFT_KEY_PREFIX = "yacht_draft_";
 const MAX_IMAGES_UPLOAD = 50;
-const UPLOAD_BATCH_SIZE = 6;
-const UPLOAD_MAX_PARALLEL_BATCHES = 4;
+const UPLOAD_BATCH_SIZE = 10;
+const UPLOAD_MAX_PARALLEL_BATCHES = 2;
 
 // Configuration
 const STORAGE_URL = "https://app.schepen-kring.nl/storage/";
@@ -1253,6 +1253,10 @@ export default function YachtEditorPage() {
       ? String(createdYachtId)
       : null
     : (yachtId as string);
+  const isPersistedYachtRoute =
+    !isNewMode &&
+    typeof yachtId === "string" &&
+    /^[0-9]+$/.test(yachtId);
 
   // Gemini Extraction State (Step 1)
   const [isExtracting, setIsExtracting] = useState(false);
@@ -1599,10 +1603,12 @@ export default function YachtEditorPage() {
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
   const restoredDraftRef = useRef(false);
   const serverDraftVersionRef = useRef<number | null>(null);
+  const lastServerDraftSnapshotRef = useRef<string | null>(null);
   const syncingServerDraftRef = useRef(false);
   const serverSyncTimerRef = useRef<NodeJS.Timeout | null>(null);
   const serverDraftInitializedRef = useRef(false);
   const serverDraftBootstrapInFlightRef = useRef(false);
+  const localPreviewUrlsRef = useRef<Set<string>>(new Set());
 
   // Restore draft payload for new-yacht flow once.
   useEffect(() => {
@@ -1852,6 +1858,20 @@ export default function YachtEditorPage() {
     fieldCorrectionLabels,
   ]);
 
+  const imageManifestSyncKey = [
+    pipeline.stats.total,
+    pipeline.stats.approved,
+    pipeline.stats.processing,
+    pipeline.stats.ready,
+    pipeline.images
+      .map(
+        (img) =>
+          `${img.id}:${img.status}:${img.sort_order}:${img.keep_original ? 1 : 0}:${img.category}`,
+      )
+      .join("|"),
+    offlineImages.map((img) => img.key).join("|"),
+  ].join("::");
+
   const syncDraftToServer = useCallback(
     async (mode: "upsert" | "patch" = "patch") => {
       if (!isDraftLoaded || !isOnline || syncingServerDraftRef.current) return;
@@ -1859,6 +1879,14 @@ export default function YachtEditorPage() {
         return;
 
       const snapshot = buildServerDraftSnapshot();
+      const snapshotSignature = JSON.stringify(snapshot);
+      if (
+        mode === "patch" &&
+        serverDraftVersionRef.current !== null &&
+        lastServerDraftSnapshotRef.current === snapshotSignature
+      ) {
+        return;
+      }
       syncingServerDraftRef.current = true;
 
       try {
@@ -1875,6 +1903,7 @@ export default function YachtEditorPage() {
             client_saved_at: new Date().toISOString(),
           });
           serverDraftVersionRef.current = saved.version;
+          lastServerDraftSnapshotRef.current = snapshotSignature;
           return;
         }
 
@@ -1888,6 +1917,7 @@ export default function YachtEditorPage() {
           client_saved_at: new Date().toISOString(),
         });
         serverDraftVersionRef.current = patched.version;
+        lastServerDraftSnapshotRef.current = snapshotSignature;
       } catch (error: unknown) {
         const err = error as {
           response?: {
@@ -1917,6 +1947,7 @@ export default function YachtEditorPage() {
               client_saved_at: new Date().toISOString(),
             });
             serverDraftVersionRef.current = retried.version;
+            lastServerDraftSnapshotRef.current = JSON.stringify(snapshotRetry);
           } catch (retryError) {
             console.warn("[DraftSync] Patch retry failed:", retryError);
           }
@@ -1929,6 +1960,34 @@ export default function YachtEditorPage() {
     },
     [isDraftLoaded, isOnline, buildServerDraftSnapshot, activeStep],
   );
+
+  const syncDraftToServerRef = useRef(syncDraftToServer);
+
+  useEffect(() => {
+    syncDraftToServerRef.current = syncDraftToServer;
+  }, [syncDraftToServer]);
+
+  useEffect(() => {
+    const activePreviewUrls = new Set(
+      pipeline.images
+        .map((image) => image.client_preview_url)
+        .filter((value): value is string => typeof value === "string" && value.length > 0),
+    );
+
+    localPreviewUrlsRef.current.forEach((url) => {
+      if (!activePreviewUrls.has(url)) {
+        URL.revokeObjectURL(url);
+        localPreviewUrlsRef.current.delete(url);
+      }
+    });
+  }, [pipeline.images]);
+
+  useEffect(() => {
+    return () => {
+      localPreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      localPreviewUrlsRef.current.clear();
+    };
+  }, []);
 
   // Bootstrap server draft safely:
   // 1) fetch existing server draft if present
@@ -2044,7 +2103,7 @@ export default function YachtEditorPage() {
       clearTimeout(serverSyncTimerRef.current);
     }
     serverSyncTimerRef.current = setTimeout(() => {
-      void syncDraftToServer("patch");
+      void syncDraftToServerRef.current("patch");
     }, 1800);
 
     return () => {
@@ -2052,7 +2111,7 @@ export default function YachtEditorPage() {
         clearTimeout(serverSyncTimerRef.current);
       }
     };
-  }, [isDraftLoaded, isOnline, draft.lastSaved, activeStep, syncDraftToServer]);
+  }, [isDraftLoaded, isOnline, draft.lastSaved, activeStep, imageManifestSyncKey]);
 
   // Expose a global best-effort flush hook for language switching/navigation.
   const flushYachtDraftNow = useCallback(async () => {
@@ -2164,7 +2223,10 @@ export default function YachtEditorPage() {
 
   // --- 1. FETCH DATA (IF EDITING) ---
   useEffect(() => {
-    if (isNewMode) return;
+    if (!isPersistedYachtRoute) {
+      setLoading(false);
+      return;
+    }
 
     const fetchYachtDetails = async () => {
       try {
@@ -2245,7 +2307,13 @@ export default function YachtEditorPage() {
           fr: yacht.short_description_fr || "",
         });
 
-      } catch (err) {
+      } catch (err: any) {
+        if (err?.response?.status === 404) {
+          console.warn(`[YachtEditor] Skipping missing yacht ${yachtId}`);
+          toast.error("Vessel not found.");
+          router.push(`/${locale}/dashboard/${role}/yachts`);
+          return;
+        }
         console.error("Failed to fetch yacht details", err);
         toast.error("Failed to load yacht details");
         router.push(`/${locale}/dashboard/${role}/yachts`);
@@ -2255,7 +2323,7 @@ export default function YachtEditorPage() {
     };
 
     fetchYachtDetails();
-  }, [yachtId, isNewMode, locale, router, loadMarketingVideos]);
+  }, [yachtId, isPersistedYachtRoute, locale, router, loadMarketingVideos]);
 
   // --- 2. HANDLERS ---
 
@@ -2600,6 +2668,15 @@ export default function YachtEditorPage() {
     e.currentTarget.classList.add("opacity-50", "grayscale");
   };
 
+  const getPipelineImageSrc = (image: PipelineImage) =>
+    image.thumb_full_url ||
+    image.optimized_url ||
+    image.full_url ||
+    image.client_preview_url ||
+    image.url ||
+    image.original_temp_url ||
+    PLACEHOLDER_IMAGE;
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -2691,7 +2768,6 @@ export default function YachtEditorPage() {
 
     setIsUploading(true);
     const toastId = toast.loading(`Uploading ${files.length} image(s)...`);
-    const optimisticUrls: string[] = [];
     const previousImages = pipeline.images;
     const previousStats = pipeline.stats;
     const previousStep2Unlocked = pipeline.isStep2Unlocked;
@@ -2705,10 +2781,11 @@ export default function YachtEditorPage() {
       const optimisticBaseId = -Date.now();
       const optimisticImages: PipelineImage[] = fileArray.map((file, index) => {
         const previewUrl = URL.createObjectURL(file);
-        optimisticUrls.push(previewUrl);
+        localPreviewUrlsRef.current.add(previewUrl);
         return {
           id: optimisticBaseId - index,
           yacht_id: Number(targetId || 0),
+          client_preview_url: previewUrl,
           url: previewUrl,
           original_temp_url: previewUrl,
           optimized_master_url: previewUrl,
@@ -2783,6 +2860,7 @@ export default function YachtEditorPage() {
 
       let uploadedCount = 0;
       let failedBatches = 0;
+      const uploadedImages: PipelineImage[] = [];
 
       for (let i = 0; i < batches.length; i += UPLOAD_MAX_PARALLEL_BATCHES) {
         const chunk = batches.slice(i, i + UPLOAD_MAX_PARALLEL_BATCHES);
@@ -2802,15 +2880,20 @@ export default function YachtEditorPage() {
                 headers: { "Content-Type": "multipart/form-data" },
               },
             );
-            return Array.isArray(res.data?.images)
-              ? res.data.images.length
-              : batchFiles.length;
+            const responseImages = Array.isArray(res.data?.images)
+              ? (res.data.images as PipelineImage[])
+              : [];
+            return {
+              count: responseImages.length || batchFiles.length,
+              images: responseImages,
+            };
           }),
         );
 
         settled.forEach((result) => {
           if (result.status === "fulfilled") {
-            uploadedCount += result.value;
+            uploadedCount += result.value.count;
+            uploadedImages.push(...result.value.images);
           } else {
             failedBatches += 1;
             console.error("[Upload] Batch failed:", result.reason);
@@ -2836,15 +2919,63 @@ export default function YachtEditorPage() {
           id: toastId,
         },
       );
-      // Force a direct fetch using targetId (avoids stale closure from useImagePipeline)
-      // This is needed because in new mode, the hook's yachtId may still be null/stale
-      try {
-        const refreshRes = await api.get(`/yachts/${targetId}/images`);
-        if (refreshRes.data?.images) {
-          pipeline.setImagesDirectly?.(refreshRes.data);
-        }
-      } catch { }
-      if (pipeline.refreshImages) await pipeline.refreshImages();
+
+      const previewQueueByName = new Map<string, string[]>();
+      fileArray.forEach((file, index) => {
+        const previewUrl = optimisticImages[index]?.client_preview_url;
+        if (!previewUrl) return;
+        const queue = previewQueueByName.get(file.name) || [];
+        queue.push(previewUrl);
+        previewQueueByName.set(file.name, queue);
+      });
+
+      if (uploadedImages.length > 0) {
+        const hydratedUploadedImages = uploadedImages.map((image) => {
+          const previewQueue =
+            typeof image.original_name === "string"
+              ? previewQueueByName.get(image.original_name)
+              : undefined;
+          const previewUrl = previewQueue?.shift() || null;
+
+          if (!previewUrl) {
+            return image;
+          }
+
+          return {
+            ...image,
+            client_preview_url: previewUrl,
+          };
+        });
+
+        pipeline.setImagesDirectly?.({
+          images: [...previousImages, ...hydratedUploadedImages],
+          stats: {
+            ...previousStats,
+            total: previousStats.total + hydratedUploadedImages.length,
+            approved:
+              previousStats.approved +
+              hydratedUploadedImages.filter((image) => image.status === "approved")
+                .length,
+            processing:
+              previousStats.processing +
+              hydratedUploadedImages.filter(
+                (image) =>
+                  image.status === "processing" ||
+                  image.enhancement_method === "pending",
+              ).length,
+            ready:
+              previousStats.ready +
+              hydratedUploadedImages.filter(
+                (image) => image.status === "ready_for_review",
+              ).length,
+            min_required: previousStats.min_required,
+          },
+          step2_unlocked:
+            previousStep2Unlocked ||
+            hydratedUploadedImages.some((image) => image.status === "approved"),
+        });
+      }
+
       if (shouldSetCreatedYachtId) {
         setCreatedYachtId(Number(targetId));
       }
@@ -2859,7 +2990,6 @@ export default function YachtEditorPage() {
       // Reset to backend truth if optimistic previews were shown.
       if (pipeline.refreshImages) await pipeline.refreshImages();
     } finally {
-      optimisticUrls.forEach((url) => URL.revokeObjectURL(url));
       setIsUploading(false);
       e.target.value = "";
     }
@@ -4487,15 +4617,8 @@ export default function YachtEditorPage() {
                                         {/* Image */}
                                         <div className="aspect-square relative flex bg-slate-100 overflow-hidden">
                                           <img
-                                            key={`img-${img.id}-${img.thumb_full_url || img.optimized_url || img.full_url || img.url || img.original_temp_url}`}
-                                            src={
-                                              img.thumb_full_url ||
-                                              img.optimized_url ||
-                                              img.full_url ||
-                                              img.url ||
-                                              img.original_temp_url ||
-                                              PLACEHOLDER_IMAGE
-                                            }
+                                            key={`img-${img.id}-${getPipelineImageSrc(img)}`}
+                                            src={getPipelineImageSrc(img)}
                                             alt={img.original_name || `Yacht image ${index + 1}`}
                                             onClick={() => setSelectedLightboxImageId(img.id)}
                                             className={cn(
@@ -4716,10 +4839,7 @@ export default function YachtEditorPage() {
 
                               <div className="relative flex min-h-[54vh] items-center justify-center px-4 pb-24 pt-24 sm:px-8 lg:px-10">
                                 <img
-                                  src={
-                                    selectedLightboxImage.optimized_url ||
-                                    selectedLightboxImage.full_url
-                                  }
+                                  src={getPipelineImageSrc(selectedLightboxImage)}
                                   alt={
                                     selectedLightboxImage.original_name ||
                                     "Selected yacht image"

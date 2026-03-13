@@ -23,9 +23,8 @@ import { countPendingOutbox } from "@/lib/offline-db";
  */
 export function useSyncService() {
     const { isOnline } = useNetworkStatus();
-    const [syncStatus, setSyncStatus] = useState<SyncStatus>(
-        typeof navigator !== "undefined" && navigator.onLine ? "online" : "offline",
-    );
+    // Keep the first client render identical to SSR to avoid hydration mismatches.
+    const [syncStatus, setSyncStatus] = useState<SyncStatus>("online");
     const [pendingCount, setPendingCount] = useState(0);
     const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
     const wasOnlineRef = useRef(isOnline);

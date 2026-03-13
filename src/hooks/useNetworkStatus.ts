@@ -1,33 +1,37 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useSyncExternalStore } from "react";
+
+function subscribe(onStoreChange: () => void) {
+    window.addEventListener("online", onStoreChange);
+    window.addEventListener("offline", onStoreChange);
+
+    return () => {
+        window.removeEventListener("online", onStoreChange);
+        window.removeEventListener("offline", onStoreChange);
+    };
+}
+
+function getSnapshot() {
+    return navigator.onLine;
+}
+
+function getServerSnapshot() {
+    return true;
+}
 
 /**
  * useNetworkStatus — Reactive hook for online/offline detection.
  *
- * Returns `isOnline` boolean that updates in real-time when the
- * browser goes offline or comes back online.
+ * Uses useSyncExternalStore so the first client render stays consistent with SSR
+ * and React can subscribe to browser online/offline events safely.
  */
 export function useNetworkStatus() {
-    const [isOnline, setIsOnline] = useState<boolean>(
-        typeof navigator !== "undefined" ? navigator.onLine : true,
+    const isOnline = useSyncExternalStore(
+        subscribe,
+        getSnapshot,
+        getServerSnapshot,
     );
-
-    const handleOnline = useCallback(() => setIsOnline(true), []);
-    const handleOffline = useCallback(() => setIsOnline(false), []);
-
-    useEffect(() => {
-        window.addEventListener("online", handleOnline);
-        window.addEventListener("offline", handleOffline);
-
-        // Sync initial state in case it changed between SSR and hydration
-        setIsOnline(navigator.onLine);
-
-        return () => {
-            window.removeEventListener("online", handleOnline);
-            window.removeEventListener("offline", handleOffline);
-        };
-    }, [handleOnline, handleOffline]);
 
     return { isOnline };
 }

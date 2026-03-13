@@ -7,6 +7,7 @@ export interface PipelineImage {
     id: number;
     yacht_id: number;
     url: string;
+    client_preview_url?: string | null;
     original_temp_url: string | null;
     optimized_master_url: string | null;
     thumb_url: string | null;
@@ -62,7 +63,7 @@ interface UseImagePipelineReturn {
     setImagesDirectly?: (data: { images: PipelineImage[]; stats: PipelineStats; step2_unlocked: boolean }) => void;
 }
 
-const POLL_INTERVAL = 3000; // 3 seconds — fast feedback while processing
+const POLL_INTERVAL = 5000; // 5 seconds — lower API pressure in production
 
 export function useImagePipeline(
     yachtId: string | number | null,
