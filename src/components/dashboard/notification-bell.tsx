@@ -69,7 +69,27 @@ const resolveNotificationHref = (
     return `/dashboard/${role}/yachts/${String(entityId)}?${params.toString()}`;
   }
 
+  if (
+    (entityType === "task" || entityType.endsWith("\\task")) &&
+    entityId !== undefined &&
+    entityId !== null &&
+    entityId !== ""
+  ) {
+    const params = new URLSearchParams({ task: String(entityId) });
+    return `/dashboard/${role}/tasks?${params.toString()}`;
+  }
+
   const rawUrl = typeof data?.url === "string" ? data.url.trim() : "";
+  const taskUrlMatch = rawUrl.match(/^\/dashboard\/tasks\/([^/?#]+)$/i);
+  if (taskUrlMatch?.[1]) {
+    const params = new URLSearchParams({ task: taskUrlMatch[1] });
+    return `/dashboard/${role}/tasks?${params.toString()}`;
+  }
+
+  if (rawUrl === "/dashboard/tasks") {
+    return `/dashboard/${role}/tasks`;
+  }
+
   if (rawUrl.startsWith("/")) {
     return rawUrl;
   }
