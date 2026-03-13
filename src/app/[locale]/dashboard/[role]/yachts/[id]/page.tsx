@@ -1008,13 +1008,38 @@ function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
     .toLowerCase();
   if (!normalized) return null;
   if (
-    ["unknown", "unsure", "uncertain", "n/a", "na", "null", "none"].includes(
+    [
+      "unknown",
+      "unsure",
+      "uncertain",
+      "n/a",
+      "na",
+      "null",
+      "none",
+      "onbekend",
+      "unbekannt",
+      "inconnu",
+    ].includes(normalized)
+  )
+    return null;
+  if (
+    ["no", "n", "false", "0", "absent", "nee", "nein", "non"].includes(
       normalized,
     )
   )
-    return null;
-  if (["no", "n", "false", "0", "absent"].includes(normalized)) return "no";
-  if (["yes", "y", "true", "1", "present", "included"].includes(normalized))
+    return "no";
+  if (
+    [
+      "yes",
+      "y",
+      "true",
+      "1",
+      "present",
+      "included",
+      "ja",
+      "oui",
+    ].includes(normalized)
+  )
     return "yes";
   if (/\b(without|not visible|not present|missing)\b/.test(normalized))
     return "no";
@@ -1025,6 +1050,27 @@ function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
 }
 
 type DescriptionFormValue = string | number | boolean;
+const DESCRIPTION_LANGS = ["nl", "en", "de", "fr"] as const;
+type DescriptionLanguage = (typeof DESCRIPTION_LANGS)[number];
+type DescriptionTextState = Record<DescriptionLanguage, string>;
+const DESCRIPTION_LANGUAGE_BADGES: Record<DescriptionLanguage, string> = {
+  nl: "🇳🇱 NL",
+  en: "🇬🇧 EN",
+  de: "🇩🇪 DE",
+  fr: "🇫🇷 FR",
+};
+const DESCRIPTION_LANGUAGE_LABELS: Record<DescriptionLanguage, string> = {
+  nl: "Nederlandse Beschrijving",
+  en: "English Description",
+  de: "Deutsche Beschreibung",
+  fr: "Description Francaise",
+};
+const DESCRIPTION_LANGUAGE_LOCALES: Record<DescriptionLanguage, string> = {
+  nl: "nl-NL",
+  en: "en-US",
+  de: "de-DE",
+  fr: "fr-FR",
+};
 
 const DESCRIPTION_CONTEXT_IGNORED_FIELDS = new Set([
   "id",
@@ -1092,8 +1138,8 @@ function buildDescriptionRequestSignature(
   });
 }
 
-function hasThinDescriptions(texts: { nl: string; en: string; de: string }): boolean {
-  return (["nl", "en", "de"] as const).some(
+function hasThinDescriptions(texts: DescriptionTextState): boolean {
+  return DESCRIPTION_LANGS.some(
     (lang) => stripRichText(texts[lang]).length < 140,
   );
 }
@@ -1324,8 +1370,13 @@ export default function YachtEditorPage() {
   );
 
   // AI Text State (Tab 3)
-  const [aiTexts, setAiTexts] = useState({ nl: "", en: "", de: "" });
-  const [selectedLang, setSelectedLang] = useState<"nl" | "en" | "de">("nl");
+  const [aiTexts, setAiTexts] = useState<DescriptionTextState>({
+    nl: "",
+    en: "",
+    de: "",
+    fr: "",
+  });
+  const [selectedLang, setSelectedLang] = useState<DescriptionLanguage>("nl");
 
   // AI Tone Settings & Speech
   const [aiTone, setAiTone] = useState("professional");
@@ -1613,13 +1664,15 @@ export default function YachtEditorPage() {
         nl: typeof aiTextObj.nl === "string" ? aiTextObj.nl : "",
         en: typeof aiTextObj.en === "string" ? aiTextObj.en : "",
         de: typeof aiTextObj.de === "string" ? aiTextObj.de : "",
+        fr: typeof aiTextObj.fr === "string" ? aiTextObj.fr : "",
       });
     }
 
     if (
       step3Obj.selectedLang === "nl" ||
       step3Obj.selectedLang === "en" ||
-      step3Obj.selectedLang === "de"
+      step3Obj.selectedLang === "de" ||
+      step3Obj.selectedLang === "fr"
     ) {
       setSelectedLang(step3Obj.selectedLang);
     }
@@ -2185,6 +2238,7 @@ export default function YachtEditorPage() {
           en: yacht.short_description_en || "",
           nl: yacht.short_description_nl || "",
           de: yacht.short_description_de || "",
+          fr: yacht.short_description_fr || "",
         });
 
       } catch (err) {
@@ -3189,6 +3243,12 @@ export default function YachtEditorPage() {
             de: formValues.short_description_de,
           }));
         }
+        if (formValues.short_description_fr) {
+          setAiTexts((prev) => ({
+            ...prev,
+            fr: formValues.short_description_fr,
+          }));
+        }
 
         const mergedDescriptionState = {
           ...toObjectRecord(selectedYacht),
@@ -3320,6 +3380,7 @@ export default function YachtEditorPage() {
             en: res.data.descriptions.en || "",
             nl: res.data.descriptions.nl || "",
             de: res.data.descriptions.de || "",
+            fr: res.data.descriptions.fr || "",
           });
           lastDescriptionRequestSignatureRef.current = requestSignature;
           if (toastId) {
@@ -3396,11 +3457,7 @@ export default function YachtEditorPage() {
       setIsDictating(false);
     } else {
       recognition.lang =
-        selectedLang === "nl"
-          ? "nl-NL"
-          : selectedLang === "de"
-            ? "de-DE"
-            : "en-US";
+        DESCRIPTION_LANGUAGE_LOCALES[selectedLang];
       recognition.start();
       setIsDictating(true);
       toast.success("Listening... Speak now");
@@ -3701,6 +3758,7 @@ export default function YachtEditorPage() {
       "short_description_en",
       "short_description_nl",
       "short_description_de",
+      "short_description_fr",
       "compass",
       "gps",
       "radar",
@@ -3765,6 +3823,8 @@ export default function YachtEditorPage() {
       formData.set("short_description_nl", aiTexts.nl.trim());
     if (aiTexts.de?.trim())
       formData.set("short_description_de", aiTexts.de.trim());
+    if (aiTexts.fr?.trim())
+      formData.set("short_description_fr", aiTexts.fr.trim());
 
     // Add availability rules
     if (availabilityRules.length > 0) {
@@ -5264,7 +5324,13 @@ export default function YachtEditorPage() {
                         }));
                       }}
                     >
-                      <SelectTrigger className="h-11 border-slate-200">
+                      <SelectTrigger
+                        className={cn(
+                          "h-11 border-slate-200",
+                          hasFilledFieldValue(selectedYacht?.ref_harbor_id) &&
+                            "border-amber-300 bg-amber-50/50",
+                        )}
+                      >
                         <SelectValue placeholder="Selecteer locatie..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -5374,19 +5440,14 @@ export default function YachtEditorPage() {
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("newOrUsed", "New or Used")}</Label>
-                    <select
+                    <SelectField
                       name="new_or_used"
                       defaultValue={selectedYacht?.new_or_used || ""}
-                      className={cn(
-                        "w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
-                        "hover:border-slate-300",
-                        "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none cursor-pointer",
-                      )}
                     >
                       <option value="">Select…</option>
                       <option value="new">New</option>
                       <option value="used">Used</option>
-                    </select>
+                    </SelectField>
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("loa", "LOA (Length Overall)")}</Label>
@@ -5415,38 +5476,28 @@ export default function YachtEditorPage() {
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("ceCategory", "CE Category")}</Label>
-                    <select
+                    <SelectField
                       name="ce_category"
                       defaultValue={selectedYacht?.ce_category || ""}
-                      className={cn(
-                        "w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
-                        "hover:border-slate-300",
-                        "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none cursor-pointer",
-                      )}
                     >
                       <option value="">Select…</option>
                       <option value="A">A — Ocean</option>
                       <option value="B">B — Offshore</option>
                       <option value="C">C — Inshore</option>
                       <option value="D">D — Sheltered Waters</option>
-                    </select>
+                    </SelectField>
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("status", "Status")}</Label>
-                    <select
+                    <SelectField
                       name="status"
                       defaultValue={selectedYacht?.status || "Draft"}
-                      className={cn(
-                        "w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
-                        "hover:border-slate-300",
-                        "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none cursor-pointer",
-                      )}
                     >
                       <option value="For Sale">For Sale</option>
                       <option value="For Bid">For Bid</option>
                       <option value="Sold">Sold</option>
                       <option value="Draft">Draft</option>
-                    </select>
+                    </SelectField>
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("passengerCapacity", "Passenger Capacity")}</Label>
@@ -5639,21 +5690,16 @@ export default function YachtEditorPage() {
                       </div>
                       <div className="space-y-1 group">
                         <Label>{labelText("engineType", "Engine Type")}</Label>
-                        <select
+                        <SelectField
                           name="engine_type"
                           defaultValue={selectedYacht?.engine_type || ""}
-                          className={cn(
-                            "w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
-                            "hover:border-slate-300",
-                            "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none cursor-pointer",
-                          )}
                         >
                           <option value="">Select…</option>
                           <option value="inboard">Inboard</option>
                           <option value="outboard">Outboard</option>
                           <option value="saildrive">Saildrive</option>
                           <option value="sterndrive">Sterndrive</option>
-                        </select>
+                        </SelectField>
                       </div>
                       <div className="space-y-1 group">
                         <Label>{labelText("horsePower", "Horse Power")}</Label>
@@ -7012,7 +7058,7 @@ export default function YachtEditorPage() {
 
                   {/* Language Tabs */}
                   <div className="flex bg-slate-100 p-1 rounded-sm gap-1">
-                    {(["nl", "en", "de"] as const).map((lang) => (
+                    {DESCRIPTION_LANGS.map((lang) => (
                       <button
                         key={lang}
                         type="button"
@@ -7024,11 +7070,7 @@ export default function YachtEditorPage() {
                             : "text-slate-500 hover:text-slate-700 hover:bg-slate-200",
                         )}
                       >
-                        {lang === "nl"
-                          ? "🇳🇱 NL"
-                          : lang === "en"
-                            ? "🇬🇧 EN"
-                            : "🇩🇪 DE"}
+                        {DESCRIPTION_LANGUAGE_BADGES[lang]}
                       </button>
                     ))}
                   </div>
@@ -7095,11 +7137,7 @@ export default function YachtEditorPage() {
 
                   <div className="flex justify-between items-center pt-2">
                     <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">
-                      {selectedLang === "nl"
-                        ? "Nederlandse Beschrijving"
-                        : selectedLang === "en"
-                          ? "English Description"
-                          : "Deutsche Beschreibung"}
+                      {DESCRIPTION_LANGUAGE_LABELS[selectedLang]}
                     </p>
                     <div className="flex items-center gap-3">
                       <button
@@ -7156,11 +7194,7 @@ export default function YachtEditorPage() {
                                 if (voice) utterance.voice = voice;
                               } else {
                                 utterance.lang =
-                                  selectedLang === "nl"
-                                    ? "nl-NL"
-                                    : selectedLang === "en"
-                                      ? "en-US"
-                                      : "de-DE";
+                                  DESCRIPTION_LANGUAGE_LOCALES[selectedLang];
                               }
 
                               utterance.onend = () => setIsPlayingAudio(false);
@@ -7357,53 +7391,6 @@ export default function YachtEditorPage() {
                   {t?.wizard?.review?.title ||
                     labelText("stepReview", "Review")}
                 </h3>
-                <p className="text-sm text-slate-600 mb-6">
-                  {labelText(
-                    "reviewSummary",
-                    "Review all steps before submitting. Completed steps are marked with a blue checkmark in the tab bar above.",
-                  )}
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                  {wizardSteps.slice(0, 4).map((step) => (
-                    <div
-                      key={step.id}
-                      className={cn(
-                        "p-4 border flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors",
-                        !isNewMode || isStepComplete(step.id)
-                          ? "border-blue-300 bg-blue-50/50"
-                          : "border-orange-300 bg-orange-50/50",
-                      )}
-                      onClick={() => handleStepChange(step.id)}
-                    >
-                      <span
-                        className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black",
-                          !isNewMode || isStepComplete(step.id)
-                            ? "bg-blue-500 text-white"
-                            : "bg-orange-400 text-white",
-                        )}
-                      >
-                        {!isNewMode || isStepComplete(step.id) ? (
-                          <Check size={14} strokeWidth={3} />
-                        ) : (
-                          step.id
-                        )}
-                      </span>
-                      <div>
-                        <p className="text-sm font-bold text-slate-700">
-                          {step.label}
-                        </p>
-                        <p className="text-[9px] text-slate-500">
-                          {!isNewMode || isStepComplete(step.id)
-                            ? t?.wizard?.review?.completed ||
-                              labelText("completed", "Completed")
-                            : t?.wizard?.review?.notCompleted ||
-                              labelText("pending", "Pending")}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
 
                 {/* ── CHECKLIST & COMPLIANCE ── */}
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-8">
@@ -7825,6 +7812,25 @@ function CheckboxField({
   );
 }
 
+function hasFilledFieldValue(
+  value: unknown,
+  options?: { treatUnknownAsEmpty?: boolean },
+): boolean {
+  const treatUnknownAsEmpty = options?.treatUnknownAsEmpty ?? false;
+
+  if (value === null || value === undefined) return false;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "boolean") return true;
+
+  const normalized = String(value).trim();
+  if (!normalized) return false;
+  if (treatUnknownAsEmpty && normalized.toLowerCase() === "unknown") {
+    return false;
+  }
+
+  return true;
+}
+
 function Input(
   props: React.InputHTMLAttributes<HTMLInputElement> & {
     needsConfirmation?: boolean;
@@ -7832,21 +7838,92 @@ function Input(
   },
 ) {
   const { needsConfirmation, confidence, ...inputProps } = props;
+  const [hasValue, setHasValue] = useState(() =>
+    hasFilledFieldValue(inputProps.value ?? inputProps.defaultValue),
+  );
+
+  useEffect(() => {
+    setHasValue(hasFilledFieldValue(inputProps.value ?? inputProps.defaultValue));
+  }, [inputProps.value, inputProps.defaultValue]);
+
+  const highlighted = Boolean(needsConfirmation) || hasValue;
+
   return (
     <div className="relative">
       <input
         {...inputProps}
+        onChange={(event) => {
+          setHasValue(hasFilledFieldValue(event.target.value));
+          inputProps.onChange?.(event);
+        }}
         className={cn(
           "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
           "hover:border-slate-300",
           "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
           "placeholder:text-slate-400 placeholder:font-normal",
-          needsConfirmation
+          highlighted
             ? "border-amber-300 bg-amber-50/50"
             : "border-slate-200",
           inputProps.className,
         )}
       />
+      {needsConfirmation && (
+        <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+          ⚠ confirm
+        </span>
+      )}
+    </div>
+  );
+}
+
+function SelectField(
+  props: React.SelectHTMLAttributes<HTMLSelectElement> & {
+    needsConfirmation?: boolean;
+    treatUnknownAsEmpty?: boolean;
+  },
+) {
+  const {
+    needsConfirmation,
+    treatUnknownAsEmpty = false,
+    defaultValue,
+    value,
+    onChange,
+    className,
+    children,
+    ...selectProps
+  } = props;
+  const [currentValue, setCurrentValue] = useState(
+    value ?? defaultValue ?? "",
+  );
+
+  useEffect(() => {
+    setCurrentValue(value ?? defaultValue ?? "");
+  }, [value, defaultValue]);
+
+  const highlighted =
+    Boolean(needsConfirmation) ||
+    hasFilledFieldValue(currentValue, { treatUnknownAsEmpty });
+
+  return (
+    <div className="relative">
+      <select
+        {...selectProps}
+        value={value}
+        defaultValue={defaultValue}
+        onChange={(event) => {
+          setCurrentValue(event.target.value);
+          onChange?.(event);
+        }}
+        className={cn(
+          "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
+          "hover:border-slate-300",
+          "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none cursor-pointer",
+          highlighted ? "border-amber-300 bg-amber-50/50" : "border-slate-200",
+          className,
+        )}
+      >
+        {children}
+      </select>
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
           ⚠ confirm
@@ -7919,6 +7996,17 @@ function TriStateSelect(
     ...selectProps
   } = props;
   const normalizedDefault = normalizeTriStateValue(defaultValue);
+  const [currentValue, setCurrentValue] = useState<"yes" | "no" | null>(
+    normalizedDefault,
+  );
+
+  useEffect(() => {
+    setCurrentValue(normalizedDefault);
+  }, [normalizedDefault]);
+
+  const highlighted =
+    Boolean(needsConfirmation) ||
+    hasFilledFieldValue(currentValue, { treatUnknownAsEmpty: true });
 
   return (
     <div className="relative">
@@ -7934,11 +8022,15 @@ function TriStateSelect(
       <select
         {...selectProps}
         defaultValue={normalizedDefault ?? undefined}
+        onChange={(event) => {
+          setCurrentValue(normalizeTriStateValue(event.target.value));
+          selectProps.onChange?.(event);
+        }}
         className={cn(
           "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
           "hover:border-slate-300",
           "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
-          needsConfirmation
+          highlighted
             ? "border-amber-300 bg-amber-50/50"
             : "border-slate-200",
           selectProps.className,

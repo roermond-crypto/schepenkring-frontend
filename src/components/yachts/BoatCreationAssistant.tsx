@@ -142,6 +142,7 @@ export function BoatCreationAssistant({
     const warnings = Array.isArray(suggestions?.warnings) ? suggestions.warnings : [];
 
     if (!hasSuggestions && !isLoading) return null;
+    if (autoApply) return null;
 
     return (
         <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
