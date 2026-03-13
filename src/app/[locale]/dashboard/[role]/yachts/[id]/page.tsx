@@ -1304,6 +1304,10 @@ export default function YachtEditorPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [mainPreview, setMainPreview] = useState<string | null>(null);
   const [mainFile, setMainFile] = useState<File | null>(null);
+  const hasInFlightImageUploads = isUploading || pipeline.isUploading;
+  const shouldShowImageUploadDropzone =
+    pipeline.images.length === 0 || hasInFlightImageUploads;
+  const shouldShowImageGrid = pipeline.images.length > 0;
 
   // AI Pipeline State
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
@@ -4246,17 +4250,42 @@ export default function YachtEditorPage() {
                 </div>
 
                 {/* ── Image Upload & Pipeline Grid ── */}
-                {pipeline.images.length === 0 ? (
-                  <label className="h-64 lg:h-80 bg-white border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition-all group">
-                    <Upload
-                      size={48}
-                      className="text-slate-200 group-hover:text-blue-400 mb-4 transition-colors"
-                    />
-                    <p className="text-sm font-semibold text-slate-400 group-hover:text-blue-600 transition-colors">
-                      Click to add up to {MAX_IMAGES_UPLOAD} images
+                {shouldShowImageUploadDropzone && (
+                  <label
+                    className={cn(
+                      "h-64 lg:h-80 bg-white border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition-all group",
+                      hasInFlightImageUploads
+                        ? "border-blue-400 bg-blue-50/40 cursor-wait"
+                        : "border-slate-300 cursor-pointer hover:border-blue-500 hover:bg-blue-50/50",
+                    )}
+                  >
+                    {hasInFlightImageUploads ? (
+                      <Loader2
+                        size={48}
+                        className="text-blue-400 mb-4 animate-spin"
+                      />
+                    ) : (
+                      <Upload
+                        size={48}
+                        className="text-slate-200 group-hover:text-blue-400 mb-4 transition-colors"
+                      />
+                    )}
+                    <p
+                      className={cn(
+                        "text-sm font-semibold transition-colors",
+                        hasInFlightImageUploads
+                          ? "text-blue-600"
+                          : "text-slate-400 group-hover:text-blue-600",
+                      )}
+                    >
+                      {hasInFlightImageUploads
+                        ? "Uploading images..."
+                        : `Click to add up to ${MAX_IMAGES_UPLOAD} images`}
                     </p>
                     <p className="text-xs text-slate-400 mt-2">
-                      JPEG, PNG, HEIC auto-optimized by AI
+                      {hasInFlightImageUploads
+                        ? "This area stays visible until the current upload finishes."
+                        : "JPEG, PNG, HEIC auto-optimized by AI"}
                     </p>
                     <p className="text-xs text-blue-500 mt-1 font-medium">
                       Include HIN plates, docs, registration, engine hours
@@ -4267,10 +4296,11 @@ export default function YachtEditorPage() {
                       className="hidden"
                       accept="image/*"
                       onChange={handleImageUpload}
-                      disabled={isUploading || pipeline.isUploading}
+                      disabled={hasInFlightImageUploads}
                     />
                   </label>
-                ) : (
+                )}
+                {shouldShowImageGrid && (
                   <div className="space-y-4">
                     {/* Stats bar */}
                     <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
@@ -4388,7 +4418,7 @@ export default function YachtEditorPage() {
                             className="hidden"
                             accept="image/*"
                             onChange={handleImageUpload}
-                            disabled={isUploading || pipeline.isUploading}
+                            disabled={hasInFlightImageUploads}
                           />
                         </label>
                       </div>
@@ -4655,27 +4685,27 @@ export default function YachtEditorPage() {
                     >
                       <DialogContent
                         showCloseButton={false}
-                        className="max-w-[min(96vw,1240px)] overflow-hidden rounded-[32px] border border-slate-800/80 bg-[#020817] p-0 shadow-[0_40px_120px_rgba(2,6,23,0.78)]"
+                        className="max-w-[min(96vw,1240px)] overflow-hidden rounded-[32px] border border-slate-200/90 bg-white p-0 shadow-[0_30px_90px_rgba(15,23,42,0.18)] dark:border-slate-800/80 dark:bg-[#020817] dark:shadow-[0_40px_120px_rgba(2,6,23,0.78)]"
                       >
                         {selectedLightboxImage && (
                           <div className="max-h-[92vh] overflow-y-auto">
-                            <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_28%),linear-gradient(180deg,_#0f172a_0%,_#020617_100%)]">
+                            <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.14),_transparent_32%),linear-gradient(180deg,_#f8fbff_0%,_#eef6ff_100%)] dark:bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_28%),linear-gradient(180deg,_#0f172a_0%,_#020617_100%)]">
                               <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 p-4 sm:p-6">
-                                <div className="rounded-full border border-white/10 bg-slate-950/55 px-4 py-2 backdrop-blur-xl">
-                                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-200/70">
+                                <div className="rounded-full border border-sky-200/80 bg-white/85 px-4 py-2 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/55">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-cyan-200/70">
                                     AI Gallery Review
                                   </p>
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                  <span className="rounded-full border border-white/10 bg-slate-950/60 px-3 py-1 text-xs font-semibold text-slate-100 backdrop-blur-xl">
+                                  <span className="rounded-full border border-slate-200/80 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100">
                                     {selectedLightboxIndex + 1} /{" "}
                                     {reviewImages.length}
                                   </span>
                                   <DialogClose asChild>
                                     <button
                                       type="button"
-                                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-slate-950/60 text-white transition-colors hover:bg-white/10"
+                                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-700 shadow-sm transition-colors hover:bg-slate-100 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:hover:bg-white/10"
                                       aria-label="Close image review"
                                     >
                                       <X size={18} />
@@ -4694,7 +4724,7 @@ export default function YachtEditorPage() {
                                     selectedLightboxImage.original_name ||
                                     "Selected yacht image"
                                   }
-                                  className="max-h-[62vh] w-auto max-w-full rounded-[28px] border border-white/10 bg-slate-950/70 object-contain shadow-[0_30px_100px_rgba(15,23,42,0.65)]"
+                                  className="max-h-[62vh] w-auto max-w-full rounded-[28px] border border-slate-200/80 bg-white/80 object-contain shadow-[0_24px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-950/70 dark:shadow-[0_30px_100px_rgba(15,23,42,0.65)]"
                                   onError={handleImageError}
                                 />
                               </div>
@@ -4702,29 +4732,29 @@ export default function YachtEditorPage() {
                               <button
                                 type="button"
                                 onClick={() => moveLightboxImage("prev")}
-                                className="absolute bottom-6 left-6 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-slate-950/65 text-white shadow-[0_12px_40px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-colors hover:bg-white/10"
+                                className="absolute bottom-6 left-6 inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-colors hover:bg-slate-100 dark:border-white/10 dark:bg-slate-950/65 dark:text-white dark:shadow-[0_12px_40px_rgba(15,23,42,0.5)] dark:hover:bg-white/10"
                               >
                                 <ChevronLeft size={20} />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => moveLightboxImage("next")}
-                                className="absolute bottom-6 left-24 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-slate-950/65 text-white shadow-[0_12px_40px_rgba(15,23,42,0.5)] backdrop-blur-xl transition-colors hover:bg-white/10"
+                                className="absolute bottom-6 left-24 inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-colors hover:bg-slate-100 dark:border-white/10 dark:bg-slate-950/65 dark:text-white dark:shadow-[0_12px_40px_rgba(15,23,42,0.5)] dark:hover:bg-white/10"
                               >
                                 <ChevronRight size={20} />
                               </button>
                             </div>
 
-                            <div className="border-t border-white/10 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(248,250,252,0.96)_100%)] p-6 sm:p-8 lg:p-10">
+                            <div className="border-t border-slate-200/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(248,250,252,0.96)_100%)] p-6 dark:border-white/10 dark:bg-[linear-gradient(180deg,_rgba(15,23,42,0.98)_0%,_rgba(2,6,23,0.98)_100%)] sm:p-8 lg:p-10">
                               <DialogHeader className="text-left">
-                                <div className="inline-flex w-fit items-center rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700">
+                                <div className="inline-flex w-fit items-center rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700 dark:border-sky-900/70 dark:bg-sky-950/40 dark:text-sky-300">
                                   Review Details
                                 </div>
-                                <DialogTitle className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                                <DialogTitle className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100 sm:text-4xl">
                                   {selectedLightboxImage.original_name ||
                                     "Image review"}
                                 </DialogTitle>
-                                <DialogDescription className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                                <DialogDescription className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base">
                                   Review the full image, the AI quality score,
                                   and the applied corrections before approving
                                   it for the final gallery.
@@ -4732,32 +4762,32 @@ export default function YachtEditorPage() {
                               </DialogHeader>
 
                               <div className="mt-6 flex flex-wrap gap-2">
-                                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm">
+                                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                                   {selectedLightboxImage.category || "General"}
                                 </span>
-                                <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold capitalize text-violet-700 shadow-sm">
+                                <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold capitalize text-violet-700 shadow-sm dark:border-violet-900/70 dark:bg-violet-950/40 dark:text-violet-300">
                                   {(
                                     selectedLightboxImage.enhancement_method ||
                                     "none"
                                   ).replace(/_/g, " ")}
                                 </span>
                                 {selectedLightboxImage.keep_original && (
-                                  <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-sm">
+                                  <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-sm dark:border-blue-900/70 dark:bg-blue-950/40 dark:text-blue-300">
                                     Keep original
                                   </span>
                                 )}
                               </div>
 
-                              <div className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+                              <div className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900 dark:shadow-[0_20px_50px_rgba(2,6,23,0.4)]">
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                                       AI review score
                                     </p>
-                                    <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
+                                    <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
                                       {selectedLightboxImage.quality_score ??
                                         "—"}
-                                      <span className="text-lg text-slate-400">
+                                      <span className="text-lg text-slate-400 dark:text-slate-500">
                                         /100
                                       </span>
                                     </p>
@@ -4767,11 +4797,11 @@ export default function YachtEditorPage() {
                                       "rounded-full px-3 py-1 text-xs font-bold",
                                       (selectedLightboxImage.quality_score ??
                                         0) >= 70
-                                        ? "bg-emerald-50 text-emerald-700"
+                                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                                         : (selectedLightboxImage.quality_score ??
                                           0) >= 40
-                                          ? "bg-amber-50 text-amber-700"
-                                          : "bg-red-50 text-red-700",
+                                          ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                                          : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300",
                                     )}
                                   >
                                     {(selectedLightboxImage.quality_score ??
@@ -4784,16 +4814,16 @@ export default function YachtEditorPage() {
                                   </span>
                                 </div>
 
-                                <p className="mt-4 text-sm leading-6 text-slate-500">
+                                <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-300">
                                   This score reflects how suitable the image is
                                   for the public gallery after AI cleanup and
                                   classification.
                                 </p>
 
-                                <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
+                                <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
                                   AI review score
                                 </p>
-                                <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
+                                <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                   <div
                                     className={cn(
                                       "h-full rounded-full bg-gradient-to-r",
@@ -4813,7 +4843,7 @@ export default function YachtEditorPage() {
                               </div>
 
                               <div className="mt-6 space-y-3">
-                                <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                                   AI comments
                                 </p>
                                 <div className="space-y-2">
@@ -4821,7 +4851,7 @@ export default function YachtEditorPage() {
                                     (note) => (
                                       <div
                                         key={note}
-                                        className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm leading-6 text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
+                                        className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm leading-6 text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.05)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:shadow-[0_14px_30px_rgba(2,6,23,0.28)]"
                                       >
                                         {note}
                                       </div>
