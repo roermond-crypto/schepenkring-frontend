@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useTranslations, useLocale } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import {
   Plus,
   User as UserIcon,
@@ -1523,7 +1523,11 @@ export default function AdminTaskBoardPage() {
   const t = useTranslations("DashboardAdminTasks");
   const locale = useLocale();
   const params = useParams<{ role?: string; locale?: string }>();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const role = normalizeRole(params?.role) ?? "admin";
+  const taskQueryParam = searchParams.get("task");
+  const tasksPath = `/dashboard/${role}/tasks`;
   const canManageTaskWorkspace = role === "admin" || role === "location";
   const canConfigureAutomation = canManageTaskWorkspace;
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -1621,6 +1625,26 @@ export default function AdminTaskBoardPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!taskQueryParam || loading) return;
+
+    const taskId = Number(taskQueryParam);
+    if (!Number.isInteger(taskId) || taskId <= 0) {
+      router.replace(tasksPath);
+      return;
+    }
+
+    const task = tasks.find((entry) => entry.id === taskId);
+    if (!task) {
+      router.replace(tasksPath);
+      return;
+    }
+
+    setEditingTask((current) => (current?.id === task.id ? current : task));
+    setPreSelectedColId(task.column_id || undefined);
+    setIsModalOpen(true);
+  }, [loading, router, taskQueryParam, tasks, tasksPath]);
 
   // Stat counts
   const todayStr = new Date().toISOString().split("T")[0];
@@ -2635,6 +2659,9 @@ export default function AdminTaskBoardPage() {
           setIsModalOpen(false);
           setEditingTask(undefined);
           setPreSelectedColId(undefined);
+          if (taskQueryParam) {
+            router.replace(tasksPath);
+          }
         }}
         onSubmit={handleTaskSubmit}
         task={editingTask}
