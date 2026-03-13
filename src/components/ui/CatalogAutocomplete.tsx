@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -15,6 +14,11 @@ interface Props {
     needsConfirmation?: boolean;
 }
 
+interface CatalogAutocompleteItem {
+    id: number | string;
+    name: string;
+}
+
 export function CatalogAutocomplete({
     endpoint,
     name,
@@ -26,7 +30,7 @@ export function CatalogAutocomplete({
     needsConfirmation
 }: Props) {
     const [query, setQuery] = useState(defaultValue);
-    const [results, setResults] = useState<any[]>([]);
+    const [results, setResults] = useState<CatalogAutocompleteItem[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -75,6 +79,8 @@ export function CatalogAutocomplete({
         return () => clearTimeout(delayDebounceFn);
     }, [query, isOpen, endpoint, dependsOn, dependsOnValue]);
 
+    const highlighted = Boolean(needsConfirmation) || query.trim().length > 0;
+
     return (
         <div className="relative" ref={wrapperRef}>
             <input
@@ -91,7 +97,7 @@ export function CatalogAutocomplete({
                 className={cn(
                     "w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
                     "hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
-                    needsConfirmation && "ring-2 ring-amber-400 border-amber-400 bg-amber-50"
+                    highlighted && "ring-2 ring-amber-400 border-amber-400 bg-amber-50"
                 )}
             />
 
