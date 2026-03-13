@@ -246,7 +246,9 @@
       "systemAudit": "System-Audit"
     },
     "actions": {
-      "viewBiddings": "Gebote anzeigen"
+      "viewBiddings": "Gebote anzeigen",
+      "createFirstListing": "Erstes Inserat erstellen",
+      "browseMarketplace": "Marktplatz durchsuchen"
     },
     "schedule": {
       "live": "Live-Zeitplan",
@@ -279,6 +281,9 @@
     "empty": {
       "noRecentBiddingTitle": "Keine kürzliche Gebotsaktivität",
       "noRecentBiddingSubtitle": "Starten Sie einen Gebotsprozess, um hier Echtzeit-Updates zu sehen.",
+      "onboardingTitle": "Willkommen auf dem Marktplatz",
+      "onboardingHeading": "Sie haben noch keine Gebote abgegeben",
+      "onboardingSubtitle": "Beginnen Sie mit Ihrem ersten Bootsinserat oder durchsuchen Sie den Marktplatz, um Gebote abzugeben.",
       "noSystemLogs": "Noch keine kürzlichen Systemprotokolle."
     },
     "defaults": {
@@ -883,10 +888,20 @@
       "today": "Heute",
       "aiDraftReply": "KI-Antwurf",
       "summarize": "Zusammenfassen",
+      "translateTo": "Übersetzen nach",
+      "translateButton": "Übersetzen",
+      "translating": "Wird übersetzt...",
+      "translateFailed": "Diese Nachricht konnte nicht übersetzt werden. Bitte erneut versuchen.",
       "typePlaceholder": "Nachricht eingeben...",
       "callAction": "Anruf starten",
       "callUnavailable": "Keine Telefonnummer verfügbar",
       "callFailed": "Anruf fehlgeschlagen. Versuchen Sie es erneut.",
+      "languages": {
+        "nl": "Niederländisch",
+        "en": "Englisch",
+        "de": "Deutsch",
+        "fr": "Französisch"
+      },
       "status": {
         "open": "Offen",
         "pending": "Ausstehend",
@@ -1000,5 +1015,148 @@
       "title": "Benötigen Sie weitere Hilfe? Kontaktieren Sie unser maritimes Support-Team",
       "contact": "support@schepen-kring.nl • +31 20 123 4567"
     }
+  },
+  "WidgetChat": {
+    "brand": "NauticSecure",
+    "initialMessage": "Hallo! Wie können wir Ihnen heute helfen? Fragen Sie uns zu Booten, Häfen oder Support.",
+    "welcome": {
+      "kicker": "Live-Concierge",
+      "title": "Fragen Sie nach Booten, Besichtigungen oder Hafen-Support.",
+      "description": "Senden Sie eine Nachricht und unser Team meldet sich mit den passenden Details.",
+      "quickPrompts": "Schnellaktionen"
+    },
+    "quickPrompts": {
+      "details": "Ich brauche Details zu diesem Boot",
+      "viewing": "Kann ich eine Besichtigung vereinbaren?",
+      "harbor": "Unterstützen Sie diesen Hafen?",
+      "harborSupport": "Support für {harborName}"
+    },
+    "status": {
+      "supportOnline": "Support online"
+    },
+    "composer": {
+      "placeholder": "Nachricht schreiben...",
+      "sendAria": "Nachricht senden",
+      "enterToSend": "Enter zum Senden drücken",
+      "sending": "Wird gesendet...",
+      "encrypted": "Verschlüsselter Support"
+    },
+    "system": {
+      "firstReply": "Danke! Ihre Nachricht wurde empfangen. Ein Support-Mitarbeiter antwortet in Kürze.",
+      "sentReply": "Nachricht gesendet. Unser Team meldet sich bald bei Ihnen.",
+      "sendFailed": "Leider konnte Ihre Nachricht gerade nicht gesendet werden. Bitte versuchen Sie es erneut."
+    },
+    "header": {
+      "auctionWidget": "Auktions-Widget",
+      "conversationActive": "Gespräch aktiv",
+      "onlineSupport": "Online-Support",
+      "boat": "Boot {boatId}",
+      "connected": "Verbunden",
+      "supportOnline": "Support online",
+      "encrypted": "Verschlüsselt"
+    },
+    "offline": {
+      "title": "Keine Internetverbindung",
+      "description": "Bitte prüfen Sie Ihre Verbindung und versuchen Sie es erneut. Wir sind wieder da, sobald Sie online sind."
+    },
+    "aria": {
+      "open": "Chat öffnen",
+      "minimize": "Chat minimieren",
+      "closeReset": "Chat schließen und zurücksetzen"
+    }
+  },
+  "WidgetAuction": {
+    "common": {
+      "encrypted": "Verschlüsselt"
+    },
+    "mode": {
+      "live": "Auktion live",
+      "bids": "Gebote",
+      "open": "Gebote offen"
+    },
+    "hero": {
+      "liveTitle": "LIVE-BOOTSAUKTION",
+      "bidTitle": "GEBOT ABGEBEN",
+      "liveDescription": "Geben Sie Echtzeitgebote für dieses Boot ab. Das höchste Gebot gewinnt, wenn der Timer abläuft.",
+      "bidDescription": "Geben Sie Ihr Angebot für dieses Boot ab. Das höchste verifizierte Gebot bleibt oben."
+    },
+    "countdown": {
+      "startsIn": "Auktion startet in",
+      "endsIn": "Auktion endet in"
+    },
+    "stats": {
+      "highestBid": "Höchstes Gebot",
+      "bidSummary": "{bids} Gebote • {bidders} Bieter"
+    },
+    "status": {
+      "ended": "Beendet",
+      "scheduled": "Geplant",
+      "winning": "Führend"
+    },
+    "recent": {
+      "title": "Letzte Gebote",
+      "refresh": "Aktualisieren"
+    },
+    "registration": {
+      "title": "Zum Bieten registrieren",
+      "button": "Bieter registrieren",
+      "status": "Status: {status}",
+      "fields": {
+        "fullName": "Vollständiger Name",
+        "address": "Adresse",
+        "postalCode": "Postleitzahl",
+        "city": "Stadt",
+        "phone": "Telefon",
+        "email": "E-Mail"
+      }
+    },
+    "bidBox": {
+      "placeTitle": "Gebot abgeben",
+      "completeRegistration": "Registrierung abschließen, um zu bieten",
+      "minimumBid": "Mindestgebot:",
+      "button": "Gebot abgeben",
+      "realTime": "Echtzeitauktion"
+    },
+    "winner": {
+      "message": "Gewinner: {bidder} {amount}"
+    },
+    "unavailable": {
+      "title": "Auktion nicht verfügbar",
+      "description": "Dieses Boot akzeptiert derzeit keine Gebote."
+    },
+    "errors": {
+      "load": "Auktion konnte nicht geladen werden.",
+      "placeBid": "Gebot konnte nicht abgegeben werden.",
+      "register": "Bieterregistrierung fehlgeschlagen."
+    }
+  },
+  "widgetConfig": {
+    "title": "Chat-Widget-Konfiguration",
+    "subtitle": "Live-Chat auf öffentlichen Websites einbetten",
+    "enableWidget": "Widget aktivieren",
+    "welcomeText": "Begrüßungstext",
+    "welcomePlaceholder": "z. B. Hallo! Wie können wir helfen?",
+    "saveSuccess": "Widget-Einstellungen gespeichert",
+    "saveError": "Widget-Einstellungen konnten nicht gespeichert werden",
+    "copyCode": "Code kopieren",
+    "copied": "Kopiert!",
+    "save": "Einstellungen speichern",
+    "loadLocationsError": "Standorte konnten nicht geladen werden",
+    "locationSettings": "Standort-Einstellungen",
+    "selectLocation": "Standort auswählen",
+    "loading": "Wird geladen...",
+    "tenantId": "Tenant-ID",
+    "appearance": "Darstellung",
+    "themePreset": "Theme-Voreinstellung",
+    "accentColor": "Akzentfarbe",
+    "themeOcean": "Ozeanblau",
+    "themeSunset": "Sonnenuntergang Orange",
+    "themeViolet": "Violett",
+    "embedCode": "Einbettungscode",
+    "embedHelp": "Kopieren Sie diesen Code in den <head>-Bereich oder direkt vor den schließenden </body>-Tag Ihrer Website. Das Chat-Widget erscheint automatisch unten rechts.",
+    "livePreview": "Live-Vorschau",
+    "hidden": "Versteckt",
+    "previewHelp": "Das Widget erscheint in der unteren rechten Ecke dieses Containers, genau wie auf Ihrer Website.",
+    "previewTitle": "Chat-Widget-Vorschau"
   }
 }

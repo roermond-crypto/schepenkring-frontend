@@ -35,6 +35,8 @@ type DashboardData = {
   monthlyRevenue: number;
   conversionRate: number;
   avgDaysToSale: number;
+  hasBoatListings: boolean;
+  hasPlacedBids: boolean;
   recentBids: any[];
   auditLogs: any[];
   trends: {
@@ -171,6 +173,8 @@ export default function AdminDashboardHome() {
     monthlyRevenue: 0,
     conversionRate: 0,
     avgDaysToSale: 0,
+    hasBoatListings: false,
+    hasPlacedBids: false,
     recentBids: [],
     auditLogs: [],
     trends: {
@@ -256,6 +260,15 @@ export default function AdminDashboardHome() {
             )
           : 0;
 
+      const recentBids = yachts
+        .filter((y: any) => parseFloat(y.current_bid) > 0)
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.updated_at).getTime() -
+            new Date(a.updated_at).getTime(),
+        )
+        .slice(0, 3);
+
       setData({
         activeBidsCount: activeBids,
         pendingTasks: pending,
@@ -264,14 +277,9 @@ export default function AdminDashboardHome() {
         monthlyRevenue,
         conversionRate,
         avgDaysToSale,
-        recentBids: yachts
-          .filter((y: any) => parseFloat(y.current_bid) > 0)
-          .sort(
-            (a: any, b: any) =>
-              new Date(b.updated_at).getTime() -
-              new Date(a.updated_at).getTime(),
-          )
-          .slice(0, 3),
+        hasBoatListings: yachts.length > 0,
+        hasPlacedBids: Array.isArray(bidsRaw) && bidsRaw.length > 0,
+        recentBids,
         auditLogs: auditLogs.slice(0, 5),
         trends:
           summaryRes.status === "fulfilled" && summaryRes.value.data
@@ -343,6 +351,14 @@ export default function AdminDashboardHome() {
       window.removeEventListener("storage", syncWelcomeName);
     };
   }, [defaultUserName]);
+
+  const showRecentBiddingPanel =
+    role !== "client" || data.hasBoatListings || data.hasPlacedBids;
+  const showClientOnboarding =
+    role === "client" &&
+    !loading &&
+    !data.hasBoatListings &&
+    !data.hasPlacedBids;
 
   const stats = [
     {
@@ -639,101 +655,137 @@ export default function AdminDashboardHome() {
           showAuditPanel ? "xl:grid-cols-3" : "xl:grid-cols-1",
         )}
       >
-        <div
-          className={cn(
-            "rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900",
-            showAuditPanel && "xl:col-span-2",
-          )}
-        >
-          <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
-            <div>
+        {showRecentBiddingPanel && (
+          <div
+            className={cn(
+              "rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900",
+              showAuditPanel && "xl:col-span-2",
+            )}
+          >
+            <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("sections.marketPulse")}
+                </p>
+                <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                  {t("sections.recentBiddingActivity")}
+                </h2>
+              </div>
+              <Link
+                href={`${dashboardBase}/yachts`}
+                className="inline-flex items-center gap-1 rounded-lg border border-[#BED0EE] bg-[#EFF4FF] px-3 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-[#dfe9ff] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                {t("actions.viewBiddings")}
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+
+            <div className="space-y-3">
+              {loading &&
+                Array.from({ length: 3 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="animate-pulse rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+                  >
+                    <div className="h-4 w-40 rounded bg-slate-200 dark:bg-slate-700" />
+                    <div className="mt-2 h-3 w-28 rounded bg-slate-100 dark:bg-slate-800" />
+                  </div>
+                ))}
+
+              {!loading &&
+                data.recentBids.map((yacht: any, idx) => (
+                  <motion.div
+                    key={yacht.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.06 }}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-4 transition hover:border-[#BBD0F2] hover:shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800 dark:hover:border-slate-600"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0B1F3A] text-sm font-bold text-white">
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[#0B1F3A] dark:text-slate-100">
+                          {yacht.name}
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {t("labels.registry")}:{" "}
+                          {yacht.vessel_id || t("labels.unknown")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-[#1E3A8A]">
+                        €
+                        {parseFloat(yacht.current_bid || 0).toLocaleString(
+                          "de-DE",
+                        )}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {t("labels.currentBid")}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+
+              {!loading && data.recentBids.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-[#C6D6F2] bg-gradient-to-b from-[#F8FBFF] to-white p-10 text-center dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#0B1F3A]/10">
+                    <Sailboat className="text-[#1E3A8A]" size={26} />
+                  </div>
+                  <p className="text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
+                    {t("empty.noRecentBiddingTitle")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    {t("empty.noRecentBiddingSubtitle")}
+                  </p>
+                  <Link
+                    href={`${dashboardBase}/yachts`}
+                    className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
+                  >
+                    {t("actions.viewBiddings")}
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {showClientOnboarding && (
+          <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
+            <div className="mb-6 border-b border-slate-100 pb-4 dark:border-slate-700">
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 {t("sections.marketPulse")}
               </p>
               <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
-                {t("sections.recentBiddingActivity")}
+                {t("empty.onboardingTitle")}
               </h2>
             </div>
-            <Link
-              href={`${dashboardBase}/yachts`}
-              className="inline-flex items-center gap-1 rounded-lg border border-[#BED0EE] bg-[#EFF4FF] px-3 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-[#dfe9ff] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-            >
-              {t("actions.viewBiddings")}
-              <ArrowRight size={14} />
-            </Link>
-          </div>
 
-          <div className="space-y-3">
-            {loading &&
-              Array.from({ length: 3 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className="animate-pulse rounded-xl border border-slate-200 p-4 dark:border-slate-700"
-                >
-                  <div className="h-4 w-40 rounded bg-slate-200 dark:bg-slate-700" />
-                  <div className="mt-2 h-3 w-28 rounded bg-slate-100 dark:bg-slate-800" />
-                </div>
-              ))}
-
-            {!loading &&
-              data.recentBids.map((yacht: any, idx) => (
-                <motion.div
-                  key={yacht.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.06 }}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-4 transition hover:border-[#BBD0F2] hover:shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800 dark:hover:border-slate-600"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0B1F3A] text-sm font-bold text-white">
-                      {idx + 1}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-[#0B1F3A] dark:text-slate-100">
-                        {yacht.name}
-                      </p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {t("labels.registry")}:{" "}
-                        {yacht.vessel_id || t("labels.unknown")}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-black text-[#1E3A8A]">
-                      €
-                      {parseFloat(yacht.current_bid || 0).toLocaleString(
-                        "de-DE",
-                      )}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {t("labels.currentBid")}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-
-            {!loading && data.recentBids.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-[#C6D6F2] bg-gradient-to-b from-[#F8FBFF] to-white p-10 text-center dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#0B1F3A]/10">
-                  <Sailboat className="text-[#1E3A8A]" size={26} />
-                </div>
-                <p className="text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
-                  {t("empty.noRecentBiddingTitle")}
-                </p>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  {t("empty.noRecentBiddingSubtitle")}
-                </p>
+            <div className="rounded-2xl border border-dashed border-[#C6D6F2] bg-gradient-to-b from-[#F8FBFF] to-white p-10 text-center dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#0B1F3A]/10">
+                <Sailboat className="text-[#1E3A8A]" size={26} />
+              </div>
+              <p className="text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
+                {t("empty.onboardingHeading")}
+              </p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {t("empty.onboardingSubtitle")}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 <Link
                   href={`${dashboardBase}/yachts`}
-                  className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
                 >
-                  {t("actions.viewBiddings")}
+                  {t("actions.createFirstListing")}
                   <ArrowRight size={14} />
                 </Link>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {showAuditPanel && (
           <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
