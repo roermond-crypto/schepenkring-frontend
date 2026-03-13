@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bell, BellOff, CheckCheck, Trash2 } from "lucide-react";
+import { useRouter } from "@/i18n/navigation";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 import type { UserRole } from "@/lib/auth/roles";
 import { apiRequest } from "@/lib/api/http";
@@ -18,6 +19,15 @@ type NotificationItem = {
   message: string;
   createdAt: string;
   read: boolean;
+  href?: string;
+};
+
+type BackendNotificationData = {
+  sender_name?: string;
+  url?: string;
+  entity_type?: string;
+  entity_id?: number | string;
+  sign_request_id?: number | string;
 };
 
 type BackendNotification = {
@@ -29,11 +39,42 @@ type BackendNotification = {
     message?: string;
     title?: string;
     created_at?: string;
-    data?: { sender_name?: string };
+    data?: BackendNotificationData;
   };
   sender?: { name?: string };
   message?: string;
   created_at?: string;
+};
+
+const resolveNotificationHref = (
+  item: BackendNotification,
+  role: UserRole,
+): string | undefined => {
+  const data = item.notification?.data;
+  const entityType = String(data?.entity_type ?? "").toLowerCase();
+  const entityId = data?.entity_id;
+  const signRequestId = data?.sign_request_id;
+
+  if (
+    (entityType === "vessel" || entityType === "yacht" || entityType === "boat") &&
+    entityId !== undefined &&
+    entityId !== null &&
+    entityId !== ""
+  ) {
+    const params = new URLSearchParams({ step: "6" });
+    if (signRequestId !== undefined && signRequestId !== null && signRequestId !== "") {
+      params.set("sign_request_id", String(signRequestId));
+    }
+
+    return `/dashboard/${role}/yachts/${String(entityId)}?${params.toString()}`;
+  }
+
+  const rawUrl = typeof data?.url === "string" ? data.url.trim() : "";
+  if (rawUrl.startsWith("/")) {
+    return rawUrl;
+  }
+
+  return undefined;
 };
 
 const humanizeDate = (
@@ -63,6 +104,7 @@ const mapNotification = (
     hoursAgo: string;
     daysAgo: string;
   },
+  role: UserRole,
 ): NotificationItem => ({
   id: String(item.id),
   sender:
@@ -72,10 +114,11 @@ const mapNotification = (
   message: item.notification?.message ?? item.message ?? t.defaultMessage,
   createdAt: humanizeDate(item.notification?.created_at ?? item.created_at, t),
   read: Boolean(item.read ?? item.pivot?.read ?? false),
+  href: resolveNotificationHref(item, role),
 });
 
-export function NotificationBell({ locale, role: _role }: NotificationBellProps) {
-  void _role;
+export function NotificationBell({ locale, role }: NotificationBellProps) {
+  const router = useRouter();
   const dictionary = getDictionary(locale);
   const t = dictionary.dashboard.notifications;
   const text = {
@@ -131,14 +174,14 @@ export function NotificationBell({ locale, role: _role }: NotificationBellProps)
 
       const list = Array.isArray(payload) ? payload : (payload.data ?? []);
       setNotifications(
-        list.slice(0, 10).map((entry) => mapNotification(entry, t)),
+        list.slice(0, 10).map((entry) => mapNotification(entry, t, role)),
       );
     } catch {
       // Keep UI stable even when endpoint is unavailable.
     } finally {
       setLoading(false);
     }
-  }, [notificationsEnabled, t]);
+  }, [notificationsEnabled, role, t]);
 
   useEffect(() => {
     if (!open || !notificationsEnabled) return;
@@ -231,6 +274,17 @@ export function NotificationBell({ locale, role: _role }: NotificationBellProps)
     const next = !browserPushEnabled;
     setBrowserPushEnabled(next);
     localStorage.setItem("browser_push_enabled", String(next));
+  };
+
+  const openNotification = (item: NotificationItem) => {
+    if (!item.href) return;
+
+    setOpen(false);
+    setNotifications((prev) =>
+      prev.map((entry) => (entry.id === item.id ? { ...entry, read: true } : entry)),
+    );
+    void markAsRead(item.id);
+    router.push(item.href);
   };
 
   return (
@@ -345,7 +399,21 @@ export function NotificationBell({ locale, role: _role }: NotificationBellProps)
               notifications.map((item) => (
                 <div
                   key={item.id}
-                  className="border-b border-slate-100 p-4 last:border-b-0 dark:border-slate-800"
+                  className={cn(
+                    "border-b border-slate-100 p-4 last:border-b-0 dark:border-slate-800",
+                    item.href && "cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60",
+                  )}
+                  onClick={() => openNotification(item)}
+                  onKeyDown={(event) => {
+                    if (!item.href) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openNotification(item);
+                    }
+                  }}
+                  role={item.href ? "button" : undefined}
+                  tabIndex={item.href ? 0 : undefined}
+                  aria-label={item.href ? `Open notification: ${item.message}` : undefined}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E7F0FF] text-xs font-semibold text-[#0B1F3A] dark:bg-slate-700 dark:text-slate-100">
@@ -371,7 +439,10 @@ export function NotificationBell({ locale, role: _role }: NotificationBellProps)
                           {!item.read ? (
                             <button
                               type="button"
-                              onClick={() => void markAsRead(item.id)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void markAsRead(item.id);
+                              }}
                               className="text-xs font-medium text-blue-600 hover:text-blue-700"
                             >
                               {text.markAllRead}
@@ -379,7 +450,10 @@ export function NotificationBell({ locale, role: _role }: NotificationBellProps)
                           ) : null}
                           <button
                             type="button"
-                            onClick={() => void deleteNotification(item.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void deleteNotification(item.id);
+                            }}
                             className="text-xs font-medium text-slate-500 hover:text-red-600 dark:text-slate-300"
                           >
                             {text.delete}
