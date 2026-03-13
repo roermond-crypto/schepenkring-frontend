@@ -2984,11 +2984,7 @@ export default function YachtEditorPage() {
     } catch (err) {
       console.error("Upload failed:", err);
       toast.error("Failed to upload images", { id: toastId });
-      setPendingUploadPreviews((prev) =>
-        prev.filter(
-          (image: PipelineImage) => !optimisticImages.some((optimistic: PipelineImage) => optimistic.id === image.id),
-        ),
-      );
+
       const optimisticUrls: string[] = optimisticImages
         .map((img: PipelineImage) => img.client_preview_url)
         .filter((url): url is string => typeof url === "string");
