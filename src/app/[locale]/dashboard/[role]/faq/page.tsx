@@ -228,12 +228,15 @@ export default function FAQPage() {
       const currentLocationId = getCurrentLocationId();
       if (list.length > 0) {
         const fallbackLocationId =
-          currentLocationId && list.some((location) => location.id === currentLocationId)
+          currentLocationId &&
+          list.some((location) => location.id === currentLocationId)
             ? String(currentLocationId)
             : String(list[0].id);
 
         setNewFaq((prev) =>
-          prev.location_id ? prev : { ...prev, location_id: fallbackLocationId },
+          prev.location_id
+            ? prev
+            : { ...prev, location_id: fallbackLocationId },
         );
       }
     } catch (error: unknown) {
@@ -351,7 +354,7 @@ export default function FAQPage() {
 
   const trainGemini = async () => {
     try {
-      await api.post("/faqs/train-gemini", {});
+      await api.get("/faqs/train-gemini");
       toast.success(t("toastAiTrained"));
     } catch {
       toast.error(t("toastFailedTrain"));

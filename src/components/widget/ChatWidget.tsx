@@ -7,6 +7,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   MessageCircle,
   Minimize2,
@@ -18,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
+import { AuctionWidgetBody } from "@/components/widget/AuctionWidgetBody";
 
 type ThemePreset = "ocean" | "violet" | "sunset";
 
@@ -31,6 +33,7 @@ interface WidgetMessage {
 interface ChatWidgetProps {
   harborId?: string;
   harborName?: string;
+  boatId?: number;
   locationId?: number;
   accentColor?: string;
   themePreset?: ThemePreset;
@@ -38,6 +41,7 @@ interface ChatWidgetProps {
   sourceUrl?: string;
   welcomeText?: string;
   isEmbedded?: boolean;
+  locale?: string;
 }
 
 interface WidgetColors {
@@ -88,12 +92,6 @@ const THEME_PRESETS: Record<ThemePreset, WidgetColors> = {
   },
 };
 
-const quickPrompts = [
-  "I need details for this boat",
-  "Can I schedule a viewing?",
-  "Do you support this harbor?",
-];
-
 // ── Public API helper (no auth needed) ─────────────────────────────
 const PUBLIC_API_BASE =
   normalizeApiBaseUrl(
@@ -134,6 +132,7 @@ function ChatBody({
   colors,
   harborName,
   sending,
+  locale: _locale,
 }: {
   messages: WidgetMessage[];
   onSend: (text: string) => void;
@@ -141,7 +140,10 @@ function ChatBody({
   colors: WidgetColors;
   harborName?: string;
   sending: boolean;
+  locale?: string;
 }) {
+  void _locale;
+  const t = useTranslations("WidgetChat");
   const [input, setInput] = useState("");
   const [composerFocused, setComposerFocused] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -149,6 +151,11 @@ function ChatBody({
   const hasUserMessages = messages.some((message) => message.isUser);
   const showWelcomePanel = !hasUserMessages;
   const visibleMessages = messages.filter((message) => message.id !== "init");
+  const quickPrompts = [
+    t("quickPrompts.details"),
+    t("quickPrompts.viewing"),
+    t("quickPrompts.harbor"),
+  ];
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -191,20 +198,20 @@ function ChatBody({
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700/70">
-                  Live concierge
+                  {t("welcome.kicker")}
                 </p>
                 <h5 className="mt-1 text-sm font-bold text-slate-900">
-                  Ask about boats, viewings, or harbor support.
+                  {t("welcome.title")}
                 </h5>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                  Send a message and our team will follow up with the right details.
+                  {t("welcome.description")}
                 </p>
               </div>
             </div>
 
             <div className="mt-4">
               <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Quick prompts
+                {t("welcome.quickPrompts")}
               </div>
               <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
                 {quickPrompts.map((prompt) => (
@@ -224,11 +231,13 @@ function ChatBody({
                 ))}
                 {harborName && (
                   <button
-                    onClick={() => onSend(`I need support for ${harborName}`)}
+                    onClick={() =>
+                      onSend(t("quickPrompts.harborSupport", { harborName }))
+                    }
                     disabled={sending}
                     className="shrink-0 rounded-full border border-sky-200 bg-sky-50 px-3.5 py-2 text-xs font-semibold text-sky-700 transition hover:-translate-y-0.5 hover:bg-sky-100 disabled:opacity-50"
                   >
-                    Support for {harborName}
+                    {t("quickPrompts.harborSupport", { harborName })}
                   </button>
                 )}
               </div>
@@ -238,7 +247,7 @@ function ChatBody({
           <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1">
             <div className="flex shrink-0 items-center gap-2 rounded-full bg-slate-950 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              Support online
+              {t("status.supportOnline")}
             </div>
             {quickPrompts.map((prompt) => (
               <button
@@ -335,7 +344,7 @@ function ChatBody({
                   handleSend();
                 }
               }}
-              placeholder="Write your message..."
+              placeholder={t("composer.placeholder")}
               disabled={sending}
               rows={1}
               className="max-h-[140px] min-h-[52px] flex-1 resize-none bg-transparent px-1 py-2 text-[15px] font-medium leading-6 text-slate-900 outline-none placeholder:text-slate-400 disabled:opacity-50"
@@ -357,7 +366,7 @@ function ChatBody({
                   }
                   : undefined
               }
-              aria-label="Send message"
+              aria-label={t("composer.sendAria")}
             >
               {sending ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -368,10 +377,10 @@ function ChatBody({
           </div>
           <div className="mt-3 flex items-center justify-between gap-2 px-1">
             <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
-              Press Enter to send
+              {t("composer.enterToSend")}
             </span>
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
-              {sending ? "Sending..." : "Encrypted support"}
+              {sending ? t("composer.sending") : t("composer.encrypted")}
             </span>
           </div>
         </div>
@@ -384,6 +393,7 @@ function ChatBody({
 
 export function ChatWidget({
   harborName,
+  boatId,
   locationId,
   accentColor,
   themePreset = "ocean",
@@ -391,7 +401,11 @@ export function ChatWidget({
   welcomeText,
   sourceUrl,
   isEmbedded,
+  locale: localeOverride,
 }: ChatWidgetProps) {
+  const t = useTranslations("WidgetChat");
+  const routeLocale = useLocale();
+  const locale = localeOverride || routeLocale;
   const { isOnline } = useNetworkStatus();
   const [isOpen, setIsOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -400,7 +414,7 @@ export function ChatWidget({
     {
       id: "init",
       isUser: false,
-      text: welcomeText || "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
+      text: welcomeText || t("initialMessage"),
       timestamp: new Date(),
     },
   ]);
@@ -445,7 +459,7 @@ export function ChatWidget({
       {
         id: "init",
         isUser: false,
-        text: welcomeText || "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
+        text: welcomeText || t("initialMessage"),
         timestamp: new Date(),
       },
     ]);
@@ -486,7 +500,7 @@ export function ChatWidget({
           {
             id: `sys-${Date.now()}`,
             isUser: false,
-            text: "Thanks! Your message has been received. A support agent will respond shortly.",
+            text: t("system.firstReply"),
             timestamp: new Date(),
           },
         ]);
@@ -509,7 +523,7 @@ export function ChatWidget({
           {
             id: `sys-${Date.now()}`,
             isUser: false,
-            text: "Message sent. Our team will get back to you soon.",
+            text: t("system.sentReply"),
             timestamp: new Date(),
           },
         ]);
@@ -521,7 +535,7 @@ export function ChatWidget({
         {
           id: `err-${Date.now()}`,
           isUser: false,
-          text: "Sorry, we couldn't send your message right now. Please try again.",
+          text: t("system.sendFailed"),
           timestamp: new Date(),
         },
       ]);
@@ -540,7 +554,7 @@ export function ChatWidget({
             style={{
               background: `linear-gradient(140deg, ${colors.launcherStart}, ${colors.launcherEnd})`,
             }}
-            aria-label="Open chat"
+            aria-label={t("aria.open")}
           >
             <MessageCircle
               size={22}
@@ -575,18 +589,26 @@ export function ChatWidget({
                   </div>
                   <div>
                     <h4 className="text-sm font-bold leading-tight">
-                      {harborName || "NauticSecure"}
+                      {harborName || t("brand")}
                     </h4>
                     <p className="mt-1 text-[11px] text-white/78">
-                      {conversationId ? "Conversation active" : "Online support"}
+                      {boatId
+                        ? t("header.auctionWidget")
+                        : conversationId
+                          ? t("header.conversationActive")
+                          : t("header.onlineSupport")}
                     </p>
                     <div className="mt-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/80">
                       <span className="rounded-full bg-white/14 px-2.5 py-1 backdrop-blur">
-                        {conversationId ? "Connected" : "Support online"}
+                        {boatId
+                          ? t("header.boat", { boatId })
+                          : conversationId
+                            ? t("header.connected")
+                            : t("header.supportOnline")}
                       </span>
                       <span className="inline-flex items-center gap-1 text-white/75">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                        Encrypted
+                        {t("header.encrypted")}
                       </span>
                     </div>
                   </div>
@@ -596,7 +618,7 @@ export function ChatWidget({
                   <button
                     onClick={() => setIsOpen(false)}
                     className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/14 transition hover:bg-white/24"
-                    aria-label="Minimize chat"
+                    aria-label={t("aria.minimize")}
                   >
                     <Minimize2 size={16} />
                   </button>
@@ -606,7 +628,7 @@ export function ChatWidget({
                       resetChat();
                     }}
                     className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-950/18 transition hover:bg-slate-950/28"
-                    aria-label="Close and reset chat"
+                    aria-label={t("aria.closeReset")}
                   >
                     <X size={16} />
                   </button>
@@ -621,22 +643,31 @@ export function ChatWidget({
                     <WifiOff size={28} className="text-slate-400" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700">
-                    No internet connection
+                    {t("offline.title")}
                   </p>
                   <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-                    Please check your connection and try again. We&rsquo;ll be
-                    here when you&rsquo;re back online.
+                    {t("offline.description")}
                   </p>
                 </div>
               ) : (
-                <ChatBody
-                  messages={messages}
-                  onSend={handleSendMessage}
-                  typing={sending}
-                  colors={colors}
-                  harborName={harborName}
-                  sending={sending}
-                />
+                boatId ? (
+                  <AuctionWidgetBody
+                    boatId={boatId}
+                    locationId={locationId}
+                    colors={colors}
+                    locale={locale}
+                  />
+                ) : (
+                  <ChatBody
+                    messages={messages}
+                    onSend={handleSendMessage}
+                    typing={sending}
+                    colors={colors}
+                    harborName={harborName}
+                    sending={sending}
+                    locale={locale}
+                  />
+                )
               )}
             </div>
           </div>

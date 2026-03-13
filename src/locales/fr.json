@@ -246,7 +246,9 @@
       "systemAudit": "Audit du système"
     },
     "actions": {
-      "viewBiddings": "Voir les enchères"
+      "viewBiddings": "Voir les enchères",
+      "createFirstListing": "Creer la premiere annonce",
+      "browseMarketplace": "Parcourir le marketplace"
     },
     "schedule": {
       "live": "Horaire en direct",
@@ -279,6 +281,9 @@
     "empty": {
       "noRecentBiddingTitle": "Aucune activité d'enchères récente",
       "noRecentBiddingSubtitle": "Démarrez un processus d'enchères pour voir les mises à jour en direct ici.",
+      "onboardingTitle": "Bienvenue sur le marketplace",
+      "onboardingHeading": "Vous n'avez encore place aucune offre",
+      "onboardingSubtitle": "Commencez par creer votre premiere annonce de bateau ou parcourez le marketplace pour enchérir.",
       "noSystemLogs": "Aucun journal système récent pour le moment."
     },
     "defaults": {
@@ -883,10 +888,20 @@
       "today": "Aujourd'hui",
       "aiDraftReply": "Réponse brouillon IA",
       "summarize": "Résumer",
+      "translateTo": "Traduire en",
+      "translateButton": "Traduire",
+      "translating": "Traduction...",
+      "translateFailed": "Impossible de traduire ce message. Réessayez.",
       "typePlaceholder": "Tapez votre message...",
       "callAction": "Démarrer l'appel",
       "callUnavailable": "Aucun numéro de téléphone disponible",
       "callFailed": "Impossible de lancer l'appel. Réessayez.",
+      "languages": {
+        "nl": "Néerlandais",
+        "en": "Anglais",
+        "de": "Allemand",
+        "fr": "Français"
+      },
       "status": {
         "open": "Ouvrir",
         "pending": "En attente",
@@ -1000,5 +1015,148 @@
       "title": "Need more help? Contact our maritime support team",
       "contact": "support@schepen-kring.nl • +31 20 123 4567"
     }
+  },
+  "WidgetChat": {
+    "brand": "NauticSecure",
+    "initialMessage": "Bonjour ! Comment pouvons-nous vous aider aujourd'hui ? Posez-nous vos questions sur les bateaux, les ports ou l'assistance.",
+    "welcome": {
+      "kicker": "Conciergerie en direct",
+      "title": "Posez vos questions sur les bateaux, les visites ou l'assistance portuaire.",
+      "description": "Envoyez un message et notre équipe reviendra vers vous avec les bonnes informations.",
+      "quickPrompts": "Suggestions rapides"
+    },
+    "quickPrompts": {
+      "details": "Je veux des détails sur ce bateau",
+      "viewing": "Puis-je planifier une visite ?",
+      "harbor": "Prenez-vous en charge ce port ?",
+      "harborSupport": "Assistance pour {harborName}"
+    },
+    "status": {
+      "supportOnline": "Support en ligne"
+    },
+    "composer": {
+      "placeholder": "Écrivez votre message...",
+      "sendAria": "Envoyer le message",
+      "enterToSend": "Appuyez sur Entrée pour envoyer",
+      "sending": "Envoi...",
+      "encrypted": "Support chiffré"
+    },
+    "system": {
+      "firstReply": "Merci ! Votre message a bien été reçu. Un agent du support vous répondra sous peu.",
+      "sentReply": "Message envoyé. Notre équipe reviendra vers vous rapidement.",
+      "sendFailed": "Désolé, nous n'avons pas pu envoyer votre message pour le moment. Réessayez."
+    },
+    "header": {
+      "auctionWidget": "Widget d'enchères",
+      "conversationActive": "Conversation active",
+      "onlineSupport": "Support en ligne",
+      "boat": "Bateau {boatId}",
+      "connected": "Connecté",
+      "supportOnline": "Support en ligne",
+      "encrypted": "Chiffré"
+    },
+    "offline": {
+      "title": "Aucune connexion Internet",
+      "description": "Veuillez vérifier votre connexion et réessayer. Nous serons là dès votre retour en ligne."
+    },
+    "aria": {
+      "open": "Ouvrir le chat",
+      "minimize": "Réduire le chat",
+      "closeReset": "Fermer et réinitialiser le chat"
+    }
+  },
+  "WidgetAuction": {
+    "common": {
+      "encrypted": "Chiffré"
+    },
+    "mode": {
+      "live": "Enchère en direct",
+      "bids": "Collecte d'offres",
+      "open": "Offres ouvertes"
+    },
+    "hero": {
+      "liveTitle": "ENCHÈRE BATEAU EN DIRECT",
+      "bidTitle": "PLACEZ VOTRE OFFRE",
+      "liveDescription": "Placez des offres en temps réel pour ce bateau. L'offre la plus élevée gagne lorsque le temps est écoulé.",
+      "bidDescription": "Soumettez votre offre pour ce bateau. L'offre vérifiée la plus élevée reste en tête."
+    },
+    "countdown": {
+      "startsIn": "L'enchère commence dans",
+      "endsIn": "L'enchère se termine dans"
+    },
+    "stats": {
+      "highestBid": "Offre la plus élevée",
+      "bidSummary": "{bids} offres • {bidders} enchérisseurs"
+    },
+    "status": {
+      "ended": "Terminée",
+      "scheduled": "Planifiée",
+      "winning": "En tête"
+    },
+    "recent": {
+      "title": "Offres récentes",
+      "refresh": "Actualiser"
+    },
+    "registration": {
+      "title": "S'inscrire pour enchérir",
+      "button": "Inscrire l'enchérisseur",
+      "status": "Statut : {status}",
+      "fields": {
+        "fullName": "Nom complet",
+        "address": "Adresse",
+        "postalCode": "Code postal",
+        "city": "Ville",
+        "phone": "Téléphone",
+        "email": "E-mail"
+      }
+    },
+    "bidBox": {
+      "placeTitle": "Placer une offre",
+      "completeRegistration": "Complétez l'inscription pour enchérir",
+      "minimumBid": "Offre minimale :",
+      "button": "Placer une offre",
+      "realTime": "Enchère en temps réel"
+    },
+    "winner": {
+      "message": "Gagnant : {bidder} {amount}"
+    },
+    "unavailable": {
+      "title": "Enchère indisponible",
+      "description": "Ce bateau n'accepte pas d'offres pour le moment."
+    },
+    "errors": {
+      "load": "Impossible de charger l'enchère.",
+      "placeBid": "Impossible de placer l'offre.",
+      "register": "Impossible d'inscrire l'enchérisseur."
+    }
+  },
+  "widgetConfig": {
+    "title": "Configuration du widget de chat",
+    "subtitle": "Intégrer le chat en direct sur les sites publics",
+    "enableWidget": "Activer le widget",
+    "welcomeText": "Texte d'accueil",
+    "welcomePlaceholder": "ex. Bonjour ! Comment pouvons-nous vous aider ?",
+    "saveSuccess": "Paramètres du widget enregistrés",
+    "saveError": "Impossible d'enregistrer les paramètres du widget",
+    "copyCode": "Copier le code",
+    "copied": "Copié !",
+    "save": "Enregistrer les paramètres",
+    "loadLocationsError": "Impossible de charger les emplacements",
+    "locationSettings": "Paramètres d'emplacement",
+    "selectLocation": "Sélectionner l'emplacement",
+    "loading": "Chargement...",
+    "tenantId": "ID du tenant",
+    "appearance": "Apparence",
+    "themePreset": "Préréglage du thème",
+    "accentColor": "Couleur d'accent",
+    "themeOcean": "Bleu océan",
+    "themeSunset": "Orange coucher de soleil",
+    "themeViolet": "Violet",
+    "embedCode": "Code d'intégration",
+    "embedHelp": "Copiez et collez cet extrait dans le <head> ou juste avant la balise </body> de votre site. Le widget de chat apparaîtra automatiquement en bas à droite.",
+    "livePreview": "Aperçu en direct",
+    "hidden": "Masqué",
+    "previewHelp": "Le widget apparaîtra dans le coin inférieur droit de ce conteneur, comme sur votre site web.",
+    "previewTitle": "Aperçu du widget de chat"
   }
 }

@@ -10,8 +10,10 @@ export async function GET() {
   const script = document.currentScript;
   const harborId = script.getAttribute('data-harbor-id') || '';
   const harborName = script.getAttribute('data-harbor-name') || '';
+  const boatId = script.getAttribute('data-boat-id') || '';
   const locationId = script.getAttribute('data-location-id') || '';
   const tenant = script.getAttribute('data-tenant') || 'schepenkring';
+  const locale = script.getAttribute('data-locale') || document.documentElement.lang?.split('-')[0] || 'en';
   const accentColor = script.getAttribute('data-accent-color') || '';
   const themePreset = script.getAttribute('data-theme') || 'ocean';
   
@@ -33,13 +35,15 @@ export async function GET() {
   const params = new URLSearchParams();
   if (harborId) params.append('harborId', harborId);
   if (harborName) params.append('harborName', harborName);
+  if (boatId) params.append('boatId', boatId);
   if (locationId) params.append('locationId', locationId);
   if (tenant) params.append('tenant', tenant);
+  if (locale) params.append('locale', locale);
   if (accentColor) params.append('accentColor', accentColor);
   if (themePreset) params.append('themePreset', themePreset);
   params.append('sourceUrl', window.location.href);
   
-  const iframeSrc = \`\${host}/en/widget?\${params.toString()}\`;
+  const iframeSrc = \`\${host}/\${locale}/widget?\${params.toString()}\`;
 
   const iframe = document.createElement('iframe');
   iframe.src = iframeSrc;
