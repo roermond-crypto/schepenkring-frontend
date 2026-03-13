@@ -246,7 +246,9 @@
       "systemAudit": "System Audit"
     },
     "actions": {
-      "viewBiddings": "View Biddings"
+      "viewBiddings": "View Biddings",
+      "createFirstListing": "Create First Listing",
+      "browseMarketplace": "Browse Marketplace"
     },
     "schedule": {
       "live": "Live schedule",
@@ -279,6 +281,9 @@
     "empty": {
       "noRecentBiddingTitle": "No recent bidding activity",
       "noRecentBiddingSubtitle": "Start a bidding process to see live updates here.",
+      "onboardingTitle": "Welcome to the marketplace",
+      "onboardingHeading": "You have not placed any bids yet",
+      "onboardingSubtitle": "Start by creating your first boat listing or browse the marketplace to begin bidding.",
       "noSystemLogs": "No recent system logs yet."
     },
     "defaults": {
@@ -883,10 +888,20 @@
       "today": "Today",
       "aiDraftReply": "AI Draft Reply",
       "summarize": "Summarize",
+      "translateTo": "Translate to",
+      "translateButton": "Translate",
+      "translating": "Translating...",
+      "translateFailed": "Could not translate this message. Try again.",
       "typePlaceholder": "Type your message...",
       "callAction": "Start call",
       "callUnavailable": "No phone number available",
       "callFailed": "Could not start the call. Try again.",
+      "languages": {
+        "nl": "Dutch",
+        "en": "English",
+        "de": "German",
+        "fr": "French"
+      },
       "status": {
         "open": "Open",
         "pending": "Pending",
@@ -1000,5 +1015,148 @@
       "title": "Need more help? Contact our maritime support team",
       "contact": "support@schepen-kring.nl • +31 20 123 4567"
     }
+  },
+  "WidgetChat": {
+    "brand": "NauticSecure",
+    "initialMessage": "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
+    "welcome": {
+      "kicker": "Live concierge",
+      "title": "Ask about boats, viewings, or harbor support.",
+      "description": "Send a message and our team will follow up with the right details.",
+      "quickPrompts": "Quick prompts"
+    },
+    "quickPrompts": {
+      "details": "I need details for this boat",
+      "viewing": "Can I schedule a viewing?",
+      "harbor": "Do you support this harbor?",
+      "harborSupport": "Support for {harborName}"
+    },
+    "status": {
+      "supportOnline": "Support online"
+    },
+    "composer": {
+      "placeholder": "Write your message...",
+      "sendAria": "Send message",
+      "enterToSend": "Press Enter to send",
+      "sending": "Sending...",
+      "encrypted": "Encrypted support"
+    },
+    "system": {
+      "firstReply": "Thanks! Your message has been received. A support agent will respond shortly.",
+      "sentReply": "Message sent. Our team will get back to you soon.",
+      "sendFailed": "Sorry, we couldn't send your message right now. Please try again."
+    },
+    "header": {
+      "auctionWidget": "Auction widget",
+      "conversationActive": "Conversation active",
+      "onlineSupport": "Online support",
+      "boat": "Boat {boatId}",
+      "connected": "Connected",
+      "supportOnline": "Support online",
+      "encrypted": "Encrypted"
+    },
+    "offline": {
+      "title": "No internet connection",
+      "description": "Please check your connection and try again. We'll be here when you're back online."
+    },
+    "aria": {
+      "open": "Open chat",
+      "minimize": "Minimize chat",
+      "closeReset": "Close and reset chat"
+    }
+  },
+  "WidgetAuction": {
+    "common": {
+      "encrypted": "Encrypted"
+    },
+    "mode": {
+      "live": "Auction live",
+      "bids": "Bid collection",
+      "open": "Offers open"
+    },
+    "hero": {
+      "liveTitle": "LIVE BOAT AUCTION",
+      "bidTitle": "PLACE YOUR BID",
+      "liveDescription": "Place bids in real-time for this boat. Highest bid wins when the timer runs out.",
+      "bidDescription": "Submit your offer for this boat. The highest verified bid stays on top."
+    },
+    "countdown": {
+      "startsIn": "Auction starts in",
+      "endsIn": "Auction ends in"
+    },
+    "stats": {
+      "highestBid": "Highest bid",
+      "bidSummary": "{bids} bids • {bidders} bidders"
+    },
+    "status": {
+      "ended": "Ended",
+      "scheduled": "Scheduled",
+      "winning": "Winning"
+    },
+    "recent": {
+      "title": "Recent bids",
+      "refresh": "Refresh"
+    },
+    "registration": {
+      "title": "Register to bid",
+      "button": "Register bidder",
+      "status": "Status: {status}",
+      "fields": {
+        "fullName": "Full name",
+        "address": "Address",
+        "postalCode": "Postal code",
+        "city": "City",
+        "phone": "Phone",
+        "email": "E-mail"
+      }
+    },
+    "bidBox": {
+      "placeTitle": "Place bid",
+      "completeRegistration": "Complete registration to bid",
+      "minimumBid": "Minimum bid:",
+      "button": "Place bid",
+      "realTime": "Real-time auction"
+    },
+    "winner": {
+      "message": "Winner: {bidder} {amount}"
+    },
+    "unavailable": {
+      "title": "Auction unavailable",
+      "description": "This boat is not accepting bids right now."
+    },
+    "errors": {
+      "load": "Failed to load auction.",
+      "placeBid": "Failed to place bid.",
+      "register": "Failed to register bidder."
+    }
+  },
+  "widgetConfig": {
+    "title": "Chat Widget Configuration",
+    "subtitle": "Embed Live Chat on Public Websites",
+    "enableWidget": "Enable Widget",
+    "welcomeText": "Welcome Text",
+    "welcomePlaceholder": "e.g. Hi! How can we help you?",
+    "saveSuccess": "Widget settings saved",
+    "saveError": "Failed to save settings",
+    "copyCode": "Copy Code",
+    "copied": "Copied!",
+    "save": "Save Settings",
+    "loadLocationsError": "Failed to load locations",
+    "locationSettings": "Location Settings",
+    "selectLocation": "Select Location",
+    "loading": "Loading...",
+    "tenantId": "Tenant ID",
+    "appearance": "Appearance",
+    "themePreset": "Theme Preset",
+    "accentColor": "Accent Color",
+    "themeOcean": "Ocean Blue",
+    "themeSunset": "Sunset Orange",
+    "themeViolet": "Violet Purple",
+    "embedCode": "Embed Code",
+    "embedHelp": "Copy and paste this snippet into the <head> or just before the closing </body> tag of your website. The chat widget will automatically appear in the bottom right corner.",
+    "livePreview": "Live Preview",
+    "hidden": "Hidden",
+    "previewHelp": "The widget will appear in the bottom right corner of this container just like it would on your website.",
+    "previewTitle": "Chat Widget Preview"
   }
 }

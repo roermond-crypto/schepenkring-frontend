@@ -247,7 +247,9 @@
       "systemAudit": "Systeemaudit"
     },
     "actions": {
-      "viewBiddings": "Bekijk biedingen"
+      "viewBiddings": "Bekijk biedingen",
+      "createFirstListing": "Eerste listing maken",
+      "browseMarketplace": "Marketplace bekijken"
     },
     "schedule": {
       "live": "Live planning",
@@ -280,6 +282,9 @@
     "empty": {
       "noRecentBiddingTitle": "Geen recente biedactiviteit",
       "noRecentBiddingSubtitle": "Start een biedproces om hier live updates te zien.",
+      "onboardingTitle": "Welkom op de marketplace",
+      "onboardingHeading": "Je hebt nog geen biedingen geplaatst",
+      "onboardingSubtitle": "Begin met het maken van je eerste bootlisting of bekijk de marketplace om te bieden.",
       "noSystemLogs": "Nog geen recente systeemlogs."
     },
     "defaults": {
@@ -884,10 +889,20 @@
       "today": "Vandaag",
       "aiDraftReply": "AI Concept Antwoord",
       "summarize": "Samenvatten",
+      "translateTo": "Vertalen naar",
+      "translateButton": "Vertalen",
+      "translating": "Vertalen...",
+      "translateFailed": "Kon dit bericht niet vertalen. Probeer het opnieuw.",
       "typePlaceholder": "Typ je bericht...",
       "callAction": "Gesprek starten",
       "callUnavailable": "Geen telefoonnummer beschikbaar",
       "callFailed": "Kon gesprek niet starten. Probeer het opnieuw.",
+      "languages": {
+        "nl": "Nederlands",
+        "en": "Engels",
+        "de": "Duits",
+        "fr": "Frans"
+      },
       "status": {
         "open": "Open",
         "pending": "In afwachting",
@@ -1001,5 +1016,148 @@
       "title": "Need more help? Contact our maritime support team",
       "contact": "support@schepen-kring.nl • +31 20 123 4567"
     }
+  },
+  "WidgetChat": {
+    "brand": "NauticSecure",
+    "initialMessage": "Hallo! Hoe kunnen we je vandaag helpen? Vraag ons naar boten, havens of ondersteuning.",
+    "welcome": {
+      "kicker": "Live conciërge",
+      "title": "Vraag naar boten, bezichtigingen of havenondersteuning.",
+      "description": "Stuur een bericht en ons team komt bij je terug met de juiste details.",
+      "quickPrompts": "Snelle prompts"
+    },
+    "quickPrompts": {
+      "details": "Ik wil details over deze boot",
+      "viewing": "Kan ik een bezichtiging plannen?",
+      "harbor": "Ondersteunen jullie deze haven?",
+      "harborSupport": "Ondersteuning voor {harborName}"
+    },
+    "status": {
+      "supportOnline": "Support online"
+    },
+    "composer": {
+      "placeholder": "Schrijf je bericht...",
+      "sendAria": "Bericht verzenden",
+      "enterToSend": "Druk op Enter om te verzenden",
+      "sending": "Verzenden...",
+      "encrypted": "Versleutelde support"
+    },
+    "system": {
+      "firstReply": "Bedankt! Je bericht is ontvangen. Een supportmedewerker reageert zo snel mogelijk.",
+      "sentReply": "Bericht verzonden. Ons team komt snel bij je terug.",
+      "sendFailed": "Sorry, we konden je bericht nu niet verzenden. Probeer het opnieuw."
+    },
+    "header": {
+      "auctionWidget": "Veilingwidget",
+      "conversationActive": "Conversatie actief",
+      "onlineSupport": "Online support",
+      "boat": "Boot {boatId}",
+      "connected": "Verbonden",
+      "supportOnline": "Support online",
+      "encrypted": "Versleuteld"
+    },
+    "offline": {
+      "title": "Geen internetverbinding",
+      "description": "Controleer je verbinding en probeer het opnieuw. We zijn er weer zodra je online bent."
+    },
+    "aria": {
+      "open": "Chat openen",
+      "minimize": "Chat minimaliseren",
+      "closeReset": "Chat sluiten en resetten"
+    }
+  },
+  "WidgetAuction": {
+    "common": {
+      "encrypted": "Versleuteld"
+    },
+    "mode": {
+      "live": "Veiling live",
+      "bids": "Biedingen",
+      "open": "Biedingen open"
+    },
+    "hero": {
+      "liveTitle": "LIVE BOOTVEILING",
+      "bidTitle": "PLAATS JE BOD",
+      "liveDescription": "Plaats in realtime biedingen op deze boot. Het hoogste bod wint als de timer afloopt.",
+      "bidDescription": "Dien je bod in voor deze boot. Het hoogste geverifieerde bod blijft bovenaan staan."
+    },
+    "countdown": {
+      "startsIn": "Veiling start over",
+      "endsIn": "Veiling eindigt over"
+    },
+    "stats": {
+      "highestBid": "Hoogste bod",
+      "bidSummary": "{bids} biedingen • {bidders} bieders"
+    },
+    "status": {
+      "ended": "Beëindigd",
+      "scheduled": "Gepland",
+      "winning": "Winnend"
+    },
+    "recent": {
+      "title": "Recente biedingen",
+      "refresh": "Verversen"
+    },
+    "registration": {
+      "title": "Registreer om te bieden",
+      "button": "Bieder registreren",
+      "status": "Status: {status}",
+      "fields": {
+        "fullName": "Volledige naam",
+        "address": "Adres",
+        "postalCode": "Postcode",
+        "city": "Plaats",
+        "phone": "Telefoon",
+        "email": "E-mail"
+      }
+    },
+    "bidBox": {
+      "placeTitle": "Plaats bod",
+      "completeRegistration": "Voltooi registratie om te bieden",
+      "minimumBid": "Minimumbod:",
+      "button": "Plaats bod",
+      "realTime": "Realtime veiling"
+    },
+    "winner": {
+      "message": "Winnaar: {bidder} {amount}"
+    },
+    "unavailable": {
+      "title": "Veiling niet beschikbaar",
+      "description": "Deze boot accepteert nu geen biedingen."
+    },
+    "errors": {
+      "load": "Veiling laden mislukt.",
+      "placeBid": "Bod plaatsen mislukt.",
+      "register": "Registreren als bieder mislukt."
+    }
+  },
+  "widgetConfig": {
+    "title": "Chatwidget-configuratie",
+    "subtitle": "Plaats live chat op publieke websites",
+    "enableWidget": "Widget inschakelen",
+    "welcomeText": "Welkomsttekst",
+    "welcomePlaceholder": "bijv. Hallo! Hoe kunnen we je helpen?",
+    "saveSuccess": "Widgetinstellingen opgeslagen",
+    "saveError": "Widgetinstellingen opslaan mislukt",
+    "copyCode": "Code kopiëren",
+    "copied": "Gekopieerd!",
+    "save": "Instellingen opslaan",
+    "loadLocationsError": "Locaties laden mislukt",
+    "locationSettings": "Locatie-instellingen",
+    "selectLocation": "Selecteer locatie",
+    "loading": "Laden...",
+    "tenantId": "Tenant-ID",
+    "appearance": "Weergave",
+    "themePreset": "Themapreset",
+    "accentColor": "Accentkleur",
+    "themeOcean": "Oceaanblauw",
+    "themeSunset": "Zonsondergang oranje",
+    "themeViolet": "Violet paars",
+    "embedCode": "Insluitcode",
+    "embedHelp": "Kopieer en plak dit fragment in de <head> of net voor de sluitende </body>-tag van je website. De chatwidget verschijnt automatisch rechtsonder.",
+    "livePreview": "Live voorbeeld",
+    "hidden": "Verborgen",
+    "previewHelp": "De widget verschijnt in de rechterbenedenhoek van deze container, net zoals op je website.",
+    "previewTitle": "Chatwidget-voorbeeld"
   }
 }

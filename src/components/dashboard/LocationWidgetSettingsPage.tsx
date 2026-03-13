@@ -29,6 +29,25 @@ type WidgetConfigText = {
   saveSuccess: string;
   saveError: string;
   copyCode: string;
+  copied: string;
+  save: string;
+  loadLocationsError: string;
+  locationSettings: string;
+  selectLocation: string;
+  loading: string;
+  tenantId: string;
+  appearance: string;
+  themePreset: string;
+  accentColor: string;
+  themeOcean: string;
+  themeSunset: string;
+  themeViolet: string;
+  embedCode: string;
+  embedHelp: string;
+  livePreview: string;
+  hidden: string;
+  previewHelp: string;
+  previewTitle: string;
 };
 
 export function LocationWidgetSettingsPage() {
@@ -44,6 +63,27 @@ export function LocationWidgetSettingsPage() {
     saveSuccess: "Widget settings saved",
     saveError: "Failed to save settings",
     copyCode: "Copy Code",
+    copied: "Copied!",
+    save: "Save Settings",
+    loadLocationsError: "Failed to load locations",
+    locationSettings: "Location Settings",
+    selectLocation: "Select Location",
+    loading: "Loading...",
+    tenantId: "Tenant ID",
+    appearance: "Appearance",
+    themePreset: "Theme Preset",
+    accentColor: "Accent Color",
+    themeOcean: "Ocean Blue",
+    themeSunset: "Sunset Orange",
+    themeViolet: "Violet Purple",
+    embedCode: "Embed Code",
+    embedHelp:
+      "Copy and paste this snippet into the <head> or just before the closing </body> tag of your website. The chat widget will automatically appear in the bottom right corner.",
+    livePreview: "Live Preview",
+    hidden: "Hidden",
+    previewHelp:
+      "The widget will appear in the bottom right corner of this container just like it would on your website.",
+    previewTitle: "Chat Widget Preview",
   };
   const t =
     (dictionary as Dictionary & { widgetConfig?: WidgetConfigText }).widgetConfig ??
@@ -73,13 +113,13 @@ export function LocationWidgetSettingsPage() {
           void fetchSettings(first.id);
         }
       } catch (err) {
-        toast.error("Failed to load locations");
+        toast.error(t.loadLocationsError);
         console.error(err);
       }
     };
 
     void fetchLocations();
-  }, []);
+  }, [t.loadLocationsError]);
 
   const fetchSettings = async (locationId: number) => {
     try {
@@ -136,13 +176,14 @@ export function LocationWidgetSettingsPage() {
   data-tenant="${tenant}"
   data-accent-color="${accentColor}"
   data-theme="${themePreset}"
+  data-locale="${locale}"
   defer
 ></script>`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(embedCode);
     setCopied(true);
-    toast.success(`${t.copyCode} ${locale === "nl" ? "gekopieerd" : "copied"}`);
+    toast.success(t.copied);
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -165,7 +206,7 @@ export function LocationWidgetSettingsPage() {
           className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-white shadow-lg transition-all hover:bg-blue-700 disabled:opacity-50"
         >
           {saving ? <span className="mr-2 animate-spin">...</span> : <Save size={18} />}
-          {locale === "nl" ? "Opslaan" : "Save Settings"}
+          {t.save}
         </button>
       </div>
 
@@ -174,13 +215,13 @@ export function LocationWidgetSettingsPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800 dark:text-slate-100">
               <Globe size={18} className="text-blue-600" />
-              Location Settings
+              {t.locationSettings}
             </h2>
 
             <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-slate-500">
-                  Select Location
+                  {t.selectLocation}
                 </label>
                 <select
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
@@ -192,7 +233,7 @@ export function LocationWidgetSettingsPage() {
                       {location.name}
                     </option>
                   ))}
-                  {locations.length === 0 && <option value="">Loading...</option>}
+                  {locations.length === 0 && <option value="">{t.loading}</option>}
                 </select>
               </div>
 
@@ -227,7 +268,7 @@ export function LocationWidgetSettingsPage() {
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-slate-500">
-                  Tenant ID
+                  {t.tenantId}
                 </label>
                 <input
                   type="text"
@@ -242,28 +283,28 @@ export function LocationWidgetSettingsPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800 dark:text-slate-100">
               <Paintbrush size={18} className="text-blue-600" />
-              Appearance
+              {t.appearance}
             </h2>
 
             <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-slate-500">
-                  Theme Preset
+                  {t.themePreset}
                 </label>
                 <select
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
                   value={themePreset}
                   onChange={(event) => setThemePreset(event.target.value)}
                 >
-                  <option value="ocean">Ocean Blue</option>
-                  <option value="sunset">Sunset Orange</option>
-                  <option value="violet">Violet Purple</option>
+                  <option value="ocean">{t.themeOcean}</option>
+                  <option value="sunset">{t.themeSunset}</option>
+                  <option value="violet">{t.themeViolet}</option>
                 </select>
               </div>
 
               <div>
                 <label className="mb-1.5 flex items-center justify-between text-xs font-semibold text-slate-500">
-                  Accent Color
+                  {t.accentColor}
                   <span className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                     {accentColor}
                   </span>
@@ -293,7 +334,7 @@ export function LocationWidgetSettingsPage() {
               <div className="flex items-center gap-2">
                 <LayoutTemplate size={16} className="text-blue-400" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  Embed Code
+                  {t.embedCode}
                 </span>
               </div>
               <button
@@ -305,7 +346,7 @@ export function LocationWidgetSettingsPage() {
                 ) : (
                   <Copy size={14} />
                 )}
-                {copied ? (locale === "nl" ? "Gekopieerd!" : "Copied!") : t.copyCode}
+                {copied ? t.copied : t.copyCode}
               </button>
             </div>
             <div className="overflow-x-auto p-4">
@@ -316,35 +357,32 @@ export function LocationWidgetSettingsPage() {
             <div className="flex items-start gap-3 border-t border-slate-800/60 bg-[#0d1323] px-4 py-3">
               <div className="mt-0.5 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-blue-500" />
               <p className="text-[11px] leading-relaxed text-slate-400">
-                {locale === "nl"
-                  ? "Kopieer en plak dit fragment in de <head> of net voor de sluitende </body>-tag van je website. De chat-widget verschijnt automatisch in de rechterbenedenhoek."
-                  : "Copy and paste this snippet into the <head> or just before the closing </body> tag of your website. The chat widget will automatically appear in the bottom right corner."}
+                {t.embedHelp}
               </p>
             </div>
           </div>
 
           <div className="relative flex min-h-[800px] flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:min-h-[1000px]">
             <h3 className="absolute left-6 top-6 flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-100">
-              Live Preview
+              {t.livePreview}
               {!enabled && (
                 <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[10px] uppercase text-red-600">
-                  Hidden
+                  {t.hidden}
                 </span>
               )}
             </h3>
             <div className="mt-8 max-w-sm text-center">
               <p className="mb-4 text-sm text-slate-500">
-                The widget will appear in the bottom right corner of this
-                container just like it would on your website.
+                {t.previewHelp}
               </p>
             </div>
 
             {enabled && (
               <div className="pointer-events-none absolute bottom-0 right-0 h-[950px] w-[500px] max-w-full origin-bottom-right scale-[0.6] transition-transform duration-500 sm:scale-[0.8] md:scale-95 lg:scale-110 xl:scale-125">
                 <iframe
-                  src={`/en/widget?harborId=${selectedLocationId}&harborName=${locationName}&tenant=${tenant}&accentColor=${encodeURIComponent(accentColor)}&themePreset=${themePreset}&welcomeText=${encodeURIComponent(welcomeText)}`}
+                  src={`/${locale}/widget?harborId=${selectedLocationId}&harborName=${encodeURIComponent(locationName)}&tenant=${tenant}&accentColor=${encodeURIComponent(accentColor)}&themePreset=${themePreset}&welcomeText=${encodeURIComponent(welcomeText)}`}
                   className="pointer-events-auto h-full w-full border-0"
-                  title="Chat Widget Preview"
+                  title={t.previewTitle}
                 />
               </div>
             )}
