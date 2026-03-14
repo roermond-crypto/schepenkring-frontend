@@ -26,6 +26,12 @@ interface SocialVideo {
     duration?: number | null;
     status?: string | null;
     template_type?: string | null;
+    generation_trigger?: string | null;
+    whatsapp_status?: string | null;
+    whatsapp_sent_at?: string | null;
+    whatsapp_message_id?: string | null;
+    whatsapp_recipient?: string | null;
+    whatsapp_error?: string | null;
     created_at?: string | null;
 }
 
@@ -128,6 +134,7 @@ export default function AdminSocialAutomationPage() {
     const [selectedVideoIds, setSelectedVideoIds] = useState<number[]>([]);
     const [reschedulePostId, setReschedulePostId] = useState<number | null>(null);
     const [rescheduleValue, setRescheduleValue] = useState("");
+    const [previewVideoId, setPreviewVideoId] = useState<number | null>(null);
     const hasLoadedInitialData = useRef(false);
     const [scheduleForm, setScheduleForm] = useState<ScheduleForm>(() => ({
         start_date: new Date().toISOString().slice(0, 10),
@@ -247,6 +254,21 @@ export default function AdminSocialAutomationPage() {
             await loadData();
         } catch {
             toast.error(t("errors.regenerateFailed"));
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleNotifyOwner = async (videoId: number) => {
+        setActionLoading(`notify-${videoId}`);
+        try {
+            await api.post(`/social/videos/${videoId}/notify-owner`, {
+                force: true,
+            });
+            toast.success("Owner WhatsApp delivery queued.");
+            await loadData();
+        } catch {
+            toast.error("Could not queue owner WhatsApp delivery.");
         } finally {
             setActionLoading(null);
         }
@@ -613,11 +635,49 @@ export default function AdminSocialAutomationPage() {
                                                                 {t("videoCard.created")}{" "}
                                                                 {formatDateTime(video.created_at, locale)}
                                                             </p>
+                                                            <p>
+                                                                Trigger {video.generation_trigger || "—"}
+                                                            </p>
+                                                            <p>
+                                                                WhatsApp {video.whatsapp_status || "—"}
+                                                            </p>
                                                         </div>
+                                                        {(video.whatsapp_recipient || video.whatsapp_sent_at || video.whatsapp_error) && (
+                                                            <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-600">
+                                                                {video.whatsapp_recipient ? (
+                                                                    <p>Recipient: {video.whatsapp_recipient}</p>
+                                                                ) : null}
+                                                                {video.whatsapp_sent_at ? (
+                                                                    <p>
+                                                                        Sent: {formatDateTime(video.whatsapp_sent_at, locale)}
+                                                                    </p>
+                                                                ) : null}
+                                                                {video.whatsapp_message_id ? (
+                                                                    <p>Message ID: {video.whatsapp_message_id}</p>
+                                                                ) : null}
+                                                                {video.whatsapp_error ? (
+                                                                    <p className="text-red-600">Error: {video.whatsapp_error}</p>
+                                                                ) : null}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
 
                                                 <div className="flex flex-wrap gap-2">
+                                                    {video.video_url && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setPreviewVideoId((current) =>
+                                                                    current === video.id ? null : video.id,
+                                                                )
+                                                            }
+                                                            className="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-[10px] font-black uppercase tracking-[0.18em] text-[#003566]"
+                                                        >
+                                                            <Video className="mr-2 h-3.5 w-3.5" />
+                                                            Watch Video
+                                                        </button>
+                                                    )}
                                                     {video.video_url && (
                                                         <a
                                                             href={video.video_url}
@@ -629,6 +689,19 @@ export default function AdminSocialAutomationPage() {
                                                             {t("actions.open")}
                                                         </a>
                                                     )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleNotifyOwner(video.id)}
+                                                        disabled={actionLoading === `notify-${video.id}` || !video.video_url}
+                                                        className="inline-flex h-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        {actionLoading === `notify-${video.id}` ? (
+                                                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                                        ) : (
+                                                            <Sparkles className="mr-2 h-3.5 w-3.5" />
+                                                        )}
+                                                        Send WhatsApp
+                                                    </button>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleRegenerate(video.id)}
@@ -644,6 +717,17 @@ export default function AdminSocialAutomationPage() {
                                                     </button>
                                                 </div>
                                             </div>
+                                            {previewVideoId === video.id && video.video_url ? (
+                                                <div className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-black">
+                                                    <video
+                                                        src={video.video_url}
+                                                        controls
+                                                        preload="metadata"
+                                                        className="h-auto max-h-[28rem] w-full"
+                                                        poster={video.thumbnail_url || undefined}
+                                                    />
+                                                </div>
+                                            ) : null}
                                         </div>
                                     );
                                 })}

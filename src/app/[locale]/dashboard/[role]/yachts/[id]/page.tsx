@@ -1268,7 +1268,9 @@ export default function YachtEditorPage() {
   const loadMarketingVideos = useCallback(
     async (targetYachtId: number | string) => {
       try {
-        const response = await api.get("/social/videos");
+        const response = await api.get("/social/videos", {
+          params: { yacht_id: Number(targetYachtId) },
+        });
         const payload =
           Array.isArray(response.data)
             ? response.data
@@ -1292,6 +1294,25 @@ export default function YachtEditorPage() {
     },
     [],
   );
+
+  useEffect(() => {
+    const targetId = isNewMode ? createdYachtId : yachtId;
+    if (!targetId || marketingVideos.length === 0) return;
+
+    const hasProcessingVideo = marketingVideos.some((video) =>
+      ["queued", "processing", "pending", "rendering"].includes(
+        String(video?.status || "").toLowerCase(),
+      ),
+    );
+
+    if (!hasProcessingVideo) return;
+
+    const timer = window.setInterval(() => {
+      void loadMarketingVideos(targetId);
+    }, 8000);
+
+    return () => window.clearInterval(timer);
+  }, [createdYachtId, isNewMode, loadMarketingVideos, marketingVideos, yachtId]);
   const [imageGridDensity, setImageGridDensity] =
     useState<ImageGridDensity>("regular");
   const [selectedLightboxImageId, setSelectedLightboxImageId] = useState<
@@ -2410,6 +2431,29 @@ export default function YachtEditorPage() {
       );
     } finally {
       setIsGeneratingMarketingVideo(false);
+    }
+  };
+
+  const handleNotifyMarketingVideoOwner = async (videoId: number) => {
+    setIsPublishingVideo(videoId);
+    try {
+      const response = await api.post(`/social/videos/${videoId}/notify-owner`, {
+        force: true,
+      });
+      toast.success(
+        response.data?.message || "Owner WhatsApp delivery queued.",
+      );
+      const targetId = isNewMode ? createdYachtId : yachtId;
+      if (targetId) {
+        await loadMarketingVideos(targetId);
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+          "Could not queue owner WhatsApp delivery.",
+      );
+    } finally {
+      setIsPublishingVideo(null);
     }
   };
 
@@ -5253,6 +5297,9 @@ export default function YachtEditorPage() {
                               <p className="mt-1 text-xs text-slate-500">
                                 Template: {video.template_type || "vertical_slideshow_v1"}
                               </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                Trigger: {video.generation_trigger || "created"}
+                              </p>
                             </div>
                             <span
                               className={cn(
@@ -5267,6 +5314,44 @@ export default function YachtEditorPage() {
                               {video.status || "queued"}
                             </span>
                           </div>
+                          {(video.thumbnail_url || video.video_url) && (
+                            <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                              {video.video_url ? (
+                                <video
+                                  src={video.video_url}
+                                  controls
+                                  preload="metadata"
+                                  poster={video.thumbnail_url || undefined}
+                                  className="h-auto max-h-64 w-full bg-black object-contain"
+                                />
+                              ) : video.thumbnail_url ? (
+                                <img
+                                  src={video.thumbnail_url}
+                                  alt=""
+                                  className="h-64 w-full object-cover"
+                                />
+                              ) : null}
+                            </div>
+                          )}
+                          <div className="mt-4 grid gap-2 text-xs text-slate-500 sm:grid-cols-2">
+                            <p>
+                              WhatsApp: {video.whatsapp_status || "pending"}
+                            </p>
+                            <p>
+                              Recipient: {video.whatsapp_recipient || "—"}
+                            </p>
+                            <p>
+                              Sent at: {video.whatsapp_sent_at || "—"}
+                            </p>
+                            <p>
+                              Video URL: {video.video_url ? "ready" : "waiting"}
+                            </p>
+                          </div>
+                          {video.whatsapp_error ? (
+                            <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                              WhatsApp error: {video.whatsapp_error}
+                            </div>
+                          ) : null}
                           <div className="mt-4 flex flex-wrap gap-2">
                             {video.video_url && (
                               <a
@@ -5279,6 +5364,22 @@ export default function YachtEditorPage() {
                                 Open Video
                               </a>
                             )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
+                              onClick={() => handleNotifyMarketingVideoOwner(video.id)}
+                              disabled={
+                                isPublishingVideo === video.id || !video.video_url
+                              }
+                            >
+                              {isPublishingVideo === video.id ? (
+                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              ) : (
+                                <Sparkles size={12} className="mr-2" />
+                              )}
+                              Send WhatsApp
+                            </Button>
                             <Button
                               type="button"
                               variant="outline"

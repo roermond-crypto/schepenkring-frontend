@@ -133,6 +133,13 @@ export function Sidebar({
         icon: TriangleAlert,
       });
     } else if (role === "employee") {
+      items.push({ title: t.clients, href: `${root}/users`, icon: Users });
+      items.push({
+        title: t.interaction,
+        href: `${root}/chat`,
+        icon: MessageSquare,
+      });
+    } else if (role === "client") {
       items.push({
         title: t.interaction,
         href: `${root}/chat`,

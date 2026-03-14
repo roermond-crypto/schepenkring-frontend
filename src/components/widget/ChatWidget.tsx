@@ -30,6 +30,24 @@ interface WidgetMessage {
   timestamp: Date;
 }
 
+interface PublicLeadResponse {
+  conversation?: { id: string };
+  ai_message?: {
+    id: string;
+    text?: string | null;
+    body?: string | null;
+  } | null;
+}
+
+interface PublicConversationAskResponse {
+  conversation?: { id: string };
+  ai_message?: {
+    id: string;
+    text?: string | null;
+    body?: string | null;
+  } | null;
+}
+
 interface ChatWidgetProps {
   harborId?: string;
   harborName?: string;
@@ -121,6 +139,20 @@ async function publicApi<T>(
   }
 
   return res.json();
+}
+
+function getOrCreateVisitorId(): string {
+  if (typeof window === "undefined") {
+    return `visitor-${Date.now()}`;
+  }
+
+  const storageKey = "nauticsecure_widget_visitor_id";
+  const existing = window.localStorage.getItem(storageKey);
+  if (existing) return existing;
+
+  const created = `visitor-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  window.localStorage.setItem(storageKey, created);
+  return created;
 }
 
 // ── Chat Body Sub-Component ────────────────────────────────────────
@@ -410,6 +442,7 @@ export function ChatWidget({
   const [isOpen, setIsOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const visitorIdRef = useRef<string>(getOrCreateVisitorId());
   const [messages, setMessages] = useState<WidgetMessage[]>([
     {
       id: "init",
@@ -481,26 +514,27 @@ export function ChatWidget({
         // First message: create lead + conversation + initial message
         const clientMessageId = `widget-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-        const response = await publicApi<{
-          lead: { id: number; name: string | null };
-          conversation: { id: string };
-          message: { id: string };
-        }>("POST", "/public/leads", {
+        const response = await publicApi<PublicLeadResponse>("POST", "/public/leads", {
           location_id: locationId ?? 1,
           source_url: sourceUrl || (typeof window !== "undefined" ? window.location.href : undefined),
           message: text,
           client_message_id: clientMessageId,
+          visitor_id: visitorIdRef.current,
         });
 
-        setConversationId(response.conversation.id);
+        if (response.conversation?.id) {
+          setConversationId(response.conversation.id);
+        }
 
-        // Add confirmation message
+        const aiText =
+          response.ai_message?.text?.trim() || response.ai_message?.body?.trim();
+
         setMessages((prev) => [
           ...prev,
           {
-            id: `sys-${Date.now()}`,
+            id: response.ai_message?.id ?? `sys-${Date.now()}`,
             isUser: false,
-            text: t("system.firstReply"),
+            text: aiText || t("system.firstReply"),
             timestamp: new Date(),
           },
         ]);
@@ -508,22 +542,25 @@ export function ChatWidget({
         // Subsequent messages: send to existing conversation
         const clientMessageId = `widget-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-        await publicApi(
+        const response = await publicApi<PublicConversationAskResponse>(
           "POST",
-          `/public/conversations/${conversationId}/messages`,
+          `/public/conversations/${conversationId}/ask`,
           {
             body: text,
             client_message_id: clientMessageId,
+            visitor_id: visitorIdRef.current,
           },
         );
 
-        // Add confirmation
+        const aiText =
+          response.ai_message?.text?.trim() || response.ai_message?.body?.trim();
+
         setMessages((prev) => [
           ...prev,
           {
-            id: `sys-${Date.now()}`,
+            id: response.ai_message?.id ?? `sys-${Date.now()}`,
             isUser: false,
-            text: t("system.sentReply"),
+            text: aiText || t("system.sentReply"),
             timestamp: new Date(),
           },
         ]);
