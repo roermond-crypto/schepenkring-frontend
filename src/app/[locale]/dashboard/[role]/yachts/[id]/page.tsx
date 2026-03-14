@@ -2256,13 +2256,13 @@ export default function YachtEditorPage() {
           setAiStaging(loadedImages);
         }
 
-        // Fetch Boat Videos
-        try {
-          const videoRes = await api.get(`/yachts/${yachtId}/boat-videos`);
-          setBoatVideos(videoRes.data);
-        } catch (e) {
-          console.error("Failed to fetch boat videos", e);
-        }
+        // Fetch Boat Videos (Endpoint currently missing/obsolete)
+        // try {
+        //   const videoRes = await api.get(`/yachts/${yachtId}/boat-videos`);
+        //   setBoatVideos(videoRes.data);
+        // } catch (e) {
+        //   console.error("Failed to fetch boat videos", e);
+        // }
 
         await loadMarketingVideos(yachtId);
 
