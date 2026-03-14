@@ -108,6 +108,7 @@
       "audit": "Audit",
       "errors": "Errors",
       "locations": "Locations",
+      "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Salesfunnel",
       "socialAutomation": "Social Automation"
     },
@@ -577,6 +578,8 @@
       "phoneNumber": "Phone Number",
       "dateOfBirth": "Date of Birth",
       "locale": "Locale",
+      "location": "Location",
+      "locationRole": "Location Role",
       "timezone": "Timezone",
       "addressLine1": "Address Line 1",
       "addressLine2": "Address Line 2",
@@ -602,6 +605,10 @@
       "pendingVerification": "Not verified yet",
       "notConfigured": "Not configured",
       "user": "User",
+      "noLocationAssigned": "No location assigned",
+      "assignmentStatus": "Assignment status",
+      "boardAccessEnabled": "Board access enabled for this employee.",
+      "boardAccessDisabled": "Board access depends on a valid location assignment.",
       "profilePicture": "Profile picture",
       "uploadHelp": "Upload a new avatar (max 5MB, WEBP/JPG/PNG)."
     },

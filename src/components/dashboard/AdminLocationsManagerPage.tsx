@@ -30,6 +30,14 @@ type LocationRecord = {
   status: "ACTIVE" | "INACTIVE";
   clients_total: number;
   staff_total: number;
+  employee_count?: number;
+  employees?: Array<{
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    location_role?: string | null;
+  }>;
   boats_total: number;
   yachts_total: number;
   open_leads: number;
@@ -286,9 +294,10 @@ export function AdminLocationsManagerPage({
       </div>
 
       <div className="mt-8 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
-        <div className="grid grid-cols-[minmax(0,2fr)_120px_140px_180px_120px] gap-4 border-b border-slate-100 bg-slate-50 px-6 py-4 text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">
+        <div className="grid grid-cols-[minmax(0,2fr)_120px_minmax(0,1.3fr)_140px_180px_120px] gap-4 border-b border-slate-100 bg-slate-50 px-6 py-4 text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">
           <span>{isNl ? "Locatie" : "Location"}</span>
           <span>Code</span>
+          <span>{isNl ? "Medewerkers" : "Employees"}</span>
           <span>{isNl ? "Status" : "Status"}</span>
           <span>{isNl ? "Bijgewerkt" : "Updated"}</span>
           <span className="text-right">{isNl ? "Acties" : "Actions"}</span>
@@ -306,7 +315,7 @@ export function AdminLocationsManagerPage({
           filteredLocations.map((location) => (
             <div
               key={location.id}
-              className="grid grid-cols-[minmax(0,2fr)_120px_140px_180px_120px] gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0"
+              className="grid grid-cols-[minmax(0,2fr)_120px_minmax(0,1.3fr)_140px_180px_120px] gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-3">
@@ -327,6 +336,22 @@ export function AdminLocationsManagerPage({
 
               <div className="self-center text-sm font-semibold text-slate-700">
                 {location.code}
+              </div>
+
+              <div className="self-center text-sm text-slate-700">
+                <p className="font-semibold">
+                  {(location.employee_count ?? location.employees?.length ?? 0).toString()}{" "}
+                  {isNl ? "gekoppeld" : "assigned"}
+                </p>
+                {location.employees && location.employees.length > 0 ? (
+                  <p className="mt-1 truncate text-xs text-slate-500">
+                    {location.employees.map((employee) => employee.name).join(", ")}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-slate-400">
+                    {isNl ? "Geen medewerkers toegewezen" : "No employees assigned"}
+                  </p>
+                )}
               </div>
 
               <div className="self-center">

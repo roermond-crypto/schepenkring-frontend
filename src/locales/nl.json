@@ -109,6 +109,7 @@
       "audit": "Audit",
       "errors": "Fouten",
       "locations": "Locaties",
+      "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Salesfunnel",
       "socialAutomation": "Sociale automatisering"
     },
@@ -578,6 +579,8 @@
       "phoneNumber": "Telefoonnummer",
       "dateOfBirth": "Geboortedatum",
       "locale": "Taal",
+      "location": "Locatie",
+      "locationRole": "Locatierol",
       "timezone": "Tijdzone",
       "addressLine1": "Adresregel 1",
       "addressLine2": "Adresregel 2",
@@ -603,6 +606,10 @@
       "pendingVerification": "Nog niet bevestigd",
       "notConfigured": "Nog niet ingesteld",
       "user": "Gebruiker",
+      "noLocationAssigned": "Geen locatie toegewezen",
+      "assignmentStatus": "Toewijzingsstatus",
+      "boardAccessEnabled": "Bordtoegang is ingeschakeld voor deze medewerker.",
+      "boardAccessDisabled": "Bordtoegang hangt af van een geldige locatietoewijzing.",
       "profilePicture": "Profielfoto",
       "uploadHelp": "Upload een nieuwe avatar (max 5MB, WEBP/JPG/PNG)."
     },

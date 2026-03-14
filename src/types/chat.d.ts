@@ -49,7 +49,7 @@ export interface Chat {
 
 export type ConversationStatus = "open" | "pending" | "solved"
 export type ConversationSource = "webapp" | "widget"
-export type SenderType = "guest" | "user" | "admin" | "system"
+export type SenderType = "guest" | "user" | "admin" | "system" | "ai"
 export type SupportMessageType = "text" | "call"
 
 export interface ConversationContext {

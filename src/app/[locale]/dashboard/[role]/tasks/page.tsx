@@ -229,6 +229,29 @@ function getCurrentLocationId() {
   }
 }
 
+function canCurrentUserAccessBoard() {
+  if (typeof window === "undefined") return false;
+  const userDataRaw = localStorage.getItem("user_data");
+  if (!userDataRaw) return false;
+
+  try {
+    const userData = JSON.parse(userDataRaw) as {
+      can_access_board?: boolean;
+      has_location_assignment?: boolean;
+      location_id?: number | string | null;
+      location?: { id?: number | string | null } | null;
+    };
+
+    const hasLocation =
+      userData.has_location_assignment ??
+      Boolean(userData.location_id ?? userData.location?.id);
+
+    return Boolean(userData.can_access_board) && hasLocation;
+  } catch {
+    return false;
+  }
+}
+
 function fromApiStatus(status: string | undefined): Task["status"] {
   const normalized = String(status || "").toLowerCase();
   if (normalized === "new" || normalized === "pending") return "To Do";
@@ -1528,7 +1551,10 @@ export default function AdminTaskBoardPage() {
   const role = normalizeRole(params?.role) ?? "admin";
   const taskQueryParam = searchParams.get("task");
   const tasksPath = `/dashboard/${role}/tasks`;
-  const canManageTaskWorkspace = role === "admin" || role === "location";
+  const canManageTaskWorkspace =
+    role === "admin" ||
+    role === "location" ||
+    (role === "employee" && canCurrentUserAccessBoard());
   const canConfigureAutomation = canManageTaskWorkspace;
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);

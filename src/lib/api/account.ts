@@ -15,7 +15,28 @@ export type MeUser = {
   email: string;
   avatar: string | null;
   phone: string | null;
+  location_id: number | null;
+  location_role: string | null;
   client_location_id: number | null;
+  has_location_assignment: boolean;
+  can_access_board: boolean;
+  location: {
+    id: number;
+    name: string;
+    code?: string | null;
+    role?: string | null;
+  } | null;
+  client_location: {
+    id: number;
+    name: string;
+    code?: string | null;
+  } | null;
+  locations: Array<{
+    id: number;
+    name: string;
+    code?: string | null;
+    role?: string | null;
+  }>;
   timezone: string | null;
   locale: string | null;
   address_line1: string | null;
@@ -57,6 +78,8 @@ export async function updateAdminUser(
     email?: string | null;
     phone?: string | null;
     status?: MeUserStatus;
+    location_id?: number | null;
+    location_role?: string | null;
   },
 ) {
   const { data } = await api.patch<{ data: MeUser }>(

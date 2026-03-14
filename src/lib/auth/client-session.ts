@@ -38,6 +38,13 @@ export function setClientSession(token: string, user: SessionUser) {
         email: user.email,
         avatar: user.avatar ?? null,
         role: user.role,
+        location_id: user.location_id ?? null,
+        location_role: user.location_role ?? null,
+        client_location_id: user.client_location_id ?? null,
+        has_location_assignment: user.has_location_assignment ?? false,
+        can_access_board: user.can_access_board ?? false,
+        location: user.location ?? null,
+        locations: user.locations ?? [],
         token,
       }),
     );

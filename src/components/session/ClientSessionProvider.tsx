@@ -22,6 +22,13 @@ type ClientSessionUser = {
   email: string;
   avatar?: string;
   role: UserRole;
+  location_id?: number | null;
+  location_role?: string | null;
+  client_location_id?: number | null;
+  has_location_assignment?: boolean;
+  can_access_board?: boolean;
+  location?: { id: number; name?: string; code?: string; role?: string } | null;
+  locations?: Array<{ id: number; name?: string; code?: string; role?: string }>;
 };
 
 type ClientSessionContextValue = {
@@ -87,6 +94,13 @@ function buildUserFromStorage(
         email?: string;
         avatar?: string | null;
         role?: UserRole;
+        location_id?: number | null;
+        location_role?: string | null;
+        client_location_id?: number | null;
+        has_location_assignment?: boolean;
+        can_access_board?: boolean;
+        location?: { id?: number; name?: string; code?: string; role?: string } | null;
+        locations?: Array<{ id: number; name?: string; code?: string; role?: string }>;
       };
 
       localId =
@@ -97,6 +111,30 @@ function buildUserFromStorage(
       localEmail = parsed.email;
       localAvatar = normalizeAvatarUrl(parsed.avatar);
       localRole = parsed.role;
+      return {
+        id: localId || fallback.id,
+        name: localName || fallback.name,
+        email: localEmail || fallback.email,
+        avatar: localAvatar || fallback.avatar,
+        role: localRole || fallback.role,
+        location_id: parsed.location_id ?? fallback.location_id,
+        location_role: parsed.location_role ?? fallback.location_role,
+        client_location_id:
+          parsed.client_location_id ?? fallback.client_location_id,
+        has_location_assignment:
+          parsed.has_location_assignment ?? fallback.has_location_assignment,
+        can_access_board: parsed.can_access_board ?? fallback.can_access_board,
+        location:
+          parsed.location?.id != null
+            ? {
+                id: Number(parsed.location.id),
+                name: parsed.location.name,
+                code: parsed.location.code,
+                role: parsed.location.role,
+              }
+            : fallback.location ?? null,
+        locations: parsed.locations ?? fallback.locations,
+      };
     }
   } catch {
     // Ignore malformed local cache.
@@ -128,6 +166,13 @@ function buildUserFromStorage(
       email?: string;
       avatar?: string;
       role?: UserRole;
+      location_id?: number | null;
+      location_role?: string | null;
+      client_location_id?: number | null;
+      has_location_assignment?: boolean;
+      can_access_board?: boolean;
+      location?: { id?: number; name?: string; code?: string; role?: string } | null;
+      locations?: Array<{ id: number; name?: string; code?: string; role?: string }>;
     };
 
     return {
@@ -140,6 +185,22 @@ function buildUserFromStorage(
       email: localEmail || parsed.email || fallback.email,
       avatar: localAvatar || normalizeAvatarUrl(parsed.avatar) || fallback.avatar,
       role: localRole || parsed.role || fallback.role,
+      location_id: parsed.location_id ?? fallback.location_id,
+      location_role: parsed.location_role ?? fallback.location_role,
+      client_location_id: parsed.client_location_id ?? fallback.client_location_id,
+      has_location_assignment:
+        parsed.has_location_assignment ?? fallback.has_location_assignment,
+      can_access_board: parsed.can_access_board ?? fallback.can_access_board,
+      location:
+        parsed.location?.id != null
+          ? {
+              id: Number(parsed.location.id),
+              name: parsed.location.name,
+              code: parsed.location.code,
+              role: parsed.location.role,
+            }
+          : fallback.location ?? null,
+      locations: parsed.locations ?? fallback.locations,
     };
   } catch {
     return {
@@ -148,6 +209,13 @@ function buildUserFromStorage(
       email: localEmail || fallback.email,
       avatar: localAvatar || fallback.avatar,
       role: localRole || fallback.role,
+      location_id: fallback.location_id,
+      location_role: fallback.location_role,
+      client_location_id: fallback.client_location_id,
+      has_location_assignment: fallback.has_location_assignment,
+      can_access_board: fallback.can_access_board,
+      location: fallback.location ?? null,
+      locations: fallback.locations,
     };
   }
 }
@@ -160,13 +228,6 @@ export function ClientSessionProvider({
     ...initialUser,
     avatar: normalizeAvatarUrl(initialUser.avatar),
   });
-
-  useEffect(() => {
-    setUserState({
-      ...initialUser,
-      avatar: normalizeAvatarUrl(initialUser.avatar),
-    });
-  }, [initialUser]);
 
   const setUser = useCallback((nextUser: ClientSessionUser) => {
     setUserState({
