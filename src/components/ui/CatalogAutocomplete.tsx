@@ -7,7 +7,7 @@ interface Props {
     endpoint: string;
     name: string;
     placeholder?: string;
-    defaultValue?: string;
+    defaultValue?: string | null;
     dependsOn?: string;
     dependsOnValue?: number | string | null;
     onSelect?: (id: number | string, name: string) => void;
@@ -29,7 +29,7 @@ export function CatalogAutocomplete({
     onSelect,
     needsConfirmation
 }: Props) {
-    const [query, setQuery] = useState(defaultValue);
+    const [query, setQuery] = useState(defaultValue || "");
     const [results, setResults] = useState<CatalogAutocompleteItem[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -79,7 +79,7 @@ export function CatalogAutocomplete({
         return () => clearTimeout(delayDebounceFn);
     }, [query, isOpen, endpoint, dependsOn, dependsOnValue]);
 
-    const highlighted = Boolean(needsConfirmation) || query.trim().length > 0;
+    const highlighted = Boolean(needsConfirmation) || (query && query.trim().length > 0);
 
     return (
         <div className="relative" ref={wrapperRef}>
