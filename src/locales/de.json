@@ -108,6 +108,7 @@
       "audit": "Audit",
       "errors": "Fehler",
       "locations": "Standorte",
+      "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Salesfunnel",
       "socialAutomation": "Social-Automatisierung"
     },
@@ -577,6 +578,8 @@
       "phoneNumber": "Telefonnummer",
       "dateOfBirth": "Geburtsdatum",
       "locale": "Sprache",
+      "location": "Standort",
+      "locationRole": "Standortrolle",
       "timezone": "Zeitzone",
       "addressLine1": "Adresszeile 1",
       "addressLine2": "Adresszeile 2",
@@ -602,6 +605,10 @@
       "pendingVerification": "Noch nicht bestatigt",
       "notConfigured": "Noch nicht eingerichtet",
       "user": "Benutzer",
+      "noLocationAssigned": "Kein Standort zugewiesen",
+      "assignmentStatus": "Zuweisungsstatus",
+      "boardAccessEnabled": "Board-Zugriff ist fuer diesen Mitarbeiter aktiviert.",
+      "boardAccessDisabled": "Board-Zugriff haengt von einer gueltigen Standortzuweisung ab.",
       "profilePicture": "Profilbild",
       "uploadHelp": "Laden Sie einen neuen Avatar hoch (max. 5MB, WEBP/JPG/PNG)."
     },

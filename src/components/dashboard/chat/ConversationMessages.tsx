@@ -446,7 +446,7 @@ export function ConversationMessages({
             </div>
 
             {messages.map((msg) =>
-              msg.sender_type === "system" ? (
+              msg.sender_type === "system" || msg.sender_type === "ai" ? (
                 <SystemEventBubble key={msg.id} message={msg} />
               ) : (
                 <MessageBubbleItem

@@ -8,40 +8,6 @@ import type {
 } from "@/types/chat";
 import { apiRequest } from "@/lib/api/http";
 
-// ── Type mappings from backend → frontend ──────────────────────────
-
-interface BackendLead {
-  id: number;
-  location_id: number;
-  client_id: number | null;
-  conversation_id: string | null;
-  assigned_employee_id: number | null;
-  status: string;
-  source: string;
-  source_url: string | null;
-  notes: string | null;
-  name: string | null;
-  email: string | null;
-  phone: string | null;
-  created_at: string;
-  updated_at: string;
-  conversation?: BackendConversation;
-  location?: { id: number; name: string };
-  assigned_employee?: { id: number; name: string; first_name?: string; last_name?: string };
-  converted_client?: { id: number; name: string } | null;
-}
-
-interface BackendConversation {
-  id: string;
-  location_id: number;
-  channel: string;
-  status: string;
-  assigned_employee_id: number | null;
-  lead_id: number | null;
-  created_at: string;
-  updated_at: string;
-}
-
 interface BackendContact {
   id?: string;
   name?: string | null;
@@ -54,29 +20,60 @@ interface BackendContact {
   consent_service_messages?: boolean | null;
 }
 
+interface BackendConversation {
+  id: string;
+  location_id: number;
+  status: string;
+  priority?: string | null;
+  channel: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at?: string | null;
+  location?: {
+    id: number;
+    name: string;
+    code?: string | null;
+  } | null;
+  assigned_employee?: {
+    id: number;
+    name: string;
+    email?: string;
+    first_name?: string;
+    last_name?: string;
+  } | null;
+  contact?: BackendContact | null;
+  lead?: {
+    id?: number | null;
+    status?: string | null;
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  } | null;
+}
+
 interface BackendMessage {
   id: string;
   conversation_id: string;
   sender_type: string;
-  employee_id: number | null;
-  body: string | null;
   text?: string | null;
+  body?: string | null;
   message_type?: "text" | "call" | string;
   channel?: string;
   metadata?: Record<string, unknown>;
-  client_message_id: string | null;
-  delivery_state: string;
+  employee?: { id: number; name: string; first_name?: string; last_name?: string } | null;
+  attachments?: Array<{
+    id?: string;
+    name?: string;
+    type?: string;
+    size?: number;
+    url?: string;
+    thumbnail?: string;
+  }>;
   created_at: string;
-  updated_at: string;
-  employee?: { id: number; name: string; first_name?: string; last_name?: string };
 }
 
-interface PaginatedResponse<T> {
-  data: T[];
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
+interface BackendConversationDetail extends BackendConversation {
+  messages?: BackendMessage[];
 }
 
 interface TranslateChatResponse {
@@ -89,99 +86,127 @@ interface TranslateChatResponse {
   model: string;
 }
 
-// ── Mappers ─────────────────────────────────────────────────────────
+function mapConversationStatus(status?: string | null): ConversationStatus {
+  const normalized = String(status ?? "").toLowerCase();
+  if (normalized === "pending") return "pending";
+  if (normalized === "solved" || normalized === "closed") return "solved";
+  return "open";
+}
 
-function mapLeadToConversation(lead: BackendLead): Conversation {
-  const statusMap: Record<string, ConversationStatus> = {
-    new: "open",
-    open: "open",
-    contacted: "pending",
-    qualified: "pending",
-    converted: "solved",
-    closed: "solved",
-  };
+function mapConversationToConversation(
+  conversation: BackendConversation,
+): Conversation {
+  const contactName =
+    conversation.contact?.name ??
+    conversation.lead?.name ??
+    "Anonymous Visitor";
 
   return {
-    id: lead.conversation?.id ?? `lead-${lead.id}`,
-    status: statusMap[lead.status] ?? "open",
-    source: (lead.source === "web_widget" ? "widget" : "webapp") as "widget" | "webapp",
-    contact_name: lead.name ?? "Anonymous Visitor",
-    contact_avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(lead.name ?? "anon")}`,
-    contact_company: lead.location?.name,
-    last_message: lead.notes ?? "",
-    last_message_at: new Date(lead.updated_at),
-    unread_count: lead.status === "new" ? 1 : 0,
-    created_at: new Date(lead.created_at),
-    updated_at: new Date(lead.updated_at),
-    assigned_name: lead.assigned_employee?.name ?? lead.assigned_employee?.first_name,
-    guest_email: lead.email ?? undefined,
-    guest_phone: lead.phone ?? undefined,
-    // Store lead id for status updates
-    user_id: String(lead.id),
+    id: conversation.id,
+    status: mapConversationStatus(conversation.status),
+    source: (conversation.channel === "web_widget" ? "widget" : "webapp") as
+      | "widget"
+      | "webapp",
+    contact_name: contactName,
+    contact_avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(contactName)}`,
+    contact_company: conversation.location?.name ?? undefined,
+    last_message_at: conversation.last_message_at
+      ? new Date(conversation.last_message_at)
+      : new Date(conversation.updated_at),
+    unread_count: conversation.status === "open" ? 1 : 0,
+    created_at: new Date(conversation.created_at),
+    updated_at: new Date(conversation.updated_at),
+    assigned_name:
+      conversation.assigned_employee?.name ??
+      conversation.assigned_employee?.first_name,
+    guest_email:
+      conversation.contact?.email ?? conversation.lead?.email ?? undefined,
+    guest_phone:
+      conversation.contact?.phone ?? conversation.lead?.phone ?? undefined,
+    user_id:
+      conversation.lead?.id !== null && conversation.lead?.id !== undefined
+        ? String(conversation.lead.id)
+        : undefined,
   };
 }
 
-function mapBackendMessage(msg: BackendMessage): SupportMessage {
-  const senderType = msg.sender_type === "employee" ? "admin" : msg.sender_type === "visitor" ? "guest" : "user";
-  const senderName = msg.employee?.name
-    ?? msg.employee?.first_name
-    ?? (msg.sender_type === "employee" ? "Agent" : "Visitor");
+function mapBackendMessage(message: BackendMessage): SupportMessage {
+  const senderType =
+    message.sender_type === "employee"
+      ? "admin"
+      : message.sender_type === "visitor"
+        ? "guest"
+        : message.sender_type === "ai"
+          ? "ai"
+          : "user";
+  const senderName =
+    message.employee?.name ??
+    message.employee?.first_name ??
+    (message.sender_type === "employee"
+      ? "Agent"
+      : message.sender_type === "ai"
+        ? "AI assistant"
+        : "Visitor");
 
   return {
-    id: msg.id,
-    conversation_id: msg.conversation_id,
-    sender_type: senderType as "guest" | "user" | "admin" | "system",
+    id: message.id,
+    conversation_id: message.conversation_id,
+    sender_type: senderType,
     sender_name: senderName,
     sender_avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(senderName)}`,
     text:
-      msg.body ??
-      msg.text ??
-      (msg.message_type === "call"
-        ? `Started support call${typeof msg.metadata?.to_number === "string" ? ` to ${msg.metadata.to_number}` : ""}`
+      message.body ??
+      message.text ??
+      (message.message_type === "call"
+        ? `Started support call${typeof message.metadata?.to_number === "string" ? ` to ${message.metadata.to_number}` : ""}`
         : ""),
-    message_type:
-      msg.message_type === "call" ? "call" : "text",
-    metadata: msg.metadata ?? undefined,
-    created_at: new Date(msg.created_at),
-    attachments: [],
+    message_type: message.message_type === "call" ? "call" : "text",
+    metadata: message.metadata ?? undefined,
+    attachments: Array.isArray(message.attachments)
+      ? message.attachments.map((attachment, index) => ({
+          id: attachment.id ?? `${message.id}-attachment-${index}`,
+          name: attachment.name ?? "Attachment",
+          type: attachment.type ?? "file",
+          size: attachment.size ?? 0,
+          url: attachment.url ?? "",
+          thumbnail: attachment.thumbnail,
+        }))
+      : [],
+    created_at: new Date(message.created_at),
   };
 }
-
-// ── API Functions ───────────────────────────────────────────────────
 
 export async function getConversations(filters?: {
   status?: ConversationStatus | "all";
   search?: string;
 }): Promise<Conversation[]> {
   try {
-    const params: Record<string, string> = { per_page: "50" };
+    const params: Record<string, string> = { limit: "50" };
 
     if (filters?.status && filters.status !== "all") {
-      // Map frontend status to backend lead status
-      const statusMap: Record<string, string> = {
-        open: "new",
-        pending: "contacted",
-        solved: "converted",
-      };
-      params.status = statusMap[filters.status] ?? filters.status;
+      params.status = filters.status;
     }
 
-    const response = await apiRequest<PaginatedResponse<BackendLead>>({
+    const response = await apiRequest<{
+      data: BackendConversation[];
+      next_cursor?: string | null;
+    }>({
       method: "GET",
-      url: "/leads",
+      url: "/chat/conversations",
       params,
     });
 
-    let results = response.data.map(mapLeadToConversation);
+    let results = response.data.map(mapConversationToConversation);
 
-    // Client-side search filter (backend doesn't support text search on leads yet)
     if (filters?.search) {
-      const s = filters.search.toLowerCase();
+      const normalizedSearch = filters.search.toLowerCase();
       results = results.filter(
-        (c) =>
-          c.contact_name.toLowerCase().includes(s) ||
-          c.contact_company?.toLowerCase().includes(s) ||
-          c.last_message?.toLowerCase().includes(s)
+        (conversation) =>
+          conversation.contact_name.toLowerCase().includes(normalizedSearch) ||
+          conversation.contact_company
+            ?.toLowerCase()
+            .includes(normalizedSearch) ||
+          conversation.guest_email?.toLowerCase().includes(normalizedSearch),
       );
     }
 
@@ -192,37 +217,70 @@ export async function getConversations(filters?: {
   }
 }
 
-export async function getMessages(conversationId: string): Promise<SupportMessage[]> {
+export async function getMessages(
+  conversationId: string,
+): Promise<SupportMessage[]> {
   try {
-    const response = await apiRequest<PaginatedResponse<BackendMessage>>({
+    const response = await apiRequest<BackendConversationDetail>({
       method: "GET",
-      url: `/conversations/${conversationId}/messages`,
-      params: { per_page: "100" },
+      url: `/chat/conversations/${conversationId}`,
     });
 
-    return response.data.map(mapBackendMessage);
+    return Array.isArray(response.messages)
+      ? response.messages.map(mapBackendMessage)
+      : [];
   } catch (error) {
-    console.error(`Failed to fetch messages for conversation ${conversationId}:`, error);
+    console.error(
+      `Failed to fetch messages for conversation ${conversationId}:`,
+      error,
+    );
     return [];
   }
 }
 
-export async function getContactInfo(conversationId: string): Promise<ContactInfo> {
-  // We extract contact info from the conversation's lead
-  // For now, return a placeholder that gets filled by ChatPage with the lead data
-  return {
-    name: "Loading...",
-    email: undefined,
-    phone: undefined,
-    whatsapp_user_id: undefined,
-    language_preferred: undefined,
-    do_not_contact: false,
-    consent_marketing: false,
-    consent_service_messages: true,
-    status: "online",
-    shared_files: [],
-    events: [],
-  };
+export async function getContactInfo(
+  conversationId: string,
+): Promise<ContactInfo> {
+  try {
+    const response = await apiRequest<BackendConversationDetail>({
+      method: "GET",
+      url: `/chat/conversations/${conversationId}`,
+    });
+
+    return {
+      name:
+        response.contact?.name ??
+        response.lead?.name ??
+        "Anonymous Visitor",
+      email: response.contact?.email ?? response.lead?.email ?? undefined,
+      phone: response.contact?.phone ?? response.lead?.phone ?? undefined,
+      whatsapp_user_id: response.contact?.whatsapp_user_id ?? undefined,
+      language_preferred: response.contact?.language_preferred ?? undefined,
+      do_not_contact: response.contact?.do_not_contact ?? false,
+      consent_marketing: response.contact?.consent_marketing ?? false,
+      consent_service_messages:
+        response.contact?.consent_service_messages ?? true,
+      company: response.location?.name ?? undefined,
+      status: "online",
+      location: response.location?.name ?? undefined,
+      shared_files: [],
+      events: [],
+    };
+  } catch {
+    return {
+      name: "Loading...",
+      email: undefined,
+      phone: undefined,
+      whatsapp_user_id: undefined,
+      language_preferred: undefined,
+      do_not_contact: false,
+      consent_marketing: false,
+      consent_service_messages: true,
+      status: "online",
+      shared_files: [],
+      events: [],
+    };
+  }
 }
 
 export async function updateConversationContact(
@@ -263,7 +321,8 @@ export async function updateConversationContact(
     email: contact.email ?? lead.email ?? payload.email,
     phone: contact.phone ?? lead.phone ?? payload.phone,
     whatsapp_user_id: contact.whatsapp_user_id ?? payload.whatsapp_user_id,
-    language_preferred: contact.language_preferred ?? payload.language_preferred,
+    language_preferred:
+      contact.language_preferred ?? payload.language_preferred,
     do_not_contact: contact.do_not_contact ?? payload.do_not_contact,
     consent_marketing: contact.consent_marketing ?? payload.consent_marketing,
     consent_service_messages:
@@ -277,21 +336,14 @@ export async function updateConversationContact(
 export async function updateConversationStatus(
   conversationId: string,
   status: ConversationStatus,
-  leadId?: string
+  leadId?: string,
 ): Promise<boolean> {
-  void conversationId;
-  if (!leadId) return false;
-
-  const statusMap: Record<string, string> = {
-    open: "new",
-    pending: "contacted",
-    solved: "converted",
-  };
+  void leadId;
 
   await apiRequest({
     method: "PATCH",
-    url: `/leads/${leadId}`,
-    data: { status: statusMap[status] ?? status },
+    url: `/chat/conversations/${conversationId}`,
+    data: { status },
   });
 
   return true;
@@ -300,21 +352,21 @@ export async function updateConversationStatus(
 export async function sendSupportMessage(
   conversationId: string,
   text: string,
-  attachments?: File[]
+  attachments?: File[],
 ): Promise<SupportMessage> {
   void attachments;
   const clientMessageId = `crm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-  const response = await apiRequest<{ message: BackendMessage }>({
+  const response = await apiRequest<BackendMessage>({
     method: "POST",
-    url: `/conversations/${conversationId}/messages`,
+    url: `/chat/conversations/${conversationId}/messages`,
     data: {
       body: text,
       client_message_id: clientMessageId,
     },
   });
 
-  return mapBackendMessage(response.message);
+  return mapBackendMessage(response);
 }
 
 export async function translateSupportMessage(
@@ -341,7 +393,7 @@ export async function translateSupportMessage(
 
 export async function startSupportCall(
   conversationId: string,
-  phoneNumber?: string
+  phoneNumber?: string,
 ): Promise<SupportMessage> {
   const response = await apiRequest<BackendMessage>({
     method: "POST",
@@ -359,16 +411,14 @@ export async function startSupportCall(
 }
 
 export async function createConversation(): Promise<Conversation> {
-  // Creating a new conversation from the CRM side means creating a new lead
-  const response = await apiRequest<BackendLead>({
+  const response = await apiRequest<BackendConversation>({
     method: "POST",
-    url: "/leads",
+    url: "/chat/conversations",
     data: {
-      source: "webapp",
-      status: "new",
-      name: "New Lead",
+      status: "open",
+      channel: "webapp",
     },
   });
 
-  return mapLeadToConversation(response);
+  return mapConversationToConversation(response);
 }

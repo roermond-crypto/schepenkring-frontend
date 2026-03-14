@@ -34,6 +34,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { setClientSession, getClientToken } from "@/lib/auth/client-session";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
+import { api } from "@/lib/api";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
 import { SUPPORTED_LOCALES, type AppLocale } from "@/lib/i18n";
 import { normalizeRole } from "@/lib/auth/roles";
@@ -48,7 +49,9 @@ function extractErrorMessage(error: unknown, fallback: string) {
       response?: { data?: { message?: string } };
       message?: string;
     };
-    return maybeResponse.response?.data?.message || maybeResponse.message || fallback;
+    return (
+      maybeResponse.response?.data?.message || maybeResponse.message || fallback
+    );
   }
   return fallback;
 }
@@ -63,13 +66,18 @@ function normalizeAvatarUrl(value?: string | null) {
     process.env.NEXT_PUBLIC_BACKEND_API_URL ??
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.BACKEND_API_URL;
-  const apiBase = normalizeApiBaseUrl(configured || "https://app.schepen-kring.nl/api");
+  const apiBase = normalizeApiBaseUrl(
+    configured || "https://app.schepen-kring.nl/api",
+  );
   const origin = apiBase.replace(/\/api\/?$/, "");
 
   return value.startsWith("/") ? `${origin}${value}` : `${origin}/${value}`;
 }
 
-function normalizeLocaleValue(value?: string | null, fallback: AppLocale = "nl"): AppLocale {
+function normalizeLocaleValue(
+  value?: string | null,
+  fallback: AppLocale = "nl",
+): AppLocale {
   const normalized = String(value ?? "")
     .trim()
     .toLowerCase();
@@ -94,6 +102,12 @@ type GooglePlaceResult = {
 type GooglePlacesAutocomplete = {
   addListener: (eventName: string, handler: () => void) => void;
   getPlace: () => GooglePlaceResult;
+};
+
+type LocationOption = {
+  id: number;
+  name: string;
+  code?: string | null;
 };
 
 type GoogleWindow = Window & {
@@ -128,7 +142,9 @@ export default function DashboardAccountPage() {
 
   const [activeTab, setActiveTab] = useState<AccountTab>("profile");
   const canEditCurrentTab =
-    !isAdminSelectedUserView || activeTab === "profile" || activeTab === "personal";
+    !isAdminSelectedUserView ||
+    activeTab === "profile" ||
+    activeTab === "personal";
   const [user, setUser] = useState<MeUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -203,7 +219,11 @@ export default function DashboardAccountPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [profile, setProfile] = useState({ name: "", timezone: "", locale: "en" });
+  const [profile, setProfile] = useState({
+    name: "",
+    timezone: "",
+    locale: "en",
+  });
   const [personal, setPersonal] = useState({
     first_name: "",
     last_name: "",
@@ -229,6 +249,13 @@ export default function DashboardAccountPage() {
     password: "",
     password_confirmation: "",
   });
+  const [availableLocations, setAvailableLocations] = useState<
+    LocationOption[]
+  >([]);
+  const [locationAssignment, setLocationAssignment] = useState({
+    location_id: "",
+    location_role: "LOCATION_EMPLOYEE",
+  });
 
   const tabs: Array<{ id: AccountTab; label: string }> = [
     { id: "profile", label: t("tabs.profile") },
@@ -238,14 +265,14 @@ export default function DashboardAccountPage() {
     { id: "password", label: t("tabs.password") },
   ];
 
-  const localeOptions: Array<{ value: AppLocale; label: string }> = SUPPORTED_LOCALES.map(
-    (value) => ({
+  const localeOptions: Array<{ value: AppLocale; label: string }> =
+    SUPPORTED_LOCALES.map((value) => ({
       value,
       label: t(`languages.${value}`),
-    }),
-  );
+    }));
 
-  const activeTabLabel = tabs.find((tab) => tab.id === activeTab)?.label ?? t("tabs.profile");
+  const activeTabLabel =
+    tabs.find((tab) => tab.id === activeTab)?.label ?? t("tabs.profile");
 
   useEffect(() => {
     let active = true;
@@ -292,7 +319,17 @@ export default function DashboardAccountPage() {
           postal_code: nextUser.postal_code || "",
           country: nextUser.country || "",
         });
-        setSecurity((prev) => ({ ...prev, two_factor_enabled: nextUser.two_factor_enabled }));
+        setSecurity((prev) => ({
+          ...prev,
+          two_factor_enabled: nextUser.two_factor_enabled,
+        }));
+        setLocationAssignment({
+          location_id:
+            nextUser.location_id !== null && nextUser.location_id !== undefined
+              ? String(nextUser.location_id)
+              : "",
+          location_role: nextUser.location_role || "LOCATION_EMPLOYEE",
+        });
       } catch (err: unknown) {
         if (!active) return;
         setError(extractErrorMessage(err, "Failed to load account profile."));
@@ -305,7 +342,38 @@ export default function DashboardAccountPage() {
     return () => {
       active = false;
     };
-  }, [isAdminSelectedUserView, normalizedRouteLocale, selectedUserId, updateUser]);
+  }, [
+    isAdminSelectedUserView,
+    normalizedRouteLocale,
+    selectedUserId,
+    updateUser,
+  ]);
+
+  useEffect(() => {
+    if (!isAdminSelectedUserView) return;
+
+    let active = true;
+
+    const loadLocations = async () => {
+      try {
+        const response = await api.get<{ data?: LocationOption[] }>(
+          "/admin/locations",
+        );
+        if (!active) return;
+        setAvailableLocations(
+          Array.isArray(response.data?.data) ? response.data.data : [],
+        );
+      } catch (err) {
+        if (!active) return;
+        console.error("Failed to load admin locations for assignment", err);
+      }
+    };
+
+    void loadLocations();
+    return () => {
+      active = false;
+    };
+  }, [isAdminSelectedUserView]);
 
   useEffect(() => {
     if (activeTab !== "address") return;
@@ -319,14 +387,15 @@ export default function DashboardAccountPage() {
 
     const setupAutocomplete = () => {
       const googleRef = (window as GoogleWindow).google;
-      if (!googleRef?.maps?.places?.Autocomplete || !placeInputRef.current) return;
+      if (!googleRef?.maps?.places?.Autocomplete || !placeInputRef.current)
+        return;
 
       const autocomplete = new googleRef.maps.places.Autocomplete(
         placeInputRef.current,
         {
           fields: ["address_components", "formatted_address"],
           types: ["address"],
-        }
+        },
       );
 
       autocomplete.addListener("place_changed", () => {
@@ -339,31 +408,36 @@ export default function DashboardAccountPage() {
         let postal = "";
         let countryObj = "";
 
-        place.address_components.forEach((component: GoogleAddressComponent) => {
-          const types = component.types;
-          if (types.includes("street_number")) {
-            address1 = `${component.long_name} ${address1}`;
-          }
-          if (types.includes("route")) {
-            address1 += component.short_name;
-          }
-          if (types.includes("locality")) {
-            city = component.long_name;
-          }
-          if (types.includes("administrative_area_level_1")) {
-            state = component.long_name;
-          }
-          if (types.includes("postal_code")) {
-            postal = component.long_name;
-          }
-          if (types.includes("country")) {
-            countryObj = component.short_name;
-          }
-        });
+        place.address_components.forEach(
+          (component: GoogleAddressComponent) => {
+            const types = component.types;
+            if (types.includes("street_number")) {
+              address1 = `${component.long_name} ${address1}`;
+            }
+            if (types.includes("route")) {
+              address1 += component.short_name;
+            }
+            if (types.includes("locality")) {
+              city = component.long_name;
+            }
+            if (types.includes("administrative_area_level_1")) {
+              state = component.long_name;
+            }
+            if (types.includes("postal_code")) {
+              postal = component.long_name;
+            }
+            if (types.includes("country")) {
+              countryObj = component.short_name;
+            }
+          },
+        );
 
         setAddress((prev) => ({
           ...prev,
-          address_line1: address1.trim() || placeInputRef.current?.value || prev.address_line1,
+          address_line1:
+            address1.trim() ||
+            placeInputRef.current?.value ||
+            prev.address_line1,
           city: city || prev.city,
           state: state || prev.state,
           postal_code: postal || prev.postal_code,
@@ -430,6 +504,16 @@ export default function DashboardAccountPage() {
           const response = await updateAdminUser(selectedUserId, {
             name: profile.name,
             status: user?.status || "ACTIVE",
+            location_id:
+              user?.type === "EMPLOYEE"
+                ? locationAssignment.location_id
+                  ? Number(locationAssignment.location_id)
+                  : null
+                : undefined,
+            location_role:
+              user?.type === "EMPLOYEE"
+                ? locationAssignment.location_role || null
+                : undefined,
           });
           setUser({
             ...response.data,
@@ -481,12 +565,19 @@ export default function DashboardAccountPage() {
         });
         setUser(response.data);
       } else {
-        if (!password.password || password.password !== password.password_confirmation) {
+        if (
+          !password.password ||
+          password.password !== password.password_confirmation
+        ) {
           throw new Error(t("toasts.passwordMismatch"));
         }
         const response = await updateMePassword(password);
         setUser(response.data);
-        setPassword({ current_password: "", password: "", password_confirmation: "" });
+        setPassword({
+          current_password: "",
+          password: "",
+          password_confirmation: "",
+        });
       }
 
       setSuccess(t("toasts.saved"));
@@ -553,16 +644,28 @@ export default function DashboardAccountPage() {
           </h1>
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-3xl border border-white/80 bg-white/80 p-4 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/70">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">{t("tabs.profile")}</p>
-              <p className="mt-2 text-lg font-bold text-[#0B1F3A] dark:text-slate-100">{completion}%</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+                {t("tabs.profile")}
+              </p>
+              <p className="mt-2 text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
+                {completion}%
+              </p>
             </div>
             <div className="rounded-3xl border border-white/80 bg-white/80 p-4 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/70">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">{t("tabs.address")}</p>
-              <p className="mt-2 text-lg font-bold text-[#0B1F3A] dark:text-slate-100">{address.city || address.country || "..."}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+                {t("tabs.address")}
+              </p>
+              <p className="mt-2 text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
+                {address.city || address.country || "..."}
+              </p>
             </div>
             <div className="rounded-3xl border border-white/80 bg-white/80 p-4 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/70">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">{t("tabs.security")}</p>
-              <p className="mt-2 text-lg font-bold text-[#0B1F3A] dark:text-slate-100">{security.two_factor_enabled ? t("labels.yes") : t("labels.no")}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+                {t("tabs.security")}
+              </p>
+              <p className="mt-2 text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
+                {security.two_factor_enabled ? t("labels.yes") : t("labels.no")}
+              </p>
             </div>
           </div>
         </div>
@@ -584,16 +687,28 @@ export default function DashboardAccountPage() {
                   initials
                 )}
               </div>
-              <h2 className="mt-6 text-xs font-black uppercase tracking-[0.24em] text-white">{user?.name || t("labels.user")}</h2>
+              <h2 className="mt-6 text-xs font-black uppercase tracking-[0.24em] text-white">
+                {user?.name || t("labels.user")}
+              </h2>
               <p className="mt-2 text-xs text-slate-300">{user?.email}</p>
               <div className="mt-6 grid grid-cols-2 gap-3 text-left">
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">{t("tabs.profile")}</p>
-                  <p className="mt-2 text-sm font-semibold text-white">{completion}%</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">
+                    {t("tabs.profile")}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-white">
+                    {completion}%
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">{t("tabs.security")}</p>
-                  <p className="mt-2 text-sm font-semibold text-white">{security.two_factor_enabled ? t("labels.yes") : t("labels.no")}</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">
+                    {t("tabs.security")}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-white">
+                    {security.two_factor_enabled
+                      ? t("labels.yes")
+                      : t("labels.no")}
+                  </p>
                 </div>
               </div>
             </div>
@@ -614,7 +729,10 @@ export default function DashboardAccountPage() {
                   ))}
                 </select>
               </div>
-              <div className="hidden overflow-x-auto lg:flex" style={{ scrollbarWidth: "none" }}>
+              <div
+                className="hidden overflow-x-auto lg:flex"
+                style={{ scrollbarWidth: "none" }}
+              >
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
@@ -639,23 +757,46 @@ export default function DashboardAccountPage() {
 
             <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.06)] dark:border-slate-700 dark:bg-slate-900">
               <div className="border-b border-slate-100 bg-gradient-to-r from-[#F8FBFF] to-white px-5 py-5 dark:border-slate-700 dark:from-slate-900 dark:to-slate-900 sm:px-7">
-                <h2 className="text-lg font-bold text-[#003566] dark:text-slate-100">{activeTabLabel}</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("header.subtitle")}</p>
+                <h2 className="text-lg font-bold text-[#003566] dark:text-slate-100">
+                  {activeTabLabel}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  {t("header.subtitle")}
+                </p>
               </div>
 
               <div className="space-y-5 p-5 sm:p-7">
-                {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-                {success ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div> : null}
+                {error ? (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    {error}
+                  </div>
+                ) : null}
+                {success ? (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {success}
+                  </div>
+                ) : null}
 
                 {activeTab === "profile" ? (
                   <div className="space-y-6">
                     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
                       <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-[#E7F0FF] shadow-sm dark:border-slate-700 dark:bg-slate-800">
                         {user?.avatar ? (
-                          <Image src={user.avatar} alt="Avatar" className="h-full w-full object-cover" fill unoptimized />
+                          <Image
+                            src={user.avatar}
+                            alt="Avatar"
+                            className="h-full w-full object-cover"
+                            fill
+                            unoptimized
+                          />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-[#0B1F3A] dark:text-slate-100">
-                            {profile.name?.split(" ").map((s) => s[0]).join("").toUpperCase().slice(0, 2) || "U"}
+                            {profile.name
+                              ?.split(" ")
+                              .map((s) => s[0])
+                              .join("")
+                              .toUpperCase()
+                              .slice(0, 2) || "U"}
                           </div>
                         )}
                         {uploadingAvatar && (
@@ -666,25 +807,34 @@ export default function DashboardAccountPage() {
                       </div>
                       <div className="flex flex-1 flex-col justify-center space-y-2 text-center sm:text-left">
                         <div>
-                          <p className="text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">{t("labels.profilePicture") || "Profile Picture"}</p>
+                          <p className="text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">
+                            {t("labels.profilePicture") || "Profile Picture"}
+                          </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {t("labels.uploadHelp") || "Upload a new avatar (max 5MB, WEBP/JPG/PNG)."}
+                            {t("labels.uploadHelp") ||
+                              "Upload a new avatar (max 5MB, WEBP/JPG/PNG)."}
                           </p>
                         </div>
                         <div className="relative inline-flex">
                           <Button
                             type="button"
                             variant="outline"
-                            disabled={uploadingAvatar || isAdminSelectedUserView}
+                            disabled={
+                              uploadingAvatar || isAdminSelectedUserView
+                            }
                             className="h-9 relative overflow-hidden text-xs"
                           >
-                            {uploadingAvatar ? t("actions.uploading") || "Uploading..." : t("actions.uploadImage") || "Upload Image"}
+                            {uploadingAvatar
+                              ? t("actions.uploading") || "Uploading..."
+                              : t("actions.uploadImage") || "Upload Image"}
                             <input
                               type="file"
                               accept="image/jpeg,image/png,image/webp"
                               className="absolute inset-0 cursor-pointer opacity-0"
                               onChange={handleAvatarUpload}
-                              disabled={uploadingAvatar || isAdminSelectedUserView}
+                              disabled={
+                                uploadingAvatar || isAdminSelectedUserView
+                              }
                             />
                           </Button>
                         </div>
@@ -693,18 +843,34 @@ export default function DashboardAccountPage() {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="space-y-2">
-                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><User size={12} /> {t("fields.fullName")}</span>
-                        <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.name} onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))} />
+                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                          <User size={12} /> {t("fields.fullName")}
+                        </span>
+                        <input
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          value={profile.name}
+                          onChange={(e) =>
+                            setProfile((p) => ({ ...p, name: e.target.value }))
+                          }
+                        />
                       </label>
                       {isAdminSelectedUserView ? (
                         <label className="space-y-2">
-                          <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Shield size={12} /> Status</span>
+                          <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                            <Shield size={12} /> Status
+                          </span>
                           <select
                             className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             value={user?.status || "ACTIVE"}
                             onChange={(e) =>
                               setUser((prev) =>
-                                prev ? { ...prev, status: e.target.value as MeUser["status"] } : prev,
+                                prev
+                                  ? {
+                                      ...prev,
+                                      status: e.target
+                                        .value as MeUser["status"],
+                                    }
+                                  : prev,
                               )
                             }
                           >
@@ -714,8 +880,86 @@ export default function DashboardAccountPage() {
                           </select>
                         </label>
                       ) : null}
+                      {isAdminSelectedUserView && user?.type === "EMPLOYEE" ? (
+                        <>
+                          <label className="space-y-2">
+                            <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                              <MapPin size={12} />{" "}
+                              {t("fields.location") || "Location"}
+                            </span>
+                            <select
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              value={locationAssignment.location_id}
+                              onChange={(e) =>
+                                setLocationAssignment((current) => ({
+                                  ...current,
+                                  location_id: e.target.value,
+                                }))
+                              }
+                            >
+                              <option value="">
+                                {t("labels.noLocationAssigned") ||
+                                  "No location assigned"}
+                              </option>
+                              {availableLocations.map((location) => (
+                                <option
+                                  key={location.id}
+                                  value={String(location.id)}
+                                >
+                                  {location.name}
+                                  {location.code ? ` (${location.code})` : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="space-y-2">
+                            <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                              <Shield size={12} />{" "}
+                              {t("fields.locationRole") || "Location role"}
+                            </span>
+                            <select
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              value={locationAssignment.location_role}
+                              onChange={(e) =>
+                                setLocationAssignment((current) => ({
+                                  ...current,
+                                  location_role: e.target.value,
+                                }))
+                              }
+                            >
+                              <option value="LOCATION_EMPLOYEE">
+                                LOCATION_EMPLOYEE
+                              </option>
+                              <option value="LOCATION_MANAGER">
+                                LOCATION_MANAGER
+                              </option>
+                            </select>
+                          </label>
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 sm:col-span-2 dark:border-slate-700 dark:bg-slate-800">
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                              {t("labels.assignmentStatus") ||
+                                "Assignment status"}
+                            </p>
+                            <p className="mt-2 text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">
+                              {user.has_location_assignment
+                                ? user.location?.name || t("labels.yes")
+                                : t("labels.noLocationAssigned") ||
+                                  "No location assigned"}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                              {user.can_access_board
+                                ? t("labels.boardAccessEnabled") ||
+                                  "Board access enabled for this employee."
+                                : t("labels.boardAccessDisabled") ||
+                                  "Board access depends on a valid location assignment."}
+                            </p>
+                          </div>
+                        </>
+                      ) : null}
                       <label className="space-y-2">
-                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.locale")}</span>
+                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                          <Globe size={12} /> {t("fields.locale")}
+                        </span>
                         <select
                           disabled={isAdminSelectedUserView}
                           className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
@@ -723,7 +967,10 @@ export default function DashboardAccountPage() {
                           onChange={(e) =>
                             setProfile((p) => ({
                               ...p,
-                              locale: normalizeLocaleValue(e.target.value, normalizedRouteLocale),
+                              locale: normalizeLocaleValue(
+                                e.target.value,
+                                normalizedRouteLocale,
+                              ),
                             }))
                           }
                         >
@@ -735,8 +982,20 @@ export default function DashboardAccountPage() {
                         </select>
                       </label>
                       <label className="space-y-2 sm:col-span-2">
-                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.timezone")}</span>
-                        <input disabled={isAdminSelectedUserView} className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={profile.timezone} onChange={(e) => setProfile((p) => ({ ...p, timezone: e.target.value }))} />
+                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                          <Globe size={12} /> {t("fields.timezone")}
+                        </span>
+                        <input
+                          disabled={isAdminSelectedUserView}
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          value={profile.timezone}
+                          onChange={(e) =>
+                            setProfile((p) => ({
+                              ...p,
+                              timezone: e.target.value,
+                            }))
+                          }
+                        />
                       </label>
                     </div>
                   </div>
@@ -745,66 +1004,190 @@ export default function DashboardAccountPage() {
                 {activeTab === "personal" ? (
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><User size={12} /> {t("fields.firstName")}</span>
-                      <input disabled={isAdminSelectedUserView} className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.first_name} onChange={(e) => setPersonal((p) => ({ ...p, first_name: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <User size={12} /> {t("fields.firstName")}
+                      </span>
+                      <input
+                        disabled={isAdminSelectedUserView}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={personal.first_name}
+                        onChange={(e) =>
+                          setPersonal((p) => ({
+                            ...p,
+                            first_name: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><User size={12} /> {t("fields.lastName")}</span>
-                      <input disabled={isAdminSelectedUserView} className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.last_name} onChange={(e) => setPersonal((p) => ({ ...p, last_name: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <User size={12} /> {t("fields.lastName")}
+                      </span>
+                      <input
+                        disabled={isAdminSelectedUserView}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={personal.last_name}
+                        onChange={(e) =>
+                          setPersonal((p) => ({
+                            ...p,
+                            last_name: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Mail size={12} /> {t("fields.emailAddress")}</span>
-                      <input type="email" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.email} onChange={(e) => setPersonal((p) => ({ ...p, email: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <Mail size={12} /> {t("fields.emailAddress")}
+                      </span>
+                      <input
+                        type="email"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={personal.email}
+                        onChange={(e) =>
+                          setPersonal((p) => ({ ...p, email: e.target.value }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Phone size={12} /> {t("fields.phoneNumber")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.phone} onChange={(e) => setPersonal((p) => ({ ...p, phone: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <Phone size={12} /> {t("fields.phoneNumber")}
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={personal.phone}
+                        onChange={(e) =>
+                          setPersonal((p) => ({ ...p, phone: e.target.value }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2 sm:col-span-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><User size={12} /> {t("fields.dateOfBirth")}</span>
-                      <input disabled={isAdminSelectedUserView} type="date" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={personal.date_of_birth} onChange={(e) => setPersonal((p) => ({ ...p, date_of_birth: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <User size={12} /> {t("fields.dateOfBirth")}
+                      </span>
+                      <input
+                        disabled={isAdminSelectedUserView}
+                        type="date"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={personal.date_of_birth}
+                        onChange={(e) =>
+                          setPersonal((p) => ({
+                            ...p,
+                            date_of_birth: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                   </div>
                 ) : null}
 
                 {activeTab === "address" ? (
-                  <fieldset disabled={isAdminSelectedUserView} className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60">
+                  <fieldset
+                    disabled={isAdminSelectedUserView}
+                    className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
                     <label className="space-y-2 sm:col-span-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><MapPin size={12} /> {t("fields.addressLine1")}</span>
-                      <input ref={placeInputRef} autoComplete="off" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={address.address_line1} onChange={(e) => setAddress((p) => ({ ...p, address_line1: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <MapPin size={12} /> {t("fields.addressLine1")}
+                      </span>
+                      <input
+                        ref={placeInputRef}
+                        autoComplete="off"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={address.address_line1}
+                        onChange={(e) =>
+                          setAddress((p) => ({
+                            ...p,
+                            address_line1: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2 sm:col-span-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><MapPin size={12} /> {t("fields.addressLine2")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={address.address_line2} onChange={(e) => setAddress((p) => ({ ...p, address_line2: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <MapPin size={12} /> {t("fields.addressLine2")}
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={address.address_line2}
+                        onChange={(e) =>
+                          setAddress((p) => ({
+                            ...p,
+                            address_line2: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><MapPin size={12} /> {t("fields.city")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={address.city} onChange={(e) => setAddress((p) => ({ ...p, city: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <MapPin size={12} /> {t("fields.city")}
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={address.city}
+                        onChange={(e) =>
+                          setAddress((p) => ({ ...p, city: e.target.value }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><MapPin size={12} /> {t("fields.state")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={address.state} onChange={(e) => setAddress((p) => ({ ...p, state: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <MapPin size={12} /> {t("fields.state")}
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={address.state}
+                        onChange={(e) =>
+                          setAddress((p) => ({ ...p, state: e.target.value }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><MapPin size={12} /> {t("fields.postalCode")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={address.postal_code} onChange={(e) => setAddress((p) => ({ ...p, postal_code: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <MapPin size={12} /> {t("fields.postalCode")}
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={address.postal_code}
+                        onChange={(e) =>
+                          setAddress((p) => ({
+                            ...p,
+                            postal_code: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Globe size={12} /> {t("fields.country")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={address.country} onChange={(e) => setAddress((p) => ({ ...p, country: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <Globe size={12} /> {t("fields.country")}
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={address.country}
+                        onChange={(e) =>
+                          setAddress((p) => ({ ...p, country: e.target.value }))
+                        }
+                      />
                     </label>
                   </fieldset>
                 ) : null}
 
                 {activeTab === "security" ? (
-                  <fieldset disabled={isAdminSelectedUserView} className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60">
+                  <fieldset
+                    disabled={isAdminSelectedUserView}
+                    className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
                     <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
                       <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                         <Shield size={14} />
                         <input
                           type="checkbox"
                           checked={security.two_factor_enabled}
-                          onChange={(e) => setSecurity((p) => ({ ...p, two_factor_enabled: e.target.checked }))}
+                          onChange={(e) =>
+                            setSecurity((p) => ({
+                              ...p,
+                              two_factor_enabled: e.target.checked,
+                            }))
+                          }
                         />
                         {t("fields.twoFactor")}
                       </label>
@@ -813,36 +1196,98 @@ export default function DashboardAccountPage() {
                       {t("labels.twoFactorStatus")} {twoFactorStatusLabel}
                     </div>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Shield size={12} /> {t("fields.otpSecret")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={security.otp_secret} onChange={(e) => setSecurity((p) => ({ ...p, otp_secret: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <Shield size={12} /> {t("fields.otpSecret")}
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={security.otp_secret}
+                        onChange={(e) =>
+                          setSecurity((p) => ({
+                            ...p,
+                            otp_secret: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Shield size={12} /> {t("fields.otpCode")}</span>
-                      <input className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={security.otp_code} onChange={(e) => setSecurity((p) => ({ ...p, otp_code: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <Shield size={12} /> {t("fields.otpCode")}
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={security.otp_code}
+                        onChange={(e) =>
+                          setSecurity((p) => ({
+                            ...p,
+                            otp_code: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                   </fieldset>
                 ) : null}
 
                 {activeTab === "password" ? (
-                  <fieldset disabled={isAdminSelectedUserView} className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60">
+                  <fieldset
+                    disabled={isAdminSelectedUserView}
+                    className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
                     <label className="space-y-2 sm:col-span-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Lock size={12} /> {t("fields.currentPassword")}</span>
-                      <input type="password" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={password.current_password} onChange={(e) => setPassword((p) => ({ ...p, current_password: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <Lock size={12} /> {t("fields.currentPassword")}
+                      </span>
+                      <input
+                        type="password"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={password.current_password}
+                        onChange={(e) =>
+                          setPassword((p) => ({
+                            ...p,
+                            current_password: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Lock size={12} /> {t("fields.newPassword")}</span>
-                      <input type="password" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={password.password} onChange={(e) => setPassword((p) => ({ ...p, password: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <Lock size={12} /> {t("fields.newPassword")}
+                      </span>
+                      <input
+                        type="password"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={password.password}
+                        onChange={(e) =>
+                          setPassword((p) => ({
+                            ...p,
+                            password: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                     <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400"><Lock size={12} /> {t("fields.confirmPassword")}</span>
-                      <input type="password" className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" value={password.password_confirmation} onChange={(e) => setPassword((p) => ({ ...p, password_confirmation: e.target.value }))} />
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <Lock size={12} /> {t("fields.confirmPassword")}
+                      </span>
+                      <input
+                        type="password"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={password.password_confirmation}
+                        onChange={(e) =>
+                          setPassword((p) => ({
+                            ...p,
+                            password_confirmation: e.target.value,
+                          }))
+                        }
+                      />
                     </label>
                   </fieldset>
                 ) : null}
 
                 {isAdminSelectedUserView && !canEditCurrentTab ? (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                    This section is view-only for selected users. Admin editing is currently limited to name, email, phone, and status.
+                    This section is view-only for selected users. Admin editing
+                    is currently limited to name, email, phone, and status.
                   </div>
                 ) : null}
 
@@ -853,7 +1298,11 @@ export default function DashboardAccountPage() {
                     disabled={saving || !canEditCurrentTab}
                     className="h-11 rounded-2xl bg-[#003566] px-5 text-xs font-bold uppercase tracking-[0.16em] text-white hover:bg-[#00284d]"
                   >
-                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    {saving ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
                     {saving ? t("actions.saving") : t("actions.syncProfile")}
                   </Button>
                 </div>

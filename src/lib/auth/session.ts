@@ -11,6 +11,16 @@ export type SessionUser = {
   email: string;
   avatar?: string;
   role: UserRole;
+  type?: "ADMIN" | "EMPLOYEE" | "CLIENT";
+  status?: "ACTIVE" | "DISABLED" | "BLOCKED";
+  phone?: string | null;
+  location_id?: number | null;
+  location_role?: string | null;
+  client_location_id?: number | null;
+  has_location_assignment?: boolean;
+  can_access_board?: boolean;
+  location?: { id: number; name?: string; code?: string; role?: string } | null;
+  locations?: Array<{ id: number; name?: string; code?: string; role?: string }>;
 };
 
 export type SessionData = {
@@ -39,6 +49,16 @@ function decodeSession(value: string): SessionUser | null {
       email: parsed.email,
       avatar: parsed.avatar,
       role,
+      type: parsed.type,
+      status: parsed.status,
+      phone: parsed.phone,
+      location_id: parsed.location_id,
+      location_role: parsed.location_role,
+      client_location_id: parsed.client_location_id,
+      has_location_assignment: parsed.has_location_assignment,
+      can_access_board: parsed.can_access_board,
+      location: parsed.location,
+      locations: parsed.locations,
     };
   } catch {
     return null;

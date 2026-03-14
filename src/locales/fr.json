@@ -108,6 +108,7 @@
       "audit": "Audit",
       "errors": "Erreurs",
       "locations": "Emplacements",
+      "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Entonnoir de vente",
       "socialAutomation": "Automatisation sociale"
     },
@@ -577,6 +578,8 @@
       "phoneNumber": "Numéro de téléphone",
       "dateOfBirth": "Date de naissance",
       "locale": "Langue",
+      "location": "Emplacement",
+      "locationRole": "Role d'emplacement",
       "timezone": "Fuseau horaire",
       "addressLine1": "Adresse ligne 1",
       "addressLine2": "Adresse ligne 2",
@@ -602,6 +605,10 @@
       "pendingVerification": "Pas encore confirmé",
       "notConfigured": "Non configuré",
       "user": "Utilisateur",
+      "noLocationAssigned": "Aucun emplacement assigne",
+      "assignmentStatus": "Statut d'affectation",
+      "boardAccessEnabled": "L'acces au tableau est active pour cet employe.",
+      "boardAccessDisabled": "L'acces au tableau depend d'une affectation d'emplacement valide.",
       "profilePicture": "Photo de profil",
       "uploadHelp": "Téléversez un nouvel avatar (max. 5 Mo, WEBP/JPG/PNG)."
     },

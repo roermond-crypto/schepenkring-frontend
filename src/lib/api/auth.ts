@@ -9,7 +9,12 @@ export type SessionUser = {
   type?: "ADMIN" | "EMPLOYEE" | "CLIENT";
   status?: "ACTIVE" | "DISABLED" | "BLOCKED";
   phone?: string | null;
+  location_id?: number | null;
+  location_role?: string | null;
   client_location_id?: number | null;
+  has_location_assignment?: boolean;
+  can_access_board?: boolean;
+  location?: { id: number; name?: string; code?: string; role?: string } | null;
   locations?: Array<{ id: number; name?: string; code?: string; role?: string }>;
 };
 
