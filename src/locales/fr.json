@@ -498,12 +498,13 @@
     },
     "fields": {
       "fullName": "Nom complet",
-      "emailAddress": "Adresse e-mail",
-      "systemPassword": "Mot de passe système",
-      "assignment": "Affectation",
-      "clearance": "Habilitation",
-      "accountStatus": "Statut du compte"
-    },
+    "emailAddress": "Adresse e-mail",
+    "systemPassword": "Mot de passe système",
+    "assignment": "Affectation",
+    "location": "Emplacement",
+    "clearance": "Habilitation",
+    "accountStatus": "Statut du compte"
+  },
     "options": {
       "limited": "Limité",
       "full": "Complet",
@@ -964,6 +965,40 @@
         "offline": "Hors ligne",
         "away": "Absent"
       }
+    }
+  },
+  "DashboardClientChat": {
+    "header": {
+      "title": "Chat client IA",
+      "subtitle": "Assistant privé",
+      "description": "Posez des questions sur votre bateau, l’assurance, les visites ou l’assistance du port. Cette conversation est liée à votre emplacement afin que l’équipe puisse la suivre si nécessaire.",
+      "location": "Emplacement lié : {location}"
+    },
+    "assistant": {
+      "title": "Assistant IA fluide",
+      "description": "L’IA répond dans le même fil et l’équipe de votre emplacement peut suivre la conversation."
+    },
+    "loading": "Préparation de votre conversation...",
+    "thinking": "Réflexion en cours...",
+    "sources": "Connaissances utilisées",
+    "empty": {
+      "title": "Commencez votre conversation",
+      "description": "Écrivez votre premier message ci-dessous et l’IA répondra dans ce fil."
+    },
+    "composer": {
+      "placeholder": "Posez votre question...",
+      "send": "Envoyer le message",
+      "enterHint": "Appuyez sur Entrée pour envoyer",
+      "encrypted": "Conversation chiffrée"
+    },
+    "errors": {
+      "startFailed": "Impossible de démarrer votre conversation IA.",
+      "sendFailed": "Impossible d’envoyer votre message pour le moment.",
+      "replyMissing": "L’IA n’a pas renvoyé de réponse."
+    },
+    "noLocation": {
+      "title": "Aucun emplacement attribué",
+      "description": "Votre compte n’a pas encore d’emplacement, le chat IA ne peut donc pas démarrer."
     }
   },
   "DashboardSignhostFlow": {

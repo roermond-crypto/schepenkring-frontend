@@ -499,12 +499,13 @@
     },
     "fields": {
       "fullName": "Volledige naam",
-      "emailAddress": "E-mailadres",
-      "systemPassword": "Systeemwachtwoord",
-      "assignment": "Toewijzing",
-      "clearance": "Toegang",
-      "accountStatus": "Accountstatus"
-    },
+    "emailAddress": "E-mailadres",
+    "systemPassword": "Systeemwachtwoord",
+    "assignment": "Toewijzing",
+    "location": "Locatie",
+    "clearance": "Toegang",
+    "accountStatus": "Accountstatus"
+  },
     "options": {
       "limited": "Beperkt",
       "full": "Volledig",
@@ -965,6 +966,40 @@
         "offline": "Offline",
         "away": "Afwezig"
       }
+    }
+  },
+  "DashboardClientChat": {
+    "header": {
+      "title": "AI-klantchat",
+      "subtitle": "Privé assistent",
+      "description": "Stel vragen over je boot, verzekering, bezichtigingen of havenondersteuning. Dit gesprek is gekoppeld aan je locatie zodat het team kan meekijken wanneer dat nodig is.",
+      "location": "Gekoppelde locatie: {location}"
+    },
+    "assistant": {
+      "title": "Vloeiende AI-assistent",
+      "description": "De AI antwoordt in hetzelfde gesprek en je locatieteam kan het gesprek volgen."
+    },
+    "loading": "Je gesprek wordt voorbereid...",
+    "thinking": "Even nadenken...",
+    "sources": "Gebruikte kennis",
+    "empty": {
+      "title": "Start je gesprek",
+      "description": "Schrijf hieronder je eerste bericht en de AI antwoordt in deze thread."
+    },
+    "composer": {
+      "placeholder": "Stel je vraag...",
+      "send": "Bericht verzenden",
+      "enterHint": "Druk op Enter om te verzenden",
+      "encrypted": "Versleuteld gesprek"
+    },
+    "errors": {
+      "startFailed": "Het AI-gesprek kon niet worden gestart.",
+      "sendFailed": "Je bericht kon nu niet worden verzonden.",
+      "replyMissing": "De AI heeft geen antwoord teruggegeven."
+    },
+    "noLocation": {
+      "title": "Geen locatie gekoppeld",
+      "description": "Je account heeft nog geen locatie, daarom kan de AI-chat niet worden gestart."
     }
   },
   "DashboardSignhostFlow": {

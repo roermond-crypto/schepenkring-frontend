@@ -498,12 +498,13 @@
     },
     "fields": {
       "fullName": "Full Name",
-      "emailAddress": "Email Address",
-      "systemPassword": "System Password",
-      "assignment": "Assignment",
-      "clearance": "Clearance",
-      "accountStatus": "Account Status"
-    },
+    "emailAddress": "Email Address",
+    "systemPassword": "System Password",
+    "assignment": "Assignment",
+    "location": "Location",
+    "clearance": "Clearance",
+    "accountStatus": "Account Status"
+  },
     "options": {
       "limited": "Limited",
       "full": "Full",
@@ -964,6 +965,40 @@
         "offline": "Offline",
         "away": "Away"
       }
+    }
+  },
+  "DashboardClientChat": {
+    "header": {
+      "title": "AI Client Chat",
+      "subtitle": "Private assistant",
+      "description": "Ask questions about your boat, insurance, viewings, or harbor support. This conversation is linked to your location so the team can follow along when needed.",
+      "location": "Connected location: {location}"
+    },
+    "assistant": {
+      "title": "Fluent AI Assistant",
+      "description": "The AI answers in the same thread and your location team can follow the conversation."
+    },
+    "loading": "Preparing your conversation...",
+    "thinking": "Thinking...",
+    "sources": "Knowledge used",
+    "empty": {
+      "title": "Start your conversation",
+      "description": "Write your first message below and the AI will respond in this thread."
+    },
+    "composer": {
+      "placeholder": "Ask your question...",
+      "send": "Send message",
+      "enterHint": "Press Enter to send",
+      "encrypted": "Encrypted conversation"
+    },
+    "errors": {
+      "startFailed": "Could not start your AI conversation.",
+      "sendFailed": "Could not send your message right now.",
+      "replyMissing": "The AI did not return a reply."
+    },
+    "noLocation": {
+      "title": "No location assigned",
+      "description": "Your account does not have a location yet, so AI chat cannot be started."
     }
   },
   "DashboardSignhostFlow": {

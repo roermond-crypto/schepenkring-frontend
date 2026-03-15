@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   UserPlus,
   Trash2,
@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { setClientSession } from "@/lib/auth/client-session";
+import { useClientSession } from "@/components/session/ClientSessionProvider";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -190,12 +191,20 @@ function formatDateTime(value?: string | null) {
 
 export default function RoleManagementPage() {
   const router = useRouter();
+  const params = useParams<{ role: string }>();
   const locale = useLocale();
   const t = useTranslations("DashboardAdminUsers");
+  const { user: sessionUser } = useClientSession();
+  const routeRole = params.role;
+  const isEmployeeView = routeRole === "employee" || sessionUser.role === "employee";
+  const canManageUsers = !isEmployeeView;
+  const hasEmployeeLocation = Boolean(sessionUser.location_id);
 
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<UserCategory>("Employee");
+  const [activeTab, setActiveTab] = useState<UserCategory>(
+    isEmployeeView ? "Customer" : "Employee",
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -216,18 +225,45 @@ export default function RoleManagementPage() {
   });
   const syncFailedText = t("toasts.syncFailed");
 
+  useEffect(() => {
+    if (
+      sessionUser.role === "employee" &&
+      routeRole === "admin"
+    ) {
+      router.replace(`/${locale}/dashboard/employee/users`);
+    }
+  }, [locale, routeRole, router, sessionUser.role]);
+
+  useEffect(() => {
+    if (isEmployeeView) {
+      setActiveTab("Customer");
+    }
+  }, [isEmployeeView]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get("/admin/users");
-      const list = Array.isArray(data?.data) ? data.data : [];
+      const endpoint = isEmployeeView ? "/employee/users" : "/admin/users";
+      const { data } = await api.get(endpoint, {
+        params: isEmployeeView
+          ? {
+              search: searchQuery || undefined,
+              per_page: 25,
+            }
+          : undefined,
+      });
+      const list = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+          ? data
+          : [];
       setUsers(list);
     } catch (err: unknown) {
       toast.error(extractErrorMessage(err, syncFailedText));
     } finally {
       setLoading(false);
     }
-  }, [syncFailedText]);
+  }, [isEmployeeView, searchQuery, syncFailedText]);
 
   useEffect(() => {
     void fetchData();
@@ -347,6 +383,18 @@ export default function RoleManagementPage() {
         name: impersonated.name,
         email: impersonated.email,
         role: mapTypeToRole(impersonated.type as UserType),
+        type: impersonated.type as UserType,
+        status: impersonated.status as UserStatus,
+        phone: impersonated.phone ?? null,
+        location_id: impersonated.location_id ?? null,
+        location_role: impersonated.location_role ?? null,
+        client_location_id: impersonated.client_location_id ?? null,
+        has_location_assignment: impersonated.has_location_assignment ?? false,
+        can_access_board: impersonated.can_access_board ?? false,
+        location: impersonated.location ?? null,
+        locations: Array.isArray(impersonated.locations)
+          ? impersonated.locations
+          : [],
       });
 
       localStorage.setItem(
@@ -381,8 +429,11 @@ export default function RoleManagementPage() {
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
+      if (isEmployeeView && (u.role === "employee" || u.role === "admin")) {
+        return false;
+      }
       const category = mapTypeToCategory(u.type);
-      if (category !== activeTab) return false;
+      if (!isEmployeeView && category !== activeTab) return false;
       const q = searchQuery.toLowerCase();
       return (
         u.name.toLowerCase().includes(q) ||
@@ -390,7 +441,7 @@ export default function RoleManagementPage() {
         (u.phone || "").toLowerCase().includes(q)
       );
     });
-  }, [users, searchQuery, activeTab]);
+  }, [users, searchQuery, activeTab, isEmployeeView]);
 
   const roleCounts = useMemo(() => {
     const counts: Record<UserCategory, number> = {
@@ -400,11 +451,14 @@ export default function RoleManagementPage() {
       Customer: 0,
     };
     users.forEach((u) => {
+      if (isEmployeeView && (u.role === "employee" || u.role === "admin")) {
+        return;
+      }
       const category = mapTypeToCategory(u.type);
       counts[category] += 1;
     });
     return counts;
-  }, [users]);
+  }, [users, isEmployeeView]);
 
   return (
     <div className="min-h-screen max-w-[1400px] p-4 sm:p-6 lg:p-8">
@@ -433,21 +487,32 @@ export default function RoleManagementPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button
-            onClick={() => {
-              setNewUser((prev) => ({ ...prev, role: activeTab }));
-              setIsModalOpen(true);
-            }}
-            className="h-10 shrink-0 gap-2 rounded-lg bg-[#003566] px-5 text-xs font-bold tracking-wider text-white transition-colors hover:bg-[#002a52]"
-          >
-            <UserPlus size={15} />
-            <span className="hidden sm:inline">{t("header.provisionNew")}</span>
-          </Button>
+          {canManageUsers ? (
+            <Button
+              onClick={() => {
+                setNewUser((prev) => ({ ...prev, role: activeTab }));
+                setIsModalOpen(true);
+              }}
+              className="h-10 shrink-0 gap-2 rounded-lg bg-[#003566] px-5 text-xs font-bold tracking-wider text-white transition-colors hover:bg-[#002a52]"
+            >
+              <UserPlus size={15} />
+              <span className="hidden sm:inline">{t("header.provisionNew")}</span>
+            </Button>
+          ) : null}
         </div>
       </div>
 
+      {!hasEmployeeLocation && isEmployeeView ? (
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-800">
+          No location assigned for this user.
+        </div>
+      ) : null}
+
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {tabConfig.map(({ id, icon: Icon }) => {
+        {(isEmployeeView
+          ? tabConfig.filter(({ id }) => id === "Customer")
+          : tabConfig
+        ).map(({ id, icon: Icon }) => {
           const count = roleCounts[id];
           const isActive = activeTab === id;
           return (
@@ -512,13 +577,13 @@ export default function RoleManagementPage() {
             {t("fields.emailAddress")}
           </p>
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            {t("fields.clearance")}
+            {isEmployeeView ? t("fields.location") : t("fields.clearance")}
           </p>
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {t("labels.status")}
           </p>
           <p className="text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            {t("actions.terminate")}
+            {canManageUsers ? t("actions.terminate") : t("actions.refresh")}
           </p>
         </div>
 
@@ -602,13 +667,22 @@ export default function RoleManagementPage() {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
-                        <Shield size={11} />
-                        {user.role || user.type}
-                      </span>
-                      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
-                        {user.two_factor_enabled ? "2FA On" : "2FA Off"}
-                      </span>
+                      {isEmployeeView ? (
+                        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                          <Anchor size={11} />
+                          {user.client_location?.name || "No location"}
+                        </span>
+                      ) : (
+                        <>
+                          <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                            <Shield size={11} />
+                            {user.role || user.type}
+                          </span>
+                          <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                            {user.two_factor_enabled ? "2FA On" : "2FA Off"}
+                          </span>
+                        </>
+                      )}
                     </div>
 
                     <span
@@ -623,88 +697,100 @@ export default function RoleManagementPage() {
                     </span>
 
                     <div className="relative flex justify-end">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenActionId(
-                            openActionId === user.id ? null : user.id,
-                          );
-                        }}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-
-                      <AnimatePresence>
-                        {openActionId === user.id && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="absolute right-0 top-10 z-30 w-52 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+                      {canManageUsers ? (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenActionId(
+                                openActionId === user.id ? null : user.id,
+                              );
+                            }}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
                           >
-                            <button
-                              onClick={() => {
-                                router.push(
-                                  `/${locale}/dashboard/admin/account?userId=${user.id}`,
-                                );
-                                setOpenActionId(null);
-                              }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                            >
-                              <span className="inline-flex items-center gap-3">
-                                <UserCircle size={15} className="text-blue-500" />
-                                View account
-                              </span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                void handleStatusToggle(user);
-                                setOpenActionId(null);
-                              }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                            >
-                              <span className="inline-flex items-center gap-3">
-                                {user.status === "ACTIVE" ? (
-                                  <XCircle size={15} className="text-red-500" />
-                                ) : (
-                                  <CheckCircle2 size={15} className="text-emerald-500" />
-                                )}
-                                {user.status === "ACTIVE"
-                                  ? "Set inactive"
-                                  : "Set active"}
-                              </span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setImpersonateTarget(user);
-                                setAdminPassword("");
-                                setOtpCode("");
-                                setOpenActionId(null);
-                              }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                            >
-                              <span className="inline-flex items-center gap-3">
-                                <LogIn size={15} className="text-emerald-500" />
-                                {t("actions.assumeIdentity")}
-                              </span>
-                            </button>
-                            <div className="my-1 h-px bg-slate-100 dark:bg-slate-700" />
-                            <button
-                              onClick={() => {
-                                setTerminateTarget(user);
-                                setOpenActionId(null);
-                              }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
-                            >
-                              <span className="inline-flex items-center gap-3">
-                                <Trash2 size={15} />
-                                {t("actions.terminate")}
-                              </span>
-                            </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                            <MoreVertical size={16} />
+                          </button>
+
+                          <AnimatePresence>
+                            {openActionId === user.id && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="absolute right-0 top-10 z-30 w-52 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+                              >
+                                <button
+                                  onClick={() => {
+                                    router.push(
+                                      `/${locale}/dashboard/admin/account?userId=${user.id}`,
+                                    );
+                                    setOpenActionId(null);
+                                  }}
+                                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                                >
+                                  <span className="inline-flex items-center gap-3">
+                                    <UserCircle size={15} className="text-blue-500" />
+                                    View account
+                                  </span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    void handleStatusToggle(user);
+                                    setOpenActionId(null);
+                                  }}
+                                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                                >
+                                  <span className="inline-flex items-center gap-3">
+                                    {user.status === "ACTIVE" ? (
+                                      <XCircle size={15} className="text-red-500" />
+                                    ) : (
+                                      <CheckCircle2 size={15} className="text-emerald-500" />
+                                    )}
+                                    {user.status === "ACTIVE"
+                                      ? "Set inactive"
+                                      : "Set active"}
+                                  </span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setImpersonateTarget(user);
+                                    setAdminPassword("");
+                                    setOtpCode("");
+                                    setOpenActionId(null);
+                                  }}
+                                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                                >
+                                  <span className="inline-flex items-center gap-3">
+                                    <LogIn size={15} className="text-emerald-500" />
+                                    {t("actions.assumeIdentity")}
+                                  </span>
+                                </button>
+                                <div className="my-1 h-px bg-slate-100 dark:bg-slate-700" />
+                                <button
+                                  onClick={() => {
+                                    setTerminateTarget(user);
+                                    setOpenActionId(null);
+                                  }}
+                                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
+                                >
+                                  <span className="inline-flex items-center gap-3">
+                                    <Trash2 size={15} />
+                                    {t("actions.terminate")}
+                                  </span>
+                                </button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => void fetchData()}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                          title={t("actions.refresh")}
+                        >
+                          <RefreshCw size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -731,7 +817,7 @@ export default function RoleManagementPage() {
       </div>
 
       <AnimatePresence>
-        {isModalOpen && (
+        {canManageUsers && isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
             <motion.div
               initial={{ opacity: 0 }}
