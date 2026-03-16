@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { signhostApi, type SignRequest } from "@/lib/api/signhost";
+import { useClientSession } from "@/components/session/ClientSessionProvider";
 
 type ContractLanguage = "nl" | "en" | "de" | "fr";
 type ContractTemplateKey = "sale_agreement" | "escrow_form";
@@ -1177,6 +1178,7 @@ export function SignhostFlow({
   locationOptions = [],
 }: SignhostFlowProps) {
   const locale = useLocale();
+  const { user } = useClientSession();
   const localeContractLanguage = resolveContractLanguage(locale);
   const params = useParams<{ role?: string }>();
   const role = params?.role?.toLowerCase();
@@ -1199,7 +1201,6 @@ export function SignhostFlow({
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSection, setEditorSection] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSending, setIsSending] = useState(false);
   const [contractTemplateKey, setContractTemplateKey] =
     useState<ContractTemplateKey>("sale_agreement");
 
@@ -1242,6 +1243,31 @@ export function SignhostFlow({
         : { ...prev, language: localeContractLanguage },
     );
   }, [localeContractLanguage]);
+
+  useEffect(() => {
+    const trimmedName = user.name?.trim() || "";
+    const trimmedEmail = user.email?.trim() || "";
+    const trimmedPhone = user.phone?.trim() || "";
+
+    setDraft((prev) => {
+      const updates: Partial<ContractDraft> = {};
+
+      if (user.role === "client") {
+        if (!prev.clientName && trimmedName) updates.clientName = trimmedName;
+        if (!prev.clientEmail && trimmedEmail)
+          updates.clientEmail = trimmedEmail;
+        if (!prev.clientPhone && trimmedPhone)
+          updates.clientPhone = trimmedPhone;
+      } else {
+        if (!prev.companyEmail && trimmedEmail)
+          updates.companyEmail = trimmedEmail;
+        if (!prev.companyPhone && trimmedPhone)
+          updates.companyPhone = trimmedPhone;
+      }
+
+      return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
+    });
+  }, [user.email, user.name, user.phone, user.role]);
 
   useEffect(() => {
     try {
@@ -1590,8 +1616,23 @@ export function SignhostFlow({
           location_snapshot: selectedLocation,
         },
       });
-      setSignRequest(res.sign_request);
-      const signUrl = res.sign_url || res.sign_request.sign_url;
+      let nextSignRequest = res.sign_request;
+      let signUrl = res.sign_url || res.sign_request.sign_url;
+
+      if (shouldSendToSignhost && !signUrl && nextSignRequest?.id) {
+        const deeplinkRes = await signhostApi.createRequest(
+          {
+            sign_request_id: nextSignRequest.id,
+            recipients: resolvedRecipients,
+            reference: `vessel-${yachtId}`,
+          },
+          `signhost_${nextSignRequest.id}_${Date.now()}`,
+        );
+        nextSignRequest = deeplinkRes.sign_request;
+        signUrl = deeplinkRes.sign_request.sign_url;
+      }
+
+      setSignRequest(nextSignRequest);
       if (shouldSendToSignhost && signUrl) {
         window.open(signUrl, "_blank", "noopener,noreferrer");
         toast.success("Contract generated and sent to Signhost.");
@@ -1619,47 +1660,6 @@ export function SignhostFlow({
     } finally {
       cleanupPdfGenerationArtifacts();
       setIsGenerating(false);
-    }
-  };
-
-  const handleCreateSignhostDeeplink = async () => {
-    if (!signRequest) {
-      toast.error("Generate the contract PDF first.");
-      return;
-    }
-
-    if (resolvedRecipients.length === 0) {
-      toast.error(
-        "Add buyer or seller name and e-mail before creating the deeplink.",
-      );
-      return;
-    }
-
-    setIsSending(true);
-    try {
-      const res = await signhostApi.createRequest(
-        {
-          sign_request_id: signRequest.id,
-          recipients: resolvedRecipients,
-          reference: `vessel-${yachtId}`,
-        },
-        `signhost_${signRequest.id}_${Date.now()}`,
-      );
-      setSignRequest(res.sign_request);
-      toast.success("Signhost deeplink created.");
-    } catch (error: unknown) {
-      const message =
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error &&
-        typeof (error as { response?: { data?: { message?: string } } })
-          .response?.data?.message === "string"
-          ? (error as { response?: { data?: { message?: string } } }).response!
-              .data!.message!
-          : "Failed to create Signhost deeplink.";
-      toast.error(message);
-    } finally {
-      setIsSending(false);
     }
   };
 
@@ -1698,9 +1698,9 @@ export function SignhostFlow({
   }
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/60 p-6 dark:border-slate-800 dark:bg-slate-900/80">
-        <div>
+    <div className="overflow-hidden">
+      <div className="">
+        <div className="mb-4">
           <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
             <FilePenLine
               size={18}
@@ -1768,37 +1768,11 @@ export function SignhostFlow({
             <FileText className="mr-2 h-4 w-4" />
             {editorCopy.downloadPdf}
           </Button>
-          {signRequest && !signRequest.sign_url && (
-            <Button
-              type="button"
-              onClick={handleCreateSignhostDeeplink}
-              disabled={isSending}
-              className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
-            >
-              {isSending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
-              {editorCopy.createDeeplink}
-            </Button>
-          )}
-          {signRequest?.sign_url && (
-            <a
-              href={signRequest.sign_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              {editorCopy.openDeeplink}
-            </a>
-          )}
         </div>
       </div>
 
-      <div className="p-6">
-        <div className="rounded-3xl border border-[#d7e3f1] bg-gradient-to-br from-[#f8fbff] to-white shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-950 overflow-hidden">
+      <div className="">
+        <div className="">
           <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-6">
             <p className="text-[11px] font-black uppercase tracking-[0.24em] text-blue-600 dark:text-sky-300">
               {contractTemplateKey === "escrow_form"
@@ -1904,7 +1878,7 @@ export function SignhostFlow({
               </div>
             </div>
           ) : (
-            <div className="mt-6 bg-white px-6 py-8 shadow-sm0 dark:bg-slate-950">
+            <div className="py-6">
               <div className="mx-auto max-w-[920px] text-slate-900 dark:text-slate-100">
                 <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-end gap-6">
                   <div className="flex justify-center">

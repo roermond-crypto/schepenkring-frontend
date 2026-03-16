@@ -108,6 +108,7 @@
       "audit": "Audit",
       "errors": "Fehler",
       "locations": "Standorte",
+      "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Salesfunnel",
       "socialAutomation": "Social-Automatisierung"
     },
@@ -497,12 +498,13 @@
     },
     "fields": {
       "fullName": "Vollstandiger Name",
-      "emailAddress": "E-Mail-Adresse",
-      "systemPassword": "Systempasswort",
-      "assignment": "Zuweisung",
-      "clearance": "Berechtigung",
-      "accountStatus": "Kontostatus"
-    },
+    "emailAddress": "E-Mail-Adresse",
+    "systemPassword": "Systempasswort",
+    "assignment": "Zuweisung",
+    "location": "Standort",
+    "clearance": "Berechtigung",
+    "accountStatus": "Kontostatus"
+  },
     "options": {
       "limited": "Begrenzt",
       "full": "Voll",
@@ -577,6 +579,8 @@
       "phoneNumber": "Telefonnummer",
       "dateOfBirth": "Geburtsdatum",
       "locale": "Sprache",
+      "location": "Standort",
+      "locationRole": "Standortrolle",
       "timezone": "Zeitzone",
       "addressLine1": "Adresszeile 1",
       "addressLine2": "Adresszeile 2",
@@ -602,6 +606,10 @@
       "pendingVerification": "Noch nicht bestatigt",
       "notConfigured": "Noch nicht eingerichtet",
       "user": "Benutzer",
+      "noLocationAssigned": "Kein Standort zugewiesen",
+      "assignmentStatus": "Zuweisungsstatus",
+      "boardAccessEnabled": "Board-Zugriff ist fuer diesen Mitarbeiter aktiviert.",
+      "boardAccessDisabled": "Board-Zugriff haengt von einer gueltigen Standortzuweisung ab.",
       "profilePicture": "Profilbild",
       "uploadHelp": "Laden Sie einen neuen Avatar hoch (max. 5MB, WEBP/JPG/PNG)."
     },
@@ -957,6 +965,40 @@
         "offline": "Offline",
         "away": "Abwesend"
       }
+    }
+  },
+  "DashboardClientChat": {
+    "header": {
+      "title": "KI-Kundenchat",
+      "subtitle": "Privater Assistent",
+      "description": "Stellen Sie Fragen zu Ihrem Boot, zur Versicherung, zu Besichtigungen oder zur Hafenunterstützung. Diese Unterhaltung ist mit Ihrem Standort verknüpft, damit das Team bei Bedarf mitverfolgen kann.",
+      "location": "Verknüpfter Standort: {location}"
+    },
+    "assistant": {
+      "title": "Flüssiger KI-Assistent",
+      "description": "Die KI antwortet im selben Gespräch und Ihr Standortteam kann die Unterhaltung mitverfolgen."
+    },
+    "loading": "Ihre Unterhaltung wird vorbereitet...",
+    "thinking": "Denkt nach...",
+    "sources": "Verwendetes Wissen",
+    "empty": {
+      "title": "Starten Sie Ihre Unterhaltung",
+      "description": "Schreiben Sie unten Ihre erste Nachricht und die KI antwortet in diesem Verlauf."
+    },
+    "composer": {
+      "placeholder": "Stellen Sie Ihre Frage...",
+      "send": "Nachricht senden",
+      "enterHint": "Zum Senden Enter drücken",
+      "encrypted": "Verschlüsselte Unterhaltung"
+    },
+    "errors": {
+      "startFailed": "Die KI-Unterhaltung konnte nicht gestartet werden.",
+      "sendFailed": "Ihre Nachricht konnte gerade nicht gesendet werden.",
+      "replyMissing": "Die KI hat keine Antwort zurückgegeben."
+    },
+    "noLocation": {
+      "title": "Kein Standort zugewiesen",
+      "description": "Ihrem Konto ist noch kein Standort zugewiesen, daher kann der KI-Chat nicht gestartet werden."
     }
   },
   "DashboardSignhostFlow": {

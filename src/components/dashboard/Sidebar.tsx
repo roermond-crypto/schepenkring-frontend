@@ -19,8 +19,8 @@ import {
   Users,
   Wifi,
   WifiOff,
-  ShieldCheck,
   HelpCircle,
+  Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -117,6 +117,11 @@ export function Sidebar({
         icon: HelpCircle,
       });
       items.push({
+        title: t.knowledgeBrain,
+        href: `${root}/knowledge-brain`,
+        icon: Brain,
+      });
+      items.push({
         title: t.socialAutomation,
         href: `${root}/social`,
         icon: Share2,
@@ -126,6 +131,19 @@ export function Sidebar({
         title: t.errors,
         href: `${root}/errors`,
         icon: TriangleAlert,
+      });
+    } else if (role === "employee") {
+      items.push({ title: t.clients, href: `${root}/users`, icon: Users });
+      items.push({
+        title: t.interaction,
+        href: `${root}/chat`,
+        icon: MessageSquare,
+      });
+    } else if (role === "client") {
+      items.push({
+        title: t.interaction,
+        href: `${root}/chat`,
+        icon: MessageSquare,
       });
     }
 

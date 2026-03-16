@@ -37,6 +37,50 @@ const META: Record<AppLocale, { name: string; icon: StaticImageData }> = {
   fr: { name: "Français", icon: frFlag },
 };
 
+const COPY: Record<
+  AppLocale,
+  {
+    currentLanguageAria: string;
+    unsavedTitle: string;
+    unsavedDescription: string;
+    stay: string;
+    switchLanguage: string;
+  }
+> = {
+  en: {
+    currentLanguageAria: "Language: {language}",
+    unsavedTitle: "Unsaved boat progress",
+    unsavedDescription:
+      "You have unsaved boat draft progress. Switching language may interrupt your current editing flow.",
+    stay: "Stay",
+    switchLanguage: "Switch language",
+  },
+  nl: {
+    currentLanguageAria: "Taal: {language}",
+    unsavedTitle: "Niet-opgeslagen bootvoortgang",
+    unsavedDescription:
+      "Je hebt niet-opgeslagen voortgang in het bootconcept. Van taal wisselen kan je huidige bewerkflow onderbreken.",
+    stay: "Blijven",
+    switchLanguage: "Taal wisselen",
+  },
+  de: {
+    currentLanguageAria: "Sprache: {language}",
+    unsavedTitle: "Ungespeicherter Bootsfortschritt",
+    unsavedDescription:
+      "Sie haben ungespeicherten Fortschritt im Bootsentwurf. Ein Sprachwechsel kann Ihren aktuellen Bearbeitungsablauf unterbrechen.",
+    stay: "Bleiben",
+    switchLanguage: "Sprache wechseln",
+  },
+  fr: {
+    currentLanguageAria: "Langue : {language}",
+    unsavedTitle: "Progression du bateau non enregistree",
+    unsavedDescription:
+      "Vous avez une progression non enregistree dans le brouillon du bateau. Changer de langue peut interrompre votre flux de modification actuel.",
+    stay: "Rester",
+    switchLanguage: "Changer de langue",
+  },
+};
+
 function hasUnsavedYachtDraftProgress(pathname: string): boolean {
   if (typeof window === "undefined") return false;
 
@@ -82,6 +126,7 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const copy = COPY[locale] ?? COPY.en;
 
   const flushDraftBeforeNavigate = async () => {
     if (typeof window === "undefined") return;
@@ -126,7 +171,10 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className="flex items-center space-x-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700"
-        aria-label={`Language: ${META[locale].name}`}
+        aria-label={copy.currentLanguageAria.replace(
+          "{language}",
+          META[locale].name,
+        )}
       >
         <Image
           src={META[locale].icon}
@@ -166,10 +214,10 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
         <AlertDialogContent className="rounded-2xl border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-[#003566] dark:text-slate-100">
-              Unsaved boat progress
+              {copy.unsavedTitle}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-slate-500 dark:text-slate-400">
-              You have unsaved boat draft progress. Switching language may interrupt your current editing flow.
+              {copy.unsavedDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -179,7 +227,7 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
                 setConfirmOpen(false);
               }}
             >
-              Stay
+              {copy.stay}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
@@ -190,7 +238,7 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
                 setConfirmOpen(false);
               }}
             >
-              Switch language
+              {copy.switchLanguage}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -170,6 +170,7 @@ type AiStagedImage = {
 type GalleryState = { [key: string]: any[] };
 
 type ImageGridDensity = "regular" | "compact" | "dense";
+type ReviewPipelineImage = PipelineImage & { client_upload_key?: string };
 
 // Availability Rule Type
 type AvailabilityRule = {
@@ -345,7 +346,8 @@ const YACHT_FORM_TEXT = {
       daysOfWeek: "Days of Week",
       startTime: "Start Time",
       endTime: "End Time",
-      reviewSummary: "Review all steps before submitting. Completed steps are marked with a blue checkmark in the tab bar above.",
+      reviewSummary:
+        "Review all steps before submitting. Completed steps are marked with a blue checkmark in the tab bar above.",
       vesselName: "Vessel Name *",
       manufacturer: "Manufacturer / Make",
       model: "Model",
@@ -363,7 +365,8 @@ const YACHT_FORM_TEXT = {
       stepReview: "Review",
       stepContract: "Contract",
       stepOneTitle: "Vessel Assets & AI Extraction",
-      stepOneDescription: "Upload images -> system auto-optimizes -> approve -> then AI fills all form fields.",
+      stepOneDescription:
+        "Upload images -> system auto-optimizes -> approve -> then AI fills all form fields.",
       imagesApproved: "Images Approved",
       vesselDescriptionHelp: "Vessel Description",
       optionalRecommended: "(optional but recommended)",
@@ -375,11 +378,242 @@ const YACHT_FORM_TEXT = {
       completed: "Completed",
       pending: "Pending",
       continueToContract: "Save and Continue to Contract",
+      finishFlow: "Finish",
+      finishFlowToast: "Vessel flow completed.",
       contractStepDescription:
         "Manage the contract template, print the PDF, and generate the Signhost-ready contract from this step.",
       reviewContractNotice:
         "Save this vessel first. The contract flow opens in the next step after the vessel record is stored.",
       saveVesselFirst: "Save Vessel First",
+      imageCountLabel: "Images",
+      processingBadge: "processing",
+      readyForReviewBadge: "ready for review",
+      approvedBadge: "approved",
+      savingOrder: "Saving order...",
+      aiAutoSort: "AI auto-sort",
+      addMoreImages: "Add More",
+      deleteAllImages: "Delete all images",
+      clickToAddImages: "Click to add up to {count} images",
+      uploadingImages: "Uploading images...",
+      uploadAreaPendingHelp:
+        "This area stays visible until the current upload finishes.",
+      uploadAreaFormatsHelp: "JPEG, PNG, HEIC auto-optimized by AI",
+      uploadAreaHint: "Include HIN plates, docs, registration, engine hours",
+      processingStatusLabel: "Processing...",
+      readyForReviewStatusLabel: "Ready for Review",
+      approvedStatusLabel: "Approved",
+      failedStatusLabel: "Failed",
+      dragToReorder: "Drag to reorder",
+      aiReviewScore: "AI review score",
+      keepOriginal: "Keep original",
+      aiComments: "AI comments",
+      approveImage: "Approve",
+      generalCategory: "General",
+      acceptableQuality: "Acceptable",
+      offlineQuality: "Offline",
+      galleryReadinessHint: "Measures gallery readiness after AI cleanup.",
+      galleryReady: "Gallery ready",
+      needsReview: "Needs review",
+      needsCorrection: "Needs correction",
+      scoreSuitabilityHelp:
+        "This score reflects how suitable the image is for the public gallery after AI cleanup and classification.",
+      extractionInProgress: "AI Extraction in Progress",
+      extractionAnalyzingPhotos:
+        "AI is analyzing your yacht photos and preparing fields.",
+      extractionSearchingKnowledge:
+        "RAG Engine is searching Pinecone to find consensus and auto-filling details...",
+      percentComplete: "{percent}% Complete",
+      secondsRemaining: "Approx. {seconds}s remaining",
+      dataConflictDetected: "Data Conflict Detected",
+      vesselDescriptionPlaceholder:
+        'Brand/Model/Year + short notes (e.g. "Beneteau Oceanis 38, 2016, diesel, 3 cabins, VAT paid, CE docs available")',
+      vesselDescriptionAccuracyHint:
+        "Adding brand/model/year dramatically improves AI accuracy.",
+      shower: "Shower",
+      bath: "Bath",
+      saloon: "Saloon",
+      headroom: "Headroom",
+      engineRoom: "Engine Room",
+      spacesInside: "Spaces Inside",
+      matrasses: "Matrasses",
+      cushions: "Cushions",
+      curtains: "Curtains",
+      heating: "Heating",
+      compass: "Compass",
+      depthInstrument: "Depth Instrument",
+      windInstrument: "Wind Instrument",
+      navigationLights: "Navigation Lights",
+      autopilot: "Autopilot",
+      gps: "GPS",
+      vhf: "VHF / Marifoon",
+      plotter: "Chart Plotter",
+      speedInstrument: "Log / Speed",
+      radar: "Radar",
+      fishfinder: "Fishfinder",
+      ais: "AIS",
+      logSpeed: "Log / Speed",
+      rudderPositionIndicator: "Rudder Position Indicator",
+      turnIndicator: "Turn Indicator",
+      ssbReceiver: "SSB Receiver",
+      shortwaveRadio: "Shortwave Radio",
+      shortBandTransmitter: "Short Band Transmitter",
+      satelliteCommunication: "Satellite Communication",
+      weatherfaxNavtex: "Weatherfax / Navtex",
+      chartsGuides: "Charts / Guides",
+      lifeRaft: "Life Raft",
+      epirb: "EPIRB",
+      bilgePump: "Bilge Pump",
+      bilgePumpManual: "Bilge Pump (Manual)",
+      bilgePumpElectric: "Bilge Pump (Electric)",
+      fireExtinguisher: "Fire Extinguisher",
+      mobSystem: "MOB System",
+      lifeJackets: "Life Jackets",
+      radarReflector: "Radar Reflector",
+      flares: "Flares",
+      lifeBuoy: "Life Buoy",
+      watertightDoor: "Watertight Door",
+      gasBottleLocker: "Gas Bottle Locker",
+      selfDrainingCockpit: "Self Draining Cockpit",
+      sailplanType: "Sailplan Type",
+      numberOfMasts: "Number of Masts",
+      sparsMaterial: "Spars Material",
+      bowsprit: "Bowsprit",
+      standingRig: "Standing Rig",
+      mainSail: "Main Sail",
+      furlingMainsail: "Furling Mainsail",
+      jib: "Jib",
+      genoa: "Genoa",
+      spinnaker: "Spinnaker",
+      gennaker: "Gennaker",
+      mizzen: "Mizzen",
+      winches: "Winches",
+      electricWinches: "Electric Winches",
+      manualWinches: "Manual Winches",
+      anchor: "Anchor",
+      bowThruster: "Bow Thruster",
+      anchorWinch: "Anchor Winch",
+      sprayHood: "Spray Hood",
+      bimini: "Bimini",
+      swimmingPlatform: "Swimming Platform",
+      swimmingLadder: "Swimming Ladder",
+      teakDeck: "Teak Deck",
+      cockpitTable: "Cockpit Table",
+      dinghy: "Dinghy",
+      trailer: "Trailer",
+      covers: "Covers",
+      fenders: "Fenders & Lines",
+      fendersLines: "Fenders & Lines",
+      anchorConnection: "Anchor Connection",
+      sternAnchor: "Stern Anchor",
+      spudPole: "Spud Pole",
+      cockpitTent: "Cockpit Tent",
+      outdoorCushions: "Outdoor Cushions",
+      seaRails: "Sea Rails",
+      pushpitPullpit: "Pushpit / Pullpit",
+      sailLoweringSystem: "Sail Lowering System",
+      crutch: "Crutch (Schaar)",
+      dinghyBrand: "Dinghy Brand",
+      outboardEngine: "Outboard Engine",
+      crane: "Crane",
+      davits: "Davits",
+      imageDetectedDark:
+        "Source image was detected as dark before enhancement.",
+      imageStrongHighlights:
+        "Source image had strong highlights before enhancement.",
+      imageSoftRecovery:
+        "Source image was soft, so clarity recovery was attempted.",
+      imageLowRes:
+        "Source image resolution was low, so upscale logic was considered.",
+      imageRotationCorrected:
+        "Image orientation was corrected by {degrees} degrees.",
+      imageGalleryReadyNoCorrections:
+        "AI marked this image as gallery-ready without major corrections.",
+      aiReadyAnalyzeApprovedImages:
+        "AI is ready to analyze {count} approved optimized images",
+      uploadApproveImagesFirstAi:
+        "Upload and approve images first, then AI will analyze them",
+      runAiExtractionManually: "Run AI Extraction Manually",
+      noSchedulingRules: "No scheduling rules defined yet.",
+      vesselVideoOperations: "Vessel Video Operations",
+      manageVideosSocialPosting: "Manage Videos & Social Posting",
+      generateFromImages: "Generate from images",
+      uploadMp4: "Upload MP4",
+      automatedSocialVideo: "Automated Social Video",
+      queueMarketingVideo:
+        "Queue a marketing video built from the approved boat images. The backend will render it and it will appear in the social video library with status updates.",
+      openSocialLibrary: "Open Social Library",
+      forceRegenerate: "Force Regenerate",
+      generatedMarketingVideos: "Generated marketing videos",
+      refresh: "Refresh",
+      marketingVideo: "Marketing Video",
+      templateLabel: "Template",
+      videoUrlLabel: "Video URL",
+      readyState: "ready",
+      waitingState: "waiting",
+      addSchedulingWindow: "Add Scheduling Window",
+      locationSelectPlaceholder: "Select location...",
+      locationRequiredForNextStep:
+        "Select a sales location before continuing to the next step.",
+      noSpecificDocumentsRequired:
+        "No specific documents required for this type.",
+      uploadDocuments: "Upload Documents",
+      documentUploading: "Uploading...",
+      clickOrDropDocument: "Click or drag a document",
+      uploadedDocuments: "Already uploaded ({count})",
+      deleteAllImagesTitle: "Delete all images",
+      deleteAllImagesDescription:
+        "Are you sure you want to remove all uploaded images from this yacht? This action cannot be undone.",
+      deletingAllImages: "Deleting...",
+      deleteAllAction: "Delete all",
+      cancel: "Cancel",
+      aiExtractionNotAvailableOffline: "AI Extraction Not Available Offline",
+      offlineManualHint:
+        "You can skip this step and fill in the boat details manually. Images are saved locally.",
+      skipToStep2Manual: "Skip to Step 2 (Manual Fill)",
+      geminiAnalyzingImages: "Gemini is analyzing your images...",
+      aiExtractionNeedsInternet:
+        "AI extraction requires an internet connection. You can skip to Step 2 to fill in details manually.",
+      uploadOneImageFirst: "Please upload at least one image first.",
+      uploadOneImageFirstOffline:
+        "Please upload at least one image first (saved locally).",
+      aiExtractionStartedBackground:
+        "🤖 AI extraction started in background...",
+      aiPipelineAnalyzingImages: "🤖 AI Pipeline is analyzing your images...",
+      connectingGeminiVisionApi: "Connecting to Gemini Vision API...",
+      analyzingVesselImagesGemini:
+        "Analyzing vessel images with Gemini Vision...",
+      searchingCatalogMatchingModels:
+        "Searching catalog for matching models...",
+      crossReferencingTechnicalSpecs:
+        "Cross-referencing technical specifications...",
+      finalizingDataValidatingResults:
+        "Finalizing data and validating results...",
+      aiGalleryReview: "AI Gallery Review",
+      reviewDetails: "Review Details",
+      imageReviewTitle: "Image review",
+      imageReviewDescription:
+        "Review the full image, the AI quality score, and the applied corrections before approving it for the final gallery.",
+      closeImageReview: "Close image review",
+      aiEnhanced: "AI Enhanced",
+      imagesApprovedUnlocked: "✅ Images approved - Step 2 is unlocked!",
+      imagesApprovedExtractionRunning:
+        "🤖 Images approved. AI extraction is still running...",
+      approvedMinimumImages:
+        "⏳ {approved} of {minimum} minimum images approved",
+      editManifestUnlocked:
+        "ℹ️ Edit Manifest mode - Step 2 is unlocked with existing boat details.",
+      stepTwoUnlockHint:
+        "Step 2 opens after image approval. AI extraction continues in background and fills fields when ready.",
+      stillProcessingCount: "{count} still processing...",
+      approveAllImages: "Approve All",
+      aiTimedOutStepTwo:
+        "AI extraction timed out. Step 2 is unlocked; you can continue manually and retry AI later.",
+      imagesApprovedManualAi:
+        "Images approved. You can manually run AI autofill if needed.",
+      imagesApprovedShort: "Images approved.",
+      fourImagesPerRow: "4 images per row",
+      sixImagesPerRow: "6 images per row",
+      eightImagesPerRow: "8 images per row",
       harborLocation: "Sales Location (Harbor) *",
       price: "Price (€)",
       minBidAmount: "Minimum Bid Amount (€)",
@@ -459,7 +693,12 @@ const YACHT_FORM_TEXT = {
     },
   },
   nl: {
-    common: { yes: "Ja", no: "Nee", unknown: "Onbekend", confirm: "controleren" },
+    common: {
+      yes: "Ja",
+      no: "Nee",
+      unknown: "Onbekend",
+      confirm: "controleren",
+    },
     sections: {
       electricalSystem: "Elektrisch systeem",
       kitchenComfort: "Keuken & comfort",
@@ -525,7 +764,8 @@ const YACHT_FORM_TEXT = {
       daysOfWeek: "Dagen van de week",
       startTime: "Starttijd",
       endTime: "Eindtijd",
-      reviewSummary: "Controleer alle stappen voordat je indient. Voltooide stappen krijgen bovenaan een blauw vinkje.",
+      reviewSummary:
+        "Controleer alle stappen voordat je indient. Voltooide stappen krijgen bovenaan een blauw vinkje.",
       vesselName: "Vaartuignaam *",
       manufacturer: "Merk / fabrikant",
       model: "Model",
@@ -543,7 +783,8 @@ const YACHT_FORM_TEXT = {
       stepReview: "Controle",
       stepContract: "Contract",
       stepOneTitle: "Vaartuigmedia & AI-extractie",
-      stepOneDescription: "Upload afbeeldingen -> systeem optimaliseert automatisch -> keur goed -> daarna vult AI alle velden in.",
+      stepOneDescription:
+        "Upload afbeeldingen -> systeem optimaliseert automatisch -> keur goed -> daarna vult AI alle velden in.",
       imagesApproved: "Afbeeldingen goedgekeurd",
       vesselDescriptionHelp: "Vaartuigbeschrijving",
       optionalRecommended: "(optioneel maar aanbevolen)",
@@ -555,11 +796,246 @@ const YACHT_FORM_TEXT = {
       completed: "Voltooid",
       pending: "Open",
       continueToContract: "Opslaan en naar contract",
+      finishFlow: "Afronden",
+      finishFlowToast: "Vaartuigflow voltooid.",
       contractStepDescription:
         "Beheer het contractsjabloon, druk de PDF af en genereer vanuit deze stap het Signhost-klare contract.",
       reviewContractNotice:
         "Sla dit vaartuig eerst op. De contractflow opent in de volgende stap zodra het vaartuigrecord is opgeslagen.",
       saveVesselFirst: "Sla eerst het vaartuig op",
+      imageCountLabel: "Afbeeldingen",
+      processingBadge: "in verwerking",
+      readyForReviewBadge: "klaar voor controle",
+      approvedBadge: "goedgekeurd",
+      savingOrder: "Volgorde opslaan...",
+      aiAutoSort: "AI automatisch sorteren",
+      addMoreImages: "Meer toevoegen",
+      deleteAllImages: "Alle afbeeldingen verwijderen",
+      clickToAddImages: "Klik om maximaal {count} afbeeldingen toe te voegen",
+      uploadingImages: "Afbeeldingen uploaden...",
+      uploadAreaPendingHelp:
+        "Dit vlak blijft zichtbaar totdat de huidige upload klaar is.",
+      uploadAreaFormatsHelp:
+        "JPEG, PNG, HEIC worden automatisch door AI geoptimaliseerd",
+      uploadAreaHint:
+        "Voeg HIN-plaatjes, documenten, registratie en motoruren toe",
+      processingStatusLabel: "Verwerken...",
+      readyForReviewStatusLabel: "Klaar voor controle",
+      approvedStatusLabel: "Goedgekeurd",
+      failedStatusLabel: "Mislukt",
+      dragToReorder: "Sleep om te herschikken",
+      aiReviewScore: "AI-beoordelingsscore",
+      keepOriginal: "Origineel behouden",
+      aiComments: "AI-opmerkingen",
+      approveImage: "Goedkeuren",
+      generalCategory: "Algemeen",
+      acceptableQuality: "Acceptabel",
+      offlineQuality: "Offline",
+      galleryReadinessHint:
+        "Meet hoe geschikt de afbeelding is voor de galerij na AI-opruiming.",
+      galleryReady: "Klaar voor galerij",
+      needsReview: "Controle nodig",
+      needsCorrection: "Correctie nodig",
+      scoreSuitabilityHelp:
+        "Deze score laat zien hoe geschikt de afbeelding is voor de publieke galerij na AI-opruiming en classificatie.",
+      extractionInProgress: "AI-extractie bezig",
+      extractionAnalyzingPhotos:
+        "AI analyseert je jachtfoto's en bereidt de velden voor.",
+      extractionSearchingKnowledge:
+        "De RAG-engine doorzoekt Pinecone en vult velden automatisch aan...",
+      percentComplete: "{percent}% voltooid",
+      secondsRemaining: "Nog ongeveer {seconds}s",
+      dataConflictDetected: "Gegevensconflict gedetecteerd",
+      vesselDescriptionPlaceholder:
+        'Merk/Model/Jaar + korte notities (bijv. "Beneteau Oceanis 38, 2016, diesel, 3 hutten, btw betaald, CE-documenten aanwezig")',
+      vesselDescriptionAccuracyHint:
+        "Merk/model/jaar toevoegen verbetert de AI-nauwkeurigheid sterk.",
+      shower: "Douche",
+      bath: "Bad",
+      saloon: "Salon",
+      headroom: "Stahoogte",
+      engineRoom: "Machinekamer",
+      spacesInside: "Ruimtes binnen",
+      matrasses: "Matrassen",
+      cushions: "Kussens",
+      curtains: "Gordijnen",
+      heating: "Verwarming",
+      compass: "Kompas",
+      depthInstrument: "Dieptemeter",
+      windInstrument: "Windinstrument",
+      navigationLights: "Navigatieverlichting",
+      autopilot: "Automatische piloot",
+      gps: "GPS",
+      vhf: "VHF / Marifoon",
+      plotter: "Kaartplotter",
+      speedInstrument: "Log / Snelheid",
+      radar: "Radar",
+      fishfinder: "Fishfinder",
+      ais: "AIS",
+      logSpeed: "Log / Snelheid",
+      rudderPositionIndicator: "Roerstandaanwijzer",
+      turnIndicator: "Bochtindicator",
+      ssbReceiver: "SSB-ontvanger",
+      shortwaveRadio: "Kortegolfradio",
+      shortBandTransmitter: "Kortegolfzender",
+      satelliteCommunication: "Satellietcommunicatie",
+      weatherfaxNavtex: "Weatherfax / Navtex",
+      chartsGuides: "Kaarten / Gidsen",
+      lifeRaft: "Reddingsvlot",
+      epirb: "EPIRB",
+      bilgePump: "Bilgepomp",
+      bilgePumpManual: "Bilgepomp (handmatig)",
+      bilgePumpElectric: "Bilgepomp (elektrisch)",
+      fireExtinguisher: "Brandblusser",
+      mobSystem: "MOB-systeem",
+      lifeJackets: "Reddingsvesten",
+      radarReflector: "Radarreflector",
+      flares: "Noodsignalen",
+      lifeBuoy: "Reddingsboei",
+      watertightDoor: "Waterdichte deur",
+      gasBottleLocker: "Gasbun",
+      selfDrainingCockpit: "Zelflozende kuip",
+      sailplanType: "Tuigplan",
+      numberOfMasts: "Aantal masten",
+      sparsMaterial: "Materiaal rondhouten",
+      bowsprit: "Boegspriet",
+      standingRig: "Staand want",
+      mainSail: "Grootzeil",
+      furlingMainsail: "Rolgrootzeil",
+      jib: "Fok",
+      genoa: "Genua",
+      spinnaker: "Spinnaker",
+      gennaker: "Gennaker",
+      mizzen: "Bezaan",
+      winches: "Lieren",
+      electricWinches: "Elektrische lieren",
+      manualWinches: "Handmatige lieren",
+      anchor: "Anker",
+      bowThruster: "Boegschroef",
+      anchorWinch: "Ankerlier",
+      sprayHood: "Sprayhood",
+      bimini: "Bimini",
+      swimmingPlatform: "Zwemplatform",
+      swimmingLadder: "Zwemtrap",
+      teakDeck: "Teakdek",
+      cockpitTable: "Kuiptafel",
+      dinghy: "Bijboot",
+      trailer: "Trailer",
+      covers: "Hoezen",
+      fenders: "Stootwillen & lijnen",
+      fendersLines: "Stootwillen & lijnen",
+      anchorConnection: "Ankerverbinding",
+      sternAnchor: "Hekanker",
+      spudPole: "Spudpaal",
+      cockpitTent: "Kuiptent",
+      outdoorCushions: "Buitenkussens",
+      seaRails: "Zeereling",
+      pushpitPullpit: "Preekstoel / Hekstoel",
+      sailLoweringSystem: "Zeilstrijksysteem",
+      crutch: "Bokkepoot",
+      dinghyBrand: "Merk bijboot",
+      outboardEngine: "Buitenboordmotor",
+      crane: "Kraan",
+      davits: "Davits",
+      imageDetectedDark: "Bronafbeelding was donker voor verbetering.",
+      imageStrongHighlights:
+        "Bronafbeelding had sterke hooglichten voor verbetering.",
+      imageSoftRecovery:
+        "Bronafbeelding was zacht, dus helderheidsherstel is geprobeerd.",
+      imageLowRes:
+        "Bronafbeelding had een lage resolutie, dus opschalen is overwogen.",
+      imageRotationCorrected:
+        "Beeldorientatie is gecorrigeerd met {degrees} graden.",
+      imageGalleryReadyNoCorrections:
+        "AI heeft deze afbeelding galerijklaar gemarkeerd zonder grote correcties.",
+      aiReadyAnalyzeApprovedImages:
+        "AI staat klaar om {count} goedgekeurde geoptimaliseerde afbeeldingen te analyseren",
+      uploadApproveImagesFirstAi:
+        "Upload en keur eerst afbeeldingen goed, daarna analyseert AI ze",
+      runAiExtractionManually: "Voer AI-extractie handmatig uit",
+      noSchedulingRules: "Er zijn nog geen planningsregels ingesteld.",
+      vesselVideoOperations: "Beheer van scheepsvideo's",
+      manageVideosSocialPosting: "Beheer video's en social posting",
+      generateFromImages: "Genereer uit afbeeldingen",
+      uploadMp4: "Upload MP4",
+      automatedSocialVideo: "Automatische social video",
+      queueMarketingVideo:
+        "Zet een marketingvideo op basis van de goedgekeurde bootafbeeldingen in de wachtrij. De backend rendert de video en toont statusupdates in de social-videobibliotheek.",
+      openSocialLibrary: "Open social bibliotheek",
+      forceRegenerate: "Opnieuw genereren forceren",
+      generatedMarketingVideos: "Gegenereerde marketingvideo's",
+      refresh: "Vernieuwen",
+      marketingVideo: "Marketingvideo",
+      templateLabel: "Template",
+      videoUrlLabel: "Video-URL",
+      readyState: "gereed",
+      waitingState: "wachtend",
+      addSchedulingWindow: "Planningsvenster toevoegen",
+      locationSelectPlaceholder: "Selecteer locatie...",
+      locationRequiredForNextStep:
+        "Selecteer eerst een verkooplocatie voordat je doorgaat naar de volgende stap.",
+      noSpecificDocumentsRequired:
+        "Geen specifieke documenten vereist voor dit type.",
+      uploadDocuments: "Documenten uploaden",
+      documentUploading: "Bezig met uploaden...",
+      clickOrDropDocument: "Klik of sleep een document",
+      uploadedDocuments: "Al geüpload ({count})",
+      deleteAllImagesTitle: "Alle afbeeldingen verwijderen",
+      deleteAllImagesDescription:
+        "Weet je zeker dat je alle geüploade afbeeldingen van dit jacht wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+      deletingAllImages: "Verwijderen...",
+      deleteAllAction: "Alles verwijderen",
+      cancel: "Annuleren",
+      aiExtractionNotAvailableOffline: "AI-extractie niet beschikbaar offline",
+      offlineManualHint:
+        "Je kunt deze stap overslaan en de bootgegevens handmatig invullen. Afbeeldingen zijn lokaal opgeslagen.",
+      skipToStep2Manual: "Ga naar stap 2 (handmatig invullen)",
+      geminiAnalyzingImages: "Gemini analyseert je afbeeldingen...",
+      aiExtractionNeedsInternet:
+        "AI-extractie vereist een internetverbinding. Je kunt doorgaan naar stap 2 om de gegevens handmatig in te vullen.",
+      uploadOneImageFirst: "Upload eerst minimaal een afbeelding.",
+      uploadOneImageFirstOffline:
+        "Upload eerst minimaal een afbeelding (lokaal opgeslagen).",
+      aiExtractionStartedBackground:
+        "🤖 AI-extractie is op de achtergrond gestart...",
+      aiPipelineAnalyzingImages:
+        "🤖 De AI-pijplijn analyseert je afbeeldingen...",
+      connectingGeminiVisionApi: "Verbinden met de Gemini Vision API...",
+      analyzingVesselImagesGemini:
+        "Vaartuigafbeeldingen worden geanalyseerd met Gemini Vision...",
+      searchingCatalogMatchingModels:
+        "Catalogus wordt doorzocht op overeenkomende modellen...",
+      crossReferencingTechnicalSpecs:
+        "Technische specificaties worden vergeleken...",
+      finalizingDataValidatingResults:
+        "Gegevens worden afgerond en resultaten gevalideerd...",
+      aiGalleryReview: "AI-galerijcontrole",
+      reviewDetails: "Controledetails",
+      imageReviewTitle: "Afbeeldingscontrole",
+      imageReviewDescription:
+        "Controleer de volledige afbeelding, de AI-score en de toegepaste correcties voordat je deze goedkeurt voor de uiteindelijke galerij.",
+      closeImageReview: "Afbeeldingscontrole sluiten",
+      aiEnhanced: "AI verbeterd",
+      imagesApprovedUnlocked:
+        "✅ Afbeeldingen goedgekeurd - stap 2 is ontgrendeld!",
+      imagesApprovedExtractionRunning:
+        "🤖 Afbeeldingen goedgekeurd. AI-extractie loopt nog...",
+      approvedMinimumImages:
+        "⏳ {approved} van {minimum} minimale afbeeldingen goedgekeurd",
+      editManifestUnlocked:
+        "ℹ️ Bewerkingsmodus - stap 2 is ontgrendeld met bestaande bootgegevens.",
+      stepTwoUnlockHint:
+        "Stap 2 opent na goedkeuring van de afbeeldingen. AI-extractie loopt op de achtergrond door en vult de velden zodra alles klaar is.",
+      stillProcessingCount: "{count} nog in verwerking...",
+      approveAllImages: "Alles goedkeuren",
+      aiTimedOutStepTwo:
+        "AI-extractie duurde te lang. Stap 2 is ontgrendeld; je kunt doorgaan en AI later opnieuw proberen.",
+      imagesApprovedManualAi:
+        "Afbeeldingen goedgekeurd. Je kunt AI-autofill handmatig starten als dat nodig is.",
+      imagesApprovedShort: "Afbeeldingen goedgekeurd.",
+      fourImagesPerRow: "4 afbeeldingen per rij",
+      sixImagesPerRow: "6 afbeeldingen per rij",
+      eightImagesPerRow: "8 afbeeldingen per rij",
       harborLocation: "Verkooplocatie (haven) *",
       price: "Prijs (€)",
       minBidAmount: "Minimum biedbedrag (€)",
@@ -705,7 +1181,8 @@ const YACHT_FORM_TEXT = {
       daysOfWeek: "Wochentage",
       startTime: "Startzeit",
       endTime: "Endzeit",
-      reviewSummary: "Prufen Sie alle Schritte vor dem Speichern. Abgeschlossene Schritte sind oben mit einem blauen Haken markiert.",
+      reviewSummary:
+        "Prufen Sie alle Schritte vor dem Speichern. Abgeschlossene Schritte sind oben mit einem blauen Haken markiert.",
       vesselName: "Schiffsname *",
       manufacturer: "Hersteller / Marke",
       model: "Modell",
@@ -723,7 +1200,8 @@ const YACHT_FORM_TEXT = {
       stepReview: "Prufung",
       stepContract: "Vertrag",
       stepOneTitle: "Schiffsmedien & KI-Extraktion",
-      stepOneDescription: "Bilder hochladen -> System optimiert automatisch -> freigeben -> danach fullt die KI alle Felder aus.",
+      stepOneDescription:
+        "Bilder hochladen -> System optimiert automatisch -> freigeben -> danach fullt die KI alle Felder aus.",
       imagesApproved: "Bilder freigegeben",
       vesselDescriptionHelp: "Schiffsbeschreibung",
       optionalRecommended: "(optional, aber empfohlen)",
@@ -735,11 +1213,247 @@ const YACHT_FORM_TEXT = {
       completed: "Abgeschlossen",
       pending: "Offen",
       continueToContract: "Speichern und weiter zum Vertrag",
+      finishFlow: "Fertigstellen",
+      finishFlowToast: "Schiffsablauf abgeschlossen.",
       contractStepDescription:
         "Verwalten Sie die Vertragsvorlage, drucken Sie das PDF und erzeugen Sie in diesem Schritt den Signhost-bereiten Vertrag.",
       reviewContractNotice:
         "Speichern Sie dieses Schiff zuerst. Der Vertragsablauf wird im nächsten Schritt geöffnet, sobald der Datensatz gespeichert ist.",
       saveVesselFirst: "Schiff zuerst speichern",
+      imageCountLabel: "Bilder",
+      processingBadge: "in Bearbeitung",
+      readyForReviewBadge: "zur Prüfung bereit",
+      approvedBadge: "freigegeben",
+      savingOrder: "Reihenfolge wird gespeichert...",
+      aiAutoSort: "KI automatisch sortieren",
+      addMoreImages: "Mehr hinzufügen",
+      deleteAllImages: "Alle Bilder löschen",
+      clickToAddImages: "Klicken Sie, um bis zu {count} Bilder hinzuzufügen",
+      uploadingImages: "Bilder werden hochgeladen...",
+      uploadAreaPendingHelp:
+        "Dieser Bereich bleibt sichtbar, bis der aktuelle Upload abgeschlossen ist.",
+      uploadAreaFormatsHelp:
+        "JPEG, PNG, HEIC werden automatisch von KI optimiert",
+      uploadAreaHint:
+        "Fügen Sie HIN-Schilder, Dokumente, Registrierung und Motorstunden hinzu",
+      processingStatusLabel: "Wird verarbeitet...",
+      readyForReviewStatusLabel: "Zur Prüfung bereit",
+      approvedStatusLabel: "Freigegeben",
+      failedStatusLabel: "Fehlgeschlagen",
+      dragToReorder: "Zum Umordnen ziehen",
+      aiReviewScore: "KI-Bewertung",
+      keepOriginal: "Original behalten",
+      aiComments: "KI-Kommentare",
+      approveImage: "Freigeben",
+      generalCategory: "Allgemein",
+      acceptableQuality: "Akzeptabel",
+      offlineQuality: "Offline",
+      galleryReadinessHint:
+        "Misst die Galerietauglichkeit nach der KI-Bereinigung.",
+      galleryReady: "Galeriebereit",
+      needsReview: "Prüfung nötig",
+      needsCorrection: "Korrektur nötig",
+      scoreSuitabilityHelp:
+        "Diese Bewertung zeigt, wie gut das Bild nach KI-Bereinigung und Klassifizierung für die öffentliche Galerie geeignet ist.",
+      extractionInProgress: "KI-Extraktion läuft",
+      extractionAnalyzingPhotos:
+        "Die KI analysiert Ihre Yachtfotos und bereitet die Felder vor.",
+      extractionSearchingKnowledge:
+        "Die RAG-Engine durchsucht Pinecone und füllt Felder automatisch aus...",
+      percentComplete: "{percent}% abgeschlossen",
+      secondsRemaining: "Noch ca. {seconds}s",
+      dataConflictDetected: "Datenkonflikt erkannt",
+      vesselDescriptionPlaceholder:
+        'Marke/Modell/Jahr + kurze Hinweise (z. B. "Beneteau Oceanis 38, 2016, Diesel, 3 Kabinen, MwSt. bezahlt, CE-Dokumente vorhanden")',
+      vesselDescriptionAccuracyHint:
+        "Marke/Modell/Jahr verbessern die KI-Genauigkeit deutlich.",
+      shower: "Dusche",
+      bath: "Bad",
+      saloon: "Salon",
+      headroom: "Stehhöhe",
+      engineRoom: "Maschinenraum",
+      spacesInside: "Innenräume",
+      matrasses: "Matratzen",
+      cushions: "Kissen",
+      curtains: "Vorhänge",
+      heating: "Heizung",
+      compass: "Kompass",
+      depthInstrument: "Tiefenmesser",
+      windInstrument: "Windinstrument",
+      navigationLights: "Navigationslichter",
+      autopilot: "Autopilot",
+      gps: "GPS",
+      vhf: "VHF / Marifunk",
+      plotter: "Kartenplotter",
+      speedInstrument: "Log / Geschwindigkeit",
+      radar: "Radar",
+      fishfinder: "Fischfinder",
+      ais: "AIS",
+      logSpeed: "Log / Geschwindigkeit",
+      rudderPositionIndicator: "Ruderlagenanzeiger",
+      turnIndicator: "Wendeanzeiger",
+      ssbReceiver: "SSB-Empfänger",
+      shortwaveRadio: "Kurzwellenradio",
+      shortBandTransmitter: "Kurzwellensender",
+      satelliteCommunication: "Satellitenkommunikation",
+      weatherfaxNavtex: "Weatherfax / Navtex",
+      chartsGuides: "Karten / Handbücher",
+      lifeRaft: "Rettungsinsel",
+      epirb: "EPIRB",
+      bilgePump: "Bilgenpumpe",
+      bilgePumpManual: "Bilgenpumpe (manuell)",
+      bilgePumpElectric: "Bilgenpumpe (elektrisch)",
+      fireExtinguisher: "Feuerlöscher",
+      mobSystem: "MOB-System",
+      lifeJackets: "Rettungswesten",
+      radarReflector: "Radarreflektor",
+      flares: "Notsignale",
+      lifeBuoy: "Rettungsring",
+      watertightDoor: "Wasserdichte Tür",
+      gasBottleLocker: "Gasflaschenkasten",
+      selfDrainingCockpit: "Selbstlenzendes Cockpit",
+      sailplanType: "Segelplan",
+      numberOfMasts: "Anzahl der Masten",
+      sparsMaterial: "Material der Spieren",
+      bowsprit: "Bugspriet",
+      standingRig: "Stehendes Gut",
+      mainSail: "Großsegel",
+      furlingMainsail: "Rollgroßsegel",
+      jib: "Fock",
+      genoa: "Genua",
+      spinnaker: "Spinnaker",
+      gennaker: "Gennaker",
+      mizzen: "Besan",
+      winches: "Winschen",
+      electricWinches: "Elektrische Winschen",
+      manualWinches: "Manuelle Winschen",
+      anchor: "Anker",
+      bowThruster: "Bugstrahlruder",
+      anchorWinch: "Ankerwinde",
+      sprayHood: "Sprayhood",
+      bimini: "Bimini",
+      swimmingPlatform: "Badeplattform",
+      swimmingLadder: "Badeleiter",
+      teakDeck: "Teakdeck",
+      cockpitTable: "Cockpittisch",
+      dinghy: "Beiboot",
+      trailer: "Trailer",
+      covers: "Abdeckungen",
+      fenders: "Fender & Leinen",
+      fendersLines: "Fender & Leinen",
+      anchorConnection: "Ankerverbindung",
+      sternAnchor: "Heckanker",
+      spudPole: "Spud-Pfahl",
+      cockpitTent: "Cockpitzelt",
+      outdoorCushions: "Außenkissen",
+      seaRails: "Seereling",
+      pushpitPullpit: "Bugkorb / Heckkorb",
+      sailLoweringSystem: "Segelbergsystem",
+      crutch: "Schere",
+      dinghyBrand: "Beibootmarke",
+      outboardEngine: "Außenbordmotor",
+      crane: "Kran",
+      davits: "Davits",
+      imageDetectedDark: "Das Ausgangsbild war vor der Verbesserung zu dunkel.",
+      imageStrongHighlights:
+        "Das Ausgangsbild hatte vor der Verbesserung starke Lichter.",
+      imageSoftRecovery:
+        "Das Ausgangsbild war weich, daher wurde eine Klarheitskorrektur versucht.",
+      imageLowRes:
+        "Das Ausgangsbild hatte eine niedrige Auflösung, daher wurde Upscaling erwogen.",
+      imageRotationCorrected:
+        "Die Bildausrichtung wurde um {degrees} Grad korrigiert.",
+      imageGalleryReadyNoCorrections:
+        "Die KI hat dieses Bild ohne größere Korrekturen als galeriegeeignet markiert.",
+      aiReadyAnalyzeApprovedImages:
+        "Die KI ist bereit, {count} freigegebene optimierte Bilder zu analysieren",
+      uploadApproveImagesFirstAi:
+        "Lade zuerst Bilder hoch und gib sie frei, dann analysiert die KI sie",
+      runAiExtractionManually: "KI-Extraktion manuell ausführen",
+      noSchedulingRules: "Es sind noch keine Planungsregeln definiert.",
+      vesselVideoOperations: "Vessel-Videoverwaltung",
+      manageVideosSocialPosting: "Videos und Social Posting verwalten",
+      generateFromImages: "Aus Bildern generieren",
+      uploadMp4: "MP4 hochladen",
+      automatedSocialVideo: "Automatisches Social-Video",
+      queueMarketingVideo:
+        "Stelle ein Marketingvideo aus den freigegebenen Bootsbildern in die Warteschlange. Das Backend rendert das Video und zeigt Statusupdates in der Social-Video-Bibliothek an.",
+      openSocialLibrary: "Social-Bibliothek öffnen",
+      forceRegenerate: "Neu erzeugen erzwingen",
+      generatedMarketingVideos: "Generierte Marketingvideos",
+      refresh: "Aktualisieren",
+      marketingVideo: "Marketingvideo",
+      templateLabel: "Vorlage",
+      videoUrlLabel: "Video-URL",
+      readyState: "bereit",
+      waitingState: "wartend",
+      addSchedulingWindow: "Zeitfenster hinzufügen",
+      locationSelectPlaceholder: "Standort auswählen...",
+      locationRequiredForNextStep:
+        "Wählen Sie einen Verkaufsstandort, bevor Sie mit dem nächsten Schritt fortfahren.",
+      noSpecificDocumentsRequired:
+        "Für diesen Typ sind keine speziellen Dokumente erforderlich.",
+      uploadDocuments: "Dokumente hochladen",
+      documentUploading: "Wird hochgeladen...",
+      clickOrDropDocument: "Klicken oder ziehen Sie ein Dokument hierher",
+      uploadedDocuments: "Bereits hochgeladen ({count})",
+      deleteAllImagesTitle: "Alle Bilder löschen",
+      deleteAllImagesDescription:
+        "Möchten Sie wirklich alle hochgeladenen Bilder von dieser Yacht entfernen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      deletingAllImages: "Löschen...",
+      deleteAllAction: "Alle löschen",
+      cancel: "Abbrechen",
+      aiExtractionNotAvailableOffline: "KI-Extraktion offline nicht verfügbar",
+      offlineManualHint:
+        "Sie können diesen Schritt überspringen und die Bootsdaten manuell ausfüllen. Bilder sind lokal gespeichert.",
+      skipToStep2Manual: "Zu Schritt 2 wechseln (manuell)",
+      geminiAnalyzingImages: "Gemini analysiert Ihre Bilder...",
+      aiExtractionNeedsInternet:
+        "Die KI-Extraktion benötigt eine Internetverbindung. Du kannst zu Schritt 2 wechseln, um die Angaben manuell auszufüllen.",
+      uploadOneImageFirst: "Bitte lade zuerst mindestens ein Bild hoch.",
+      uploadOneImageFirstOffline:
+        "Bitte lade zuerst mindestens ein Bild hoch (lokal gespeichert).",
+      aiExtractionStartedBackground:
+        "🤖 KI-Extraktion wurde im Hintergrund gestartet...",
+      aiPipelineAnalyzingImages:
+        "🤖 Die KI-Pipeline analysiert deine Bilder...",
+      connectingGeminiVisionApi:
+        "Verbindung zur Gemini Vision API wird hergestellt...",
+      analyzingVesselImagesGemini:
+        "Schiffsbilder werden mit Gemini Vision analysiert...",
+      searchingCatalogMatchingModels:
+        "Katalog wird nach passenden Modellen durchsucht...",
+      crossReferencingTechnicalSpecs:
+        "Technische Spezifikationen werden abgeglichen...",
+      finalizingDataValidatingResults:
+        "Daten werden finalisiert und Ergebnisse validiert...",
+      aiGalleryReview: "KI-Galerieprüfung",
+      reviewDetails: "Prüfdetails",
+      imageReviewTitle: "Bildprüfung",
+      imageReviewDescription:
+        "Prüfen Sie das vollständige Bild, die KI-Bewertung und die angewendeten Korrekturen, bevor Sie es für die endgültige Galerie freigeben.",
+      closeImageReview: "Bildprüfung schließen",
+      aiEnhanced: "KI verbessert",
+      imagesApprovedUnlocked:
+        "✅ Bilder freigegeben - Schritt 2 ist entsperrt!",
+      imagesApprovedExtractionRunning:
+        "🤖 Bilder freigegeben. Die KI-Extraktion läuft noch...",
+      approvedMinimumImages:
+        "⏳ {approved} von {minimum} Mindestbildern freigegeben",
+      editManifestUnlocked:
+        "ℹ️ Bearbeitungsmodus - Schritt 2 ist mit vorhandenen Bootsdaten entsperrt.",
+      stepTwoUnlockHint:
+        "Schritt 2 wird nach der Bildfreigabe geöffnet. Die KI-Extraktion läuft im Hintergrund weiter und füllt die Felder, sobald alles bereit ist.",
+      stillProcessingCount: "{count} noch in Bearbeitung...",
+      approveAllImages: "Alle freigeben",
+      aiTimedOutStepTwo:
+        "Die KI-Extraktion hat ein Zeitlimit erreicht. Schritt 2 ist entsperrt; Sie können fortfahren und die KI später erneut ausführen.",
+      imagesApprovedManualAi:
+        "Bilder freigegeben. Sie können die KI-Autofüllung bei Bedarf manuell starten.",
+      imagesApprovedShort: "Bilder freigegeben.",
+      fourImagesPerRow: "4 Bilder pro Reihe",
+      sixImagesPerRow: "6 Bilder pro Reihe",
+      eightImagesPerRow: "8 Bilder pro Reihe",
       harborLocation: "Verkaufsstandort (Hafen) *",
       price: "Preis (€)",
       minBidAmount: "Mindestgebot (€)",
@@ -885,7 +1599,8 @@ const YACHT_FORM_TEXT = {
       daysOfWeek: "Jours de la semaine",
       startTime: "Heure de debut",
       endTime: "Heure de fin",
-      reviewSummary: "Verifiez toutes les etapes avant l'envoi. Les etapes terminees sont marquees d'une coche bleue.",
+      reviewSummary:
+        "Verifiez toutes les etapes avant l'envoi. Les etapes terminees sont marquees d'une coche bleue.",
       vesselName: "Nom du bateau *",
       manufacturer: "Fabricant / marque",
       model: "Modele",
@@ -903,7 +1618,8 @@ const YACHT_FORM_TEXT = {
       stepReview: "Revision",
       stepContract: "Contrat",
       stepOneTitle: "Medias du bateau et extraction IA",
-      stepOneDescription: "Telechargez des images -> le systeme optimise automatiquement -> approuvez -> puis l'IA remplit les champs.",
+      stepOneDescription:
+        "Telechargez des images -> le systeme optimise automatiquement -> approuvez -> puis l'IA remplit les champs.",
       imagesApproved: "Images approuvees",
       vesselDescriptionHelp: "Description du bateau",
       optionalRecommended: "(optionnel mais recommande)",
@@ -915,11 +1631,245 @@ const YACHT_FORM_TEXT = {
       completed: "Termine",
       pending: "En attente",
       continueToContract: "Enregistrer et continuer vers le contrat",
+      finishFlow: "Terminer",
+      finishFlowToast: "Flux du bateau termine.",
       contractStepDescription:
         "Gerez le modele de contrat, imprimez le PDF et generez depuis cette etape le contrat pret pour Signhost.",
       reviewContractNotice:
         "Enregistrez d'abord ce bateau. Le flux du contrat s'ouvre a l'etape suivante une fois la fiche enregistree.",
       saveVesselFirst: "Enregistrer d'abord le bateau",
+      imageCountLabel: "Images",
+      processingBadge: "en cours",
+      readyForReviewBadge: "prete pour revision",
+      approvedBadge: "approuvees",
+      savingOrder: "Enregistrement de l'ordre...",
+      aiAutoSort: "Tri automatique IA",
+      addMoreImages: "Ajouter",
+      deleteAllImages: "Supprimer toutes les images",
+      clickToAddImages: "Cliquez pour ajouter jusqu'a {count} images",
+      uploadingImages: "Telechargement des images...",
+      uploadAreaPendingHelp:
+        "Cette zone reste visible jusqu'a la fin du telechargement en cours.",
+      uploadAreaFormatsHelp:
+        "JPEG, PNG, HEIC optimises automatiquement par l'IA",
+      uploadAreaHint:
+        "Ajoutez plaques HIN, documents, immatriculation et heures moteur",
+      processingStatusLabel: "Traitement...",
+      readyForReviewStatusLabel: "Prete pour revision",
+      approvedStatusLabel: "Approuvee",
+      failedStatusLabel: "Echec",
+      dragToReorder: "Glisser pour reordonner",
+      aiReviewScore: "Score d'evaluation IA",
+      keepOriginal: "Conserver l'original",
+      aiComments: "Commentaires IA",
+      approveImage: "Approuver",
+      generalCategory: "General",
+      acceptableQuality: "Acceptable",
+      offlineQuality: "Hors ligne",
+      galleryReadinessHint:
+        "Mesure l'aptitude de l'image pour la galerie apres le nettoyage IA.",
+      galleryReady: "Pret pour la galerie",
+      needsReview: "Revision necessaire",
+      needsCorrection: "Correction necessaire",
+      scoreSuitabilityHelp:
+        "Ce score indique a quel point l'image convient a la galerie publique apres le nettoyage et la classification par IA.",
+      extractionInProgress: "Extraction IA en cours",
+      extractionAnalyzingPhotos:
+        "L'IA analyse les photos de votre bateau et prepare les champs.",
+      extractionSearchingKnowledge:
+        "Le moteur RAG recherche dans Pinecone et remplit automatiquement les champs...",
+      percentComplete: "{percent}% termine",
+      secondsRemaining: "Encore environ {seconds}s",
+      dataConflictDetected: "Conflit de donnees detecte",
+      vesselDescriptionPlaceholder:
+        'Marque/Modele/Annee + notes courtes (ex. "Beneteau Oceanis 38, 2016, diesel, 3 cabines, TVA payee, documents CE disponibles")',
+      vesselDescriptionAccuracyHint:
+        "Ajouter marque/modele/annee ameliore fortement la precision de l'IA.",
+      shower: "Douche",
+      bath: "Bain",
+      saloon: "Salon",
+      headroom: "Hauteur sous barrot",
+      engineRoom: "Salle des machines",
+      spacesInside: "Espaces intérieurs",
+      matrasses: "Matelas",
+      cushions: "Coussins",
+      curtains: "Rideaux",
+      heating: "Chauffage",
+      compass: "Compas",
+      depthInstrument: "Sondeur",
+      windInstrument: "Instrument de vent",
+      navigationLights: "Feux de navigation",
+      autopilot: "Pilote automatique",
+      gps: "GPS",
+      vhf: "VHF / Radio marine",
+      plotter: "Traceur de cartes",
+      speedInstrument: "Loch / Vitesse",
+      radar: "Radar",
+      fishfinder: "Sondeur de peche",
+      ais: "AIS",
+      logSpeed: "Loch / Vitesse",
+      rudderPositionIndicator: "Indicateur d'angle de barre",
+      turnIndicator: "Indicateur de giration",
+      ssbReceiver: "Recepteur SSB",
+      shortwaveRadio: "Radio ondes courtes",
+      shortBandTransmitter: "Emetteur ondes courtes",
+      satelliteCommunication: "Communication satellite",
+      weatherfaxNavtex: "Weatherfax / Navtex",
+      chartsGuides: "Cartes / Guides",
+      lifeRaft: "Radeau de survie",
+      epirb: "EPIRB",
+      bilgePump: "Pompe de cale",
+      bilgePumpManual: "Pompe de cale (manuelle)",
+      bilgePumpElectric: "Pompe de cale (electrique)",
+      fireExtinguisher: "Extincteur",
+      mobSystem: "Systeme HOM",
+      lifeJackets: "Gilets de sauvetage",
+      radarReflector: "Reflecteur radar",
+      flares: "Fusees",
+      lifeBuoy: "Bouee de sauvetage",
+      watertightDoor: "Porte etanche",
+      gasBottleLocker: "Coffre a bouteilles de gaz",
+      selfDrainingCockpit: "Cockpit auto-videur",
+      sailplanType: "Plan de voilure",
+      numberOfMasts: "Nombre de mats",
+      sparsMaterial: "Materiau du greement",
+      bowsprit: "Beaupre",
+      standingRig: "Greement dormant",
+      mainSail: "Grand-voile",
+      furlingMainsail: "Grand-voile sur enrouleur",
+      jib: "Foc",
+      genoa: "Genois",
+      spinnaker: "Spinnaker",
+      gennaker: "Gennaker",
+      mizzen: "Misaine",
+      winches: "Winchs",
+      electricWinches: "Winchs electriques",
+      manualWinches: "Winchs manuels",
+      anchor: "Ancre",
+      bowThruster: "Propulseur d'etrave",
+      anchorWinch: "Guindeau",
+      sprayHood: "Capote",
+      bimini: "Bimini",
+      swimmingPlatform: "Plateforme de bain",
+      swimmingLadder: "Echelle de bain",
+      teakDeck: "Pont en teck",
+      cockpitTable: "Table de cockpit",
+      dinghy: "Annexe",
+      trailer: "Remorque",
+      covers: "Housses",
+      fenders: "Pare-battages et amarres",
+      fendersLines: "Pare-battages et amarres",
+      anchorConnection: "Connexion d'ancre",
+      sternAnchor: "Ancre arriere",
+      spudPole: "Pieu d'ancrage",
+      cockpitTent: "Tente de cockpit",
+      outdoorCushions: "Coussins exterieurs",
+      seaRails: "Balcons de mer",
+      pushpitPullpit: "Balcon avant / arriere",
+      sailLoweringSystem: "Systeme d'affalage des voiles",
+      crutch: "Chevre",
+      dinghyBrand: "Marque de l'annexe",
+      outboardEngine: "Moteur hors-bord",
+      crane: "Grue",
+      davits: "Bossoirs",
+      imageDetectedDark: "L'image source etait sombre avant l'amelioration.",
+      imageStrongHighlights:
+        "L'image source presentait de fortes hautes lumieres avant l'amelioration.",
+      imageSoftRecovery:
+        "L'image source etait douce, une recuperation de clarte a donc ete tentee.",
+      imageLowRes:
+        "L'image source avait une faible resolution, une mise a l'echelle a donc ete envisagee.",
+      imageRotationCorrected:
+        "L'orientation de l'image a ete corrigee de {degrees} degres.",
+      imageGalleryReadyNoCorrections:
+        "L'IA a marque cette image comme prete pour la galerie sans corrections majeures.",
+      aiReadyAnalyzeApprovedImages:
+        "L'IA est prete a analyser {count} images optimisees approuvees",
+      uploadApproveImagesFirstAi:
+        "Telechargez et approuvez d'abord les images, puis l'IA les analysera",
+      runAiExtractionManually: "Lancer l'extraction IA manuellement",
+      noSchedulingRules: "Aucune regle de planification n'est encore definie.",
+      vesselVideoOperations: "Operations video du navire",
+      manageVideosSocialPosting: "Gerer les videos et la publication sociale",
+      generateFromImages: "Generer a partir des images",
+      uploadMp4: "Telecharger MP4",
+      automatedSocialVideo: "Video sociale automatisee",
+      queueMarketingVideo:
+        "Mettez en file d'attente une video marketing creee a partir des images approuvees du bateau. Le backend generera la video et affichera les mises a jour de statut dans la bibliotheque video sociale.",
+      openSocialLibrary: "Ouvrir la bibliotheque sociale",
+      forceRegenerate: "Forcer la regeneration",
+      generatedMarketingVideos: "Videos marketing generees",
+      refresh: "Actualiser",
+      marketingVideo: "Video marketing",
+      templateLabel: "Modele",
+      videoUrlLabel: "URL video",
+      readyState: "prete",
+      waitingState: "en attente",
+      addSchedulingWindow: "Ajouter un creneau",
+      locationSelectPlaceholder: "Selectionner un lieu...",
+      locationRequiredForNextStep:
+        "Selectionnez un lieu de vente avant de passer a l'etape suivante.",
+      noSpecificDocumentsRequired:
+        "Aucun document specifique requis pour ce type.",
+      uploadDocuments: "Telecharger des documents",
+      documentUploading: "Telechargement...",
+      clickOrDropDocument: "Cliquez ou glissez un document",
+      uploadedDocuments: "Deja telecharges ({count})",
+      deleteAllImagesTitle: "Supprimer toutes les images",
+      deleteAllImagesDescription:
+        "Voulez-vous vraiment supprimer toutes les images telechargees de ce yacht ? Cette action est irreversible.",
+      deletingAllImages: "Suppression...",
+      deleteAllAction: "Tout supprimer",
+      cancel: "Annuler",
+      aiExtractionNotAvailableOffline: "Extraction IA indisponible hors ligne",
+      offlineManualHint:
+        "Vous pouvez ignorer cette etape et remplir les details du bateau manuellement. Les images sont enregistrees localement.",
+      skipToStep2Manual: "Passer a l'etape 2 (manuel)",
+      geminiAnalyzingImages: "Gemini analyse vos images...",
+      aiExtractionNeedsInternet:
+        "L'extraction IA necessite une connexion Internet. Vous pouvez passer a l'etape 2 pour renseigner les details manuellement.",
+      uploadOneImageFirst: "Veuillez d'abord telecharger au moins une image.",
+      uploadOneImageFirstOffline:
+        "Veuillez d'abord telecharger au moins une image (enregistree localement).",
+      aiExtractionStartedBackground:
+        "🤖 L'extraction IA a demarre en arriere-plan...",
+      aiPipelineAnalyzingImages: "🤖 Le pipeline IA analyse vos images...",
+      connectingGeminiVisionApi: "Connexion a l'API Gemini Vision...",
+      analyzingVesselImagesGemini:
+        "Analyse des images du bateau avec Gemini Vision...",
+      searchingCatalogMatchingModels:
+        "Recherche de modeles correspondants dans le catalogue...",
+      crossReferencingTechnicalSpecs:
+        "Verification croisee des specifications techniques...",
+      finalizingDataValidatingResults:
+        "Finalisation des donnees et validation des resultats...",
+      aiGalleryReview: "Revue galerie IA",
+      reviewDetails: "Details de revision",
+      imageReviewTitle: "Revision de l'image",
+      imageReviewDescription:
+        "Examinez l'image complete, le score IA et les corrections appliquees avant de l'approuver pour la galerie finale.",
+      closeImageReview: "Fermer la revision de l'image",
+      aiEnhanced: "IA amelioree",
+      imagesApprovedUnlocked:
+        "✅ Images approuvees - l'etape 2 est deverrouillee !",
+      imagesApprovedExtractionRunning:
+        "🤖 Images approuvees. L'extraction IA est encore en cours...",
+      approvedMinimumImages:
+        "⏳ {approved} sur {minimum} images minimales approuvees",
+      editManifestUnlocked:
+        "ℹ️ Mode modification - l'etape 2 est deverrouillee avec les donnees existantes du bateau.",
+      stepTwoUnlockHint:
+        "L'etape 2 s'ouvre apres l'approbation des images. L'extraction IA continue en arriere-plan et remplit les champs des qu'elle est prete.",
+      stillProcessingCount: "{count} encore en cours de traitement...",
+      approveAllImages: "Tout approuver",
+      aiTimedOutStepTwo:
+        "L'extraction IA a expire. L'etape 2 est deverrouillee ; vous pouvez continuer et relancer l'IA plus tard.",
+      imagesApprovedManualAi:
+        "Images approuvees. Vous pouvez lancer le remplissage IA manuellement si necessaire.",
+      imagesApprovedShort: "Images approuvees.",
+      fourImagesPerRow: "4 images par ligne",
+      sixImagesPerRow: "6 images par ligne",
+      eightImagesPerRow: "8 images par ligne",
       harborLocation: "Lieu de vente (port) *",
       price: "Prix (€)",
       minBidAmount: "Montant minimum de l'offre (€)",
@@ -1029,16 +1979,9 @@ function normalizeTriStateValue(value: unknown): "yes" | "no" | null {
   )
     return "no";
   if (
-    [
-      "yes",
-      "y",
-      "true",
-      "1",
-      "present",
-      "included",
-      "ja",
-      "oui",
-    ].includes(normalized)
+    ["yes", "y", "true", "1", "present", "included", "ja", "oui"].includes(
+      normalized,
+    )
   )
     return "yes";
   if (/\b(without|not visible|not present|missing)\b/.test(normalized))
@@ -1119,7 +2062,9 @@ function buildDescriptionFormValues(
       key,
       typeof rawValue === "string" ? rawValue.trim() : rawValue,
     ])
-    .sort(([leftKey], [rightKey]) => (leftKey as string).localeCompare(rightKey as string));
+    .sort(([leftKey], [rightKey]) =>
+      (leftKey as string).localeCompare(rightKey as string),
+    );
 
   return Object.fromEntries(entries);
 }
@@ -1382,6 +2327,15 @@ export default function YachtEditorPage() {
     review: labelText("stepReview", "Review"),
     contract: labelText("stepContract", "Contract"),
   };
+  const localizeFieldLabel = useCallback(
+    (fieldName: string, fallback: string) => {
+      const key = fieldName.replace(/_([a-z])/g, (_, letter: string) =>
+        letter.toUpperCase(),
+      ) as keyof typeof yachtFormText.labels;
+      return labelText(key, fallback);
+    },
+    [labelText],
+  );
 
   const wizardSteps = WIZARD_STEP_IDS.map((step) => ({
     ...step,
@@ -1461,36 +2415,41 @@ export default function YachtEditorPage() {
       : null
     : (yachtId as string);
   const isPersistedYachtRoute =
-    !isNewMode &&
-    typeof yachtId === "string" &&
-    /^[0-9]+$/.test(yachtId);
+    !isNewMode && typeof yachtId === "string" && /^[0-9]+$/.test(yachtId);
 
   // Gemini Extraction State (Step 1)
   const [isExtracting, setIsExtracting] = useState(false);
 
-  const pipeline = useImagePipeline(activeYachtId, { pausePolling: isExtracting });
+  const pipeline = useImagePipeline(activeYachtId, {
+    pausePolling: isExtracting,
+  });
   const imagesApproved = pipeline.isStep2Unlocked;
-  const [reviewImages, setReviewImages] = useState<PipelineImage[]>([]);
+  const [reviewImages, setReviewImages] = useState<ReviewPipelineImage[]>([]);
+  const [pendingUploadPreviews, setPendingUploadPreviews] = useState<
+    ReviewPipelineImage[]
+  >([]);
 
   const loadMarketingVideos = useCallback(
     async (targetYachtId: number | string) => {
       try {
-        const response = await api.get("/social/videos");
-        const payload =
-          Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response.data?.videos)
-              ? response.data.videos
-              : Array.isArray(response.data?.data?.videos)
-                ? response.data.data.videos
-                : Array.isArray(response.data?.data)
-                  ? response.data.data
-                  : [];
+        const response = await api.get("/social/videos", {
+          params: { yacht_id: Number(targetYachtId) },
+        });
+        const payload = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.videos)
+            ? response.data.videos
+            : Array.isArray(response.data?.data?.videos)
+              ? response.data.data.videos
+              : Array.isArray(response.data?.data)
+                ? response.data.data
+                : [];
 
         setMarketingVideos(
           payload.filter(
             (video: any) =>
-              Number(video?.yacht_id ?? video?.boat_id) === Number(targetYachtId),
+              Number(video?.yacht_id ?? video?.boat_id) ===
+              Number(targetYachtId),
           ),
         );
       } catch (error) {
@@ -1499,6 +2458,31 @@ export default function YachtEditorPage() {
     },
     [],
   );
+
+  useEffect(() => {
+    const targetId = isNewMode ? createdYachtId : yachtId;
+    if (!targetId || marketingVideos.length === 0) return;
+
+    const hasProcessingVideo = marketingVideos.some((video) =>
+      ["queued", "processing", "pending", "rendering"].includes(
+        String(video?.status || "").toLowerCase(),
+      ),
+    );
+
+    if (!hasProcessingVideo) return;
+
+    const timer = window.setInterval(() => {
+      void loadMarketingVideos(targetId);
+    }, 8000);
+
+    return () => window.clearInterval(timer);
+  }, [
+    createdYachtId,
+    isNewMode,
+    loadMarketingVideos,
+    marketingVideos,
+    yachtId,
+  ]);
   const [imageGridDensity, setImageGridDensity] =
     useState<ImageGridDensity>("regular");
   const [selectedLightboxImageId, setSelectedLightboxImageId] = useState<
@@ -1516,9 +2500,27 @@ export default function YachtEditorPage() {
   const [mainPreview, setMainPreview] = useState<string | null>(null);
   const [mainFile, setMainFile] = useState<File | null>(null);
   const hasInFlightImageUploads = isUploading || pipeline.isUploading;
+  const hasSelectedHarbor = hasFilledFieldValue(selectedYacht?.ref_harbor_id);
+  const persistedPipelineImages = useMemo(
+    () => pipeline.images.filter((image) => image.id > 0),
+    [pipeline.images],
+  );
+  const displayReadyForReviewCount = persistedPipelineImages.filter(
+    (image) => image.status === "ready_for_review",
+  ).length;
+  const displayApprovedCount = persistedPipelineImages.filter(
+    (image) => image.status === "approved",
+  ).length;
+  const displayProcessingCount =
+    persistedPipelineImages.filter(
+      (image) =>
+        image.status === "processing" || image.enhancement_method === "pending",
+    ).length + pendingUploadPreviews.length;
+  const displayTotalImageCount =
+    persistedPipelineImages.length + pendingUploadPreviews.length;
   const shouldShowImageUploadDropzone =
-    pipeline.images.length === 0 || hasInFlightImageUploads;
-  const shouldShowImageGrid = pipeline.images.length > 0;
+    reviewImages.length === 0 || hasInFlightImageUploads;
+  const shouldShowImageGrid = reviewImages.length > 0;
 
   // AI Pipeline State
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
@@ -1623,10 +2625,10 @@ export default function YachtEditorPage() {
       keys.length >= 5 ||
       Boolean(
         descriptionFormValues.boat_name ||
-          descriptionFormValues.manufacturer ||
-          descriptionFormValues.model ||
-          descriptionFormValues.boat_type ||
-          descriptionFormValues.boat_category,
+        descriptionFormValues.manufacturer ||
+        descriptionFormValues.model ||
+        descriptionFormValues.boat_type ||
+        descriptionFormValues.boat_category,
       )
     );
   }, [descriptionFormValues]);
@@ -1665,8 +2667,41 @@ export default function YachtEditorPage() {
   }, [selectedLang]);
 
   useEffect(() => {
-    setReviewImages(pipeline.images);
+    setPendingUploadPreviews((previous) => {
+      if (previous.length === 0) return previous;
+
+      const pipelineCounts = new Map<string, number>();
+      pipeline.images
+        .filter((image) => image.id > 0)
+        .forEach((image) => {
+          const key = image.original_name || "";
+          pipelineCounts.set(key, (pipelineCounts.get(key) || 0) + 1);
+        });
+
+      const nextPending: ReviewPipelineImage[] = [];
+      previous.forEach((image) => {
+        const key = image.original_name || "";
+        const availableCount = pipelineCounts.get(key) || 0;
+        if (availableCount > 0) {
+          pipelineCounts.set(key, availableCount - 1);
+        } else {
+          nextPending.push(image);
+        }
+      });
+
+      return nextPending;
+    });
   }, [pipeline.images]);
+
+  useEffect(() => {
+    setReviewImages([
+      ...pipeline.images,
+      ...pendingUploadPreviews.filter(
+        (image) =>
+          !pipeline.images.some((existing) => existing.id === image.id),
+      ),
+    ]);
+  }, [pendingUploadPreviews, pipeline.images]);
 
   useEffect(() => {
     if (!isDraftLoaded) return;
@@ -2178,7 +3213,10 @@ export default function YachtEditorPage() {
     const activePreviewUrls = new Set(
       pipeline.images
         .map((image) => image.client_preview_url)
-        .filter((value): value is string => typeof value === "string" && value.length > 0),
+        .filter(
+          (value): value is string =>
+            typeof value === "string" && value.length > 0,
+        ),
     );
 
     localPreviewUrlsRef.current.forEach((url) => {
@@ -2242,11 +3280,11 @@ export default function YachtEditorPage() {
           const uiState = toObjectRecord(remoteDraft.ui_state_json);
           const serverCompletedSteps = Array.isArray(uiState.completedSteps)
             ? uiState.completedSteps
-              .map((value) => Number(value))
-              .filter(
-                (value) =>
-                  Number.isInteger(value) && value >= 1 && value <= 5,
-              )
+                .map((value) => Number(value))
+                .filter(
+                  (value) =>
+                    Number.isInteger(value) && value >= 1 && value <= 5,
+                )
             : [];
 
           flushDraft({
@@ -2318,7 +3356,13 @@ export default function YachtEditorPage() {
         clearTimeout(serverSyncTimerRef.current);
       }
     };
-  }, [isDraftLoaded, isOnline, draft.lastSaved, activeStep, imageManifestSyncKey]);
+  }, [
+    isDraftLoaded,
+    isOnline,
+    draft.lastSaved,
+    activeStep,
+    imageManifestSyncKey,
+  ]);
 
   // Expose a global best-effort flush hook for language switching/navigation.
   const flushYachtDraftNow = useCallback(async () => {
@@ -2403,7 +3447,10 @@ export default function YachtEditorPage() {
           pipeline.images.length === 0
         ) {
           toast.error(
-            "Please upload at least one image first (saved locally).",
+            labelText(
+              "uploadOneImageFirstOffline",
+              "Please upload at least one image first (saved locally).",
+            ),
           );
           return;
         }
@@ -2417,12 +3464,22 @@ export default function YachtEditorPage() {
         );
         return;
       }
+      if (newStep > 2 && !hasSelectedHarbor) {
+        toast.error(
+          labelText(
+            "locationRequiredForNextStep",
+            "Select a sales location before continuing to the next step.",
+          ),
+        );
+        return;
+      }
       setActiveStep(newStep);
     },
     [
       isOnline,
       isNewMode,
       canProceedFromStep1,
+      hasSelectedHarbor,
       offlineImages,
       pipeline.images.length,
     ],
@@ -2513,7 +3570,6 @@ export default function YachtEditorPage() {
           de: yacht.short_description_de || "",
           fr: yacht.short_description_fr || "",
         });
-
       } catch (err: any) {
         if (err?.response?.status === 404) {
           console.warn(`[YachtEditor] Skipping missing yacht ${yachtId}`);
@@ -2613,10 +3669,36 @@ export default function YachtEditorPage() {
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||
-        "Could not queue marketing video generation.",
+          "Could not queue marketing video generation.",
       );
     } finally {
       setIsGeneratingMarketingVideo(false);
+    }
+  };
+
+  const handleNotifyMarketingVideoOwner = async (videoId: number) => {
+    setIsPublishingVideo(videoId);
+    try {
+      const response = await api.post(
+        `/social/videos/${videoId}/notify-owner`,
+        {
+          force: true,
+        },
+      );
+      toast.success(
+        response.data?.message || "Owner WhatsApp delivery queued.",
+      );
+      const targetId = isNewMode ? createdYachtId : yachtId;
+      if (targetId) {
+        await loadMarketingVideos(targetId);
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+          "Could not queue owner WhatsApp delivery.",
+      );
+    } finally {
+      setIsPublishingVideo(null);
     }
   };
 
@@ -2750,48 +3832,76 @@ export default function YachtEditorPage() {
       selectedLightboxImageId === null
         ? -1
         : reviewImages.findIndex(
-          (image) => image.id === selectedLightboxImageId,
-        ),
+            (image) => image.id === selectedLightboxImageId,
+          ),
     [reviewImages, selectedLightboxImageId],
   );
 
-  const buildImageAiNotes = useCallback((image: PipelineImage) => {
-    const notes: string[] = [];
-    const adjustments = Array.isArray(image.quality_flags?.ai_adjustments)
-      ? image.quality_flags.ai_adjustments
-      : [];
-    notes.push(...adjustments);
+  const buildImageAiNotes = useCallback(
+    (image: PipelineImage) => {
+      const notes: string[] = [];
+      const adjustments = Array.isArray(image.quality_flags?.ai_adjustments)
+        ? image.quality_flags.ai_adjustments
+        : [];
+      notes.push(...adjustments);
 
-    if (image.quality_flags?.too_dark) {
-      notes.push("Source image was detected as dark before enhancement.");
-    }
-    if (image.quality_flags?.too_bright) {
-      notes.push("Source image had strong highlights before enhancement.");
-    }
-    if (image.quality_flags?.blurry) {
-      notes.push("Source image was soft, so clarity recovery was attempted.");
-    }
-    if (image.quality_flags?.low_res) {
-      notes.push(
-        "Source image resolution was low, so upscale logic was considered.",
-      );
-    }
-    if (
-      typeof image.quality_flags?.ai_rotation_angle === "number" &&
-      image.quality_flags.ai_rotation_angle > 0
-    ) {
-      notes.push(
-        `Image orientation was corrected by ${image.quality_flags.ai_rotation_angle} degrees.`,
-      );
-    }
-    if (notes.length === 0) {
-      notes.push(
-        "AI marked this image as gallery-ready without major corrections.",
-      );
-    }
+      if (image.quality_flags?.too_dark) {
+        notes.push(
+          labelText(
+            "imageDetectedDark",
+            "Source image was detected as dark before enhancement.",
+          ),
+        );
+      }
+      if (image.quality_flags?.too_bright) {
+        notes.push(
+          labelText(
+            "imageStrongHighlights",
+            "Source image had strong highlights before enhancement.",
+          ),
+        );
+      }
+      if (image.quality_flags?.blurry) {
+        notes.push(
+          labelText(
+            "imageSoftRecovery",
+            "Source image was soft, so clarity recovery was attempted.",
+          ),
+        );
+      }
+      if (image.quality_flags?.low_res) {
+        notes.push(
+          labelText(
+            "imageLowRes",
+            "Source image resolution was low, so upscale logic was considered.",
+          ),
+        );
+      }
+      if (
+        typeof image.quality_flags?.ai_rotation_angle === "number" &&
+        image.quality_flags.ai_rotation_angle > 0
+      ) {
+        notes.push(
+          formatLabelText(
+            "imageRotationCorrected",
+            "Image orientation was corrected by {degrees} degrees.",
+            { degrees: image.quality_flags.ai_rotation_angle },
+          ),
+        );
+      }
+      if (notes.length === 0) {
+        notes.push(
+          labelText(
+            "imageGalleryReadyNoCorrections",
+            "AI marked this image as gallery-ready without major corrections.",
+          ),
+        );
+      }
 
-    return Array.from(new Set(notes));
-  }, []);
+      return Array.from(new Set(notes));
+    },
+    [formatLabelText, labelText],
+  );
 
   const handlePipelineDragEnd = useCallback(
     async (result: DropResult) => {
@@ -2979,7 +4089,7 @@ export default function YachtEditorPage() {
     const previousStats = pipeline.stats;
     const previousStep2Unlocked = pipeline.isStep2Unlocked;
 
-    let optimisticImages: PipelineImage[] = [];
+    let optimisticImages: ReviewPipelineImage[] = [];
 
     try {
       const fileArray = Array.from(files);
@@ -2988,36 +4098,43 @@ export default function YachtEditorPage() {
       let shouldSetCreatedYachtId = false;
 
       const optimisticBaseId = -Date.now();
-      const optimisticImages: PipelineImage[] = fileArray.map((file, index) => {
-        const previewUrl = URL.createObjectURL(file);
-        localPreviewUrlsRef.current.add(previewUrl);
-        return {
-          id: optimisticBaseId - index,
-          yacht_id: Number(targetId || 0),
-          client_preview_url: previewUrl,
-          url: previewUrl,
-          original_temp_url: previewUrl,
-          optimized_master_url: previewUrl,
-          thumb_url: previewUrl,
-          original_kept_url: null,
-          status: "processing",
-          keep_original: false,
-          quality_score: null,
-          quality_flags: null,
-          quality_label: "Uploading...",
-          category: "general",
-          original_name: file.name,
-          sort_order: pipeline.images.length + index,
-          optimized_url: previewUrl,
-          thumb_full_url: previewUrl,
-          full_url: previewUrl,
-          enhancement_method: "pending",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-      });
+      const optimisticImages: ReviewPipelineImage[] = fileArray.map(
+        (file, index) => {
+          const previewUrl = URL.createObjectURL(file);
+          localPreviewUrlsRef.current.add(previewUrl);
+          return {
+            id: optimisticBaseId - index,
+            yacht_id: Number(targetId || 0),
+            client_upload_key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
+            client_preview_url: previewUrl,
+            url: previewUrl,
+            original_temp_url: previewUrl,
+            optimized_master_url: previewUrl,
+            thumb_url: previewUrl,
+            original_kept_url: null,
+            status: "processing",
+            keep_original: false,
+            quality_score: null,
+            quality_flags: null,
+            quality_label: labelText("processingStatusLabel", "Processing..."),
+            category: "general",
+            original_name: file.name,
+            sort_order: pipeline.images.length + index,
+            optimized_url: previewUrl,
+            thumb_full_url: previewUrl,
+            full_url: previewUrl,
+            enhancement_method: "pending",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        },
+      );
 
       // Render instant previews while upload/process is still running.
+      setPendingUploadPreviews((previous) => [
+        ...previous,
+        ...optimisticImages,
+      ]);
       pipeline.setImagesDirectly?.({
         images: [...pipeline.images, ...optimisticImages],
         stats: {
@@ -3163,8 +4280,9 @@ export default function YachtEditorPage() {
             total: previousStats.total + hydratedUploadedImages.length,
             approved:
               previousStats.approved +
-              hydratedUploadedImages.filter((image) => image.status === "approved")
-                .length,
+              hydratedUploadedImages.filter(
+                (image) => image.status === "approved",
+              ).length,
             processing:
               previousStats.processing +
               hydratedUploadedImages.filter(
@@ -3183,6 +4301,27 @@ export default function YachtEditorPage() {
             previousStep2Unlocked ||
             hydratedUploadedImages.some((image) => image.status === "approved"),
         });
+
+        const uploadedCountsByName = new Map<string, number>();
+        hydratedUploadedImages.forEach((image) => {
+          const key = image.original_name || "";
+          uploadedCountsByName.set(
+            key,
+            (uploadedCountsByName.get(key) || 0) + 1,
+          );
+        });
+
+        setPendingUploadPreviews((previous) =>
+          previous.filter((image) => {
+            const key = image.original_name || "";
+            const availableCount = uploadedCountsByName.get(key) || 0;
+            if (availableCount > 0) {
+              uploadedCountsByName.set(key, availableCount - 1);
+              return false;
+            }
+            return true;
+          }),
+        );
       }
 
       if (shouldSetCreatedYachtId) {
@@ -3196,6 +4335,12 @@ export default function YachtEditorPage() {
         .map((img: PipelineImage) => img.client_preview_url)
         .filter((url): url is string => typeof url === "string");
       optimisticUrls.forEach((url: string) => URL.revokeObjectURL(url));
+      setPendingUploadPreviews((previous) =>
+        previous.filter(
+          (image) =>
+            !optimisticImages.some((optimistic) => optimistic.id === image.id),
+        ),
+      );
       pipeline.setImagesDirectly?.({
         images: previousImages,
         stats: previousStats,
@@ -3238,12 +4383,20 @@ export default function YachtEditorPage() {
     // Block AI extraction when offline
     if (!navigator.onLine) {
       toast.error(
-        "AI extraction requires an internet connection. You can skip to Step 2 to fill in details manually.",
+        labelText(
+          "aiExtractionNeedsInternet",
+          "AI extraction requires an internet connection. You can skip to Step 2 to fill in details manually.",
+        ),
       );
       return false;
     }
     if (pipeline.images.length === 0) {
-      toast.error("Please upload at least one image first.");
+      toast.error(
+        labelText(
+          "uploadOneImageFirst",
+          "Please upload at least one image first.",
+        ),
+      );
       return false;
     }
 
@@ -3252,16 +4405,27 @@ export default function YachtEditorPage() {
     if (!background) {
       setShowExtractModal(true);
     }
-    const toastId = toast.loading(
-      background
-        ? "🤖 AI extraction started in background..."
-        : "🤖 AI Pipeline is analyzing your images...",
-    );
+    // const toastId = toast.loading(
+    //   background
+    //     ? labelText(
+    //         "aiExtractionStartedBackground",
+    //         "🤖 AI extraction started in background...",
+    //       )
+    //     : labelText(
+    //         "aiPipelineAnalyzingImages",
+    //         "🤖 AI Pipeline is analyzing your images...",
+    //       ),
+    // );
 
     // ── Start Progress & Countdown ──
     setExtractionProgress(5);
     setExtractionCountdown(60);
-    setExtractionStatus("Connecting to Gemini Vision API...");
+    setExtractionStatus(
+      labelText(
+        "connectingGeminiVisionApi",
+        "Connecting to Gemini Vision API...",
+      ),
+    );
 
     progressIntervalRef.current = setInterval(() => {
       setExtractionProgress((prev) => {
@@ -3272,14 +4436,33 @@ export default function YachtEditorPage() {
 
         // Update status messages based on progress
         if (next < 25)
-          setExtractionStatus("Analyzing vessel images with Gemini Vision...");
+          setExtractionStatus(
+            labelText(
+              "analyzingVesselImagesGemini",
+              "Analyzing vessel images with Gemini Vision...",
+            ),
+          );
         else if (next < 50)
           setExtractionStatus(
-            "Searching Pinecone catalog for matching models...",
+            labelText(
+              "searchingCatalogMatchingModels",
+              "Searching catalog for matching models...",
+            ),
           );
         else if (next < 80)
-          setExtractionStatus("Cross-referencing technical specifications...");
-        else setExtractionStatus("Finalizing data and validating results...");
+          setExtractionStatus(
+            labelText(
+              "crossReferencingTechnicalSpecs",
+              "Cross-referencing technical specifications...",
+            ),
+          );
+        else
+          setExtractionStatus(
+            labelText(
+              "finalizingDataValidatingResults",
+              "Finalizing data and validating results...",
+            ),
+          );
 
         return next;
       });
@@ -3361,8 +4544,8 @@ export default function YachtEditorPage() {
       if (!res.ok) {
         throw new Error(
           responseData?.error ||
-          responseData?.message ||
-          `AI extraction request failed (HTTP ${res.status})`,
+            responseData?.message ||
+            `AI extraction request failed (HTTP ${res.status})`,
         );
       }
 
@@ -3376,7 +4559,10 @@ export default function YachtEditorPage() {
         // AI models sometimes ignore prompt instructions. This guarantees
         // "unknown" never appears in any form field.
         for (const key of Object.keys(formValues)) {
-          if (typeof formValues[key] === "string" && formValues[key].toLowerCase().trim() === "unknown") {
+          if (
+            typeof formValues[key] === "string" &&
+            formValues[key].toLowerCase().trim() === "unknown"
+          ) {
             formValues[key] = "";
           }
         }
@@ -3602,8 +4788,9 @@ export default function YachtEditorPage() {
           ...toObjectRecord(selectedYacht),
           ...fieldsToMerge,
         };
-        const extractedDescriptionFormValues =
-          buildDescriptionFormValues(mergedDescriptionState);
+        const extractedDescriptionFormValues = buildDescriptionFormValues(
+          mergedDescriptionState,
+        );
         if (Object.keys(extractedDescriptionFormValues).length > 0) {
           void handleRegenerateDescription({
             silent: true,
@@ -3632,7 +4819,7 @@ export default function YachtEditorPage() {
         if (anomalyCount > 0) {
           toastMsg += `\n⚠️ ${anomalyCount} anomal${anomalyCount > 1 ? "ies" : "y"} detected`;
         }
-        toast.success(toastMsg, { id: toastId, duration: 5000 });
+        toast.success(toastMsg, { duration: 5000 });
 
         if (navigateToStep2) {
           // Navigate to Step 2 immediately only for foreground/manual runs.
@@ -3647,7 +4834,6 @@ export default function YachtEditorPage() {
         );
         toast.error(
           responseData?.error || "Extraction failed — no data returned",
-          { id: toastId },
         );
         return false;
       }
@@ -3657,12 +4843,7 @@ export default function YachtEditorPage() {
         err?.response?.data?.error || err?.message || "AI extraction failed";
 
       if (speedMode === "deep" && isTimeoutLike(String(errorMsg))) {
-        toast.loading(
-          "Deep extraction timed out. Retrying with balanced mode...",
-          {
-            id: toastId,
-          },
-        );
+        toast("Deep extraction timed out. Retrying with balanced mode...");
         return await handleAiExtract({
           background,
           navigateToStep2,
@@ -3670,7 +4851,7 @@ export default function YachtEditorPage() {
         });
       }
 
-      toast.error(errorMsg, { id: toastId });
+      toast.error(errorMsg);
       return false;
     } finally {
       setIsExtracting(false);
@@ -3741,7 +4922,6 @@ export default function YachtEditorPage() {
         }
       } catch (e: any) {
         console.error(e);
-        lastDescriptionRequestSignatureRef.current = null;
         if (toastId) {
           toast.error(
             e?.response?.data?.error || "Failed to regenerate text.",
@@ -3804,8 +4984,7 @@ export default function YachtEditorPage() {
       recognition.stop();
       setIsDictating(false);
     } else {
-      recognition.lang =
-        DESCRIPTION_LANGUAGE_LOCALES[selectedLang];
+      recognition.lang = DESCRIPTION_LANGUAGE_LOCALES[selectedLang];
       recognition.start();
       setIsDictating(true);
       toast.success("Listening... Speak now");
@@ -4410,7 +5589,7 @@ export default function YachtEditorPage() {
               <Loader2 size={28} className="animate-spin text-blue-600" />
             </div>
             <h3 className="text-lg font-bold text-slate-900">
-              AI Extraction in Progress
+              {labelText("extractionInProgress", "AI Extraction in Progress")}
             </h3>
             <p className="text-sm text-slate-500 mt-2 min-h-[40px]">
               {extractionStatus ||
@@ -4426,8 +5605,18 @@ export default function YachtEditorPage() {
                 />
               </div>
               <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <span>{extractionProgress}% Complete</span>
-                <span>Approx. {extractionCountdown}s remaining</span>
+                <span>
+                  {labelText("percentComplete", "{percent}% Complete").replace(
+                    "{percent}",
+                    String(extractionProgress),
+                  )}
+                </span>
+                <span>
+                  {labelText(
+                    "secondsRemaining",
+                    "Approx. {seconds}s remaining",
+                  ).replace("{seconds}", String(extractionCountdown))}
+                </span>
               </div>
             </div>
           </div>
@@ -4459,17 +5648,21 @@ export default function YachtEditorPage() {
                     isLocked
                       ? isNewMode && step.id === 6 && !createdYachtId
                         ? labelText("saveVesselFirst", "Save Vessel First")
-                        : labelText("approveImagesFirst", "Approve Images First")
+                        : labelText(
+                            "approveImagesFirst",
+                            "Approve Images First",
+                          )
                       : step.label
                   }
                   className={`
                     w-[54px] h-[54px] rounded-full flex items-center justify-center
                     text-[18px] font-bold border-[3px] transition-all duration-300
-                    ${isLocked
-                      ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
-                      : isPast
-                        ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
-                        : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
+                    ${
+                      isLocked
+                        ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
+                        : isPast
+                          ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
+                          : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
                     }
                   `}
                 >
@@ -4477,8 +5670,9 @@ export default function YachtEditorPage() {
                 </button>
                 {index < wizardSteps.length - 1 && (
                   <div
-                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${step.id < activeStep ? "bg-[#2563eb]" : "bg-[#d4d8de]"
-                      }`}
+                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${
+                      step.id < activeStep ? "bg-[#2563eb]" : "bg-[#d4d8de]"
+                    }`}
                   />
                 )}
               </div>
@@ -4527,7 +5721,8 @@ export default function YachtEditorPage() {
           {errors && (
             <div className="p-6 bg-red-50 border-l-4 border-red-500 text-red-700">
               <div className="flex items-center gap-2 mb-3 font-bold text-sm">
-                <AlertCircle size={16} /> Data Conflict Detected
+                <AlertCircle size={16} />{" "}
+                {labelText("dataConflictDetected", "Data Conflict Detected")}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {Object.keys(errors).map((key) => (
@@ -4572,7 +5767,10 @@ export default function YachtEditorPage() {
                 <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-3">
                   <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                     <FileText size={14} className="text-blue-500" />
-                    {labelText("vesselDescriptionHelp", "Vessel Description")}{" "}
+                    {labelText(
+                      "vesselDescriptionHelp",
+                      "Vessel Description",
+                    )}{" "}
                     <span className="text-slate-400 font-normal">
                       {labelText(
                         "optionalRecommended",
@@ -4583,13 +5781,19 @@ export default function YachtEditorPage() {
                   <textarea
                     value={boatHint}
                     onChange={(e) => setBoatHint(e.target.value)}
-                    placeholder='Brand/Model/Year + short notes (e.g. "Beneteau Oceanis 38, 2016, diesel, 3 cabins, VAT paid, CE docs available")'
+                    placeholder={labelText(
+                      "vesselDescriptionPlaceholder",
+                      'Brand/Model/Year + short notes (e.g. "Beneteau Oceanis 38, 2016, diesel, 3 cabins, VAT paid, CE docs available")',
+                    )}
                     className="w-full h-24 bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none resize-none transition-all"
                     disabled={isExtracting}
                   />
                   <p className="text-xs text-slate-400 flex items-center gap-1">
-                    <Sparkles size={10} /> Adding brand/model/year dramatically
-                    improves AI accuracy.
+                    <Sparkles size={10} />{" "}
+                    {labelText(
+                      "vesselDescriptionAccuracyHint",
+                      "Adding brand/model/year dramatically improves AI accuracy.",
+                    )}
                   </p>
                 </div>
 
@@ -4623,16 +5827,28 @@ export default function YachtEditorPage() {
                       )}
                     >
                       {hasInFlightImageUploads
-                        ? "Uploading images..."
-                        : `Click to add up to ${MAX_IMAGES_UPLOAD} images`}
+                        ? labelText("uploadingImages", "Uploading images...")
+                        : labelText(
+                            "clickToAddImages",
+                            `Click to add up to ${MAX_IMAGES_UPLOAD} images`,
+                          ).replace("{count}", String(MAX_IMAGES_UPLOAD))}
                     </p>
                     <p className="text-xs text-slate-400 mt-2">
                       {hasInFlightImageUploads
-                        ? "This area stays visible until the current upload finishes."
-                        : "JPEG, PNG, HEIC auto-optimized by AI"}
+                        ? labelText(
+                            "uploadAreaPendingHelp",
+                            "This area stays visible until the current upload finishes.",
+                          )
+                        : labelText(
+                            "uploadAreaFormatsHelp",
+                            "JPEG, PNG, HEIC auto-optimized by AI",
+                          )}
                     </p>
                     <p className="text-xs text-blue-500 mt-1 font-medium">
-                      Include HIN plates, docs, registration, engine hours
+                      {labelText(
+                        "uploadAreaHint",
+                        "Include HIN plates, docs, registration, engine hours",
+                      )}
                     </p>
                     <input
                       type="file"
@@ -4650,29 +5866,35 @@ export default function YachtEditorPage() {
                     <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
                       <div className="flex flex-wrap items-center gap-4">
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                          {`${pipeline.stats.total} image${pipeline.stats.total !== 1 ? "s" : ""}`}
+                          {`${displayTotalImageCount} ${labelText("imageCountLabel", "Images")}`}
                         </p>
-                        {pipeline.stats.total > 0 && (
-                          <div className="flex items-center gap-2 text-[10px] font-bold">
-                            {pipeline.stats.processing > 0 && (
-                              <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                <Loader2 size={10} className="animate-spin" />{" "}
-                                {pipeline.stats.processing} processing
+                        {displayTotalImageCount > 0 && (
+                          <div className="flex flex-wrap items-center gap-2 text-sm font-bold">
+                            {displayProcessingCount > 0 && (
+                              <span className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full flex items-center gap-2 min-h-10">
+                                <Loader2 size={12} className="animate-spin" />{" "}
+                                {displayProcessingCount}{" "}
+                                {labelText("processingBadge", "processing")}
                               </span>
                             )}
-                            {pipeline.stats.ready > 0 && (
-                              <span className="bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">
-                                {pipeline.stats.ready} ready for review
+                            {displayReadyForReviewCount > 0 && (
+                              <span className="bg-amber-100 text-amber-700 px-4 py-2 rounded-full min-h-10 inline-flex items-center">
+                                {displayReadyForReviewCount}{" "}
+                                {labelText(
+                                  "readyForReviewBadge",
+                                  "ready for review",
+                                )}
                               </span>
                             )}
-                            {pipeline.stats.approved > 0 && (
-                              <span className="bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">
-                                ✓ {pipeline.stats.approved} approved
+                            {displayApprovedCount > 0 && (
+                              <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full min-h-10 inline-flex items-center">
+                                ✓ {displayApprovedCount}{" "}
+                                {labelText("approvedBadge", "approved")}
                               </span>
                             )}
                             {isReorderingImages && (
-                              <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                                Saving order...
+                              <span className="bg-slate-100 text-slate-600 px-4 py-2 rounded-full min-h-10 inline-flex items-center">
+                                {labelText("savingOrder", "Saving order...")}
                               </span>
                             )}
                           </div>
@@ -4690,7 +5912,10 @@ export default function YachtEditorPage() {
                                 ? "bg-white text-slate-800 shadow-sm"
                                 : "text-slate-500",
                             )}
-                            title="4 images per row"
+                            title={labelText(
+                              "fourImagesPerRow",
+                              "4 images per row",
+                            )}
                           >
                             4
                           </button>
@@ -4703,7 +5928,10 @@ export default function YachtEditorPage() {
                                 ? "bg-white text-slate-800 shadow-sm"
                                 : "text-slate-500",
                             )}
-                            title="6 images per row"
+                            title={labelText(
+                              "sixImagesPerRow",
+                              "6 images per row",
+                            )}
                           >
                             6
                           </button>
@@ -4716,7 +5944,10 @@ export default function YachtEditorPage() {
                                 ? "bg-white text-slate-800 shadow-sm"
                                 : "text-slate-500",
                             )}
-                            title="8 images per row"
+                            title={labelText(
+                              "eightImagesPerRow",
+                              "8 images per row",
+                            )}
                           >
                             8
                           </button>
@@ -4735,7 +5966,7 @@ export default function YachtEditorPage() {
                           ) : (
                             <Wand2 size={12} />
                           )}
-                          AI auto-sort
+                          {labelText("aiAutoSort", "AI auto-sort")}
                         </button>
 
                         <button
@@ -4745,7 +5976,10 @@ export default function YachtEditorPage() {
                             reviewImages.length === 0 || isDeletingAllImages
                           }
                           className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-60"
-                          title="Delete all images"
+                          title={labelText(
+                            "deleteAllImages",
+                            "Delete all images",
+                          )}
                         >
                           {isDeletingAllImages ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -4755,7 +5989,8 @@ export default function YachtEditorPage() {
                         </button>
 
                         <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
-                          <Upload size={12} /> Add More
+                          <Upload size={12} />{" "}
+                          {labelText("addMoreImages", "Add More")}
                           <input
                             type="file"
                             multiple
@@ -4789,22 +6024,22 @@ export default function YachtEditorPage() {
                                   processing: {
                                     bg: "bg-blue-500",
                                     text: "text-white",
-                                    label: "⏳ Processing...",
+                                    label: `⏳ ${labelText("processingStatusLabel", "Processing...")}`,
                                   },
                                   ready_for_review: {
                                     bg: "bg-amber-500",
                                     text: "text-white",
-                                    label: "👁 Ready for Review",
+                                    label: `👁 ${labelText("readyForReviewStatusLabel", "Ready for Review")}`,
                                   },
                                   approved: {
                                     bg: "bg-emerald-500",
                                     text: "text-white",
-                                    label: "✓ Approved",
+                                    label: `✓ ${labelText("approvedStatusLabel", "Approved")}`,
                                   },
                                   processing_failed: {
                                     bg: "bg-red-500",
                                     text: "text-white",
-                                    label: "✕ Failed",
+                                    label: `✕ ${labelText("failedStatusLabel", "Failed")}`,
                                   },
                                 };
                                 const sc =
@@ -4812,7 +6047,11 @@ export default function YachtEditorPage() {
                                   statusConfig.processing;
 
                                 return (
-                                  <Draggable key={img.id} draggableId={`pipeline-image-${img.id}`} index={index}>
+                                  <Draggable
+                                    key={img.id}
+                                    draggableId={`pipeline-image-${img.id}`}
+                                    index={index}
+                                  >
                                     {(dragProvided) => (
                                       <div
                                         ref={dragProvided.innerRef}
@@ -4825,7 +6064,7 @@ export default function YachtEditorPage() {
                                               ? "border-amber-300"
                                               : img.status === "processing"
                                                 ? "border-blue-200"
-                                                : "border-red-300"
+                                                : "border-red-300",
                                         )}
                                       >
                                         {/* Image */}
@@ -4833,13 +6072,20 @@ export default function YachtEditorPage() {
                                           <img
                                             key={`img-${img.id}-${getPipelineImageSrc(img)}`}
                                             src={getPipelineImageSrc(img)}
-                                            alt={img.original_name || `Yacht image ${index + 1}`}
-                                            onClick={() => setSelectedLightboxImageId(img.id)}
+                                            alt={
+                                              img.original_name ||
+                                              `Yacht image ${index + 1}`
+                                            }
+                                            onClick={() =>
+                                              setSelectedLightboxImageId(img.id)
+                                            }
                                             className={cn(
                                               "w-full h-full cursor-zoom-in object-cover transition-opacity",
-                                              img.enhancement_method === "pending" &&
-                                              "opacity-80 grayscale-[0.2]",
-                                              img.status === "processing" && "opacity-60"
+                                              img.enhancement_method ===
+                                                "pending" &&
+                                                "opacity-80 grayscale-[0.2]",
+                                              img.status === "processing" &&
+                                                "opacity-60",
                                             )}
                                             onError={handleImageError}
                                           />
@@ -4847,7 +6093,10 @@ export default function YachtEditorPage() {
                                           {/* Loading Overlay for Processing */}
                                           {img.status === "processing" && (
                                             <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
-                                              <Loader2 size={24} className="animate-spin text-blue-600" />
+                                              <Loader2
+                                                size={24}
+                                                className="animate-spin text-blue-600"
+                                              />
                                             </div>
                                           )}
 
@@ -4861,7 +6110,10 @@ export default function YachtEditorPage() {
                                           <div
                                             {...dragProvided.dragHandleProps}
                                             className="absolute right-2 bottom-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur active:cursor-grabbing"
-                                            title="Drag to reorder"
+                                            title={labelText(
+                                              "dragToReorder",
+                                              "Drag to reorder",
+                                            )}
                                           >
                                             <GripVertical size={14} />
                                           </div>
@@ -4877,13 +6129,30 @@ export default function YachtEditorPage() {
                                                     : "bg-black/60",
                                                 )}
                                               >
-                                                {img.quality_label}
+                                                {img.quality_label ===
+                                                "Acceptable"
+                                                  ? labelText(
+                                                      "acceptableQuality",
+                                                      "Acceptable",
+                                                    )
+                                                  : img.quality_label ===
+                                                      "Offline"
+                                                    ? labelText(
+                                                        "offlineQuality",
+                                                        "Offline",
+                                                      )
+                                                    : img.quality_label}
                                               </div>
                                             )}
 
                                           {img.category && (
                                             <div className="absolute bottom-2 right-12 z-20 rounded-md bg-[#0B1F3A]/80 px-2 py-1 text-[9px] font-bold text-white shadow-md backdrop-blur-sm">
-                                              {img.category}
+                                              {img.category === "general"
+                                                ? labelText(
+                                                    "generalCategory",
+                                                    "General",
+                                                  )
+                                                : img.category}
                                             </div>
                                           )}
 
@@ -4892,8 +6161,11 @@ export default function YachtEditorPage() {
                                             "cloudinary" &&
                                             img.status !== "processing" && (
                                               <div className="absolute bottom-2 left-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-bold px-2.5 py-1 rounded-md shadow-md flex items-center gap-1.5 z-20">
-                                                <Sparkles size={10} /> AI
-                                                Enhanced
+                                                <Sparkles size={10} />{" "}
+                                                {labelText(
+                                                  "aiEnhanced",
+                                                  "AI Enhanced",
+                                                )}
                                               </div>
                                             )}
                                         </div>
@@ -4905,7 +6177,10 @@ export default function YachtEditorPage() {
                                             <div className="space-y-1">
                                               <div className="flex items-center justify-between gap-2">
                                                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                                  AI review score
+                                                  {labelText(
+                                                    "aiReviewScore",
+                                                    "AI review score",
+                                                  )}
                                                 </span>
                                                 <span className="text-[10px] font-bold text-slate-400">
                                                   {img.quality_score}/100
@@ -4919,7 +6194,7 @@ export default function YachtEditorPage() {
                                                       img.quality_score >= 70
                                                         ? "bg-emerald-500"
                                                         : img.quality_score >=
-                                                          40
+                                                            40
                                                           ? "bg-amber-500"
                                                           : "bg-red-500",
                                                     )}
@@ -4930,8 +6205,10 @@ export default function YachtEditorPage() {
                                                 </div>
                                               </div>
                                               <p className="text-[10px] text-slate-400">
-                                                Measures gallery readiness after
-                                                AI cleanup.
+                                                {labelText(
+                                                  "galleryReadinessHint",
+                                                  "Measures gallery readiness after AI cleanup.",
+                                                )}
                                               </p>
                                             </div>
                                           )}
@@ -4939,7 +6216,10 @@ export default function YachtEditorPage() {
                                           {/* Keep original toggle */}
                                           <div className="flex items-center justify-between">
                                             <span className="text-[10px] text-slate-500 font-medium">
-                                              Keep original
+                                              {labelText(
+                                                "keepOriginal",
+                                                "Keep original",
+                                              )}
                                             </span>
                                             <button
                                               type="button"
@@ -4968,7 +6248,10 @@ export default function YachtEditorPage() {
 
                                           <div className="rounded-lg bg-slate-50 px-2.5 py-2 text-[10px] text-slate-500">
                                             <p className="font-semibold text-slate-700">
-                                              AI comments
+                                              {labelText(
+                                                "aiComments",
+                                                "AI comments",
+                                              )}
                                             </p>
                                             <p className="mt-1 line-clamp-2">
                                               {buildImageAiNotes(img)[0]}
@@ -4979,16 +6262,20 @@ export default function YachtEditorPage() {
                                           <div className="flex gap-2">
                                             {img.status ===
                                               "ready_for_review" && (
-                                                <button
-                                                  type="button"
-                                                  onClick={() =>
-                                                    pipeline.approveImage(img.id)
-                                                  }
-                                                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
-                                                >
-                                                  <Check size={12} /> Approve
-                                                </button>
-                                              )}
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  pipeline.approveImage(img.id)
+                                                }
+                                                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors flex items-center justify-center gap-1"
+                                              >
+                                                <Check size={12} />{" "}
+                                                {labelText(
+                                                  "approveImage",
+                                                  "Approve",
+                                                )}
+                                              </button>
+                                            )}
                                             <button
                                               type="button"
                                               onClick={() =>
@@ -5030,7 +6317,10 @@ export default function YachtEditorPage() {
                               <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 p-4 sm:p-6">
                                 <div className="rounded-full border border-sky-200/80 bg-white/85 px-4 py-2 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/55">
                                   <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-cyan-200/70">
-                                    AI Gallery Review
+                                    {labelText(
+                                      "aiGalleryReview",
+                                      "AI Gallery Review",
+                                    )}
                                   </p>
                                 </div>
 
@@ -5043,7 +6333,10 @@ export default function YachtEditorPage() {
                                     <button
                                       type="button"
                                       className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-700 shadow-sm transition-colors hover:bg-slate-100 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:hover:bg-white/10"
-                                      aria-label="Close image review"
+                                      aria-label={labelText(
+                                        "closeImageReview",
+                                        "Close image review",
+                                      )}
                                     >
                                       <X size={18} />
                                     </button>
@@ -5053,7 +6346,9 @@ export default function YachtEditorPage() {
 
                               <div className="relative flex min-h-[54vh] items-center justify-center px-4 pb-24 pt-24 sm:px-8 lg:px-10">
                                 <img
-                                  src={getPipelineImageSrc(selectedLightboxImage)}
+                                  src={getPipelineImageSrc(
+                                    selectedLightboxImage,
+                                  )}
                                   alt={
                                     selectedLightboxImage.original_name ||
                                     "Selected yacht image"
@@ -5082,22 +6377,29 @@ export default function YachtEditorPage() {
                             <div className="border-t border-slate-200/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(248,250,252,0.96)_100%)] p-6 dark:border-white/10 dark:bg-[linear-gradient(180deg,_rgba(15,23,42,0.98)_0%,_rgba(2,6,23,0.98)_100%)] sm:p-8 lg:p-10">
                               <DialogHeader className="text-left">
                                 <div className="inline-flex w-fit items-center rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700 dark:border-sky-900/70 dark:bg-sky-950/40 dark:text-sky-300">
-                                  Review Details
+                                  {labelText("reviewDetails", "Review Details")}
                                 </div>
                                 <DialogTitle className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100 sm:text-4xl">
                                   {selectedLightboxImage.original_name ||
-                                    "Image review"}
+                                    labelText(
+                                      "imageReviewTitle",
+                                      "Image review",
+                                    )}
                                 </DialogTitle>
                                 <DialogDescription className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base">
-                                  Review the full image, the AI quality score,
-                                  and the applied corrections before approving
-                                  it for the final gallery.
+                                  {labelText(
+                                    "imageReviewDescription",
+                                    "Review the full image, the AI quality score, and the applied corrections before approving it for the final gallery.",
+                                  )}
                                 </DialogDescription>
                               </DialogHeader>
 
                               <div className="mt-6 flex flex-wrap gap-2">
                                 <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                                  {selectedLightboxImage.category || "General"}
+                                  {selectedLightboxImage.category === "general"
+                                    ? labelText("generalCategory", "General")
+                                    : selectedLightboxImage.category ||
+                                      "General"}
                                 </span>
                                 <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold capitalize text-violet-700 shadow-sm dark:border-violet-900/70 dark:bg-violet-950/40 dark:text-violet-300">
                                   {(
@@ -5107,7 +6409,7 @@ export default function YachtEditorPage() {
                                 </span>
                                 {selectedLightboxImage.keep_original && (
                                   <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-sm dark:border-blue-900/70 dark:bg-blue-950/40 dark:text-blue-300">
-                                    Keep original
+                                    {labelText("keepOriginal", "Keep original")}
                                   </span>
                                 )}
                               </div>
@@ -5116,7 +6418,10 @@ export default function YachtEditorPage() {
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
                                     <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-                                      AI review score
+                                      {labelText(
+                                        "aiReviewScore",
+                                        "AI review score",
+                                      )}
                                     </p>
                                     <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
                                       {selectedLightboxImage.quality_score ??
@@ -5133,29 +6438,42 @@ export default function YachtEditorPage() {
                                         0) >= 70
                                         ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                                         : (selectedLightboxImage.quality_score ??
-                                          0) >= 40
+                                              0) >= 40
                                           ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
                                           : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300",
                                     )}
                                   >
                                     {(selectedLightboxImage.quality_score ??
                                       0) >= 70
-                                      ? "Gallery ready"
+                                      ? labelText(
+                                          "galleryReady",
+                                          "Gallery ready",
+                                        )
                                       : (selectedLightboxImage.quality_score ??
-                                        0) >= 40
-                                        ? "Needs review"
-                                        : "Needs correction"}
+                                            0) >= 40
+                                        ? labelText(
+                                            "needsReview",
+                                            "Needs review",
+                                          )
+                                        : labelText(
+                                            "needsCorrection",
+                                            "Needs correction",
+                                          )}
                                   </span>
                                 </div>
 
                                 <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-300">
-                                  This score reflects how suitable the image is
-                                  for the public gallery after AI cleanup and
-                                  classification.
+                                  {labelText(
+                                    "scoreSuitabilityHelp",
+                                    "This score reflects how suitable the image is for the public gallery after AI cleanup and classification.",
+                                  )}
                                 </p>
 
                                 <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
-                                  AI review score
+                                  {labelText(
+                                    "aiReviewScore",
+                                    "AI review score",
+                                  )}
                                 </p>
                                 <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                   <div
@@ -5165,7 +6483,7 @@ export default function YachtEditorPage() {
                                         0) >= 70
                                         ? "from-emerald-400 to-emerald-500"
                                         : (selectedLightboxImage.quality_score ??
-                                          0) >= 40
+                                              0) >= 40
                                           ? "from-amber-400 to-orange-500"
                                           : "from-rose-400 to-red-500",
                                     )}
@@ -5178,7 +6496,7 @@ export default function YachtEditorPage() {
 
                               <div className="mt-6 space-y-3">
                                 <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-                                  AI comments
+                                  {labelText("aiComments", "AI comments")}
                                 </p>
                                 <div className="space-y-2">
                                   {buildImageAiNotes(selectedLightboxImage).map(
@@ -5224,17 +6542,45 @@ export default function YachtEditorPage() {
                           {isNewMode
                             ? imagesApproved
                               ? canProceedFromStep1
-                                ? "✅ Images approved — Step 2 is unlocked!"
-                                : "🤖 Images approved. AI extraction is still running..."
-                              : `⏳ ${pipeline.stats.approved} of ${pipeline.stats.min_required} minimum images approved`
-                            : "ℹ️ Edit Manifest mode — Step 2 is unlocked with existing boat details."}
+                                ? labelText(
+                                    "imagesApprovedUnlocked",
+                                    "✅ Images approved - Step 2 is unlocked!",
+                                  )
+                                : labelText(
+                                    "imagesApprovedExtractionRunning",
+                                    "🤖 Images approved. AI extraction is still running...",
+                                  )
+                              : labelText(
+                                  "approvedMinimumImages",
+                                  "⏳ {approved} of {minimum} minimum images approved",
+                                )
+                                  .replace(
+                                    "{approved}",
+                                    String(pipeline.stats.approved),
+                                  )
+                                  .replace(
+                                    "{minimum}",
+                                    String(pipeline.stats.min_required),
+                                  )
+                            : labelText(
+                                "editManifestUnlocked",
+                                "ℹ️ Edit Manifest mode - Step 2 is unlocked with existing boat details.",
+                              )}
                         </p>
                         {isNewMode && !imagesApproved && (
                           <p className="text-xs text-amber-600 mt-1">
-                            Step 2 opens after image approval. AI extraction
-                            continues in background and fills fields when ready.
+                            {labelText(
+                              "stepTwoUnlockHint",
+                              "Step 2 opens after image approval. AI extraction continues in background and fills fields when ready.",
+                            )}
                             {pipeline.stats.processing > 0 &&
-                              ` ${pipeline.stats.processing} still processing...`}
+                              ` ${labelText(
+                                "stillProcessingCount",
+                                "{count} still processing...",
+                              ).replace(
+                                "{count}",
+                                String(pipeline.stats.processing),
+                              )}`}
                           </p>
                         )}
                       </div>
@@ -5252,25 +6598,36 @@ export default function YachtEditorPage() {
                                 });
                                 if (!extractionOk) {
                                   toast(
-                                    "AI extraction timed out. Step 2 is unlocked; you can continue manually and retry AI later.",
+                                    labelText(
+                                      "aiTimedOutStepTwo",
+                                      "AI extraction timed out. Step 2 is unlocked; you can continue manually and retry AI later.",
+                                    ),
                                     { icon: "⚠️" },
                                   );
                                   setActiveStep(2);
                                 }
                               } else {
                                 toast.success(
-                                  "Images approved. You can manually run AI autofill if needed.",
+                                  labelText(
+                                    "imagesApprovedManualAi",
+                                    "Images approved. You can manually run AI autofill if needed.",
+                                  ),
                                 );
                               }
                             } else {
-                              toast.success("Images approved.");
+                              toast.success(
+                                labelText(
+                                  "imagesApprovedShort",
+                                  "Images approved.",
+                                ),
+                              );
                             }
                           }}
                           disabled={isExtracting}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-md"
                         >
                           <CheckCircle size={16} />{" "}
-                          {isNewMode ? "Approve All" : "Approve All"}
+                          {labelText("approveAllImages", "Approve All")}
                         </button>
                       )}
                     </div>
@@ -5281,71 +6638,91 @@ export default function YachtEditorPage() {
                 {(pipeline.stats.total > 0 ||
                   imagesApproved ||
                   (!isOnline && offlineImages.length > 0)) && (
-                    <div className="flex flex-col items-center gap-4 py-4">
-                      {/* Offline Skip Button */}
-                      {!isOnline ? (
-                        <div className="flex flex-col items-center gap-3 w-full max-w-lg">
-                          <div className="bg-amber-50 text-amber-700 border border-amber-200 rounded-lg p-4 text-sm w-full flex gap-3 shadow-sm mb-2">
-                            <WifiOff className="shrink-0" size={18} />
-                            <div>
-                              <p className="font-semibold mb-1">
-                                AI Extraction Not Available Offline
-                              </p>
-                              <p>
-                                You can skip this step and fill in the boat
-                                details manually. Images are saved locally.
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setActiveStep(2)}
-                            disabled={isExtracting}
-                            className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
-                          >
-                            Skip to Step 2 (Manual Fill) <ArrowRight size={20} />
-                          </button>
-                        </div>
-                      ) : (
-                        isExtracting && (
-                          <div className="w-full max-w-lg flex flex-col items-center justify-center gap-3 py-6 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
-                            <Loader2
-                              size={32}
-                              className="animate-spin text-blue-600"
-                            />
-                            <p className="text-blue-800 font-medium">
-                              Gemini is analyzing your images...
+                  <div className="flex flex-col items-center gap-4 py-4">
+                    {/* Offline Skip Button */}
+                    {!isOnline ? (
+                      <div className="flex flex-col items-center gap-3 w-full max-w-lg">
+                        <div className="bg-amber-50 text-amber-700 border border-amber-200 rounded-lg p-4 text-sm w-full flex gap-3 shadow-sm mb-2">
+                          <WifiOff className="shrink-0" size={18} />
+                          <div>
+                            <p className="font-semibold mb-1">
+                              {labelText(
+                                "aiExtractionNotAvailableOffline",
+                                "AI Extraction Not Available Offline",
+                              )}
+                            </p>
+                            <p>
+                              {labelText(
+                                "offlineManualHint",
+                                "You can skip this step and fill in the boat details manually. Images are saved locally.",
+                              )}
                             </p>
                           </div>
-                        )
-                      )}
-                      {!geminiExtracted && !isExtracting && isOnline && (
-                        <div className="flex flex-col items-center gap-3">
-                          <p className="text-xs text-slate-400 text-center">
-                            {imagesApproved
-                              ? `AI is ready to analyze ${pipeline.stats.approved} approved optimized images`
-                              : `Upload and approve images first, then AI will analyze them`}
-                          </p>
-
-                          {/* Manual Trigger for Edit Mode or Retries */}
-                          {imagesApproved && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                toast("Extracting data from images...", {
-                                  icon: "🪄",
-                                });
-                                void handleAiExtract();
-                              }}
-                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <Sparkles size={16} /> Run AI Extraction Manually
-                            </button>
-                          )}
                         </div>
-                      )}
-                    </div>
-                  )}
+                        <button
+                          type="button"
+                          onClick={() => setActiveStep(2)}
+                          disabled={isExtracting}
+                          className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
+                        >
+                          {labelText(
+                            "skipToStep2Manual",
+                            "Skip to Step 2 (Manual Fill)",
+                          )}{" "}
+                          <ArrowRight size={20} />
+                        </button>
+                      </div>
+                    ) : (
+                      isExtracting && (
+                        <div className="w-full max-w-lg flex flex-col items-center justify-center gap-3 py-6 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                          <Loader2
+                            size={32}
+                            className="animate-spin text-blue-600"
+                          />
+                          <p className="text-blue-800 font-medium">
+                            {labelText(
+                              "geminiAnalyzingImages",
+                              "Gemini is analyzing your images...",
+                            )}
+                          </p>
+                        </div>
+                      )
+                    )}
+                    {!geminiExtracted && !isExtracting && isOnline && (
+                      <div className="flex flex-col items-center gap-3">
+                        <p className="text-xs text-slate-400 text-center">
+                          {imagesApproved
+                            ? formatLabelText(
+                                "aiReadyAnalyzeApprovedImages",
+                                "AI is ready to analyze {count} approved optimized images",
+                                { count: displayApprovedCount },
+                              )
+                            : labelText(
+                                "uploadApproveImagesFirstAi",
+                                "Upload and approve images first, then AI will analyze them",
+                              )}
+                        </p>
+
+                        {/* Manual Trigger for Edit Mode or Retries */}
+                        {imagesApproved && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void handleAiExtract();
+                            }}
+                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Sparkles size={16} />{" "}
+                            {labelText(
+                              "runAiExtractionManually",
+                              "Run AI Extraction Manually",
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Extracted Fields Preview intentionally hidden */}
               </div>
@@ -5353,16 +6730,22 @@ export default function YachtEditorPage() {
           )}
 
           {/* ── VIDEO SECTION (After Image Pipeline but inside Step 1) ── */}
-          {activeStep === 1 && (
+          {activeStep === 1 && role === "admin" && (
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mt-8 mb-4">
               <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <Video size={18} className="text-blue-500" /> Vessel Video
-                    Operations
+                    <Video size={18} className="text-blue-500" />{" "}
+                    {labelText(
+                      "vesselVideoOperations",
+                      "Vessel Video Operations",
+                    )}
                   </h3>
                   <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">
-                    {t?.video?.manage || "Manage Videos & Social Posting"}
+                    {labelText(
+                      "manageVideosSocialPosting",
+                      "Manage Videos & Social Posting",
+                    )}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -5377,7 +6760,7 @@ export default function YachtEditorPage() {
                     ) : (
                       <Sparkles size={14} className="mr-2" />
                     )}
-                    Generate from images
+                    {labelText("generateFromImages", "Generate from images")}
                   </Button>
                   <label className="cursor-pointer bg-[#003566] text-white px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2">
                     {isUploadingVideo ? (
@@ -5385,7 +6768,7 @@ export default function YachtEditorPage() {
                     ) : (
                       <Upload size={14} />
                     )}
-                    {t?.video?.upload || "Upload MP4"}
+                    {labelText("uploadMp4", "Upload MP4")}
                     <input
                       type="file"
                       className="hidden"
@@ -5402,10 +6785,16 @@ export default function YachtEditorPage() {
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
-                        Automated Social Video
+                        {labelText(
+                          "automatedSocialVideo",
+                          "Automated Social Video",
+                        )}
                       </p>
                       <p className="mt-2 text-sm text-emerald-900">
-                        Queue a marketing video built from the approved boat images. The backend will render it and it will appear in the social video library with status updates.
+                        {labelText(
+                          "queueMarketingVideo",
+                          "Queue a marketing video built from the approved boat images. The backend will render it and it will appear in the social video library with status updates.",
+                        )}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -5417,7 +6806,7 @@ export default function YachtEditorPage() {
                           router.push(`/${locale}/dashboard/${role}/social`)
                         }
                       >
-                        Open Social Library
+                        {labelText("openSocialLibrary", "Open Social Library")}
                       </Button>
                       <Button
                         type="button"
@@ -5426,7 +6815,7 @@ export default function YachtEditorPage() {
                         onClick={() => handleGenerateMarketingVideo(true)}
                         disabled={isGeneratingMarketingVideo}
                       >
-                        Force Regenerate
+                        {labelText("forceRegenerate", "Force Regenerate")}
                       </Button>
                     </div>
                   </div>
@@ -5436,14 +6825,21 @@ export default function YachtEditorPage() {
                   <div className="mb-8">
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
-                        Generated marketing videos
+                        {labelText(
+                          "generatedMarketingVideos",
+                          "Generated marketing videos",
+                        )}
                       </p>
                       <button
                         type="button"
                         className="text-[10px] uppercase font-black tracking-[0.2em] text-[#003566]"
-                        onClick={() => loadMarketingVideos(isNewMode ? createdYachtId || yachtId : yachtId)}
+                        onClick={() =>
+                          loadMarketingVideos(
+                            isNewMode ? createdYachtId || yachtId : yachtId,
+                          )
+                        }
                       >
-                        Refresh
+                        {labelText("refresh", "Refresh")}
                       </button>
                     </div>
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -5455,16 +6851,22 @@ export default function YachtEditorPage() {
                           <div className="flex items-start justify-between gap-4">
                             <div>
                               <p className="text-sm font-bold text-slate-800">
-                                Marketing Video #{video.id}
+                                {labelText("marketingVideo", "Marketing Video")}{" "}
+                                #{video.id}
                               </p>
                               <p className="mt-1 text-xs text-slate-500">
-                                Template: {video.template_type || "vertical_slideshow_v1"}
+                                {labelText("templateLabel", "Template")}:{" "}
+                                {video.template_type || "vertical_slideshow_v1"}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                Trigger: {video.generation_trigger || "created"}
                               </p>
                             </div>
                             <span
                               className={cn(
                                 "rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em]",
-                                video.status === "ready" || video.status === "published"
+                                video.status === "ready" ||
+                                  video.status === "published"
                                   ? "bg-emerald-100 text-emerald-700"
                                   : video.status === "failed"
                                     ? "bg-red-100 text-red-700"
@@ -5474,6 +6876,43 @@ export default function YachtEditorPage() {
                               {video.status || "queued"}
                             </span>
                           </div>
+                          {(video.thumbnail_url || video.video_url) && (
+                            <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                              {video.video_url ? (
+                                <video
+                                  src={video.video_url}
+                                  controls
+                                  preload="metadata"
+                                  poster={video.thumbnail_url || undefined}
+                                  className="h-auto max-h-64 w-full bg-black object-contain"
+                                />
+                              ) : video.thumbnail_url ? (
+                                <img
+                                  src={video.thumbnail_url}
+                                  alt=""
+                                  className="h-64 w-full object-cover"
+                                />
+                              ) : null}
+                            </div>
+                          )}
+                          <div className="mt-4 grid gap-2 text-xs text-slate-500 sm:grid-cols-2">
+                            <p>
+                              WhatsApp: {video.whatsapp_status || "pending"}
+                            </p>
+                            <p>Recipient: {video.whatsapp_recipient || "—"}</p>
+                            <p>Sent at: {video.whatsapp_sent_at || "—"}</p>
+                            <p>
+                              {labelText("videoUrlLabel", "Video URL")}:{" "}
+                              {video.video_url
+                                ? labelText("readyState", "ready")
+                                : labelText("waitingState", "waiting")}
+                            </p>
+                          </div>
+                          {video.whatsapp_error ? (
+                            <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                              WhatsApp error: {video.whatsapp_error}
+                            </div>
+                          ) : null}
                           <div className="mt-4 flex flex-wrap gap-2">
                             {video.video_url && (
                               <a
@@ -5491,7 +6930,28 @@ export default function YachtEditorPage() {
                               variant="outline"
                               className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
                               onClick={() =>
-                                router.push(`/${locale}/dashboard/${role}/social`)
+                                handleNotifyMarketingVideoOwner(video.id)
+                              }
+                              disabled={
+                                isPublishingVideo === video.id ||
+                                !video.video_url
+                              }
+                            >
+                              {isPublishingVideo === video.id ? (
+                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              ) : (
+                                <Sparkles size={12} className="mr-2" />
+                              )}
+                              Send WhatsApp
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
+                              onClick={() =>
+                                router.push(
+                                  `/${locale}/dashboard/${role}/social`,
+                                )
                               }
                             >
                               View in Social
@@ -5625,7 +7085,10 @@ export default function YachtEditorPage() {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
                   <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
                     <Coins size={20} className="text-blue-600" />{" "}
-                    {labelText("essentialRegistryData", "Essential Registry Data")}
+                    {labelText(
+                      "essentialRegistryData",
+                      "Essential Registry Data",
+                    )}
                   </h3>
                 </div>
 
@@ -5678,7 +7141,9 @@ export default function YachtEditorPage() {
                   </div>
 
                   <div className="space-y-2 group">
-                    <Label>{labelText("harborLocation", "Sales Location (Harbor) *")}</Label>
+                    <Label>
+                      {labelText("harborLocation", "Sales Location (Harbor) *")}
+                    </Label>
                     <Select
                       value={selectedYacht?.ref_harbor_id?.toString() || ""}
                       onValueChange={(val) => {
@@ -5864,7 +7329,9 @@ export default function YachtEditorPage() {
                       </SelectField>
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("passengerCapacity", "Passenger Capacity")}</Label>
+                    <Label>
+                      {labelText("passengerCapacity", "Passenger Capacity")}
+                    </Label>
                     <Input
                       name="passenger_capacity"
                       type="number"
@@ -5907,7 +7374,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("airDraft", "Air Draft (Clearance)")}</Label>
+                        <Label>
+                          {labelText("airDraft", "Air Draft (Clearance)")}
+                        </Label>
                         <Input
                           name="air_draft"
                           defaultValue={selectedYacht?.air_draft}
@@ -5940,7 +7409,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("hullConstruction", "Hull Construction")}</Label>
+                        <Label>
+                          {labelText("hullConstruction", "Hull Construction")}
+                        </Label>
                         <Input
                           name="hull_construction"
                           defaultValue={selectedYacht?.hull_construction}
@@ -5991,7 +7462,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("deckConstruction", "Deck Construction")}</Label>
+                        <Label>
+                          {labelText("deckConstruction", "Deck Construction")}
+                        </Label>
                         <Input
                           name="deck_construction"
                           defaultValue={selectedYacht?.deck_construction}
@@ -6000,7 +7473,12 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("superStructureColour", "Superstructure Colour")}</Label>
+                        <Label>
+                          {labelText(
+                            "superStructureColour",
+                            "Superstructure Colour",
+                          )}
+                        </Label>
                         <Input
                           name="super_structure_colour"
                           defaultValue={selectedYacht?.super_structure_colour}
@@ -6011,7 +7489,12 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("superStructureConstruction", "Superstructure Construction")}</Label>
+                        <Label>
+                          {labelText(
+                            "superStructureConstruction",
+                            "Superstructure Construction",
+                          )}
+                        </Label>
                         <Input
                           name="super_structure_construction"
                           defaultValue={
@@ -6029,11 +7512,19 @@ export default function YachtEditorPage() {
                   <div className="space-y-5">
                     <SectionHeader
                       icon={<Zap size={16} />}
-                      title={labelText("enginePerformance", "Engine & Performance")}
+                      title={labelText(
+                        "enginePerformance",
+                        "Engine & Performance",
+                      )}
                     />
                     <div className="grid grid-cols-2 gap-5">
                       <div className="space-y-1 group">
-                        <Label>{labelText("engineManufacturer", "Engine Manufacturer")}</Label>
+                        <Label>
+                          {labelText(
+                            "engineManufacturer",
+                            "Engine Manufacturer",
+                          )}
+                        </Label>
                         <Input
                           name="engine_manufacturer"
                           defaultValue={selectedYacht?.engine_manufacturer}
@@ -6044,7 +7535,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("engineModel", "Engine Model")}</Label>
+                        <Label>
+                          {labelText("engineModel", "Engine Model")}
+                        </Label>
                         <Input
                           name="engine_model"
                           defaultValue={selectedYacht?.engine_model}
@@ -6075,7 +7568,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("engineHours", "Engine Hours")}</Label>
+                        <Label>
+                          {labelText("engineHours", "Engine Hours")}
+                        </Label>
                         <Input
                           name="hours"
                           defaultValue={selectedYacht?.hours}
@@ -6093,7 +7588,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("engineQuantity", "Engine Quantity")}</Label>
+                        <Label>
+                          {labelText("engineQuantity", "Engine Quantity")}
+                        </Label>
                         <Input
                           name="engine_quantity"
                           defaultValue={selectedYacht?.engine_quantity}
@@ -6121,7 +7618,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("cruisingSpeed", "Cruising Speed")}</Label>
+                        <Label>
+                          {labelText("cruisingSpeed", "Cruising Speed")}
+                        </Label>
                         <Input
                           name="cruising_speed"
                           defaultValue={selectedYacht?.cruising_speed}
@@ -6148,7 +7647,9 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>{labelText("gallonsPerHour", "Gallons per Hour")}</Label>
+                        <Label>
+                          {labelText("gallonsPerHour", "Gallons per Hour")}
+                        </Label>
                         <Input
                           name="gallons_per_hour"
                           defaultValue={selectedYacht?.gallons_per_hour}
@@ -6171,7 +7672,10 @@ export default function YachtEditorPage() {
               <div className="bg-white p-8 lg:p-10 border border-slate-200 shadow-sm space-y-8">
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.3em] flex items-center gap-2 border-b border-slate-200 pb-4 italic">
                   <Coins size={18} />{" "}
-                  {labelText("essentialRegistryData", "Essential Registry Data")}
+                  {labelText(
+                    "essentialRegistryData",
+                    "Essential Registry Data",
+                  )}
                 </h3>
 
                 {/* Sub-Section: Accommodation */}
@@ -6210,7 +7714,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("berthsFixed", "Berths (Fixed)")}</Label>
+                      <Label>
+                        {labelText("berthsFixed", "Berths (Fixed)")}
+                      </Label>
                       <Input
                         name="berths_fixed"
                         type="number"
@@ -6219,7 +7725,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("berthsExtra", "Berths (Extra)")}</Label>
+                      <Label>
+                        {labelText("berthsExtra", "Berths (Extra)")}
+                      </Label>
                       <Input
                         name="berths_extra"
                         type="number"
@@ -6253,7 +7761,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("interiorType", "Interior Type")}</Label>
+                      <Label>
+                        {labelText("interiorType", "Interior Type")}
+                      </Label>
                       <Input
                         name="interior_type"
                         defaultValue={selectedYacht?.interior_type}
@@ -6265,7 +7775,7 @@ export default function YachtEditorPage() {
                       <Input
                         name="saloon"
                         defaultValue={selectedYacht?.saloon}
-                        placeholder="Yes"
+                        placeholder={yachtFormText.common.yes}
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -6277,7 +7787,12 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("separateDiningArea", "Separate Dining Area")}</Label>
+                      <Label>
+                        {labelText(
+                          "separateDiningArea",
+                          "Separate Dining Area",
+                        )}
+                      </Label>
                       <Input
                         name="separate_dining_area"
                         defaultValue={selectedYacht?.separate_dining_area}
@@ -6289,7 +7804,7 @@ export default function YachtEditorPage() {
                       <Input
                         name="engine_room"
                         defaultValue={selectedYacht?.engine_room}
-                        placeholder="Yes"
+                        placeholder={yachtFormText.common.yes}
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -6301,7 +7816,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("upholsteryColor", "Upholstery Color")}</Label>
+                      <Label>
+                        {labelText("upholsteryColor", "Upholstery Color")}
+                      </Label>
                       <Input
                         name="upholstery_color"
                         defaultValue={selectedYacht?.upholstery_color}
@@ -6313,7 +7830,7 @@ export default function YachtEditorPage() {
                       <Input
                         name="matrasses"
                         defaultValue={selectedYacht?.matrasses}
-                        placeholder="Yes"
+                        placeholder={yachtFormText.common.yes}
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -6321,7 +7838,7 @@ export default function YachtEditorPage() {
                       <Input
                         name="cushions"
                         defaultValue={selectedYacht?.cushions}
-                        placeholder="Yes"
+                        placeholder={yachtFormText.common.yes}
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -6345,7 +7862,10 @@ export default function YachtEditorPage() {
                       <Input
                         name="cockpit_type"
                         defaultValue={selectedYacht?.cockpit_type}
-                        placeholder={placeholderText("cockpitType", "Aft cockpit")}
+                        placeholder={placeholderText(
+                          "cockpitType",
+                          "Aft cockpit",
+                        )}
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -6357,7 +7877,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("waterTankGauge", "Water Tank Gauge")}</Label>
+                      <Label>
+                        {labelText("waterTankGauge", "Water Tank Gauge")}
+                      </Label>
                       <Input
                         name="water_tank_gauge"
                         defaultValue={selectedYacht?.water_tank_gauge}
@@ -6373,7 +7895,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("wasteWaterTank", "Waste Water Tank")}</Label>
+                      <Label>
+                        {labelText("wasteWaterTank", "Waste Water Tank")}
+                      </Label>
                       <Input
                         name="waste_water_tank"
                         defaultValue={selectedYacht?.waste_water_tank}
@@ -6381,7 +7905,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("wasteWaterGauge", "Waste Water Gauge")}</Label>
+                      <Label>
+                        {labelText("wasteWaterGauge", "Waste Water Gauge")}
+                      </Label>
                       <Input
                         name="waste_water_tank_gauge"
                         defaultValue={selectedYacht?.waste_water_tank_gauge}
@@ -6390,7 +7916,10 @@ export default function YachtEditorPage() {
                     </div>
                     <div className="space-y-1 group">
                       <Label>
-                        {labelText("wasteTankDrainPump", "Waste Tank Drain Pump")}
+                        {labelText(
+                          "wasteTankDrainPump",
+                          "Waste Tank Drain Pump",
+                        )}
                       </Label>
                       <Input
                         name="waste_water_tank_drainpump"
@@ -6414,7 +7943,10 @@ export default function YachtEditorPage() {
                       <Input
                         name="water_system"
                         defaultValue={selectedYacht?.water_system}
-                        placeholder={placeholderText("waterSystem", "Pressurized")}
+                        placeholder={placeholderText(
+                          "waterSystem",
+                          "Pressurized",
+                        )}
                       />
                     </div>
                     <div className="space-y-1 group">
@@ -6426,7 +7958,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("seaWaterPump", "Sea Water Pump")}</Label>
+                      <Label>
+                        {labelText("seaWaterPump", "Sea Water Pump")}
+                      </Label>
                       <Input
                         name="sea_water_pump"
                         defaultValue={selectedYacht?.sea_water_pump}
@@ -6442,7 +7976,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("cdPlayer", "Radio / CD Player")}</Label>
+                      <Label>
+                        {labelText("cdPlayer", "Radio / CD Player")}
+                      </Label>
                       <Input
                         name="cd_player"
                         defaultValue={selectedYacht?.cd_player}
@@ -6450,7 +7986,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("satelliteReception", "Satellite Reception")}</Label>
+                      <Label>
+                        {labelText("satelliteReception", "Satellite Reception")}
+                      </Label>
                       <Input
                         name="satellite_reception"
                         defaultValue={selectedYacht?.satellite_reception}
@@ -6522,7 +8060,9 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>{labelText("centralHeating", "Central Heating")}</Label>
+                      <Label>
+                        {labelText("centralHeating", "Central Heating")}
+                      </Label>
                       <Input
                         name="central_heating"
                         defaultValue={selectedYacht?.central_heating}
@@ -6539,42 +8079,44 @@ export default function YachtEditorPage() {
                     </div>
                     <div className="col-span-2 md:col-span-4 border-t border-slate-100 pt-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                        <CheckboxField
-                          name="air_conditioning"
-                          label={labelText("airConditioning", "Air Conditioning")}
-                          defaultChecked={
-                            selectedYacht?.air_conditioning === true ||
-                            selectedYacht?.air_conditioning === "true" ||
-                            selectedYacht?.air_conditioning === 1
-                          }
-                        />
-                        <CheckboxField
-                          name="flybridge"
-                          label={labelText("flybridge", "Flybridge")}
-                          defaultChecked={
-                            selectedYacht?.flybridge === true ||
-                            selectedYacht?.flybridge === "true" ||
-                            selectedYacht?.flybridge === 1
-                          }
-                        />
-                        <CheckboxField
-                          name="deck_wash_pump"
-                          label={labelText("deckWashPump", "Deck Wash Pump")}
-                          defaultChecked={
-                            selectedYacht?.deck_wash_pump === true ||
-                            selectedYacht?.deck_wash_pump === "true" ||
-                            selectedYacht?.deck_wash_pump === 1
-                          }
-                        />
-                        <CheckboxField
-                          name="deck_shower"
-                          label={labelText("deckShower", "Deck Shower")}
-                          defaultChecked={
-                            selectedYacht?.deck_shower === true ||
-                            selectedYacht?.deck_shower === "true" ||
-                            selectedYacht?.deck_shower === 1
-                          }
-                        />
+                        <div className="space-y-1 group">
+                          <Label>
+                            {labelText("airConditioning", "Air Conditioning")}
+                          </Label>
+                          <TriStateSelect
+                            name="air_conditioning"
+                            defaultValue={selectedYacht?.air_conditioning}
+                            needsConfirmation={needsConfirm("air_conditioning")}
+                          />
+                        </div>
+                        <div className="space-y-1 group">
+                          <Label>{labelText("flybridge", "Flybridge")}</Label>
+                          <TriStateSelect
+                            name="flybridge"
+                            defaultValue={selectedYacht?.flybridge}
+                            needsConfirmation={needsConfirm("flybridge")}
+                          />
+                        </div>
+                        <div className="space-y-1 group">
+                          <Label>
+                            {labelText("deckWashPump", "Deck Wash Pump")}
+                          </Label>
+                          <TriStateSelect
+                            name="deck_wash_pump"
+                            defaultValue={selectedYacht?.deck_wash_pump}
+                            needsConfirmation={needsConfirm("deck_wash_pump")}
+                          />
+                        </div>
+                        <div className="space-y-1 group">
+                          <Label>
+                            {labelText("deckShower", "Deck Shower")}
+                          </Label>
+                          <TriStateSelect
+                            name="deck_shower"
+                            defaultValue={selectedYacht?.deck_shower}
+                            needsConfirmation={needsConfirm("deck_shower")}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -6585,7 +8127,10 @@ export default function YachtEditorPage() {
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
                   <Compass size={20} className="text-blue-600" />{" "}
-                  {labelText("navigationElectronics", "Navigation & Electronics")}
+                  {labelText(
+                    "navigationElectronics",
+                    "Navigation & Electronics",
+                  )}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[
@@ -6693,7 +8238,7 @@ export default function YachtEditorPage() {
                   ].map((f) => (
                     <YachtFieldWrapper
                       key={f.name}
-                      label={f.label}
+                      label={localizeFieldLabel(f.name, f.label)}
                       yachtId={selectedYachtId}
                       fieldName={f.name}
                       correctionLabel={fieldCorrectionLabels[f.name]}
@@ -6800,7 +8345,7 @@ export default function YachtEditorPage() {
                   ].map((f) => (
                     <YachtFieldWrapper
                       key={f.name}
-                      label={f.label}
+                      label={localizeFieldLabel(f.name, f.label)}
                       yachtId={selectedYachtId}
                       fieldName={f.name}
                       correctionLabel={fieldCorrectionLabels[f.name]}
@@ -6859,7 +8404,10 @@ export default function YachtEditorPage() {
                     {
                       name: "inverter",
                       label: labelText("inverter", "Inverter"),
-                      ph: placeholderText("inverter", "e.g. Victron Phoenix 3000W"),
+                      ph: placeholderText(
+                        "inverter",
+                        "e.g. Victron Phoenix 3000W",
+                      ),
                     },
                     {
                       name: "shorepower",
@@ -6869,12 +8417,18 @@ export default function YachtEditorPage() {
                     {
                       name: "solar_panel",
                       label: labelText("solarPanel", "Solar Panel"),
-                      ph: placeholderText("solarPanel", "e.g. 2x 100W flexible"),
+                      ph: placeholderText(
+                        "solarPanel",
+                        "e.g. 2x 100W flexible",
+                      ),
                     },
                     {
                       name: "wind_generator",
                       label: labelText("windGenerator", "Wind Generator"),
-                      ph: placeholderText("windGenerator", "e.g. Silentwind 400+"),
+                      ph: placeholderText(
+                        "windGenerator",
+                        "e.g. Silentwind 400+",
+                      ),
                     },
                     {
                       name: "voltage",
@@ -6903,7 +8457,10 @@ export default function YachtEditorPage() {
                     },
                     {
                       name: "consumption_monitor",
-                      label: labelText("consumptionMonitor", "Consumption Monitor"),
+                      label: labelText(
+                        "consumptionMonitor",
+                        "Consumption Monitor",
+                      ),
                       ph: yachtFormText.common.yes,
                     },
                     {
@@ -6923,7 +8480,10 @@ export default function YachtEditorPage() {
                     },
                     {
                       name: "oil_pressure_gauge",
-                      label: labelText("oilPressureGauge", "Oil Pressure Gauge"),
+                      label: labelText(
+                        "oilPressureGauge",
+                        "Oil Pressure Gauge",
+                      ),
                       ph: yachtFormText.common.yes,
                     },
                     {
@@ -6934,7 +8494,7 @@ export default function YachtEditorPage() {
                   ].map((f) => (
                     <YachtFieldWrapper
                       key={f.name}
-                      label={f.label}
+                      label={localizeFieldLabel(f.name, f.label)}
                       yachtId={selectedYachtId}
                       fieldName={f.name}
                       correctionLabel={fieldCorrectionLabels[f.name]}
@@ -7000,7 +8560,10 @@ export default function YachtEditorPage() {
                     {
                       name: "television",
                       label: labelText("television", "Television"),
-                      ph: placeholderText("television", 'e.g. Samsung 32" Smart TV'),
+                      ph: placeholderText(
+                        "television",
+                        'e.g. Samsung 32" Smart TV',
+                      ),
                     },
                     {
                       name: "cd_player",
@@ -7014,7 +8577,10 @@ export default function YachtEditorPage() {
                     },
                     {
                       name: "satellite_reception",
-                      label: labelText("satelliteReception", "Satellite Reception"),
+                      label: labelText(
+                        "satelliteReception",
+                        "Satellite Reception",
+                      ),
                       ph: placeholderText(
                         "satelliteReception",
                         "e.g. KVH TracVision TV5",
@@ -7047,7 +8613,10 @@ export default function YachtEditorPage() {
                     },
                     {
                       name: "waste_water_tank_drainpump",
-                      label: labelText("wasteTankDrainPump", "Waste Tank Drain Pump"),
+                      label: labelText(
+                        "wasteTankDrainPump",
+                        "Waste Tank Drain Pump",
+                      ),
                       ph: placeholderText("wasteTankDrainPump", "Yes"),
                     },
                     {
@@ -7112,7 +8681,8 @@ export default function YachtEditorPage() {
               {/* Sub-Section: Deck Equipment */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-                  <Anchor size={20} className="text-blue-600" /> Deck Equipment
+                  <Anchor size={20} className="text-blue-600" />{" "}
+                  {labelText("deckEquipment", "Deck Equipment")}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[
@@ -7249,7 +8819,7 @@ export default function YachtEditorPage() {
                   ].map((f) => (
                     <YachtFieldWrapper
                       key={f.name}
-                      label={f.label}
+                      label={localizeFieldLabel(f.name, f.label)}
                       yachtId={selectedYachtId}
                       fieldName={f.name}
                       correctionLabel={fieldCorrectionLabels[f.name]}
@@ -7282,7 +8852,8 @@ export default function YachtEditorPage() {
               {/* Sub-Section: Rigging & Sails */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-                  <Wind size={20} className="text-blue-600" /> Rigging & Sails
+                  <Wind size={20} className="text-blue-600" />{" "}
+                  {labelText("riggingSails", "Rigging & Sails")}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                   {[
@@ -7332,7 +8903,7 @@ export default function YachtEditorPage() {
                   ].map((f) => (
                     <YachtFieldWrapper
                       key={f.name}
-                      label={f.label}
+                      label={localizeFieldLabel(f.name, f.label)}
                       yachtId={selectedYachtId}
                       fieldName={f.name}
                       correctionLabel={fieldCorrectionLabels[f.name]}
@@ -7370,7 +8941,9 @@ export default function YachtEditorPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1 group">
-                    <Label>{labelText("ownerComment", "Owner's Comment")}</Label>
+                    <Label>
+                      {labelText("ownerComment", "Owner's Comment")}
+                    </Label>
                     <textarea
                       name="owners_comment"
                       defaultValue={selectedYacht?.owners_comment || ""}
@@ -7388,7 +8961,9 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-1 group">
-                    <Label>{labelText("registrationDetails", "Registration Details")}</Label>
+                    <Label>
+                      {labelText("registrationDetails", "Registration Details")}
+                    </Label>
                     <Input
                       name="reg_details"
                       defaultValue={selectedYacht?.reg_details}
@@ -7621,7 +9196,7 @@ export default function YachtEditorPage() {
                     onClick={addAvailabilityRule}
                     className="bg-[#003566] text-white text-[8px] font-black uppercase tracking-widest px-6 h-8"
                   >
-                    {t?.scheduling?.addWindow || "Add Scheduling Window"}
+                    {labelText("addSchedulingWindow", "Add Scheduling Window")}
                   </Button>
                 </div>
 
@@ -7653,22 +9228,23 @@ export default function YachtEditorPage() {
                                 onClick={() => {
                                   const newDays = isSelected
                                     ? rule.days_of_week.filter(
-                                      (d) => d !== day.val,
-                                    )
+                                        (d) => d !== day.val,
+                                      )
                                     : [...rule.days_of_week, day.val].sort(
-                                      (a, b) =>
-                                        (a === 0 ? 7 : a) - (b === 0 ? 7 : b),
-                                    );
+                                        (a, b) =>
+                                          (a === 0 ? 7 : a) - (b === 0 ? 7 : b),
+                                      );
                                   updateAvailabilityRule(
                                     idx,
                                     "days_of_week",
                                     newDays,
                                   );
                                 }}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${isSelected
-                                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                  }`}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${
+                                  isSelected
+                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                                }`}
                               >
                                 {day.label}
                               </button>
@@ -7679,7 +9255,10 @@ export default function YachtEditorPage() {
 
                       <div className="flex-1 min-w-[120px]">
                         <Label>
-                          {labelText("startTime", t?.scheduling?.startTime || "Start Time")}
+                          {labelText(
+                            "startTime",
+                            t?.scheduling?.startTime || "Start Time",
+                          )}
                         </Label>
                         <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
                           <Clock size={12} className="text-slate-400" />
@@ -7700,7 +9279,12 @@ export default function YachtEditorPage() {
                       </div>
 
                       <div className="flex-1 min-w-[120px]">
-                        <Label>{labelText("endTime", t?.scheduling?.endTime || "End Time")}</Label>
+                        <Label>
+                          {labelText(
+                            "endTime",
+                            t?.scheduling?.endTime || "End Time",
+                          )}
+                        </Label>
                         <div className="flex items-center gap-2 bg-slate-50 p-2 border-b border-slate-200">
                           <Clock size={12} className="text-slate-400" />
                           <input
@@ -7736,9 +9320,21 @@ export default function YachtEditorPage() {
                         className="mx-auto text-slate-200 mb-2"
                       />
                       <p className="text-sm font-semibold text-slate-500">
-                        {t?.scheduling?.empty ||
-                          "No scheduling rules defined yet."}
+                        {labelText(
+                          "noSchedulingRules",
+                          "No scheduling rules defined yet.",
+                        )}
                       </p>
+                      <Button
+                        type="button"
+                        onClick={addAvailabilityRule}
+                        className="mt-4 bg-[#003566] text-white text-[10px] font-black uppercase tracking-widest px-6 h-9"
+                      >
+                        {labelText(
+                          "addSchedulingWindow",
+                          "Add Scheduling Window",
+                        )}
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -7813,7 +9409,10 @@ export default function YachtEditorPage() {
                         </div>
                       ) : (
                         <p className="text-sm text-slate-500 italic py-4">
-                          Geen specifieke documenten vereist voor dit type.
+                          {labelText(
+                            "noSpecificDocumentsRequired",
+                            "No specific documents required for this type.",
+                          )}
                         </p>
                       )}
                     </div>
@@ -7821,7 +9420,7 @@ export default function YachtEditorPage() {
                     {/* Document Upload Area */}
                     <div className="space-y-4">
                       <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-                        Upload Documenten
+                        {labelText("uploadDocuments", "Upload Documents")}
                       </h5>
 
                       {/* Upload Dropzone */}
@@ -7847,8 +9446,11 @@ export default function YachtEditorPage() {
                           )}
                           <p className="text-sm font-medium text-slate-600">
                             {isUploadingDocument
-                              ? "Bezig met uploaden..."
-                              : "Klik of sleep een document"}
+                              ? labelText("documentUploading", "Uploading...")
+                              : labelText(
+                                  "clickOrDropDocument",
+                                  "Click or drag a document",
+                                )}
                           </p>
                           <p className="text-xs text-slate-500 mt-1">
                             PDF, DOCX, JPG (Max 10MB)
@@ -7867,7 +9469,10 @@ export default function YachtEditorPage() {
                       {boatDocuments.length > 0 && (
                         <div className="space-y-2 mt-4">
                           <h6 className="text-xs font-semibold text-slate-700">
-                            Reeds Geüpload ({boatDocuments.length})
+                            {labelText(
+                              "uploadedDocuments",
+                              "Already uploaded ({count})",
+                            ).replace("{count}", String(boatDocuments.length))}
                           </h6>
                           <div className="space-y-2">
                             {boatDocuments.map((doc) => (
@@ -7968,7 +9573,8 @@ export default function YachtEditorPage() {
                     }
                     locationId={
                       selectedYacht?.ref_harbor_id ||
-                      (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id ||
+                      (draft?.data as any)?.step2?.selectedYacht
+                        ?.ref_harbor_id ||
                       null
                     }
                     yachtData={
@@ -8011,10 +9617,14 @@ export default function YachtEditorPage() {
                   markStepComplete(activeStep);
                   handleStepChange(activeStep + 1);
                 }}
-                disabled={isNewMode && !canProceedFromStep1 && activeStep === 1}
+                disabled={
+                  (isNewMode && !canProceedFromStep1 && activeStep === 1) ||
+                  (activeStep === 2 && !hasSelectedHarbor)
+                }
                 className={cn(
                   "h-11 px-6 text-xs font-bold uppercase tracking-wider",
-                  isNewMode && !canProceedFromStep1 && activeStep === 1
+                  (isNewMode && !canProceedFromStep1 && activeStep === 1) ||
+                    (activeStep === 2 && !hasSelectedHarbor)
                     ? "bg-slate-300 text-slate-500 cursor-not-allowed"
                     : "bg-[#003566] text-white hover:bg-blue-800",
                 )}
@@ -8023,6 +9633,13 @@ export default function YachtEditorPage() {
                   <>
                     {t?.wizard?.nav?.runExtractionFirst ||
                       labelText("approveImagesFirst", "Approve Images First")}
+                  </>
+                ) : activeStep === 2 && !hasSelectedHarbor ? (
+                  <>
+                    {labelText(
+                      "locationRequiredForNextStep",
+                      "Select a sales location before continuing to the next step.",
+                    )}
                   </>
                 ) : (
                   <>
@@ -8046,6 +9663,19 @@ export default function YachtEditorPage() {
                   "continueToContract",
                   "Save and Continue to Contract",
                 )}
+              </Button>
+            ) : activeStep === 6 ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  toast.success(
+                    labelText("finishFlowToast", "Vessel flow completed."),
+                  );
+                  router.push(`/${locale}/dashboard/${role}/yachts`);
+                }}
+                className="h-11 px-6 text-xs font-bold uppercase tracking-wider bg-[#003566] text-white hover:bg-blue-800"
+              >
+                {labelText("finishFlow", "Finish")}
               </Button>
             ) : (
               <div />
@@ -8122,14 +9752,21 @@ export default function YachtEditorPage() {
       <ConfirmDialog
         open={deleteAllImagesDialogOpen}
         onOpenChange={setDeleteAllImagesDialogOpen}
-        title="Delete all images"
-        description="Are you sure you want to remove all uploaded images from this yacht? This action cannot be undone."
-        confirmText={isDeletingAllImages ? "Deleting..." : "Delete all"}
-        cancelText="Cancel"
+        title={labelText("deleteAllImagesTitle", "Delete all images")}
+        description={labelText(
+          "deleteAllImagesDescription",
+          "Are you sure you want to remove all uploaded images from this yacht? This action cannot be undone.",
+        )}
+        confirmText={
+          isDeletingAllImages
+            ? labelText("deletingAllImages", "Deleting...")
+            : labelText("deleteAllAction", "Delete all")
+        }
+        cancelText={labelText("cancel", "Cancel")}
         variant="destructive"
         onConfirm={handleDeleteAllImages}
       />
-    </div >
+    </div>
   );
 }
 
@@ -8150,28 +9787,6 @@ function Label({
       )}
     >
       {children}
-    </label>
-  );
-}
-
-function CheckboxField({
-  name,
-  label,
-  defaultChecked,
-}: {
-  name: string;
-  label: string;
-  defaultChecked?: boolean;
-}) {
-  return (
-    <label className="flex min-h-[46px] items-center gap-3 rounded-md border border-slate-200 px-3.5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300">
-      <input
-        type="checkbox"
-        name={name}
-        defaultChecked={defaultChecked}
-        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-      />
-      <span>{label}</span>
     </label>
   );
 }
@@ -8207,7 +9822,9 @@ function Input(
   );
 
   useEffect(() => {
-    setHasValue(hasFilledFieldValue(inputProps.value ?? inputProps.defaultValue));
+    setHasValue(
+      hasFilledFieldValue(inputProps.value ?? inputProps.defaultValue),
+    );
   }, [inputProps.value, inputProps.defaultValue]);
 
   const highlighted = Boolean(needsConfirmation) || hasValue;
@@ -8225,9 +9842,7 @@ function Input(
           "hover:border-slate-300",
           "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
           "placeholder:text-slate-400 placeholder:font-normal",
-          highlighted
-            ? "border-amber-300 bg-amber-50/50"
-            : "border-slate-200",
+          highlighted ? "border-amber-300 bg-amber-50/50" : "border-slate-200",
           inputProps.className,
         )}
       />
@@ -8256,9 +9871,7 @@ function SelectField(
     children,
     ...selectProps
   } = props;
-  const [currentValue, setCurrentValue] = useState(
-    value ?? defaultValue ?? "",
-  );
+  const [currentValue, setCurrentValue] = useState(value ?? defaultValue ?? "");
 
   useEffect(() => {
     setCurrentValue(value ?? defaultValue ?? "");
@@ -8350,7 +9963,8 @@ function TriStateSelect(
 ) {
   const locale = useLocale();
   const formText =
-    YACHT_FORM_TEXT[locale as keyof typeof YACHT_FORM_TEXT] ?? YACHT_FORM_TEXT.en;
+    YACHT_FORM_TEXT[locale as keyof typeof YACHT_FORM_TEXT] ??
+    YACHT_FORM_TEXT.en;
   const {
     needsConfirmation,
     defaultValue,
@@ -8394,9 +10008,7 @@ function TriStateSelect(
           "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
           "hover:border-slate-300",
           "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
-          highlighted
-            ? "border-amber-300 bg-amber-50/50"
-            : "border-slate-200",
+          highlighted ? "border-amber-300 bg-amber-50/50" : "border-slate-200",
           selectProps.className,
         )}
       >
