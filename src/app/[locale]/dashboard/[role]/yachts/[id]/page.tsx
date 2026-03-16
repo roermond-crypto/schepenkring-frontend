@@ -1154,18 +1154,225 @@ export default function YachtEditorPage() {
   const dict = getDictionary(locale) as any;
   const t = dict?.YachtWizard || dict?.DashboardAdminYachtEditor || ({} as any);
   const router = useRouter();
+  const step2CommonTextByLocale = {
+    en: {
+      select: "Select...",
+      selectLocation: "Select location...",
+      conditionNew: "New",
+      conditionUsed: "Used",
+      ceOcean: "Ocean",
+      ceOffshore: "Offshore",
+      ceInshore: "Inshore",
+      ceSheltered: "Sheltered Waters",
+      statusForSale: "For Sale",
+      statusForBid: "For Bid",
+      statusSold: "Sold",
+      statusDraft: "Draft",
+    },
+    nl: {
+      select: "Selecteer...",
+      selectLocation: "Selecteer locatie...",
+      conditionNew: "Nieuw",
+      conditionUsed: "Gebruikt",
+      ceOcean: "Oceaan",
+      ceOffshore: "Offshore",
+      ceInshore: "Binnenwateren",
+      ceSheltered: "Beschutte wateren",
+      statusForSale: "Te koop",
+      statusForBid: "In bieding",
+      statusSold: "Verkocht",
+      statusDraft: "Concept",
+    },
+    de: {
+      select: "Auswahlen...",
+      selectLocation: "Standort auswahlen...",
+      conditionNew: "Neu",
+      conditionUsed: "Gebraucht",
+      ceOcean: "Ozean",
+      ceOffshore: "Hochsee",
+      ceInshore: "Binnengewasser",
+      ceSheltered: "Geschutzte Gewasser",
+      statusForSale: "Zum Verkauf",
+      statusForBid: "Zur Auktion",
+      statusSold: "Verkauft",
+      statusDraft: "Entwurf",
+    },
+    fr: {
+      select: "Selectionner...",
+      selectLocation: "Selectionner le port...",
+      conditionNew: "Neuf",
+      conditionUsed: "Occasion",
+      ceOcean: "Ocean",
+      ceOffshore: "Au large",
+      ceInshore: "Cotiere",
+      ceSheltered: "Eaux abritees",
+      statusForSale: "A vendre",
+      statusForBid: "En encheres",
+      statusSold: "Vendu",
+      statusDraft: "Brouillon",
+    },
+  } as const;
+  const step2PlaceholderByLocale = {
+    en: {
+      vesselName: "e.g. M/Y NOBILITY",
+      manufacturer: "e.g. Beneteau, Sunseeker",
+      model: "e.g. Oceanis 38.1",
+      minBidAmount: "Auto-calculates 90% of price if empty",
+      boatType: "e.g. Sailboat, Motorboat",
+      boatCategory: "e.g. Cruiser, Racing, Fishing",
+      shipyard: "e.g. Beneteau, Bavaria",
+      ownerComment: "Any seller notes or comments...",
+      knownDefects: "Any known issues or defects...",
+      registrationDetails: "e.g. NL registration, MMSI 244...",
+      lastServiced: "e.g. March 2024",
+    },
+    nl: {
+      vesselName: "bijv. M/Y NOBILITY",
+      manufacturer: "bijv. Beneteau, Sunseeker",
+      model: "bijv. Oceanis 38.1",
+      minBidAmount: "Wordt automatisch 90% van de prijs als dit leeg blijft",
+      boatType: "bijv. Zeilboot, Motorboot",
+      boatCategory: "bijv. Cruiser, Race, Visboot",
+      shipyard: "bijv. Beneteau, Bavaria",
+      ownerComment: "Notities of opmerkingen van de verkoper...",
+      knownDefects: "Bekende problemen of gebreken...",
+      registrationDetails: "bijv. NL-registratie, MMSI 244...",
+      lastServiced: "bijv. maart 2024",
+    },
+    de: {
+      vesselName: "z. B. M/Y NOBILITY",
+      manufacturer: "z. B. Beneteau, Sunseeker",
+      model: "z. B. Oceanis 38.1",
+      minBidAmount: "Wird automatisch mit 90 % des Preises berechnet, wenn leer",
+      boatType: "z. B. Segelboot, Motorboot",
+      boatCategory: "z. B. Cruiser, Regatta, Angeln",
+      shipyard: "z. B. Beneteau, Bavaria",
+      ownerComment: "Hinweise oder Kommentare des Verkaufers...",
+      knownDefects: "Bekannte Probleme oder Mangel...",
+      registrationDetails: "z. B. NL-Registrierung, MMSI 244...",
+      lastServiced: "z. B. Marz 2024",
+    },
+    fr: {
+      vesselName: "p. ex. M/Y NOBILITY",
+      manufacturer: "p. ex. Beneteau, Sunseeker",
+      model: "p. ex. Oceanis 38.1",
+      minBidAmount: "Calcule automatiquement 90 % du prix si vide",
+      boatType: "p. ex. Voilier, bateau a moteur",
+      boatCategory: "p. ex. Croisiere, course, peche",
+      shipyard: "p. ex. Beneteau, Bavaria",
+      ownerComment: "Notes ou commentaires du vendeur...",
+      knownDefects: "Problemes ou defauts connus...",
+      registrationDetails: "p. ex. immatriculation NL, MMSI 244...",
+      lastServiced: "p. ex. mars 2024",
+    },
+  } as const;
   const yachtFormText =
     YACHT_FORM_TEXT[locale as keyof typeof YACHT_FORM_TEXT] ?? YACHT_FORM_TEXT.en;
+  const step2CommonText =
+    step2CommonTextByLocale[locale as keyof typeof step2CommonTextByLocale] ??
+    step2CommonTextByLocale.en;
+  const step2PlaceholderText =
+    step2PlaceholderByLocale[locale as keyof typeof step2PlaceholderByLocale] ??
+    step2PlaceholderByLocale.en;
   const labelText = (key: keyof typeof yachtFormText.labels, fallback: string) =>
     t?.labels?.[key] || yachtFormText.labels[key] || fallback;
   const placeholderText = (
     key: keyof typeof yachtFormText.placeholders,
     fallback: string,
   ) => t?.placeholders?.[key] || yachtFormText.placeholders[key] || fallback;
+  const commonText = (
+    key: keyof typeof step2CommonText,
+    fallback: string,
+  ) => t?.common?.[key] || step2CommonText[key] || fallback;
+  const step2Placeholder = (
+    key: keyof typeof step2PlaceholderText,
+    fallback: string,
+  ) => t?.placeholders?.[key] || step2PlaceholderText[key] || fallback;
   const sectionText = (
     key: keyof typeof yachtFormText.sections,
     fallback: string,
   ) => t?.sections?.[key] || yachtFormText.sections[key] || fallback;
+  const step2ExtraLabelByLocale = {
+    en: {
+      displacement: "Displacement",
+      propulsion: "Propulsion",
+      tankage: "Tankage",
+      berths: "Berths",
+      toilet: "Toilet",
+      shower: "Shower",
+      bath: "Bath",
+      saloon: "Saloon",
+      headroom: "Headroom",
+      engineRoom: "Engine Room",
+      spacesInside: "Spaces Inside",
+      matrasses: "Matrasses",
+      cushions: "Cushions",
+      curtains: "Curtains",
+      heating: "Heating",
+      outdoorCushions: "Outdoor Cushions",
+    },
+    nl: {
+      displacement: "Waterverplaatsing",
+      propulsion: "Voortstuwing",
+      tankage: "Tankinhoud",
+      berths: "Slaapplaatsen",
+      toilet: "Toilet",
+      shower: "Douche",
+      bath: "Bad",
+      saloon: "Salon",
+      headroom: "Stahoogte",
+      engineRoom: "Machinekamer",
+      spacesInside: "Binnenruimtes",
+      matrasses: "Matrassen",
+      cushions: "Kussens",
+      curtains: "Gordijnen",
+      heating: "Verwarming",
+      outdoorCushions: "Buitenkussens",
+    },
+    de: {
+      displacement: "Verdrangung",
+      propulsion: "Antrieb",
+      tankage: "Tanksystem",
+      berths: "Liegeplatze",
+      toilet: "Toilette",
+      shower: "Dusche",
+      bath: "Badewanne",
+      saloon: "Salon",
+      headroom: "Stehhohe",
+      engineRoom: "Maschinenraum",
+      spacesInside: "Innenraume",
+      matrasses: "Matratzen",
+      cushions: "Polster",
+      curtains: "Vorhange",
+      heating: "Heizung",
+      outdoorCushions: "Aussenpolster",
+    },
+    fr: {
+      displacement: "Deplacement",
+      propulsion: "Propulsion",
+      tankage: "Reservoirs",
+      berths: "Couchages",
+      toilet: "Toilettes",
+      shower: "Douche",
+      bath: "Baignoire",
+      saloon: "Salon",
+      headroom: "Hauteur sous plafond",
+      engineRoom: "Salle des machines",
+      spacesInside: "Espaces interieurs",
+      matrasses: "Matelas",
+      cushions: "Coussins",
+      curtains: "Rideaux",
+      heating: "Chauffage",
+      outdoorCushions: "Coussins exterieurs",
+    },
+  } as const;
+  const step2ExtraLabels =
+    step2ExtraLabelByLocale[locale as keyof typeof step2ExtraLabelByLocale] ??
+    step2ExtraLabelByLocale.en;
+  const extraLabelText = (
+    key: keyof typeof step2ExtraLabels,
+    fallback: string,
+  ) => step2ExtraLabels[key] || fallback;
 
   const stepFallbacks: Record<string, string> = {
     images: labelText("stepImages", "Images"),
@@ -3332,10 +3539,10 @@ export default function YachtEditorPage() {
               : normalizeTriStateValue(raw);
         });
 
-        // Build the merged object (filter nulls only — match old project)
+        // Merge only meaningful values so empty API placeholders do not wipe existing data.
         const fieldsToMerge = Object.fromEntries(
           Object.entries(normalizedFormValues).filter(
-            ([, val]) => val !== null,
+            ([, val]) => val !== null && val !== "",
           ),
         );
 
@@ -5407,10 +5614,10 @@ export default function YachtEditorPage() {
 
           {/* ── STEP 2: SPECS (Analyzed by AI) ──────────────── */}
           {activeStep === 2 && (
-            <div
-              key={`step2-${formKey}`}
-              className="space-y-6 lg:space-y-8 pt-2"
-            >
+              <div
+                key={`step2-${formKey}`}
+                className="space-y-6 lg:space-y-8 pt-2 [&_input]:border-amber-300 [&_input]:bg-amber-50/50 [&_select]:border-amber-300 [&_select]:bg-amber-50/50 [&_[data-slot='select-trigger']]:border-amber-300 [&_[data-slot='select-trigger']]:bg-amber-50/50"
+              >
               {/* AI extraction summary intentionally hidden in Step 2 */}
 
               {/* --- SECTION 2: CORE SPECS --- */}
@@ -5425,22 +5632,22 @@ export default function YachtEditorPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2 group">
                     <Label>{labelText("vesselName", "Vessel Name *")}</Label>
-                    <Input
-                      name="boat_name"
-                      defaultValue={selectedYacht?.boat_name}
-                      placeholder="e.g. M/Y NOBILITY"
-                      required
-                      needsConfirmation={needsConfirm("boat_name")}
-                    />
+                      <Input
+                        name="boat_name"
+                        defaultValue={selectedYacht?.boat_name}
+                        placeholder={step2Placeholder("vesselName", "e.g. M/Y NOBILITY")}
+                        required
+                        needsConfirmation={needsConfirm("boat_name")}
+                      />
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("manufacturer", "Manufacturer / Make")}</Label>
-                    <CatalogAutocomplete
-                      endpoint="/api/autocomplete/brands"
-                      name="manufacturer"
-                      defaultValue={selectedYacht?.manufacturer}
-                      placeholder="e.g. Beneteau, Sunseeker"
-                      needsConfirmation={needsConfirm("manufacturer")}
+                      <CatalogAutocomplete
+                        endpoint="/api/autocomplete/brands"
+                        name="manufacturer"
+                        defaultValue={selectedYacht?.manufacturer}
+                        placeholder={step2Placeholder("manufacturer", "e.g. Beneteau, Sunseeker")}
+                        needsConfirmation={needsConfirm("manufacturer")}
                       onSelect={(id, name) => {
                         setSelectedBrandId(Number(id));
                         setSelectedYacht((prev: any) => ({
@@ -5452,12 +5659,12 @@ export default function YachtEditorPage() {
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("model", "Model")}</Label>
-                    <CatalogAutocomplete
-                      endpoint="/api/autocomplete/models"
-                      name="model"
-                      defaultValue={selectedYacht?.model}
-                      placeholder="e.g. Oceanis 38.1"
-                      dependsOn="brand_id"
+                      <CatalogAutocomplete
+                        endpoint="/api/autocomplete/models"
+                        name="model"
+                        defaultValue={selectedYacht?.model}
+                        placeholder={step2Placeholder("model", "e.g. Oceanis 38.1")}
+                        dependsOn="brand_id"
                       dependsOnValue={selectedBrandId}
                       needsConfirmation={needsConfirm("model")}
                       onSelect={(_id, name) => {
@@ -5488,7 +5695,7 @@ export default function YachtEditorPage() {
                             "border-amber-300 bg-amber-50/50",
                         )}
                       >
-                        <SelectValue placeholder="Selecteer locatie..." />
+                        <SelectValue placeholder={commonText("selectLocation", "Select location...")} />
                       </SelectTrigger>
                       <SelectContent>
                         {harbors.map((h) => (
@@ -5558,13 +5765,13 @@ export default function YachtEditorPage() {
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("minBidAmount", "Minimum Bid Amount (€)")}</Label>
-                    <Input
-                      name="min_bid_amount"
-                      type="number"
-                      defaultValue={selectedYacht?.min_bid_amount || ""}
-                      placeholder="Auto-calculates 90% of price if empty"
-                      step="1000"
-                    />
+                      <Input
+                        name="min_bid_amount"
+                        type="number"
+                        defaultValue={selectedYacht?.min_bid_amount || ""}
+                        placeholder={step2Placeholder("minBidAmount", "Auto-calculates 90% of price if empty")}
+                        step="1000"
+                      />
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("yearBuilt", "Year Built")}</Label>
@@ -5578,33 +5785,33 @@ export default function YachtEditorPage() {
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("boatType", "Boat Type")}</Label>
-                    <CatalogAutocomplete
-                      endpoint="/api/autocomplete/types"
-                      name="boat_type"
-                      defaultValue={selectedYacht?.boat_type}
-                      placeholder="e.g. Sailboat, Motorboat"
-                      needsConfirmation={needsConfirm("boat_type")}
-                    />
+                      <CatalogAutocomplete
+                        endpoint="/api/autocomplete/types"
+                        name="boat_type"
+                        defaultValue={selectedYacht?.boat_type}
+                        placeholder={step2Placeholder("boatType", "e.g. Sailboat, Motorboat")}
+                        needsConfirmation={needsConfirm("boat_type")}
+                      />
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("boatCategory", "Boat Category")}</Label>
-                    <Input
-                      name="boat_category"
-                      defaultValue={selectedYacht?.boat_category}
-                      placeholder="e.g. Cruiser, Racing, Fishing"
-                      needsConfirmation={needsConfirm("boat_category")}
-                    />
+                      <Input
+                        name="boat_category"
+                        defaultValue={selectedYacht?.boat_category}
+                        placeholder={step2Placeholder("boatCategory", "e.g. Cruiser, Racing, Fishing")}
+                        needsConfirmation={needsConfirm("boat_category")}
+                      />
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("newOrUsed", "New or Used")}</Label>
-                    <SelectField
-                      name="new_or_used"
-                      defaultValue={selectedYacht?.new_or_used || ""}
-                    >
-                      <option value="">Select…</option>
-                      <option value="new">New</option>
-                      <option value="used">Used</option>
-                    </SelectField>
+                      <SelectField
+                        name="new_or_used"
+                        defaultValue={selectedYacht?.new_or_used || ""}
+                      >
+                        <option value="">{commonText("select", "Select...")}</option>
+                        <option value="new">{commonText("conditionNew", "New")}</option>
+                        <option value="used">{commonText("conditionUsed", "Used")}</option>
+                      </SelectField>
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("loa", "LOA (Length Overall)")}</Label>
@@ -5625,36 +5832,36 @@ export default function YachtEditorPage() {
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("shipyard", "Shipyard / Werf")}</Label>
-                    <Input
-                      name="where"
-                      defaultValue={selectedYacht?.where}
-                      placeholder="e.g. Beneteau, Bavaria"
-                    />
+                      <Input
+                        name="where"
+                        defaultValue={selectedYacht?.where}
+                        placeholder={step2Placeholder("shipyard", "e.g. Beneteau, Bavaria")}
+                      />
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("ceCategory", "CE Category")}</Label>
-                    <SelectField
-                      name="ce_category"
-                      defaultValue={selectedYacht?.ce_category || ""}
-                    >
-                      <option value="">Select…</option>
-                      <option value="A">A — Ocean</option>
-                      <option value="B">B — Offshore</option>
-                      <option value="C">C — Inshore</option>
-                      <option value="D">D — Sheltered Waters</option>
-                    </SelectField>
+                      <SelectField
+                        name="ce_category"
+                        defaultValue={selectedYacht?.ce_category || ""}
+                      >
+                        <option value="">{commonText("select", "Select...")}</option>
+                        <option value="A">A - {commonText("ceOcean", "Ocean")}</option>
+                        <option value="B">B - {commonText("ceOffshore", "Offshore")}</option>
+                        <option value="C">C - {commonText("ceInshore", "Inshore")}</option>
+                        <option value="D">D - {commonText("ceSheltered", "Sheltered Waters")}</option>
+                      </SelectField>
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("status", "Status")}</Label>
-                    <SelectField
-                      name="status"
-                      defaultValue={selectedYacht?.status || "Draft"}
-                    >
-                      <option value="For Sale">For Sale</option>
-                      <option value="For Bid">For Bid</option>
-                      <option value="Sold">Sold</option>
-                      <option value="Draft">Draft</option>
-                    </SelectField>
+                      <SelectField
+                        name="status"
+                        defaultValue={selectedYacht?.status || "Draft"}
+                      >
+                        <option value="For Sale">{commonText("statusForSale", "For Sale")}</option>
+                        <option value="For Bid">{commonText("statusForBid", "For Bid")}</option>
+                        <option value="Sold">{commonText("statusSold", "Sold")}</option>
+                        <option value="Draft">{commonText("statusDraft", "Draft")}</option>
+                      </SelectField>
                   </div>
                   <div className="space-y-2 group">
                     <Label>{labelText("passengerCapacity", "Passenger Capacity")}</Label>
@@ -5708,7 +5915,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Displacement</Label>
+                        <Label>{extraLabelText("displacement", "Displacement")}</Label>
                         <Input
                           name="displacement"
                           defaultValue={selectedYacht?.displacement}
@@ -5932,7 +6139,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Propulsion</Label>
+                        <Label>{extraLabelText("propulsion", "Propulsion")}</Label>
                         <Input
                           name="propulsion"
                           defaultValue={selectedYacht?.propulsion}
@@ -5949,7 +6156,7 @@ export default function YachtEditorPage() {
                         />
                       </div>
                       <div className="space-y-1 group">
-                        <Label>Tankage</Label>
+                        <Label>{extraLabelText("tankage", "Tankage")}</Label>
                         <Input
                           name="tankage"
                           defaultValue={selectedYacht?.tankage}
@@ -5987,7 +6194,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Berths</Label>
+                      <Label>{extraLabelText("berths", "Berths")}</Label>
                       <Input
                         name="berths"
                         defaultValue={selectedYacht?.berths}
@@ -5995,7 +6202,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Toilet</Label>
+                      <Label>{extraLabelText("toilet", "Toilet")}</Label>
                       <TriStateSelect
                         name="toilet"
                         defaultValue={selectedYacht?.toilet}
@@ -6030,7 +6237,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Shower</Label>
+                      <Label>{extraLabelText("shower", "Shower")}</Label>
                       <Input
                         name="shower"
                         defaultValue={selectedYacht?.shower}
@@ -6038,7 +6245,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Bath</Label>
+                      <Label>{extraLabelText("bath", "Bath")}</Label>
                       <Input
                         name="bath"
                         defaultValue={selectedYacht?.bath}
@@ -6054,7 +6261,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Saloon</Label>
+                      <Label>{extraLabelText("saloon", "Saloon")}</Label>
                       <Input
                         name="saloon"
                         defaultValue={selectedYacht?.saloon}
@@ -6062,7 +6269,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Headroom</Label>
+                      <Label>{extraLabelText("headroom", "Headroom")}</Label>
                       <Input
                         name="headroom"
                         defaultValue={selectedYacht?.headroom}
@@ -6078,7 +6285,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Engine Room</Label>
+                      <Label>{extraLabelText("engineRoom", "Engine Room")}</Label>
                       <Input
                         name="engine_room"
                         defaultValue={selectedYacht?.engine_room}
@@ -6086,7 +6293,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Spaces Inside</Label>
+                      <Label>{extraLabelText("spacesInside", "Spaces Inside")}</Label>
                       <Input
                         name="spaces_inside"
                         defaultValue={selectedYacht?.spaces_inside}
@@ -6102,7 +6309,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Matrasses</Label>
+                      <Label>{extraLabelText("matrasses", "Matrasses")}</Label>
                       <Input
                         name="matrasses"
                         defaultValue={selectedYacht?.matrasses}
@@ -6110,7 +6317,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Cushions</Label>
+                      <Label>{extraLabelText("cushions", "Cushions")}</Label>
                       <Input
                         name="cushions"
                         defaultValue={selectedYacht?.cushions}
@@ -6118,7 +6325,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Curtains</Label>
+                      <Label>{extraLabelText("curtains", "Curtains")}</Label>
                       <Input
                         name="curtains"
                         defaultValue={selectedYacht?.curtains}
@@ -6126,7 +6333,7 @@ export default function YachtEditorPage() {
                       />
                     </div>
                     <div className="space-y-1 group">
-                      <Label>Heating</Label>
+                      <Label>{extraLabelText("heating", "Heating")}</Label>
                       <TriStateSelect
                         name="heating"
                         defaultValue={selectedYacht?.heating}
@@ -6996,7 +7203,7 @@ export default function YachtEditorPage() {
                     },
                     {
                       name: "outdoor_cushions",
-                      label: "Outdoor Cushions",
+                      label: extraLabelText("outdoorCushions", "Outdoor Cushions"),
                       ph: "Yes",
                     },
                     {
@@ -7167,7 +7374,7 @@ export default function YachtEditorPage() {
                     <textarea
                       name="owners_comment"
                       defaultValue={selectedYacht?.owners_comment || ""}
-                      placeholder="Any seller notes or comments…"
+                      placeholder={step2Placeholder("ownerComment", "Any seller notes or comments...")}
                       className="w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none resize-none h-24"
                     />
                   </div>
@@ -7176,7 +7383,7 @@ export default function YachtEditorPage() {
                     <textarea
                       name="known_defects"
                       defaultValue={selectedYacht?.known_defects || ""}
-                      placeholder="Any known issues or defects…"
+                      placeholder={step2Placeholder("knownDefects", "Any known issues or defects...")}
                       className="w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none resize-none h-24"
                     />
                   </div>
@@ -7185,7 +7392,7 @@ export default function YachtEditorPage() {
                     <Input
                       name="reg_details"
                       defaultValue={selectedYacht?.reg_details}
-                      placeholder="e.g. NL registration, MMSI 244…"
+                      placeholder={step2Placeholder("registrationDetails", "e.g. NL registration, MMSI 244...")}
                       needsConfirmation={needsConfirm("reg_details")}
                     />
                   </div>
@@ -7194,7 +7401,7 @@ export default function YachtEditorPage() {
                     <Input
                       name="last_serviced"
                       defaultValue={selectedYacht?.last_serviced}
-                      placeholder="e.g. March 2024"
+                      placeholder={step2Placeholder("lastServiced", "e.g. March 2024")}
                       needsConfirmation={needsConfirm("last_serviced")}
                     />
                   </div>
