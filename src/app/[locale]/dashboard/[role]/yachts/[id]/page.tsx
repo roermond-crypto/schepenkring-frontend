@@ -3882,10 +3882,9 @@ export default function YachtEditorPage() {
         image.quality_flags.ai_rotation_angle > 0
       ) {
         notes.push(
-          formatLabelText(
+          labelText(
             "imageRotationCorrected",
-            "Image orientation was corrected by {degrees} degrees.",
-            { degrees: image.quality_flags.ai_rotation_angle },
+            `Image orientation was corrected by ${image.quality_flags.ai_rotation_angle} degrees.`,
           ),
         );
       }
@@ -3900,7 +3899,7 @@ export default function YachtEditorPage() {
 
       return Array.from(new Set(notes));
     },
-    [formatLabelText, labelText],
+    [labelText],
   );
 
   const handlePipelineDragEnd = useCallback(
@@ -6692,10 +6691,9 @@ export default function YachtEditorPage() {
                       <div className="flex flex-col items-center gap-3">
                         <p className="text-xs text-slate-400 text-center">
                           {imagesApproved
-                            ? formatLabelText(
+                            ? labelText(
                                 "aiReadyAnalyzeApprovedImages",
-                                "AI is ready to analyze {count} approved optimized images",
-                                { count: displayApprovedCount },
+                                `AI is ready to analyze ${displayApprovedCount} approved optimized images`,
                               )
                             : labelText(
                                 "uploadApproveImagesFirstAi",
