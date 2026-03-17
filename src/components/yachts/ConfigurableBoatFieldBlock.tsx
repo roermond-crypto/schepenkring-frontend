@@ -3,6 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FieldHelpTooltip } from "@/components/yachts/FieldHelpTooltip";
 import {
   type BoatFormConfigBlock,
   type BoatFormConfigField,
@@ -275,6 +276,7 @@ function DynamicField({
     <div className="space-y-2 group">
       <div className="flex items-center gap-2">
         <BlockLabel className="mb-0">{field.label}</BlockLabel>
+        <FieldHelpTooltip text={field.help_text} label={field.label} />
         {yachtId && (
           <FieldHistoryPopover
             yachtId={yachtId}

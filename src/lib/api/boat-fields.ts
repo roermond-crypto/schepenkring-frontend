@@ -29,6 +29,7 @@ export interface BoatFieldRecord {
   id: number;
   internal_key: string;
   labels_json: Record<string, string>;
+  help_json?: Record<string, string> | null;
   options_json?: BoatFieldOptionRecord[] | null;
   field_type: string;
   block_key: string;
@@ -93,6 +94,7 @@ export interface BoatFieldSourceSummaryRecord {
 export interface BoatFieldUpsertPayload {
   internal_key: string;
   labels_json: Record<string, string>;
+  help_json: Record<string, string>;
   options_json: BoatFieldOptionRecord[];
   field_type: string;
   block_key: string;
@@ -103,6 +105,15 @@ export interface BoatFieldUpsertPayload {
   ai_relevance: boolean;
   is_active: boolean;
   priorities: BoatFieldPriorityRecord[];
+}
+
+export interface BoatFieldHelpGenerationPayload {
+  internal_key: string;
+  labels_json: Record<string, string>;
+  field_type: string;
+  block_key?: string | null;
+  step_key?: string | null;
+  options_json?: BoatFieldOptionRecord[];
 }
 
 export async function listBoatFields(params?: {
@@ -146,6 +157,16 @@ export async function updateBoatField(
 
 export async function deleteBoatField(fieldId: number) {
   await api.delete(`/admin/boat-fields/${fieldId}`);
+}
+
+export async function generateBoatFieldHelp(
+  payload: BoatFieldHelpGenerationPayload,
+) {
+  const response = await api.post("/admin/boat-fields/generate-help", payload);
+
+  return response.data.data as {
+    help_json: Record<string, string>;
+  };
 }
 
 export async function getBoatFieldMappings(

@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Save,
   Search,
+  Sparkles,
   Settings2,
   Shuffle,
   Trash2,
@@ -20,6 +21,7 @@ import {
   BOAT_FIELD_SOURCES,
   createBoatField,
   deleteBoatField,
+  generateBoatFieldHelp,
   getBoatFieldMappings,
   listBoatFields,
   updateBoatField,
@@ -34,6 +36,7 @@ import {
 } from "@/lib/api/boat-fields";
 
 const LABEL_LOCALES = ["nl", "en", "de", "fr"] as const;
+const HELP_LOCALES = ["nl", "en", "de"] as const;
 const FIELD_TYPE_OPTIONS = [
   "text",
   "number",
@@ -53,6 +56,7 @@ type EditableMappingRow = Pick<
 type BoatFieldFormState = {
   internal_key: string;
   labels_json: Record<string, string>;
+  help_json: Record<string, string>;
   options_json: BoatFieldOptionRecord[];
   field_type: string;
   block_key: string;
@@ -72,6 +76,11 @@ const DEFAULT_FORM_STATE: BoatFieldFormState = {
     en: "",
     de: "",
     fr: "",
+  },
+  help_json: {
+    nl: "",
+    en: "",
+    de: "",
   },
   options_json: [],
   field_type: "text",
@@ -93,6 +102,11 @@ function mapFieldToFormState(field: BoatFieldRecord): BoatFieldFormState {
       en: field.labels_json?.en ?? "",
       de: field.labels_json?.de ?? "",
       fr: field.labels_json?.fr ?? "",
+    },
+    help_json: {
+      nl: field.help_json?.nl ?? "",
+      en: field.help_json?.en ?? "",
+      de: field.help_json?.de ?? "",
     },
     options_json:
       field.options_json?.map((option) => ({
@@ -184,6 +198,7 @@ export function BoatFieldSettingsPage() {
   const [savingField, setSavingField] = useState(false);
   const [savingMappings, setSavingMappings] = useState(false);
   const [deletingField, setDeletingField] = useState(false);
+  const [generatingHelp, setGeneratingHelp] = useState(false);
 
   const selectedField =
     fields.find((field) => field.id === selectedFieldId) ?? null;
@@ -371,6 +386,16 @@ export function BoatFieldSettingsPage() {
     }));
   };
 
+  const handleHelpChange = (locale: (typeof HELP_LOCALES)[number], value: string) => {
+    setFieldForm((previous) => ({
+      ...previous,
+      help_json: {
+        ...previous.help_json,
+        [locale]: value,
+      },
+    }));
+  };
+
   const handlePriorityChange = (
     index: number,
     patch: Partial<BoatFieldPriorityRecord>,
@@ -544,6 +569,12 @@ export function BoatFieldSettingsPage() {
             label.trim(),
           ]),
         ),
+        help_json: Object.fromEntries(
+          Object.entries(fieldForm.help_json).map(([locale, helpText]) => [
+            locale,
+            helpText.trim(),
+          ]),
+        ),
         options_json: cleanedOptions,
         priorities: cleanedPriorities,
       };
@@ -560,6 +591,61 @@ export function BoatFieldSettingsPage() {
       toast.error(getApiErrorMessage(error, "Failed to save boat field."));
     } finally {
       setSavingField(false);
+    }
+  };
+
+  const handleGenerateHelp = async () => {
+    const hasLabel = Object.values(fieldForm.labels_json).some(
+      (value) => value.trim() !== "",
+    );
+
+    if (!fieldForm.internal_key.trim()) {
+      toast.error("Add an internal key before generating help text.");
+      return;
+    }
+
+    if (!hasLabel) {
+      toast.error("Add at least one translated label before generating help text.");
+      return;
+    }
+
+    try {
+      setGeneratingHelp(true);
+      const generated = await generateBoatFieldHelp({
+        internal_key: fieldForm.internal_key.trim(),
+        labels_json: Object.fromEntries(
+          Object.entries(fieldForm.labels_json).map(([locale, label]) => [
+            locale,
+            label.trim(),
+          ]),
+        ),
+        field_type: fieldForm.field_type.trim(),
+        block_key: fieldForm.block_key.trim(),
+        step_key: fieldForm.step_key.trim(),
+        options_json:
+          fieldForm.field_type === "select"
+            ? fieldForm.options_json
+                .map((option) => ({
+                  value: option.value?.trim() ?? "",
+                  label: option.label?.trim() ?? "",
+                  labels: option.labels,
+                }))
+                .filter((option) => option.value !== "")
+            : [],
+      });
+
+      setFieldForm((previous) => ({
+        ...previous,
+        help_json: {
+          ...previous.help_json,
+          ...generated.help_json,
+        },
+      }));
+      toast.success("Help text generated. Review it before saving.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Failed to generate help text."));
+    } finally {
+      setGeneratingHelp(false);
     }
   };
 
@@ -967,6 +1053,51 @@ export function BoatFieldSettingsPage() {
                           ))}
                         </select>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                          <Sparkles size={16} className="text-blue-600" />
+                          Field Help
+                        </div>
+                        <p className="mt-1 text-sm text-slate-500">
+                          These explanations are shown behind the help icon on
+                          the yacht form.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleGenerateHelp}
+                        disabled={generatingHelp}
+                        className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {generatingHelp ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles size={16} />
+                        )}
+                        Generate with AI
+                      </button>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      {HELP_LOCALES.map((locale) => (
+                        <div key={locale}>
+                          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Help {locale.toUpperCase()}
+                          </label>
+                          <textarea
+                            value={fieldForm.help_json[locale] ?? ""}
+                            onChange={(event) =>
+                              handleHelpChange(locale, event.target.value)
+                            }
+                            rows={4}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500"
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
 

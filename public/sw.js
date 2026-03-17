@@ -2,15 +2,30 @@
 // NauticSecure / Schepenkring CRM — Service Worker
 // ──────────────────────────────────────────────────────────
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v3";
 const STATIC_CACHE = `nauticsecure-static-${CACHE_VERSION}`;
 const API_CACHE = `nauticsecure-api-${CACHE_VERSION}`;
+const IS_LOCALHOST =
+    self.location.hostname === "localhost" ||
+    self.location.hostname === "127.0.0.1" ||
+    self.location.hostname === "::1";
 
 // App shell files to precache on install
-const APP_SHELL = ["/", "/manifest.json", "/schepenkring-logo.png"];
+const APP_SHELL = [
+    "/",
+    "/manifest.json",
+    "/schepenkring-logo.png",
+    "/icon-192.png",
+    "/icon-512.png",
+];
 
 // ── Install: precache app shell ──────────────────────────
 self.addEventListener("install", (event) => {
+    if (IS_LOCALHOST) {
+        event.waitUntil(self.skipWaiting());
+        return;
+    }
+
     event.waitUntil(
         caches
             .open(STATIC_CACHE)
@@ -27,7 +42,11 @@ self.addEventListener("activate", (event) => {
             .then((keys) =>
                 Promise.all(
                     keys
-                        .filter((k) => k !== STATIC_CACHE && k !== API_CACHE)
+                        .filter((k) =>
+                            IS_LOCALHOST
+                                ? k.startsWith("nauticsecure-")
+                                : k !== STATIC_CACHE && k !== API_CACHE
+                        )
                         .map((k) => caches.delete(k))
                 )
             )
@@ -117,6 +136,8 @@ async function cacheFirst(request) {
 }
 
 self.addEventListener("fetch", (event) => {
+    if (IS_LOCALHOST) return;
+
     const url = new URL(event.request.url);
 
     // Skip non-http(s) requests

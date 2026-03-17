@@ -81,7 +81,13 @@
       "openMenu": "Menü öffnen",
       "toggleTheme": "Design wechseln",
       "userFallback": "Benutzer",
-      "logout": "Abmelden"
+      "logout": "Abmelden",
+      "installApp": "App installieren",
+      "installIosInstructions": "Öffnen Sie zum Installieren dieser App das Teilen-Menü in Safari und wählen Sie \"Zum Home-Bildschirm\".",
+      "installUnavailable": "Diese App kann in diesem Browser noch nicht installiert werden.",
+      "installPending": "Die Installationsaufforderung ist noch nicht bereit. Wenn Sie auf localhost testen, laden Sie die Seite einmal neu und versuchen Sie es erneut.",
+      "installIosStepShare": "Tippen Sie auf Teilen",
+      "installIosStepAddToHomeScreen": "Tippen Sie auf Zum Home-Bildschirm"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -284,7 +290,7 @@
       "noRecentBiddingSubtitle": "Starten Sie einen Gebotsprozess, um hier Echtzeit-Updates zu sehen.",
       "onboardingTitle": "Willkommen auf dem Marktplatz",
       "onboardingHeading": "Sie haben noch keine Gebote abgegeben",
-      "onboardingSubtitle": "Beginnen Sie mit Ihrem ersten Bootsinserat oder durchsuchen Sie den Marktplatz, um Gebote abzugeben.",
+      "onboardingSubtitle": "Beginnen Sie mit Ihrem ersten Bootsinserat oder durchsuchen Sie den <marketplace>Marktplatz</marketplace>, um Gebote abzugeben.",
       "noSystemLogs": "Noch keine kürzlichen Systemprotokolle."
     },
     "defaults": {

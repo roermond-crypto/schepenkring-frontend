@@ -135,6 +135,7 @@ import {
   type BoatFormConfigBlock,
 } from "@/lib/api/boat-form-config";
 import { ConfigurableBoatFieldBlock } from "@/components/yachts/ConfigurableBoatFieldBlock";
+import { FieldHelpTooltip } from "@/components/yachts/FieldHelpTooltip";
 
 // ALi
 // Wizard step config
@@ -147,7 +148,6 @@ const WIZARD_STEP_IDS = [
   { id: 6, key: "contract", icon: Key },
 ] as const;
 
-const DRAFT_KEY_PREFIX = "yacht_draft_";
 const MAX_IMAGES_UPLOAD = 50;
 const UPLOAD_BATCH_SIZE = 10;
 const UPLOAD_MAX_PARALLEL_BATCHES = 2;
@@ -177,6 +177,13 @@ type GalleryState = { [key: string]: any[] };
 
 type ImageGridDensity = "regular" | "compact" | "dense";
 type ReviewPipelineImage = PipelineImage & { client_upload_key?: string };
+type BoatDocumentItem = {
+  id: number;
+  file_path: string;
+  file_type?: string | null;
+  document_type?: string | null;
+  uploaded_at?: string | null;
+};
 
 // Availability Rule Type
 type AvailabilityRule = {
@@ -457,7 +464,8 @@ const YACHT_FORM_TEXT = {
       uploadAreaPendingHelp:
         "This area stays visible until the current upload finishes.",
       uploadAreaFormatsHelp: "JPEG, PNG, HEIC auto-optimized by AI",
-      uploadAreaHint: "Include HIN plates, docs, registration, engine hours",
+      uploadAreaHint:
+        "Include HIN plates, dashboards, engine hours, and key boat details",
       processingStatusLabel: "Processing...",
       readyForReviewStatusLabel: "Ready for Review",
       approvedStatusLabel: "Approved",
@@ -615,6 +623,23 @@ const YACHT_FORM_TEXT = {
         "Select a sales location before continuing to the next step.",
       noSpecificDocumentsRequired:
         "No specific documents required for this type.",
+      referenceDocumentsTitle: "Invoice, leaflet & spec files",
+      referenceDocumentsDescription:
+        "Upload invoices, brochures, leaflets, or spec sheets here. These files stay separate from the image gallery and are used by AI to help fill Step 2.",
+      uploadReferenceDocuments: "Upload reference documents",
+      clickOrDropReferenceDocument:
+        "Click or drag an invoice, leaflet, or brochure",
+      uploadedReferenceDocuments: "Reference documents ({count})",
+      referenceDocumentsHint:
+        "PDF, DOC, DOCX, JPG, PNG. Stored separately from gallery images.",
+      referenceDocumentsEmpty: "No reference documents uploaded yet.",
+      complianceDocumentsTitle: "Compliance & delivery documents",
+      complianceDocumentsDescription:
+        "Upload contract, delivery, or compliance documents here. These stay separate from the AI reference files in Step 1.",
+      referenceDocumentsMovedNotice:
+        "Invoices and leaflets for AI extraction now belong in Step 1 under the image section.",
+      noComplianceDocumentsUploaded:
+        "No compliance documents uploaded yet.",
       uploadDocuments: "Upload Documents",
       documentUploading: "Uploading...",
       clickOrDropDocument: "Click or drag a document",
@@ -884,7 +909,7 @@ const YACHT_FORM_TEXT = {
       uploadAreaFormatsHelp:
         "JPEG, PNG, HEIC worden automatisch door AI geoptimaliseerd",
       uploadAreaHint:
-        "Voeg HIN-plaatjes, documenten, registratie en motoruren toe",
+        "Voeg HIN-plaatjes, dashboards, motoruren en belangrijke bootdetails toe",
       processingStatusLabel: "Verwerken...",
       readyForReviewStatusLabel: "Klaar voor controle",
       approvedStatusLabel: "Goedgekeurd",
@@ -1042,6 +1067,24 @@ const YACHT_FORM_TEXT = {
         "Selecteer eerst een verkooplocatie voordat je doorgaat naar de volgende stap.",
       noSpecificDocumentsRequired:
         "Geen specifieke documenten vereist voor dit type.",
+      referenceDocumentsTitle: "Factuur-, brochure- en specificatiebestanden",
+      referenceDocumentsDescription:
+        "Upload hier facturen, brochures, leaflets of specificatiebladen. Deze bestanden blijven apart van de galerijafbeeldingen en helpen AI om stap 2 in te vullen.",
+      uploadReferenceDocuments: "Referentiedocumenten uploaden",
+      clickOrDropReferenceDocument:
+        "Klik of sleep een factuur, leaflet of brochure",
+      uploadedReferenceDocuments: "Referentiedocumenten ({count})",
+      referenceDocumentsHint:
+        "PDF, DOC, DOCX, JPG, PNG. Apart opgeslagen van galerijafbeeldingen.",
+      referenceDocumentsEmpty:
+        "Nog geen referentiedocumenten geüpload.",
+      complianceDocumentsTitle: "Compliance- en overdrachtsdocumenten",
+      complianceDocumentsDescription:
+        "Upload hier contract-, overdrachts- of compliancedocumenten. Deze blijven apart van de AI-referentiebestanden uit stap 1.",
+      referenceDocumentsMovedNotice:
+        "Facturen en leaflets voor AI-extractie horen nu in stap 1 onder de afbeeldingssectie.",
+      noComplianceDocumentsUploaded:
+        "Nog geen compliancedocumenten geüpload.",
       uploadDocuments: "Documenten uploaden",
       documentUploading: "Bezig met uploaden...",
       clickOrDropDocument: "Klik of sleep een document",
@@ -1301,7 +1344,7 @@ const YACHT_FORM_TEXT = {
       uploadAreaFormatsHelp:
         "JPEG, PNG, HEIC werden automatisch von KI optimiert",
       uploadAreaHint:
-        "Fügen Sie HIN-Schilder, Dokumente, Registrierung und Motorstunden hinzu",
+        "Fügen Sie HIN-Schilder, Armaturen, Motorstunden und wichtige Bootsdetails hinzu",
       processingStatusLabel: "Wird verarbeitet...",
       readyForReviewStatusLabel: "Zur Prüfung bereit",
       approvedStatusLabel: "Freigegeben",
@@ -1459,6 +1502,24 @@ const YACHT_FORM_TEXT = {
         "Wählen Sie einen Verkaufsstandort, bevor Sie mit dem nächsten Schritt fortfahren.",
       noSpecificDocumentsRequired:
         "Für diesen Typ sind keine speziellen Dokumente erforderlich.",
+      referenceDocumentsTitle: "Rechnungen, Prospekte und Datenblätter",
+      referenceDocumentsDescription:
+        "Laden Sie hier Rechnungen, Prospekte, Leaflets oder Datenblätter hoch. Diese Dateien bleiben getrennt von der Bildergalerie und helfen der KI beim Ausfüllen von Schritt 2.",
+      uploadReferenceDocuments: "Referenzdokumente hochladen",
+      clickOrDropReferenceDocument:
+        "Rechnung, Leaflet oder Prospekt anklicken oder ziehen",
+      uploadedReferenceDocuments: "Referenzdokumente ({count})",
+      referenceDocumentsHint:
+        "PDF, DOC, DOCX, JPG, PNG. Getrennt von den Galeriebildern gespeichert.",
+      referenceDocumentsEmpty:
+        "Noch keine Referenzdokumente hochgeladen.",
+      complianceDocumentsTitle: "Compliance- und Ubergabedokumente",
+      complianceDocumentsDescription:
+        "Laden Sie hier Vertrags-, Ubergabe- oder Compliance-Dokumente hoch. Diese bleiben getrennt von den KI-Referenzdateien aus Schritt 1.",
+      referenceDocumentsMovedNotice:
+        "Rechnungen und Leaflets fur die KI-Extraktion gehoren jetzt in Schritt 1 unter den Bildbereich.",
+      noComplianceDocumentsUploaded:
+        "Noch keine Compliance-Dokumente hochgeladen.",
       uploadDocuments: "Dokumente hochladen",
       documentUploading: "Wird hochgeladen...",
       clickOrDropDocument: "Klicken oder ziehen Sie ein Dokument hierher",
@@ -1719,7 +1780,7 @@ const YACHT_FORM_TEXT = {
       uploadAreaFormatsHelp:
         "JPEG, PNG, HEIC optimises automatiquement par l'IA",
       uploadAreaHint:
-        "Ajoutez plaques HIN, documents, immatriculation et heures moteur",
+        "Ajoutez plaques HIN, tableaux de bord, heures moteur et details cles du bateau",
       processingStatusLabel: "Traitement...",
       readyForReviewStatusLabel: "Prete pour revision",
       approvedStatusLabel: "Approuvee",
@@ -1877,6 +1938,24 @@ const YACHT_FORM_TEXT = {
         "Selectionnez un lieu de vente avant de passer a l'etape suivante.",
       noSpecificDocumentsRequired:
         "Aucun document specifique requis pour ce type.",
+      referenceDocumentsTitle: "Factures, brochures et fiches techniques",
+      referenceDocumentsDescription:
+        "Telechargez ici les factures, brochures, leaflets ou fiches techniques. Ces fichiers restent separes de la galerie d'images et aident l'IA a remplir l'etape 2.",
+      uploadReferenceDocuments: "Telecharger des documents de reference",
+      clickOrDropReferenceDocument:
+        "Cliquez ou glissez une facture, un leaflet ou une brochure",
+      uploadedReferenceDocuments: "Documents de reference ({count})",
+      referenceDocumentsHint:
+        "PDF, DOC, DOCX, JPG, PNG. Stockes separement des images de la galerie.",
+      referenceDocumentsEmpty:
+        "Aucun document de reference telecharge pour le moment.",
+      complianceDocumentsTitle: "Documents de conformite et de livraison",
+      complianceDocumentsDescription:
+        "Telechargez ici les documents de contrat, de livraison ou de conformite. Ils restent separes des fichiers de reference IA de l'etape 1.",
+      referenceDocumentsMovedNotice:
+        "Les factures et leaflets pour l'extraction IA appartiennent maintenant a l'etape 1 sous la section images.",
+      noComplianceDocumentsUploaded:
+        "Aucun document de conformite telecharge pour le moment.",
       uploadDocuments: "Telecharger des documents",
       documentUploading: "Telechargement...",
       clickOrDropDocument: "Cliquez ou glissez un document",
@@ -2277,6 +2356,145 @@ export default function YachtEditorPage() {
       lastServiced: "p. ex. mars 2024",
     },
   } as const;
+  const step2HelpByLocale = {
+    en: {
+      boat_name: "Official or advertised vessel name shown in the listing.",
+      manufacturer: "Brand or manufacturer responsible for building the boat.",
+      model: "Commercial model name or series used for this boat.",
+      ref_harbor_id:
+        "Harbor or sales location where the boat is listed or physically available.",
+      price: "Public asking price for the boat in EUR.",
+      min_bid_amount:
+        "Lowest bid amount accepted for the auction. Leave it empty to use 90% of the asking price automatically.",
+      year: "Year the boat was built or first completed.",
+      boat_type:
+        "Main vessel type, for example sailboat, motorboat, or catamaran.",
+      boat_category:
+        "More specific market category such as cruiser, racer, or fishing boat.",
+      new_or_used: "Choose whether the boat is sold as new or used.",
+      loa: "Length overall of the vessel, usually measured in meters.",
+      lwl: "Length of the hull at the waterline.",
+      where:
+        "Shipyard, build location, or yard reference associated with the vessel.",
+      ce_category:
+        "European CE design category that indicates the operating conditions the boat is certified for.",
+      status:
+        "Current commercial status of the listing, for example Draft, For Sale, or Sold.",
+      passenger_capacity:
+        "Maximum recommended number of people the boat can carry.",
+      owners_comment:
+        "Seller notes, context, or details that help the team understand the vessel better.",
+      known_defects:
+        "Known damage, technical issues, or missing equipment that should be disclosed.",
+      reg_details:
+        "Registration number, MMSI, flag, or other official registry details for the vessel.",
+      last_serviced:
+        "Most recent known service or maintenance date, for example March 2024.",
+    },
+    nl: {
+      boat_name: "Officiele of geadverteerde naam van het vaartuig in de listing.",
+      manufacturer: "Merk of fabrikant die de boot heeft gebouwd.",
+      model: "Commerciele modelnaam of serie van deze boot.",
+      ref_harbor_id:
+        "Haven of verkooplocatie waar de boot ligt of aangeboden wordt.",
+      price: "Publieke vraagprijs van de boot in EUR.",
+      min_bid_amount:
+        "Laagste bod dat geaccepteerd wordt in de veiling. Laat leeg om automatisch 90% van de vraagprijs te gebruiken.",
+      year: "Bouwjaar of jaar waarin de boot is opgeleverd.",
+      boat_type:
+        "Hoofdtype vaartuig, bijvoorbeeld zeilboot, motorboot of catamaran.",
+      boat_category:
+        "Specifiekere marktcategorie zoals cruiser, racer of visboot.",
+      new_or_used:
+        "Geef aan of de boot als nieuw of gebruikt wordt verkocht.",
+      loa: "Totale lengte van het schip, meestal gemeten in meters.",
+      lwl: "Lengte van de waterlijn van de romp.",
+      where:
+        "Scheepswerf, bouwlocatie of werfreferentie die bij het schip hoort.",
+      ce_category:
+        "Europese CE-ontwerpcategorie die aangeeft voor welke omstandigheden de boot is gecertificeerd.",
+      status:
+        "Huidige commerciele status van de listing, bijvoorbeeld Concept, Te koop of Verkocht.",
+      passenger_capacity:
+        "Maximaal aanbevolen aantal personen dat de boot kan meenemen.",
+      owners_comment:
+        "Notities of context van de verkoper die het team helpen de boot beter te begrijpen.",
+      known_defects:
+        "Bekende schade, technische problemen of ontbrekende uitrusting die gemeld moeten worden.",
+      reg_details:
+        "Registratienummer, MMSI, vlag of andere officiele registratiedetails van het schip.",
+      last_serviced:
+        "Laatst bekende onderhouds- of servicedatum, bijvoorbeeld maart 2024.",
+    },
+    de: {
+      boat_name: "Offizieller oder ausgeschriebener Bootsname in der Anzeige.",
+      manufacturer: "Marke oder Hersteller, der das Boot gebaut hat.",
+      model: "Kommerzieller Modellname oder Baureihe dieses Boots.",
+      ref_harbor_id:
+        "Hafen oder Verkaufsstandort, an dem das Boot liegt oder angeboten wird.",
+      price: "Offentlicher Angebotspreis des Boots in EUR.",
+      min_bid_amount:
+        "Niedrigster Gebotsbetrag fur die Auktion. Leer lassen, um automatisch 90 % des Angebotspreises zu verwenden.",
+      year: "Baujahr oder Fertigstellungsjahr des Boots.",
+      boat_type:
+        "Haupttyp des Fahrzeugs, zum Beispiel Segelboot, Motorboot oder Katamaran.",
+      boat_category:
+        "Genauere Kategorie wie Cruiser, Racer oder Angelboot.",
+      new_or_used:
+        "Wahlen Sie, ob das Boot als neu oder gebraucht verkauft wird.",
+      loa: "Gesamtlange des Boots, in der Regel in Metern gemessen.",
+      lwl: "Lange der Wasserlinie des Rumpfs.",
+      where: "Werft, Bauort oder Werftbezug des Boots.",
+      ce_category:
+        "Europische CE-Kategorie fur die zertifizierten Einsatzbedingungen des Boots.",
+      status:
+        "Aktueller Verkaufsstatus der Anzeige, zum Beispiel Entwurf, Zum Verkauf oder Verkauft.",
+      passenger_capacity:
+        "Maximal empfohlene Anzahl von Personen an Bord.",
+      owners_comment:
+        "Notizen oder Hinweise des Verkaufers, die dem Team beim Verstandnis des Boots helfen.",
+      known_defects:
+        "Bekannte Schaden, technische Probleme oder fehlende Ausrustung, die offengelegt werden sollten.",
+      reg_details:
+        "Registrierungsnummer, MMSI, Flagge oder andere offizielle Registerangaben zum Boot.",
+      last_serviced:
+        "Zuletzt bekanntes Service- oder Wartungsdatum, zum Beispiel Marz 2024.",
+    },
+    fr: {
+      boat_name: "Official or advertised vessel name shown in the listing.",
+      manufacturer: "Brand or manufacturer responsible for building the boat.",
+      model: "Commercial model name or series used for this boat.",
+      ref_harbor_id:
+        "Harbor or sales location where the boat is listed or physically available.",
+      price: "Public asking price for the boat in EUR.",
+      min_bid_amount:
+        "Lowest bid amount accepted for the auction. Leave it empty to use 90% of the asking price automatically.",
+      year: "Year the boat was built or first completed.",
+      boat_type:
+        "Main vessel type, for example sailboat, motorboat, or catamaran.",
+      boat_category:
+        "More specific market category such as cruiser, racer, or fishing boat.",
+      new_or_used: "Choose whether the boat is sold as new or used.",
+      loa: "Length overall of the vessel, usually measured in meters.",
+      lwl: "Length of the hull at the waterline.",
+      where:
+        "Shipyard, build location, or yard reference associated with the vessel.",
+      ce_category:
+        "European CE design category that indicates the operating conditions the boat is certified for.",
+      status:
+        "Current commercial status of the listing, for example Draft, For Sale, or Sold.",
+      passenger_capacity:
+        "Maximum recommended number of people the boat can carry.",
+      owners_comment:
+        "Seller notes, context, or details that help the team understand the vessel better.",
+      known_defects:
+        "Known damage, technical issues, or missing equipment that should be disclosed.",
+      reg_details:
+        "Registration number, MMSI, flag, or other official registry details for the vessel.",
+      last_serviced:
+        "Most recent known service or maintenance date, for example March 2024.",
+    },
+  } as const;
   const yachtFormText =
     YACHT_FORM_TEXT[locale as keyof typeof YACHT_FORM_TEXT] ?? YACHT_FORM_TEXT.en;
   const step2CommonText =
@@ -2285,6 +2503,9 @@ export default function YachtEditorPage() {
   const step2PlaceholderText =
     step2PlaceholderByLocale[locale as keyof typeof step2PlaceholderByLocale] ??
     step2PlaceholderByLocale.en;
+  const step2HelpText =
+    step2HelpByLocale[locale as keyof typeof step2HelpByLocale] ??
+    step2HelpByLocale.en;
   const labelText = (key: keyof typeof yachtFormText.labels, fallback: string) =>
     t?.labels?.[key] || yachtFormText.labels[key] || fallback;
   const placeholderText = (
@@ -2421,6 +2642,18 @@ export default function YachtEditorPage() {
   const yachtId = params.id;
   const { isOnline } = useNetworkStatus();
   const { user } = useClientSession();
+  const draftStorageScope = useMemo(
+    () => `${role}_${String(user?.id || "guest")}`,
+    [role, user?.id],
+  );
+  const aiMetaStorageKey = useMemo(
+    () => `yacht_ai_meta_${draftStorageScope}_${yachtId}`,
+    [draftStorageScope, yachtId],
+  );
+  const completedDraftStorageKey = useMemo(
+    () => `yacht_draft_completed_${draftStorageScope}_${yachtId}`,
+    [draftStorageScope, yachtId],
+  );
 
   // Offline-first: stable UUID per session for new boats
   const offlineIdRef = useRef<string>("");
@@ -2449,7 +2682,9 @@ export default function YachtEditorPage() {
     clearDraft,
     flushDraft,
     isStepComplete,
-  } = useYachtDraft(yachtId as string);
+  } = useYachtDraft(yachtId as string, {
+    scopeKey: draftStorageScope,
+  });
 
   // Form State
   const [selectedYacht, setSelectedYacht] = useState<any>(null);
@@ -2483,6 +2718,7 @@ export default function YachtEditorPage() {
       ? String(createdYachtId)
       : null
     : (yachtId as string);
+  const currentBoatDocumentId = isNewMode ? createdYachtId : yachtId;
   const isPersistedYachtRoute =
     !isNewMode && typeof yachtId === "string" && /^[0-9]+$/.test(yachtId);
 
@@ -2635,7 +2871,7 @@ export default function YachtEditorPage() {
     () => {
       if (typeof window === "undefined") return null;
       try {
-        const stored = localStorage.getItem(`yacht_ai_meta_${yachtId}`);
+        const stored = localStorage.getItem(aiMetaStorageKey);
         return stored ? JSON.parse(stored) : null;
       } catch {
         return null;
@@ -2648,11 +2884,12 @@ export default function YachtEditorPage() {
   // Persist confidenceMeta to localStorage immediately (no debounce)
   useEffect(() => {
     if (!yachtId) return;
-    const key = `yacht_ai_meta_${yachtId}`;
     if (confidenceMeta) {
-      localStorage.setItem(key, JSON.stringify(confidenceMeta));
+      localStorage.setItem(aiMetaStorageKey, JSON.stringify(confidenceMeta));
+    } else {
+      localStorage.removeItem(aiMetaStorageKey);
     }
-  }, [confidenceMeta, yachtId]);
+  }, [aiMetaStorageKey, confidenceMeta, yachtId]);
 
   // New AI UI Feedback States
   const [extractionProgress, setExtractionProgress] = useState(0);
@@ -2667,6 +2904,7 @@ export default function YachtEditorPage() {
   const currentUserHarborId = useMemo(() => {
     const rawValue =
       user?.client_location_id ??
+      user?.client_location?.id ??
       user?.location_id ??
       user?.location?.id ??
       user?.locations?.[0]?.id ??
@@ -2680,13 +2918,156 @@ export default function YachtEditorPage() {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [
     user?.client_location_id,
+    user?.client_location?.id,
     user?.location_id,
     user?.location?.id,
     user?.locations?.[0]?.id,
   ]);
+  const currentUserHarborCode = useMemo(
+    () =>
+      user?.client_location?.code ??
+      user?.location?.code ??
+      user?.locations?.[0]?.code ??
+      null,
+    [user?.client_location?.code, user?.location?.code, user?.locations?.[0]?.code],
+  );
+  const currentUserHarborName = useMemo(
+    () =>
+      user?.client_location?.name ??
+      user?.location?.name ??
+      user?.locations?.[0]?.name ??
+      null,
+    [user?.client_location?.name, user?.location?.name, user?.locations?.[0]?.name],
+  );
+  const preferredHarborId = useMemo(() => {
+    if (harbors.length === 0) {
+      return null;
+    }
+
+    const normalizeText = (value: unknown) =>
+      String(value ?? "")
+        .trim()
+        .toLowerCase();
+
+    const byId =
+      currentUserHarborId !== null
+        ? harbors.find(
+            (harbor: any) => Number(harbor?.id) === currentUserHarborId,
+          )
+        : null;
+
+    const normalizedCode = normalizeText(currentUserHarborCode);
+    const byCode =
+      !byId && normalizedCode
+        ? harbors.find(
+            (harbor: any) => normalizeText(harbor?.code) === normalizedCode,
+          )
+        : null;
+
+    const normalizedName = normalizeText(currentUserHarborName);
+    const byName =
+      !byId && !byCode && normalizedName
+        ? harbors.find(
+            (harbor: any) => normalizeText(harbor?.name) === normalizedName,
+          )
+        : null;
+
+    const fallbackHarbor = harbors.length === 1 ? harbors[0] : null;
+    const nextHarborId =
+      byId?.id ?? byCode?.id ?? byName?.id ?? fallbackHarbor?.id ?? null;
+
+    if (nextHarborId === null || nextHarborId === undefined) {
+      return null;
+    }
+
+    const parsed = Number(nextHarborId);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }, [
+    currentUserHarborCode,
+    currentUserHarborId,
+    currentUserHarborName,
+    harbors,
+  ]);
   const draftBoatType =
     (draft?.data as any)?.step2?.selectedYacht?.boat_type ?? null;
   const boatTypeForConfig = selectedYacht?.boat_type ?? draftBoatType ?? null;
+  const boatFormFieldHelpMap = useMemo(() => {
+    const nextMap = new Map<string, string>();
+
+    boatFormConfigBlocks.forEach((block) => {
+      [...block.primary_fields, ...block.secondary_fields].forEach((field) => {
+        const helpText = field.help_text?.trim();
+        if (!helpText) return;
+
+        nextMap.set(field.internal_key, helpText);
+
+        if (field.storage_column) {
+          nextMap.set(field.storage_column, helpText);
+        }
+      });
+    });
+
+    return nextMap;
+  }, [boatFormConfigBlocks]);
+  const buildGenericFieldHelpText = useCallback(
+    (
+      label: string,
+      kind: "text" | "number" | "select" | "textarea" = "text",
+    ) => {
+      const normalizedLabel =
+        label.replace(/\s*\*+\s*$/, "").trim() || "this field";
+
+      if (kind === "number") {
+        if (locale === "nl") {
+          return `Vul de numerieke waarde in voor ${normalizedLabel}. Laat dit veld leeg als de informatie onbekend is.`;
+        }
+        if (locale === "de") {
+          return `Geben Sie den numerischen Wert fur ${normalizedLabel} ein. Lassen Sie das Feld leer, wenn die Angabe unbekannt ist.`;
+        }
+        return `Enter the numeric value for ${normalizedLabel}. Leave this field empty if the information is unknown.`;
+      }
+
+      if (kind === "select") {
+        if (locale === "nl") {
+          return `Kies de optie die het beste past bij ${normalizedLabel} voor deze boot.`;
+        }
+        if (locale === "de") {
+          return `Wahlen Sie die Option, die am besten zu ${normalizedLabel} fur dieses Boot passt.`;
+        }
+        return `Choose the option that best matches ${normalizedLabel} for this boat.`;
+      }
+
+      if (kind === "textarea") {
+        if (locale === "nl") {
+          return `Beschrijf hier de relevante informatie voor ${normalizedLabel}.`;
+        }
+        if (locale === "de") {
+          return `Beschreiben Sie hier die relevanten Angaben zu ${normalizedLabel}.`;
+        }
+        return `Describe the relevant information for ${normalizedLabel} here.`;
+      }
+
+      if (locale === "nl") {
+        return `Vul de informatie in voor ${normalizedLabel}. Laat dit veld leeg als de informatie niet beschikbaar is.`;
+      }
+      if (locale === "de") {
+        return `Tragen Sie die Angabe fur ${normalizedLabel} ein. Lassen Sie das Feld leer, wenn die Information nicht verfugbar ist.`;
+      }
+      return `Enter the information for ${normalizedLabel}. Leave this field empty if the information is not available.`;
+    },
+    [locale],
+  );
+  const resolveFieldHelpText = useCallback(
+    (
+      fieldName: string,
+      label: string,
+      kind: "text" | "number" | "select" | "textarea" = "text",
+    ) =>
+      boatFormFieldHelpMap.get(fieldName) ||
+      step2HelpText[fieldName as keyof typeof step2HelpText] ||
+      buildGenericFieldHelpText(label, kind),
+    [boatFormFieldHelpMap, buildGenericFieldHelpText, step2HelpText],
+  );
   const accommodationConfigBlock = useMemo(
     () =>
       findBoatFormConfigBlock(boatFormConfigBlocks, [
@@ -2951,16 +3332,56 @@ export default function YachtEditorPage() {
     opening_hours_end: string;
   } | null>(null);
 
-  // Checklist State (Step 5)
+  // Document + Checklist State
   const [checklistTemplates, setChecklistTemplates] = useState<any[]>([]);
-  const [boatDocuments, setBoatDocuments] = useState<any[]>([]);
+  const [boatDocuments, setBoatDocuments] = useState<BoatDocumentItem[]>([]);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [fetchingChecklist, setFetchingChecklist] = useState(false);
   const [deleteDocumentDialogOpen, setDeleteDocumentDialogOpen] =
     useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
+  const referenceBoatDocuments = useMemo(
+    () =>
+      boatDocuments.filter((document) => document.document_type === "ai_reference"),
+    [boatDocuments],
+  );
+  const complianceBoatDocuments = useMemo(
+    () =>
+      boatDocuments.filter((document) => document.document_type !== "ai_reference"),
+    [boatDocuments],
+  );
 
-  // Fetch Checklist Templates & Documents for Step 5
+  useEffect(() => {
+    if (!currentBoatDocumentId) {
+      if (isNewMode) {
+        setBoatDocuments([]);
+      }
+      return;
+    }
+
+    let isCancelled = false;
+
+    const fetchBoatDocuments = async () => {
+      try {
+        const docsRes = await api.get(`/yachts/${currentBoatDocumentId}/documents`);
+        if (!isCancelled) {
+          setBoatDocuments(Array.isArray(docsRes.data) ? docsRes.data : []);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          console.error("Failed to load boat documents", error);
+        }
+      }
+    };
+
+    void fetchBoatDocuments();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentBoatDocumentId, isNewMode]);
+
+  // Fetch Checklist Templates for Step 5
   useEffect(() => {
     if (activeStep === 5) {
       const fetchComplianceData = async () => {
@@ -2974,12 +3395,6 @@ export default function YachtEditorPage() {
             `/checklists/templates?boat_type_id=${typeId}`,
           );
           setChecklistTemplates(templatesRes.data);
-
-          const targetId = isNewMode ? createdYachtId : yachtId;
-          if (targetId) {
-            const docsRes = await api.get(`/yachts/${targetId}/documents`);
-            setBoatDocuments(docsRes.data);
-          }
         } catch (e) {
           console.error("Failed to load compliance data", e);
         } finally {
@@ -2992,9 +3407,6 @@ export default function YachtEditorPage() {
     activeStep,
     selectedYacht?.boat_type_id,
     (draft?.data as any)?.boat_type_id,
-    isNewMode,
-    createdYachtId,
-    yachtId,
   ]);
 
   /* 
@@ -3027,25 +3439,6 @@ export default function YachtEditorPage() {
         const res = await api.get("/public/locations");
         const list = res.data || [];
         setHarbors(list);
-
-        // For new boats, prefer the signed-in user's assigned location.
-        if (isNewMode && !selectedYacht?.ref_harbor_id) {
-          const preferredHarbor =
-            currentUserHarborId !== null
-              ? list.find(
-                  (harbor: any) => Number(harbor?.id) === currentUserHarborId,
-                )
-              : null;
-          const fallbackHarbor = list.length === 1 ? list[0] : null;
-          const nextHarborId = preferredHarbor?.id ?? fallbackHarbor?.id;
-
-          if (nextHarborId !== null && nextHarborId !== undefined) {
-            setSelectedYacht((prev: any) => ({
-              ...(prev ?? {}),
-              ref_harbor_id: Number(nextHarborId),
-            }));
-          }
-        }
       } catch (err) {
         console.error("Failed to fetch harbors", err);
       } finally {
@@ -3053,7 +3446,24 @@ export default function YachtEditorPage() {
       }
     };
     fetchHarbors();
-  }, [currentUserHarborId, isNewMode, selectedYacht?.ref_harbor_id]);
+  }, []);
+
+  useEffect(() => {
+    if (!isNewMode || preferredHarborId === null) {
+      return;
+    }
+
+    setSelectedYacht((prev: any) => {
+      if (hasFilledFieldValue(prev?.ref_harbor_id)) {
+        return prev;
+      }
+
+      return {
+        ...(prev ?? {}),
+        ref_harbor_id: preferredHarborId,
+      };
+    });
+  }, [isNewMode, preferredHarborId]);
 
   useEffect(() => {
     let active = true;
@@ -3104,6 +3514,7 @@ export default function YachtEditorPage() {
   const serverDraftInitializedRef = useRef(false);
   const serverDraftBootstrapInFlightRef = useRef(false);
   const localPreviewUrlsRef = useRef<Set<string>>(new Set());
+  const verifiedDraftYachtIdRef = useRef<number | null>(null);
 
   // Restore draft payload for new-yacht flow once.
   useEffect(() => {
@@ -3127,11 +3538,10 @@ export default function YachtEditorPage() {
 
     // Guard: if the previous "new" draft was already submitted via Step 5,
     // clear stale data so the user starts fresh for the next yacht.
-    const completedKey = `yacht_draft_completed_${yachtId}`;
-    if (localStorage.getItem(completedKey)) {
+    if (localStorage.getItem(completedDraftStorageKey)) {
       void clearDraft();
-      localStorage.removeItem(completedKey);
-      localStorage.removeItem(`yacht_ai_meta_${yachtId}`);
+      localStorage.removeItem(completedDraftStorageKey);
+      localStorage.removeItem(aiMetaStorageKey);
       restoredDraftRef.current = true;
       return;
     }
@@ -3156,7 +3566,17 @@ export default function YachtEditorPage() {
     }
 
     if (step2Obj.selectedYacht && typeof step2Obj.selectedYacht === "object") {
-      setSelectedYacht(step2Obj.selectedYacht);
+      const restoredSelectedYacht = step2Obj.selectedYacht as Record<
+        string,
+        unknown
+      >;
+
+      setSelectedYacht({
+        ...restoredSelectedYacht,
+        ref_harbor_id: hasFilledFieldValue(restoredSelectedYacht.ref_harbor_id)
+          ? restoredSelectedYacht.ref_harbor_id
+          : currentUserHarborId ?? restoredSelectedYacht.ref_harbor_id,
+      });
       setFormKey((k) => k + 1);
     }
     if (typeof step2Obj.correctionLabel === "string") {
@@ -3194,7 +3614,16 @@ export default function YachtEditorPage() {
     }
 
     restoredDraftRef.current = true;
-  }, [isDraftLoaded, isNewMode, getStepData]);
+  }, [
+    aiMetaStorageKey,
+    clearDraft,
+    completedDraftStorageKey,
+    currentUserHarborId,
+    getStepData,
+    isDraftLoaded,
+    isNewMode,
+    yachtId,
+  ]);
 
   // Restore draft step on mount (but respect approval gate)
   useEffect(() => {
@@ -3955,14 +4384,15 @@ export default function YachtEditorPage() {
     }
   };
 
-  // Document Handlers (Step 5)
+  // Document Handlers (Step 1 reference docs + Step 5 compliance docs)
   const handleDocumentUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
+    documentType: "ai_reference" | "compliance" = "compliance",
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    let targetId = isNewMode ? createdYachtId : yachtId;
+    let targetId = currentBoatDocumentId;
     if (isNewMode && !targetId) {
       const loadingToastId = toast.loading(
         "Creating vessel draft for document upload...",
@@ -3986,6 +4416,7 @@ export default function YachtEditorPage() {
     setIsUploadingDocument(true);
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("document_type", documentType);
 
     try {
       const res = await api.post(`/yachts/${targetId}/documents`, formData, {
@@ -4008,7 +4439,7 @@ export default function YachtEditorPage() {
 
   const executeDocumentDelete = async () => {
     if (!documentToDelete) return;
-    const targetId = isNewMode ? createdYachtId : yachtId;
+    const targetId = currentBoatDocumentId;
     try {
       await api.delete(`/yachts/${targetId}/documents/${documentToDelete}`);
       setBoatDocuments((prev) =>
@@ -4481,15 +4912,23 @@ export default function YachtEditorPage() {
       // encoding, EXIF rotation, and thumbnail generation in a background job.
       // ---------------------------------------------------------------------
 
-      // Recover from stale draft yacht IDs restored from local draft state.
+      // Recover from stale draft yacht IDs restored from local draft state only once.
       if (isNewMode && targetId) {
-        try {
-          await api.get(`/yachts/${targetId}`);
-        } catch (err: any) {
-          if (err?.response?.status === 404) {
-            targetId = null;
-          } else {
-            throw err;
+        const numericTargetId = Number(targetId);
+        if (
+          Number.isFinite(numericTargetId) &&
+          verifiedDraftYachtIdRef.current !== numericTargetId
+        ) {
+          try {
+            await api.get(`/yachts/${targetId}`);
+            verifiedDraftYachtIdRef.current = numericTargetId;
+          } catch (err: any) {
+            if (err?.response?.status === 404) {
+              targetId = null;
+              verifiedDraftYachtIdRef.current = null;
+            } else {
+              throw err;
+            }
           }
         }
       }
@@ -4504,6 +4943,7 @@ export default function YachtEditorPage() {
         });
         targetId = createRes.data.id;
         shouldSetCreatedYachtId = true;
+        verifiedDraftYachtIdRef.current = Number(targetId);
       }
 
       if (!targetId) {
@@ -5867,8 +6307,8 @@ export default function YachtEditorPage() {
       await clearDraft();
       // Mark this draft as completed so next visit to /yachts/new starts fresh
       if (isNewMode) {
-        localStorage.setItem(`yacht_draft_completed_${yachtId}`, "1");
-        localStorage.removeItem(`yacht_ai_meta_${yachtId}`);
+        localStorage.setItem(completedDraftStorageKey, "1");
+        localStorage.removeItem(aiMetaStorageKey);
       }
 
       // (Legacy manual bulk image gallery submission removed; handled by Image Pipeline now)
@@ -7068,6 +7508,146 @@ export default function YachtEditorPage() {
                   </div>
                 )}
 
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="border-b border-slate-100 pb-5">
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <FileText size={16} className="text-blue-600" />
+                      {labelText(
+                        "referenceDocumentsTitle",
+                        "Invoice, leaflet & spec files",
+                      )}
+                    </h4>
+                    <p className="mt-2 max-w-3xl text-sm text-slate-500">
+                      {labelText(
+                        "referenceDocumentsDescription",
+                        "Upload invoices, brochures, leaflets, or spec sheets here. These files stay separate from the image gallery and are used by AI to help fill Step 2.",
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,360px)_1fr]">
+                    <label
+                      className={cn(
+                        "flex min-h-[220px] flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-slate-50 px-6 py-8 text-center transition-colors",
+                        isUploadingDocument
+                          ? "border-slate-300 opacity-70 cursor-wait"
+                          : "border-slate-300 cursor-pointer hover:border-blue-400 hover:bg-blue-50/60",
+                      )}
+                    >
+                      {isUploadingDocument ? (
+                        <Loader2
+                          size={30}
+                          className="mb-3 animate-spin text-blue-500"
+                        />
+                      ) : (
+                        <UploadCloud
+                          size={30}
+                          className="mb-3 text-slate-400 transition-colors"
+                        />
+                      )}
+                      <p className="text-sm font-semibold text-slate-700">
+                        {isUploadingDocument
+                          ? labelText("documentUploading", "Uploading...")
+                          : labelText(
+                              "clickOrDropReferenceDocument",
+                              "Click or drag an invoice, leaflet, or brochure",
+                            )}
+                      </p>
+                      <p className="mt-2 max-w-xs text-xs text-slate-500">
+                        {labelText(
+                          "referenceDocumentsHint",
+                          "PDF, DOC, DOCX, JPG, PNG. Stored separately from gallery images.",
+                        )}
+                      </p>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,image/jpeg,image/png"
+                        onChange={(e) =>
+                          void handleDocumentUpload(e, "ai_reference")
+                        }
+                        disabled={isUploadingDocument}
+                      />
+                    </label>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                      <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">
+                          {labelText(
+                            "uploadedReferenceDocuments",
+                            "Reference documents ({count})",
+                          ).replace(
+                            "{count}",
+                            String(referenceBoatDocuments.length),
+                          )}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {labelText(
+                            "uploadReferenceDocuments",
+                            "Upload reference documents",
+                          )}
+                        </p>
+                      </div>
+
+                      {referenceBoatDocuments.length > 0 ? (
+                        <div className="mt-4 space-y-3">
+                          {referenceBoatDocuments.map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+                            >
+                              <div className="min-w-0 flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                                  <FileText size={18} />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-slate-800">
+                                    {doc.file_path.split("/").pop()}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400">
+                                    {doc.uploaded_at
+                                      ? new Date(
+                                          doc.uploaded_at,
+                                        ).toLocaleDateString()
+                                      : ""}
+                                    {doc.file_type
+                                      ? ` • ${doc.file_type.toUpperCase()}`
+                                      : ""}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={doc.file_path}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                                >
+                                  <Eye size={14} />
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDocumentDelete(doc.id)}
+                                  className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                                >
+                                  <Trash size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-400">
+                          {labelText(
+                            "referenceDocumentsEmpty",
+                            "No reference documents uploaded yet.",
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* ── Approval Gate ── */}
                 {pipeline.stats.total > 0 && (
                   <div
@@ -7642,22 +8222,32 @@ export default function YachtEditorPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2 group">
-                    <Label>{labelText("vesselName", "Vessel Name *")}</Label>
+                    <FieldLabel
+                      label={labelText("vesselName", "Vessel Name *")}
+                      helpText={resolveFieldHelpText(
+                        "boat_name",
+                        labelText("vesselName", "Vessel Name *"),
+                      )}
+                    />
                       <Input
                         name="boat_name"
                         defaultValue={selectedYacht?.boat_name}
-                        placeholder={step2Placeholder("vesselName", "e.g. M/Y NOBILITY")}
                         required
                         needsConfirmation={needsConfirm("boat_name")}
                       />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("manufacturer", "Manufacturer / Make")}</Label>
+                    <FieldLabel
+                      label={labelText("manufacturer", "Manufacturer / Make")}
+                      helpText={resolveFieldHelpText(
+                        "manufacturer",
+                        labelText("manufacturer", "Manufacturer / Make"),
+                      )}
+                    />
                       <CatalogAutocomplete
                         endpoint="/api/autocomplete/brands"
                         name="manufacturer"
                         defaultValue={selectedYacht?.manufacturer}
-                        placeholder={step2Placeholder("manufacturer", "e.g. Beneteau, Sunseeker")}
                         needsConfirmation={needsConfirm("manufacturer")}
                       onSelect={(id, name) => {
                         setSelectedBrandId(Number(id));
@@ -7669,12 +8259,17 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("model", "Model")}</Label>
+                    <FieldLabel
+                      label={labelText("model", "Model")}
+                      helpText={resolveFieldHelpText(
+                        "model",
+                        labelText("model", "Model"),
+                      )}
+                    />
                       <CatalogAutocomplete
                         endpoint="/api/autocomplete/models"
                         name="model"
                         defaultValue={selectedYacht?.model}
-                        placeholder={step2Placeholder("model", "e.g. Oceanis 38.1")}
                         dependsOn="brand_id"
                       dependsOnValue={selectedBrandId}
                       needsConfirmation={needsConfirm("model")}
@@ -7689,9 +8284,20 @@ export default function YachtEditorPage() {
                   </div>
 
                   <div className="space-y-2 group">
-                    <Label>
-                      {labelText("harborLocation", "Sales Location (Harbor) *")}
-                    </Label>
+                    <FieldLabel
+                      label={labelText(
+                        "harborLocation",
+                        "Sales Location (Harbor) *",
+                      )}
+                      helpText={resolveFieldHelpText(
+                        "ref_harbor_id",
+                        labelText(
+                          "harborLocation",
+                          "Sales Location (Harbor) *",
+                        ),
+                        "select",
+                      )}
+                    />
                     <Select
                       value={selectedYacht?.ref_harbor_id?.toString() || ""}
                       onValueChange={(val) => {
@@ -7767,56 +8373,91 @@ export default function YachtEditorPage() {
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("price", "Price (€)")}</Label>
+                    <FieldLabel
+                      label={labelText("price", "Price (€)")}
+                      helpText={resolveFieldHelpText(
+                        "price",
+                        labelText("price", "Price (€)"),
+                        "number",
+                      )}
+                    />
                     <Input
                       name="price"
                       type="number"
                       defaultValue={selectedYacht?.price}
-                      placeholder="1500000"
                       needsConfirmation={needsConfirm("price")}
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("minBidAmount", "Minimum Bid Amount (€)")}</Label>
+                    <FieldLabel
+                      label={labelText("minBidAmount", "Minimum Bid Amount (€)")}
+                      helpText={resolveFieldHelpText(
+                        "min_bid_amount",
+                        labelText("minBidAmount", "Minimum Bid Amount (€)"),
+                        "number",
+                      )}
+                    />
                       <Input
                         name="min_bid_amount"
                         type="number"
                         defaultValue={selectedYacht?.min_bid_amount || ""}
-                        placeholder={step2Placeholder("minBidAmount", "Auto-calculates 90% of price if empty")}
                         step="1000"
                       />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("yearBuilt", "Year Built")}</Label>
+                    <FieldLabel
+                      label={labelText("yearBuilt", "Year Built")}
+                      helpText={resolveFieldHelpText(
+                        "year",
+                        labelText("yearBuilt", "Year Built"),
+                        "number",
+                      )}
+                    />
                     <Input
                       name="year"
                       type="number"
                       defaultValue={selectedYacht?.year}
-                      placeholder="2024"
                       needsConfirmation={needsConfirm("year")}
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("boatType", "Boat Type")}</Label>
+                    <FieldLabel
+                      label={labelText("boatType", "Boat Type")}
+                      helpText={resolveFieldHelpText(
+                        "boat_type",
+                        labelText("boatType", "Boat Type"),
+                      )}
+                    />
                       <CatalogAutocomplete
                         endpoint="/api/autocomplete/types"
                         name="boat_type"
                         defaultValue={selectedYacht?.boat_type}
-                        placeholder={step2Placeholder("boatType", "e.g. Sailboat, Motorboat")}
                         needsConfirmation={needsConfirm("boat_type")}
                       />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("boatCategory", "Boat Category")}</Label>
+                    <FieldLabel
+                      label={labelText("boatCategory", "Boat Category")}
+                      helpText={resolveFieldHelpText(
+                        "boat_category",
+                        labelText("boatCategory", "Boat Category"),
+                      )}
+                    />
                       <Input
                         name="boat_category"
                         defaultValue={selectedYacht?.boat_category}
-                        placeholder={step2Placeholder("boatCategory", "e.g. Cruiser, Racing, Fishing")}
                         needsConfirmation={needsConfirm("boat_category")}
                       />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("newOrUsed", "New or Used")}</Label>
+                    <FieldLabel
+                      label={labelText("newOrUsed", "New or Used")}
+                      helpText={resolveFieldHelpText(
+                        "new_or_used",
+                        labelText("newOrUsed", "New or Used"),
+                        "select",
+                      )}
+                    />
                       <SelectField
                         name="new_or_used"
                         defaultValue={selectedYacht?.new_or_used || ""}
@@ -7827,32 +8468,56 @@ export default function YachtEditorPage() {
                       </SelectField>
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("loa", "LOA (Length Overall)")}</Label>
+                    <FieldLabel
+                      label={labelText("loa", "LOA (Length Overall)")}
+                      helpText={resolveFieldHelpText(
+                        "loa",
+                        labelText("loa", "LOA (Length Overall)"),
+                        "number",
+                      )}
+                    />
                     <Input
                       name="loa"
                       defaultValue={selectedYacht?.loa}
-                      placeholder="45.5"
                       needsConfirmation={needsConfirm("loa")}
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("lwl", "LWL (Waterline Length)")}</Label>
+                    <FieldLabel
+                      label={labelText("lwl", "LWL (Waterline Length)")}
+                      helpText={resolveFieldHelpText(
+                        "lwl",
+                        labelText("lwl", "LWL (Waterline Length)"),
+                        "number",
+                      )}
+                    />
                     <Input
                       name="lwl"
                       defaultValue={selectedYacht?.lwl}
-                      placeholder="40.2"
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("shipyard", "Shipyard / Werf")}</Label>
+                    <FieldLabel
+                      label={labelText("shipyard", "Shipyard / Werf")}
+                      helpText={resolveFieldHelpText(
+                        "where",
+                        labelText("shipyard", "Shipyard / Werf"),
+                      )}
+                    />
                       <Input
                         name="where"
                         defaultValue={selectedYacht?.where}
-                        placeholder={step2Placeholder("shipyard", "e.g. Beneteau, Bavaria")}
                       />
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("ceCategory", "CE Category")}</Label>
+                    <FieldLabel
+                      label={labelText("ceCategory", "CE Category")}
+                      helpText={resolveFieldHelpText(
+                        "ce_category",
+                        labelText("ceCategory", "CE Category"),
+                        "select",
+                      )}
+                    />
                       <SelectField
                         name="ce_category"
                         defaultValue={selectedYacht?.ce_category || ""}
@@ -7865,7 +8530,14 @@ export default function YachtEditorPage() {
                       </SelectField>
                   </div>
                   <div className="space-y-2 group">
-                    <Label>{labelText("status", "Status")}</Label>
+                    <FieldLabel
+                      label={labelText("status", "Status")}
+                      helpText={resolveFieldHelpText(
+                        "status",
+                        labelText("status", "Status"),
+                        "select",
+                      )}
+                    />
                       <SelectField
                         name="status"
                         defaultValue={selectedYacht?.status || "Draft"}
@@ -7877,14 +8549,21 @@ export default function YachtEditorPage() {
                       </SelectField>
                   </div>
                   <div className="space-y-2 group">
-                    <Label>
-                      {labelText("passengerCapacity", "Passenger Capacity")}
-                    </Label>
+                    <FieldLabel
+                      label={labelText(
+                        "passengerCapacity",
+                        "Passenger Capacity",
+                      )}
+                      helpText={resolveFieldHelpText(
+                        "passenger_capacity",
+                        labelText("passengerCapacity", "Passenger Capacity"),
+                        "number",
+                      )}
+                    />
                     <Input
                       name="passenger_capacity"
                       type="number"
                       defaultValue={selectedYacht?.passenger_capacity}
-                      placeholder="12"
                     />
                   </div>
                 </div>
@@ -8891,6 +9570,10 @@ export default function YachtEditorPage() {
                           label={localizeFieldLabel(f.name, f.label)}
                           yachtId={selectedYachtId}
                           fieldName={f.name}
+                          helpText={resolveFieldHelpText(
+                            f.name,
+                            localizeFieldLabel(f.name, f.label),
+                          )}
                           correctionLabel={fieldCorrectionLabels[f.name]}
                           onCorrectionLabelChange={(label) =>
                             handleFieldCorrectionLabelChange(f.name, label)
@@ -9024,6 +9707,10 @@ export default function YachtEditorPage() {
                           label={localizeFieldLabel(f.name, f.label)}
                           yachtId={selectedYachtId}
                           fieldName={f.name}
+                          helpText={resolveFieldHelpText(
+                            f.name,
+                            localizeFieldLabel(f.name, f.label),
+                          )}
                           correctionLabel={fieldCorrectionLabels[f.name]}
                           onCorrectionLabelChange={(label) =>
                             handleFieldCorrectionLabelChange(f.name, label)
@@ -9204,6 +9891,10 @@ export default function YachtEditorPage() {
                           label={localizeFieldLabel(f.name, f.label)}
                           yachtId={selectedYachtId}
                           fieldName={f.name}
+                          helpText={resolveFieldHelpText(
+                            f.name,
+                            localizeFieldLabel(f.name, f.label),
+                          )}
                           correctionLabel={fieldCorrectionLabels[f.name]}
                           onCorrectionLabelChange={(label) =>
                             handleFieldCorrectionLabelChange(f.name, label)
@@ -9395,11 +10086,13 @@ export default function YachtEditorPage() {
                         },
                       ].map((f) => (
                         <div key={f.name} className="space-y-1 group">
-                          <Label>{f.label}</Label>
+                          <FieldLabel
+                            label={f.label}
+                            helpText={resolveFieldHelpText(f.name, f.label)}
+                          />
                           <Input
                             name={f.name}
                             defaultValue={selectedYacht?.[f.name]}
-                            placeholder={f.ph}
                             needsConfirmation={needsConfirm(f.name)}
                           />
                         </div>
@@ -9579,6 +10272,10 @@ export default function YachtEditorPage() {
                           label={localizeFieldLabel(f.name, f.label)}
                           yachtId={selectedYachtId}
                           fieldName={f.name}
+                          helpText={resolveFieldHelpText(
+                            f.name,
+                            localizeFieldLabel(f.name, f.label),
+                          )}
                           correctionLabel={fieldCorrectionLabels[f.name]}
                           onCorrectionLabelChange={(label) =>
                             handleFieldCorrectionLabelChange(f.name, label)
@@ -9685,6 +10382,10 @@ export default function YachtEditorPage() {
                           label={localizeFieldLabel(f.name, f.label)}
                           yachtId={selectedYachtId}
                           fieldName={f.name}
+                          helpText={resolveFieldHelpText(
+                            f.name,
+                            localizeFieldLabel(f.name, f.label),
+                          )}
                           correctionLabel={fieldCorrectionLabels[f.name]}
                           onCorrectionLabelChange={(label) =>
                             handleFieldCorrectionLabelChange(f.name, label)
@@ -9719,42 +10420,66 @@ export default function YachtEditorPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1 group">
-                    <Label>
-                      {labelText("ownerComment", "Owner's Comment")}
-                    </Label>
+                    <FieldLabel
+                      label={labelText("ownerComment", "Owner's Comment")}
+                      helpText={resolveFieldHelpText(
+                        "owners_comment",
+                        labelText("ownerComment", "Owner's Comment"),
+                        "textarea",
+                      )}
+                    />
                     <textarea
                       name="owners_comment"
                       defaultValue={selectedYacht?.owners_comment || ""}
-                      placeholder={step2Placeholder("ownerComment", "Any seller notes or comments...")}
                       className="w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none resize-none h-24"
                     />
                   </div>
                   <div className="space-y-1 group">
-                    <Label>{labelText("knownDefects", "Known Defects")}</Label>
+                    <FieldLabel
+                      label={labelText("knownDefects", "Known Defects")}
+                      helpText={resolveFieldHelpText(
+                        "known_defects",
+                        labelText("knownDefects", "Known Defects"),
+                        "textarea",
+                      )}
+                    />
                     <textarea
                       name="known_defects"
                       defaultValue={selectedYacht?.known_defects || ""}
-                      placeholder={step2Placeholder("knownDefects", "Any known issues or defects...")}
                       className="w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none resize-none h-24"
                     />
                   </div>
                   <div className="space-y-1 group">
-                    <Label>
-                      {labelText("registrationDetails", "Registration Details")}
-                    </Label>
+                    <FieldLabel
+                      label={labelText(
+                        "registrationDetails",
+                        "Registration Details",
+                      )}
+                      helpText={resolveFieldHelpText(
+                        "reg_details",
+                        labelText(
+                          "registrationDetails",
+                          "Registration Details",
+                        ),
+                      )}
+                    />
                     <Input
                       name="reg_details"
                       defaultValue={selectedYacht?.reg_details}
-                      placeholder={step2Placeholder("registrationDetails", "e.g. NL registration, MMSI 244...")}
                       needsConfirmation={needsConfirm("reg_details")}
                     />
                   </div>
                   <div className="space-y-1 group">
-                    <Label>{labelText("lastServiced", "Last Serviced")}</Label>
+                    <FieldLabel
+                      label={labelText("lastServiced", "Last Serviced")}
+                      helpText={resolveFieldHelpText(
+                        "last_serviced",
+                        labelText("lastServiced", "Last Serviced"),
+                      )}
+                    />
                     <Input
                       name="last_serviced"
                       defaultValue={selectedYacht?.last_serviced}
-                      placeholder={step2Placeholder("lastServiced", "e.g. March 2024")}
                       needsConfirmation={needsConfirm("last_serviced")}
                     />
                   </div>
@@ -10134,12 +10859,16 @@ export default function YachtEditorPage() {
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-8">
                   <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
                     <CheckSquare size={16} className="text-blue-600" />
-                    Compliance & Documenten
+                    {labelText(
+                      "complianceDocumentsTitle",
+                      "Compliance & delivery documents",
+                    )}
                   </h4>
                   <p className="text-xs text-slate-500 mb-6 max-w-2xl">
-                    Hieronder ziet u de benodigde documenten voor dit type
-                    schip. U kunt deze nu alvast uploaden, of wachten tot het
-                    contract door de klant is getekend.
+                    {labelText(
+                      "complianceDocumentsDescription",
+                      "Upload contract, delivery, or compliance documents here. These stay separate from the AI reference files in Step 1.",
+                    )}
                   </p>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -10200,6 +10929,12 @@ export default function YachtEditorPage() {
                       <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
                         {labelText("uploadDocuments", "Upload Documents")}
                       </h5>
+                      <p className="text-xs text-slate-400">
+                        {labelText(
+                          "referenceDocumentsMovedNotice",
+                          "Invoices and leaflets for AI extraction now belong in Step 1 under the image section.",
+                        )}
+                      </p>
 
                       {/* Upload Dropzone */}
                       <label
@@ -10238,22 +10973,27 @@ export default function YachtEditorPage() {
                           type="file"
                           className="hidden"
                           accept=".pdf,.doc,.docx,image/jpeg,image/png"
-                          onChange={handleDocumentUpload}
+                          onChange={(e) =>
+                            void handleDocumentUpload(e, "compliance")
+                          }
                           disabled={isUploadingDocument}
                         />
                       </label>
 
                       {/* Uploaded Documents List */}
-                      {boatDocuments.length > 0 && (
+                      {complianceBoatDocuments.length > 0 ? (
                         <div className="space-y-2 mt-4">
                           <h6 className="text-xs font-semibold text-slate-700">
                             {labelText(
                               "uploadedDocuments",
                               "Already uploaded ({count})",
-                            ).replace("{count}", String(boatDocuments.length))}
+                            ).replace(
+                              "{count}",
+                              String(complianceBoatDocuments.length),
+                            )}
                           </h6>
                           <div className="space-y-2">
-                            {boatDocuments.map((doc) => (
+                            {complianceBoatDocuments.map((doc) => (
                               <div
                                 key={doc.id}
                                 className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm"
@@ -10268,10 +11008,14 @@ export default function YachtEditorPage() {
                                       {doc.file_path.split("/").pop()}
                                     </p>
                                     <p className="text-[10px] text-slate-400">
-                                      {new Date(
-                                        doc.uploaded_at,
-                                      ).toLocaleDateString()}{" "}
-                                      • {doc.file_type?.toUpperCase()}
+                                      {doc.uploaded_at
+                                        ? new Date(
+                                            doc.uploaded_at,
+                                          ).toLocaleDateString()
+                                        : ""}
+                                      {doc.file_type
+                                        ? ` • ${doc.file_type.toUpperCase()}`
+                                        : ""}
                                     </p>
                                   </div>
                                 </div>
@@ -10295,6 +11039,13 @@ export default function YachtEditorPage() {
                               </div>
                             ))}
                           </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-400">
+                          {labelText(
+                            "noComplianceDocumentsUploaded",
+                            "No compliance documents uploaded yet.",
+                          )}
                         </div>
                       )}
                     </div>
@@ -10569,6 +11320,34 @@ function Label({
   );
 }
 
+function FieldLabel({
+  label,
+  helpText,
+  yachtId,
+  fieldName,
+  className,
+}: {
+  label: string;
+  helpText?: string | null;
+  yachtId?: number;
+  fieldName?: string;
+  className?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Label className={className}>{label}</Label>
+      <FieldHelpTooltip text={helpText} label={label} />
+      {yachtId && fieldName ? (
+        <FieldHistoryPopover
+          yachtId={yachtId}
+          fieldName={fieldName}
+          label={label}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 function hasFilledFieldValue(
   value: unknown,
   options?: { treatUnknownAsEmpty?: boolean },
@@ -10594,7 +11373,11 @@ function Input(
     confidence?: number;
   },
 ) {
-  const { needsConfirmation, confidence, ...inputProps } = props;
+  const {
+    needsConfirmation,
+    confidence,
+    ...inputProps
+  } = props;
   const [hasValue, setHasValue] = useState(() =>
     hasFilledFieldValue(inputProps.value ?? inputProps.defaultValue),
   );
@@ -10611,6 +11394,7 @@ function Input(
     <div className="relative">
       <input
         {...inputProps}
+        placeholder={undefined}
         onChange={(event) => {
           setHasValue(hasFilledFieldValue(event.target.value));
           inputProps.onChange?.(event);
@@ -10693,6 +11477,7 @@ function YachtFieldWrapper({
   label,
   yachtId,
   fieldName,
+  helpText,
   correctionLabel,
   onCorrectionLabelChange,
 }: {
@@ -10700,6 +11485,7 @@ function YachtFieldWrapper({
   label: string;
   yachtId?: number;
   fieldName: string;
+  helpText?: string | null;
   correctionLabel?: CorrectionLabel | null;
   onCorrectionLabelChange?: (label: CorrectionLabel | null) => void;
 }) {
@@ -10707,18 +11493,12 @@ function YachtFieldWrapper({
 
   return (
     <div className="space-y-2 group">
-      <div className="flex items-center justify-between">
-        <Label className="flex items-center gap-1">
-          {label}
-          {yachtId && (
-            <FieldHistoryPopover
-              yachtId={yachtId}
-              fieldName={fieldName}
-              label={label}
-            />
-          )}
-        </Label>
-      </div>
+      <FieldLabel
+        label={label}
+        helpText={helpText}
+        yachtId={yachtId}
+        fieldName={fieldName}
+      />
       {children}
       {isCorrection && onCorrectionLabelChange && (
         <FieldCorrectionControls

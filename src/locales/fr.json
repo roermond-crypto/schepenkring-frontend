@@ -81,7 +81,13 @@
       "openMenu": "Ouvrir le menu",
       "toggleTheme": "Basculer le thème",
       "userFallback": "Utilisateur",
-      "logout": "Se déconnecter"
+      "logout": "Se déconnecter",
+      "installApp": "Installer l'application",
+      "installIosInstructions": "Pour installer cette application, ouvrez le menu Partager dans Safari puis choisissez \"Sur l'écran d'accueil\".",
+      "installUnavailable": "Cette application ne peut pas encore être installée depuis ce navigateur.",
+      "installPending": "L'invite d'installation n'est pas encore prete. Si vous testez sur localhost, rechargez une fois la page puis reessayez.",
+      "installIosStepShare": "Touchez Partager",
+      "installIosStepAddToHomeScreen": "Touchez Sur l'ecran d'accueil"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
@@ -284,7 +290,7 @@
       "noRecentBiddingSubtitle": "Démarrez un processus d'enchères pour voir les mises à jour en direct ici.",
       "onboardingTitle": "Bienvenue sur le marketplace",
       "onboardingHeading": "Vous n'avez encore place aucune offre",
-      "onboardingSubtitle": "Commencez par creer votre premiere annonce de bateau ou parcourez le marketplace pour enchérir.",
+      "onboardingSubtitle": "Commencez par creer votre premiere annonce de bateau ou parcourez le <marketplace>marketplace</marketplace> pour enchérir.",
       "noSystemLogs": "Aucun journal système récent pour le moment."
     },
     "defaults": {

@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { toast } from "react-hot-toast";
 import { LanguageSwitcher } from "@/components/common/language-switcher";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
+import { PwaInstallButton } from "@/components/dashboard/PwaInstallButton";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 import type { UserRole } from "@/lib/auth/roles";
 import { lockScreenNow } from "@/lib/lockscreen";
@@ -110,6 +111,8 @@ export function DashboardHeader({
             <Moon className="h-4 w-4" />
           )}
         </button>
+
+        <PwaInstallButton locale={locale} />
 
         {/* Lock button */}
         <button

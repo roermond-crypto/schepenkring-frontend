@@ -33,6 +33,10 @@ type DraftOverride = Partial<Omit<YachtDraft, "data">> & {
     data?: Partial<YachtDraft["data"]>;
 };
 
+type UseYachtDraftOptions = {
+    scopeKey?: string | null;
+};
+
 const EMPTY_DRAFT: YachtDraft = {
     id: "new",
     currentStep: 1,
@@ -48,12 +52,50 @@ const EMPTY_DRAFT: YachtDraft = {
     pendingSync: false,
 };
 
-function readDraftFromStorage(yachtId: string): YachtDraft {
+function normalizeScopeKey(scopeKey?: string | null): string {
+    const trimmed = scopeKey?.trim();
+    if (!trimmed) {
+        return "";
+    }
+
+    return trimmed.replace(/[^a-zA-Z0-9_-]+/g, "_");
+}
+
+function legacyDraftKey(yachtId: string) {
+    return `yacht_draft_${yachtId}`;
+}
+
+function draftKey(yachtId: string, scopeKey?: string | null) {
+    const normalizedScope = normalizeScopeKey(scopeKey);
+    if (!normalizedScope) {
+        return legacyDraftKey(yachtId);
+    }
+
+    return `yacht_draft_${normalizedScope}_${yachtId}`;
+}
+
+function imageDraftPrefix(yachtId: string, scopeKey?: string | null) {
+    const normalizedScope = normalizeScopeKey(scopeKey);
+    if (!normalizedScope) {
+        return `yacht_${yachtId}_`;
+    }
+
+    return `yacht_${normalizedScope}_${yachtId}_`;
+}
+
+function readDraftFromStorage(yachtId: string, scopeKey?: string | null): YachtDraft {
     if (typeof window === "undefined") {
         return { ...EMPTY_DRAFT, id: yachtId };
     }
 
-    const stored = localStorage.getItem(draftKey(yachtId));
+    const scopedKey = draftKey(yachtId, scopeKey);
+    const fallbackLegacyKey =
+        yachtId !== "new" && scopedKey !== legacyDraftKey(yachtId)
+            ? legacyDraftKey(yachtId)
+            : null;
+    const stored =
+        localStorage.getItem(scopedKey) ??
+        (fallbackLegacyKey ? localStorage.getItem(fallbackLegacyKey) : null);
     if (!stored) {
         return { ...EMPTY_DRAFT, id: yachtId };
     }
@@ -74,22 +116,22 @@ function readDraftFromStorage(yachtId: string): YachtDraft {
     }
 }
 
-// ─── Key helpers ─────────────────────────────────────────────────
-
-function draftKey(yachtId: string) {
-    return `yacht_draft_${yachtId}`;
-}
-
-function imageDraftPrefix(yachtId: string) {
-    return `yacht_${yachtId}_`;
-}
-
 // ─── Hook ────────────────────────────────────────────────────────
 
-export function useYachtDraft(yachtId: string) {
-    const [draft, setDraft] = useState<YachtDraft>(() => readDraftFromStorage(yachtId));
+export function useYachtDraft(yachtId: string, options?: UseYachtDraftOptions) {
+    const scopeKey = options?.scopeKey;
+    const scopedDraftKey = draftKey(yachtId, scopeKey);
+    const scopedImagePrefix = imageDraftPrefix(yachtId, scopeKey);
+    const legacyKey = legacyDraftKey(yachtId);
+    const legacyImagePrefix = imageDraftPrefix(yachtId);
+
+    const [draft, setDraft] = useState<YachtDraft>(() => readDraftFromStorage(yachtId, scopeKey));
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isLoaded = true;
+
+    useEffect(() => {
+        setDraft(readDraftFromStorage(yachtId, scopeKey));
+    }, [yachtId, scopeKey]);
 
     // ── Persist to localStorage ──────────────────────────────────
     const persistDraft = useCallback(
@@ -99,10 +141,10 @@ export function useYachtDraft(yachtId: string) {
                 lastSaved: new Date().toISOString(),
                 pendingSync: true,
             };
-            localStorage.setItem(draftKey(yachtId), JSON.stringify(withTimestamp));
+            localStorage.setItem(scopedDraftKey, JSON.stringify(withTimestamp));
             return withTimestamp;
         },
-        [yachtId]
+        [scopedDraftKey]
     );
 
     const mergeDraft = useCallback((base: YachtDraft, override?: DraftOverride): YachtDraft => {
@@ -199,43 +241,49 @@ export function useYachtDraft(yachtId: string) {
     // ── Save main image to IndexedDB ────────────────────────────
     const saveMainImage = useCallback(
         async (file: File) => {
-            await storeImage(`${imageDraftPrefix(yachtId)}main`, file);
+            await storeImage(`${scopedImagePrefix}main`, file);
         },
-        [yachtId]
+        [scopedImagePrefix]
     );
 
     // ── Load main image from IndexedDB ──────────────────────────
     const loadMainImage = useCallback(async (): Promise<File | null> => {
-        return loadImage(`${imageDraftPrefix(yachtId)}main`);
-    }, [yachtId]);
+        return loadImage(`${scopedImagePrefix}main`);
+    }, [scopedImagePrefix]);
 
     // ── Save gallery image to IndexedDB ─────────────────────────
     const saveGalleryImage = useCallback(
         async (category: string, index: number, file: File) => {
             await storeImage(
-                `${imageDraftPrefix(yachtId)}gallery_${category}_${index}`,
+                `${scopedImagePrefix}gallery_${category}_${index}`,
                 file
             );
         },
-        [yachtId]
+        [scopedImagePrefix]
     );
 
     // ── Load gallery images from IndexedDB ──────────────────────
     const loadGalleryImages = useCallback(
         async (category: string) => {
             return loadImagesByPrefix(
-                `${imageDraftPrefix(yachtId)}gallery_${category}_`
+                `${scopedImagePrefix}gallery_${category}_`
             );
         },
-        [yachtId]
+        [scopedImagePrefix]
     );
 
     // ── Clear draft (after successful submit) ───────────────────
     const clearDraft = useCallback(async () => {
-        localStorage.removeItem(draftKey(yachtId));
-        await deleteImagesByPrefix(imageDraftPrefix(yachtId));
+        localStorage.removeItem(scopedDraftKey);
+        if (legacyKey !== scopedDraftKey) {
+            localStorage.removeItem(legacyKey);
+        }
+        await deleteImagesByPrefix(scopedImagePrefix);
+        if (legacyImagePrefix !== scopedImagePrefix) {
+            await deleteImagesByPrefix(legacyImagePrefix);
+        }
         setDraft({ ...EMPTY_DRAFT, id: yachtId });
-    }, [yachtId]);
+    }, [legacyImagePrefix, legacyKey, scopedDraftKey, scopedImagePrefix, yachtId]);
 
     // ── Force an immediate draft flush ──────────────────────────
     const flushDraft = useCallback(
@@ -253,7 +301,7 @@ export function useYachtDraft(yachtId: string) {
         const handleBeforeUnload = () => {
             // Synchronous save to localStorage
             localStorage.setItem(
-                draftKey(yachtId),
+                scopedDraftKey,
                 JSON.stringify({
                     ...draft,
                     lastSaved: new Date().toISOString(),
@@ -278,7 +326,7 @@ export function useYachtDraft(yachtId: string) {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [draft, yachtId]);
+    }, [draft, scopedDraftKey]);
 
     // ── Check if step has data ──────────────────────────────────
     const isStepComplete = useCallback(

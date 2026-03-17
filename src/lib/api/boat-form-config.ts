@@ -11,6 +11,8 @@ export interface BoatFormConfigField {
   internal_key: string;
   label: string;
   labels: Record<string, string>;
+  help_text: string;
+  help_texts: Record<string, string>;
   options: BoatFormConfigFieldOption[];
   field_type: string;
   block_key: string;

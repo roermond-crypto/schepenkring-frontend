@@ -81,7 +81,13 @@
       "openMenu": "Menu openen",
       "toggleTheme": "Thema wisselen",
       "userFallback": "Gebruiker",
-      "logout": "Uitloggen"
+      "logout": "Uitloggen",
+      "installApp": "App installeren",
+      "installIosInstructions": "Open het deelmenu in Safari en kies \"Zet op beginscherm\" om deze app te installeren.",
+      "installUnavailable": "Deze app kan vanuit deze browser nog niet worden geinstalleerd.",
+      "installPending": "De installatieprompt is nog niet klaar. Als je op localhost test, ververs dan een keer en probeer het opnieuw.",
+      "installIosStepShare": "Tik op Deel",
+      "installIosStepAddToHomeScreen": "Tik op Zet op beginscherm"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -285,7 +291,7 @@
       "noRecentBiddingSubtitle": "Start een biedproces om hier live updates te zien.",
       "onboardingTitle": "Welkom op de marketplace",
       "onboardingHeading": "Je hebt nog geen biedingen geplaatst",
-      "onboardingSubtitle": "Begin met het maken van je eerste bootlisting of bekijk de marketplace om te bieden.",
+      "onboardingSubtitle": "Begin met het maken van je eerste bootlisting of bekijk de <marketplace>marketplace</marketplace> om te bieden.",
       "noSystemLogs": "Nog geen recente systeemlogs."
     },
     "defaults": {

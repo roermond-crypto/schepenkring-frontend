@@ -152,6 +152,7 @@ export default function AdminDashboardHome() {
   const params = useParams<{ role?: string }>();
   const role = normalizeRole(params?.role) ?? "admin";
   const dashboardBase = `/dashboard/${role}`;
+  const marketplaceUrl = "https://www.schepenkring.nl/aanbod-boten/";
   const isAdminRole = role === "admin";
   const showAdminSalesInsights = role !== "client";
   const showAuditPanel = role !== "client";
@@ -772,16 +773,36 @@ export default function AdminDashboardHome() {
                 {t("empty.onboardingHeading")}
               </p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {t("empty.onboardingSubtitle")}
+                {t.rich("empty.onboardingSubtitle", {
+                  marketplace: (chunks) => (
+                    <a
+                      href={marketplaceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 transition hover:text-[#1E3A8A] dark:text-slate-400 dark:decoration-slate-600 dark:hover:text-sky-300"
+                    >
+                      {chunks}
+                    </a>
+                  ),
+                })}
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 <Link
-                  href={`${dashboardBase}/yachts`}
+                  href={`${dashboardBase}/yachts/new`}
                   className="inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
                 >
                   {t("actions.createFirstListing")}
                   <ArrowRight size={14} />
                 </Link>
+                <a
+                  href={marketplaceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#C6D6F2] bg-white px-4 py-2 text-sm font-semibold text-[#0B1F3A] transition hover:border-[#1E3A8A] hover:text-[#1E3A8A] dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400 dark:hover:text-sky-300"
+                >
+                  {t("actions.browseMarketplace")}
+                  <ArrowRight size={14} />
+                </a>
               </div>
             </div>
           </div>
