@@ -221,6 +221,7 @@
     "title_employee": "Tableau de bord des ventes",
     "welcomeBack": "Bon retour, {name}",
     "todayWeather": "Aujourd'hui : 18° Ensoleillé à Eindhoven",
+    "notificationSummary": "Vous avez {count} nouvelle{count, plural, one {} other {s}} notification{count, plural, one {} other {s}}.",
     "activeBiddingItems": "Vous avez {count} enchères actives.",
     "liveSync": "Synchronisation en direct",
     "refresh": "Actualiser",

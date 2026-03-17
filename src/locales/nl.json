@@ -222,6 +222,7 @@
     "title_employee": "Verkoopdashboard",
     "welcomeBack": "Welkom terug, {name}",
     "todayWeather": "Vandaag: 18° zonnig in Eindhoven",
+    "notificationSummary": "Je hebt {count} nieuwe melding{count, plural, one {} other {en}}.",
     "activeBiddingItems": "Je hebt {count} actief{count, plural, one {} other {e}} bieding{count, plural, one {} other {en}}.",
     "liveSync": "Live synchronisatie",
     "refresh": "Verversen",

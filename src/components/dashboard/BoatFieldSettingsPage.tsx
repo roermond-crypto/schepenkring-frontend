@@ -682,7 +682,7 @@ export function BoatFieldSettingsPage() {
         selectedFieldId,
         selectedSource,
         mappingRows.map((mapping) => ({
-          external_key: mapping.external_key.trim() || null,
+          external_key: mapping.external_key?.trim() || null,
           external_value: mapping.external_value.trim(),
           normalized_value: mapping.normalized_value.trim(),
           match_type: mapping.match_type,

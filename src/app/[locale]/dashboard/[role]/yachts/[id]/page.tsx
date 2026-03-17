@@ -2910,7 +2910,7 @@ export default function YachtEditorPage() {
       user?.locations?.[0]?.id ??
       null;
 
-    if (rawValue === null || rawValue === undefined || rawValue === "") {
+    if (rawValue === null || rawValue === undefined || (rawValue as any) === "") {
       return null;
     }
 
@@ -4677,10 +4677,10 @@ export default function YachtEditorPage() {
       });
 
       setManualSortDialogOpen(false);
-      toast.success(labelText("manualSortSaved", "Image order saved."));
+      toast.success((labelText as any)("manualSortSaved", "Image order saved."));
     } catch (error) {
       toast.error(
-        labelText("manualSortFailed", "Failed to save image order."),
+        (labelText as any)("manualSortFailed", "Failed to save image order."),
       );
       console.error(error);
     } finally {
@@ -6737,7 +6737,7 @@ export default function YachtEditorPage() {
                           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
                         >
                           <GripVertical size={12} />
-                          {labelText("manualSortImages", "Manual sort")}
+                          {(labelText as any)("manualSortImages", "Manual sort")}
                         </button>
 
                         <button
@@ -7105,13 +7105,13 @@ export default function YachtEditorPage() {
                                 {labelText("imageCountLabel", "Images")}
                               </div>
                               <DialogTitle className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                                {labelText(
+                                {(labelText as any)(
                                   "manualSortImages",
                                   "Manual sort",
                                 )}
                               </DialogTitle>
                               <DialogDescription className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                                {labelText(
+                                {(labelText as any)(
                                   "manualSortDescription",
                                   "Drag images to control the order they appear in the gallery.",
                                 )}
@@ -7120,7 +7120,7 @@ export default function YachtEditorPage() {
 
                             <div className="hidden rounded-[24px] border border-white/80 bg-white/80 px-4 py-3 text-right shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:block">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                                {labelText("saveImageOrder", "Save order")}
+                                {(labelText as any)("saveImageOrder", "Save order")}
                               </p>
                               <p className="mt-1 text-sm font-semibold text-slate-900">
                                 1 to {Math.max(manualSortImages.length, 1)}
@@ -7281,7 +7281,7 @@ export default function YachtEditorPage() {
                               ) : (
                                 <Check size={14} className="mr-2" />
                               )}
-                              {labelText("saveImageOrder", "Save order")}
+                              {(labelText as any)("saveImageOrder", "Save order")}
                             </Button>
                           </div>
                         </div>
@@ -8595,9 +8595,9 @@ export default function YachtEditorPage() {
                         optionalTriStateFields={OPTIONAL_TRI_STATE_FIELDS}
                         correctionLabels={fieldCorrectionLabels}
                         onCorrectionLabelChange={handleFieldCorrectionLabelChange}
-                        yesLabel={commonText("yes", "Yes")}
-                        noLabel={commonText("no", "No")}
-                        unknownLabel={commonText("unknown", "Unknown")}
+                        yesLabel={(commonText as any)("yes", "Yes")}
+                        noLabel={(commonText as any)("no", "No")}
+                        unknownLabel={(commonText as any)("unknown", "Unknown")}
                         gridClassName="md:grid-cols-2"
                       />
                     ) : (
@@ -8781,9 +8781,9 @@ export default function YachtEditorPage() {
                         optionalTriStateFields={OPTIONAL_TRI_STATE_FIELDS}
                         correctionLabels={fieldCorrectionLabels}
                         onCorrectionLabelChange={handleFieldCorrectionLabelChange}
-                        yesLabel={commonText("yes", "Yes")}
-                        noLabel={commonText("no", "No")}
-                        unknownLabel={commonText("unknown", "Unknown")}
+                        yesLabel={(commonText as any)("yes", "Yes")}
+                        noLabel={(commonText as any)("no", "No")}
+                        unknownLabel={(commonText as any)("unknown", "Unknown")}
                         gridClassName="md:grid-cols-2"
                       />
                     ) : (
@@ -8976,9 +8976,9 @@ export default function YachtEditorPage() {
                     yachtId={selectedYachtId}
                     needsConfirm={needsConfirm}
                     optionalTriStateFields={OPTIONAL_TRI_STATE_FIELDS}
-                    yesLabel={commonText("yes", "Yes")}
-                    noLabel={commonText("no", "No")}
-                    unknownLabel={commonText("unknown", "Unknown")}
+                    yesLabel={(commonText as any)("yes", "Yes")}
+                    noLabel={(commonText as any)("no", "No")}
+                    unknownLabel={(commonText as any)("unknown", "Unknown")}
                   />
                 ) : (
                   <div className="space-y-5">
@@ -9447,9 +9447,9 @@ export default function YachtEditorPage() {
                     optionalTriStateFields={OPTIONAL_TRI_STATE_FIELDS}
                     correctionLabels={fieldCorrectionLabels}
                     onCorrectionLabelChange={handleFieldCorrectionLabelChange}
-                    yesLabel={commonText("yes", "Yes")}
-                    noLabel={commonText("no", "No")}
-                    unknownLabel={commonText("unknown", "Unknown")}
+                    yesLabel={(commonText as any)("yes", "Yes")}
+                    noLabel={(commonText as any)("no", "No")}
+                    unknownLabel={(commonText as any)("unknown", "Unknown")}
                     gridClassName="md:grid-cols-3"
                   />
                 ) : (
@@ -9618,9 +9618,9 @@ export default function YachtEditorPage() {
                     optionalTriStateFields={OPTIONAL_TRI_STATE_FIELDS}
                     correctionLabels={fieldCorrectionLabels}
                     onCorrectionLabelChange={handleFieldCorrectionLabelChange}
-                    yesLabel={commonText("yes", "Yes")}
-                    noLabel={commonText("no", "No")}
-                    unknownLabel={commonText("unknown", "Unknown")}
+                    yesLabel={(commonText as any)("yes", "Yes")}
+                    noLabel={(commonText as any)("no", "No")}
+                    unknownLabel={(commonText as any)("unknown", "Unknown")}
                     gridClassName="md:grid-cols-3"
                   />
                 ) : (
@@ -9755,9 +9755,9 @@ export default function YachtEditorPage() {
                     optionalTriStateFields={OPTIONAL_TRI_STATE_FIELDS}
                     correctionLabels={fieldCorrectionLabels}
                     onCorrectionLabelChange={handleFieldCorrectionLabelChange}
-                    yesLabel={commonText("yes", "Yes")}
-                    noLabel={commonText("no", "No")}
-                    unknownLabel={commonText("unknown", "Unknown")}
+                    yesLabel={(commonText as any)("yes", "Yes")}
+                    noLabel={(commonText as any)("no", "No")}
+                    unknownLabel={(commonText as any)("unknown", "Unknown")}
                     gridClassName="md:grid-cols-3"
                   />
                 ) : (
@@ -9939,9 +9939,9 @@ export default function YachtEditorPage() {
                     optionalTriStateFields={OPTIONAL_TRI_STATE_FIELDS}
                     correctionLabels={fieldCorrectionLabels}
                     onCorrectionLabelChange={handleFieldCorrectionLabelChange}
-                    yesLabel={commonText("yes", "Yes")}
-                    noLabel={commonText("no", "No")}
-                    unknownLabel={commonText("unknown", "Unknown")}
+                    yesLabel={(commonText as any)("yes", "Yes")}
+                    noLabel={(commonText as any)("no", "No")}
+                    unknownLabel={(commonText as any)("unknown", "Unknown")}
                     gridClassName="md:grid-cols-3"
                   />
                 ) : (
@@ -10120,9 +10120,9 @@ export default function YachtEditorPage() {
                     optionalTriStateFields={OPTIONAL_TRI_STATE_FIELDS}
                     correctionLabels={fieldCorrectionLabels}
                     onCorrectionLabelChange={handleFieldCorrectionLabelChange}
-                    yesLabel={commonText("yes", "Yes")}
-                    noLabel={commonText("no", "No")}
-                    unknownLabel={commonText("unknown", "Unknown")}
+                    yesLabel={(commonText as any)("yes", "Yes")}
+                    noLabel={(commonText as any)("no", "No")}
+                    unknownLabel={(commonText as any)("unknown", "Unknown")}
                     gridClassName="md:grid-cols-3"
                   />
                 ) : (
@@ -10320,9 +10320,9 @@ export default function YachtEditorPage() {
                     optionalTriStateFields={OPTIONAL_TRI_STATE_FIELDS}
                     correctionLabels={fieldCorrectionLabels}
                     onCorrectionLabelChange={handleFieldCorrectionLabelChange}
-                    yesLabel={commonText("yes", "Yes")}
-                    noLabel={commonText("no", "No")}
-                    unknownLabel={commonText("unknown", "Unknown")}
+                    yesLabel={(commonText as any)("yes", "Yes")}
+                    noLabel={(commonText as any)("no", "No")}
+                    unknownLabel={(commonText as any)("unknown", "Unknown")}
                     gridClassName="md:grid-cols-3"
                   />
                 ) : (

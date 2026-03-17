@@ -221,6 +221,7 @@
     "title_employee": "Sales Dashboard",
     "welcomeBack": "Welcome back, {name}",
     "todayWeather": "Today: 18° Sunny in Eindhoven",
+    "notificationSummary": "You got {count} new notification{count, plural, one {} other {s}}.",
     "activeBiddingItems": "You have {count} active bidding {count, plural, one {item} other {items}}.",
     "liveSync": "Live sync",
     "refresh": "Refresh",

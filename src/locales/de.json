@@ -221,6 +221,7 @@
     "title_employee": "Team-Übersicht",
     "welcomeBack": "Willkommen zurück, {name}",
     "todayWeather": "Heute: 18° Sonnig in Eindhoven",
+    "notificationSummary": "Sie haben {count} neue Benachrichtigung{count, plural, one {} other {en}}.",
     "activeBiddingItems": "Sie haben {count} aktive Gebote {count, plural, one {Artikel} other {Artikel}}.",
     "liveSync": "Live-Synchronisation",
     "refresh": "Aktualisieren",
