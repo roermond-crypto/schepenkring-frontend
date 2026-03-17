@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLocale } from "next-intl";
 import { Sparkles, Loader2, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,81 @@ const suggestionCache = new Map<string, SuggestionResponse>();
 const suggestionInFlight = new Map<string, Promise<SuggestionResponse>>();
 const autoAppliedSignatures = new Set<string>();
 
+const ASSISTANT_TEXT = {
+    en: {
+        title: "AI Creation Assistant",
+        intro: "Based on similar sold boats, we found some typical specs:",
+        loading: "Searching historical archive...",
+        apply: "Apply Suggestions",
+        confidence: "confidence",
+        year: "Year",
+        length: "Length",
+        beam: "Beam",
+        draft: "Draft",
+        fuel: "Fuel",
+        engines: "Engines",
+        power: "Power",
+        engine: "Engine",
+        price: "Price",
+        engineSingle: "engine",
+        enginePlural: "engines",
+    },
+    nl: {
+        title: "AI-aanmaakassistent",
+        intro: "Op basis van vergelijkbare verkochte boten vonden we deze typische specificaties:",
+        loading: "Historisch archief wordt doorzocht...",
+        apply: "Suggesties toepassen",
+        confidence: "zekerheid",
+        year: "Bouwjaar",
+        length: "Lengte",
+        beam: "Breedte",
+        draft: "Diepgang",
+        fuel: "Brandstof",
+        engines: "Motoren",
+        power: "Vermogen",
+        engine: "Motor",
+        price: "Prijs",
+        engineSingle: "motor",
+        enginePlural: "motoren",
+    },
+    de: {
+        title: "KI-Erstellungsassistent",
+        intro: "Basierend auf ahnlichen verkauften Booten haben wir diese typischen Spezifikationen gefunden:",
+        loading: "Historisches Archiv wird durchsucht...",
+        apply: "Vorschlage ubernehmen",
+        confidence: "Sicherheit",
+        year: "Baujahr",
+        length: "Lange",
+        beam: "Breite",
+        draft: "Tiefgang",
+        fuel: "Kraftstoff",
+        engines: "Motoren",
+        power: "Leistung",
+        engine: "Motor",
+        price: "Preis",
+        engineSingle: "Motor",
+        enginePlural: "Motoren",
+    },
+    fr: {
+        title: "Assistant de creation IA",
+        intro: "D'apres des bateaux similaires vendus, nous avons trouve ces specifications types :",
+        loading: "Recherche dans les archives historiques...",
+        apply: "Appliquer les suggestions",
+        confidence: "fiabilite",
+        year: "Annee",
+        length: "Longueur",
+        beam: "Largeur",
+        draft: "Tirant d'eau",
+        fuel: "Carburant",
+        engines: "Moteurs",
+        power: "Puissance",
+        engine: "Moteur",
+        price: "Prix",
+        engineSingle: "moteur",
+        enginePlural: "moteurs",
+    },
+} as const;
+
 interface BoatCreationAssistantProps {
     manufacturer: string;
     model: string;
@@ -30,6 +106,8 @@ export function BoatCreationAssistant({
     onApply,
     autoApply = false,
 }: BoatCreationAssistantProps) {
+    const locale = useLocale();
+    const text = ASSISTANT_TEXT[locale as keyof typeof ASSISTANT_TEXT] ?? ASSISTANT_TEXT.en;
     const [suggestions, setSuggestions] = useState<SuggestionResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [lastQuery, setLastQuery] = useState("");
@@ -112,22 +190,22 @@ export function BoatCreationAssistant({
             case "horse_power":
                 return `${value} hp`;
             case "engine_quantity":
-                return `${value} engine${Number(value) === 1 ? "" : "s"}`;
+                return `${value} ${Number(value) === 1 ? text.engineSingle : text.enginePlural}`;
             default:
                 return String(value);
         }
     };
 
     const items = [
-        { field: "year", label: "Year" },
-        { field: "loa", label: "Length" },
-        { field: "beam", label: "Beam" },
-        { field: "draft", label: "Draft" },
-        { field: "fuel", label: "Fuel" },
-        { field: "engine_quantity", label: "Engines" },
-        { field: "horse_power", label: "Power" },
-        { field: "engine_manufacturer", label: "Engine" },
-        { field: "price", label: "Price" },
+        { field: "year", label: text.year },
+        { field: "loa", label: text.length },
+        { field: "beam", label: text.beam },
+        { field: "draft", label: text.draft },
+        { field: "fuel", label: text.fuel },
+        { field: "engine_quantity", label: text.engines },
+        { field: "horse_power", label: text.power },
+        { field: "engine_manufacturer", label: text.engine },
+        { field: "price", label: text.price },
     ]
         .map((item) => ({
             ...item,
@@ -149,7 +227,7 @@ export function BoatCreationAssistant({
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-blue-700 font-medium">
                     <Sparkles size={18} className="text-blue-600 animate-pulse" />
-                    <span>AI Creation Assistant</span>
+                    <span>{text.title}</span>
                 </div>
                 {isLoading && <Loader2 size={16} className="animate-spin text-blue-400" />}
             </div>
@@ -157,7 +235,7 @@ export function BoatCreationAssistant({
             {hasSuggestions ? (
                 <div className="space-y-3">
                     <p className="text-sm text-blue-600/80">
-                        Based on similar sold boats, we found some typical specs:
+                        {text.intro}
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -172,7 +250,7 @@ export function BoatCreationAssistant({
                                     </span>
                                     {item.confidence !== null && (
                                         <span className="text-[9px] text-slate-400">
-                                            {item.confidence}% confidence
+                                            {item.confidence}% {text.confidence}
                                         </span>
                                     )}
                                 </div>
@@ -195,11 +273,11 @@ export function BoatCreationAssistant({
                         className="w-full bg-white border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 transition-all group"
                         onClick={() => onApply(consensus, "manual")}
                     >
-                        Apply Suggestions <ChevronRight size={14} className="ml-1 group-hover:translate-x-0.5 transition-transform" />
+                        {text.apply} <ChevronRight size={14} className="ml-1 group-hover:translate-x-0.5 transition-transform" />
                     </Button>
                 </div>
             ) : isLoading ? (
-                <p className="text-xs text-slate-400 italic">Searching historical archive...</p>
+                <p className="text-xs text-slate-400 italic">{text.loading}</p>
             ) : null}
         </div>
     );

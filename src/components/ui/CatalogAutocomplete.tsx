@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -19,6 +20,33 @@ interface CatalogAutocompleteItem {
     name: string;
 }
 
+const CATALOG_TEXT = {
+    en: {
+        verifyAi: "Verify AI",
+        searching: "Searching catalog...",
+        noMatch: "No canonical match found.",
+        saveAsNew: "Will be saved as new string.",
+    },
+    nl: {
+        verifyAi: "Controleer AI",
+        searching: "Catalogus wordt doorzocht...",
+        noMatch: "Geen canonieke match gevonden.",
+        saveAsNew: "Wordt opgeslagen als nieuwe waarde.",
+    },
+    de: {
+        verifyAi: "KI prufen",
+        searching: "Katalog wird durchsucht...",
+        noMatch: "Kein kanonischer Treffer gefunden.",
+        saveAsNew: "Wird als neuer Wert gespeichert.",
+    },
+    fr: {
+        verifyAi: "Verifier l'IA",
+        searching: "Recherche dans le catalogue...",
+        noMatch: "Aucune correspondance canonique trouvee.",
+        saveAsNew: "Sera enregistre comme nouvelle valeur.",
+    },
+} as const;
+
 export function CatalogAutocomplete({
     endpoint,
     name,
@@ -29,6 +57,8 @@ export function CatalogAutocomplete({
     onSelect,
     needsConfirmation
 }: Props) {
+    const locale = useLocale();
+    const text = CATALOG_TEXT[locale as keyof typeof CATALOG_TEXT] ?? CATALOG_TEXT.en;
     const [query, setQuery] = useState(defaultValue || "");
     const [results, setResults] = useState<CatalogAutocompleteItem[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -103,14 +133,14 @@ export function CatalogAutocomplete({
 
             {needsConfirmation && (
                 <div className="absolute right-2 top-2 text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded shadow-sm">
-                    Verify AI
+                    {text.verifyAi}
                 </div>
             )}
 
             {isOpen && (query.length > 1) && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto">
                     {loading ? (
-                        <div className="p-3 text-sm text-slate-500 text-center">Searching Catalog...</div>
+                        <div className="p-3 text-sm text-slate-500 text-center">{text.searching}</div>
                     ) : results.length > 0 ? (
                         <ul className="py-1">
                             {results.map((item) => (
@@ -128,7 +158,7 @@ export function CatalogAutocomplete({
                             ))}
                         </ul>
                     ) : (
-                        <div className="p-3 text-sm text-slate-400 text-center italic">No canonical match found.<br />Will be saved as new string.</div>
+                        <div className="p-3 text-sm text-slate-400 text-center italic">{text.noMatch}<br />{text.saveAsNew}</div>
                     )}
                 </div>
             )}
