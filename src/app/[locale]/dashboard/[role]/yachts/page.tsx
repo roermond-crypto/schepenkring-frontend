@@ -539,6 +539,17 @@ export default function FleetManagementPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            {role === "admin" && (
+              <Button
+                onClick={() =>
+                  router.push(`/${locale}/dashboard/${role}/yachts/settings`)
+                }
+                className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
+              >
+                <Settings size={14} />
+                Field Settings
+              </Button>
+            )}
             <Button
               onClick={() => router.push(`/${locale}/dashboard/${role}/boat-audit`)}
               className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
