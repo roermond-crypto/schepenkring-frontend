@@ -6620,7 +6620,11 @@ export default function YachtEditorPage() {
                     }
                   `}
                 >
-                  {isCompleted ? <Check size={20} strokeWidth={3} /> : step.id}
+                  {isCompleted ? (
+                    <Check size={20} strokeWidth={3} />
+                  ) : (
+                    index + 1
+                  )}
                 </button>
                 {index < visibleWizardSteps.length - 1 && (
                   <div

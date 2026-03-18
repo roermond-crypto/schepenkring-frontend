@@ -479,6 +479,11 @@ function BookingCalendarTab({
       formatter.format(new Date(baseSunday.getTime() + index * 86400000)),
     );
   }, [locale]);
+  const bookingDatesErrorText = t("booking.errors.dates");
+  const bookingSlotsErrorText = t("booking.errors.slots");
+  const bookingSelectDateTimeText = t("booking.errors.selectDateTime");
+  const bookingFillNameEmailText = t("booking.errors.fillNameEmail");
+  const bookingSubmitErrorText = t("booking.errors.submit");
 
   const monthLabel = new Intl.DateTimeFormat(locale || "en", {
     month: "long",
@@ -537,12 +542,12 @@ function BookingCalendarTab({
         );
       })
       .catch(() => {
-        setBookingMessage(t("booking.errors.dates"));
+        setBookingMessage(bookingDatesErrorText);
       })
       .finally(() => {
         setLoadingDates(false);
       });
-  }, [boatId, currentMonth, locationId, locale, t]);
+  }, [boatId, bookingDatesErrorText, currentMonth, locationId, locale]);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -570,20 +575,20 @@ function BookingCalendarTab({
       })
       .catch(() => {
         setAvailableSlots([]);
-        setBookingMessage(t("booking.errors.slots"));
+        setBookingMessage(bookingSlotsErrorText);
       })
       .finally(() => {
         setLoadingSlots(false);
       });
-  }, [boatId, locationId, selectedDate, t]);
+  }, [boatId, bookingSlotsErrorText, locationId, selectedDate]);
 
   const handleBook = async () => {
     if (!selectedDate || !selectedTime) {
-      setBookingMessage(t("booking.errors.selectDateTime"));
+      setBookingMessage(bookingSelectDateTimeText);
       return;
     }
     if (!bookingForm.name || !bookingForm.email) {
-      setBookingMessage(t("booking.errors.fillNameEmail"));
+      setBookingMessage(bookingFillNameEmailText);
       return;
     }
 
@@ -611,7 +616,7 @@ function BookingCalendarTab({
     } catch (error) {
       setBookingStatus("idle");
       setBookingMessage(
-        error instanceof Error ? error.message : t("booking.errors.submit"),
+        error instanceof Error ? error.message : bookingSubmitErrorText,
       );
     }
   };
