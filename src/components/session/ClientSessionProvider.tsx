@@ -29,6 +29,12 @@ type ClientSessionUser = {
   has_location_assignment?: boolean;
   can_access_board?: boolean;
   location?: { id: number; name?: string; code?: string; role?: string } | null;
+  client_location?: {
+    id: number;
+    name?: string;
+    code?: string;
+    role?: string;
+  } | null;
   locations?: Array<{
     id: number;
     name?: string;
@@ -105,6 +111,12 @@ function buildUserFromStorage(
         client_location_id?: number | null;
         has_location_assignment?: boolean;
         can_access_board?: boolean;
+        client_location?: {
+          id?: number;
+          name?: string;
+          code?: string;
+          role?: string;
+        } | null;
         location?: {
           id?: number;
           name?: string;
@@ -140,6 +152,15 @@ function buildUserFromStorage(
         has_location_assignment:
           parsed.has_location_assignment ?? fallback.has_location_assignment,
         can_access_board: parsed.can_access_board ?? fallback.can_access_board,
+        client_location:
+          parsed.client_location?.id != null
+            ? {
+                id: Number(parsed.client_location.id),
+                name: parsed.client_location.name,
+                code: parsed.client_location.code,
+                role: parsed.client_location.role,
+              }
+            : (fallback.client_location ?? null),
         location:
           parsed.location?.id != null
             ? {
@@ -187,6 +208,12 @@ function buildUserFromStorage(
       client_location_id?: number | null;
       has_location_assignment?: boolean;
       can_access_board?: boolean;
+      client_location?: {
+        id?: number;
+        name?: string;
+        code?: string;
+        role?: string;
+      } | null;
       location?: {
         id?: number;
         name?: string;
@@ -219,6 +246,15 @@ function buildUserFromStorage(
       has_location_assignment:
         parsed.has_location_assignment ?? fallback.has_location_assignment,
       can_access_board: parsed.can_access_board ?? fallback.can_access_board,
+      client_location:
+        parsed.client_location?.id != null
+          ? {
+              id: Number(parsed.client_location.id),
+              name: parsed.client_location.name,
+              code: parsed.client_location.code,
+              role: parsed.client_location.role,
+            }
+          : (fallback.client_location ?? null),
       location:
         parsed.location?.id != null
           ? {
@@ -242,6 +278,7 @@ function buildUserFromStorage(
       client_location_id: fallback.client_location_id,
       has_location_assignment: fallback.has_location_assignment,
       can_access_board: fallback.can_access_board,
+      client_location: fallback.client_location ?? null,
       location: fallback.location ?? null,
       locations: fallback.locations,
     };

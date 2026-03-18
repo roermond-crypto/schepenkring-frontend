@@ -108,6 +108,7 @@ export default function FleetManagementPage() {
   const params = useParams<{ role?: string }>();
   const locale = useLocale();
   const role = normalizeRole(params?.role) ?? "admin";
+  const isClientRole = role === "client";
   const dict = getDictionary(locale) as any;
   const t = dict.DashboardYachts || {} as any;
   const [fleet, setFleet] = useState<any[]>([]);
@@ -539,20 +540,35 @@ export default function FleetManagementPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <Button
-              onClick={() => router.push(`/${locale}/dashboard/${role}/boat-audit`)}
-              className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
-            >
-              <ShieldCheck size={14} />
-              Boat Audit
-            </Button>
-            <Button
-              onClick={fetchFleet}
-              className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
-            >
-              <RefreshCw size={14} />
-              {t?.actions?.refresh || "Refresh"}
-            </Button>
+            {role === "admin" && (
+              <Button
+                onClick={() =>
+                  router.push(`/${locale}/dashboard/${role}/yachts/settings`)
+                }
+                className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
+              >
+                <Settings size={14} />
+                Field Settings
+              </Button>
+            )}
+            {!isClientRole && (
+              <>
+                <Button
+                  onClick={() => router.push(`/${locale}/dashboard/${role}/boat-audit`)}
+                  className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
+                >
+                  <ShieldCheck size={14} />
+                  Boat Audit
+                </Button>
+                <Button
+                  onClick={fetchFleet}
+                  className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
+                >
+                  <RefreshCw size={14} />
+                  {t?.actions?.refresh || "Refresh"}
+                </Button>
+              </>
+            )}
             <Button
               onClick={() => router.push(`/${locale}/dashboard/${role}/yachts/new`)}
               className="bg-[#003566] text-white hover:bg-blue-800 rounded-none h-12 px-8 font-black uppercase text-[10px] tracking-widest transition-all shadow-lg flex items-center gap-2"
@@ -564,169 +580,173 @@ export default function FleetManagementPage() {
         </div>
 
         {/* STATS CARDS */}
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mb-8">
-          <div className="bg-white p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  {t?.stats?.total || "Total"}
-                </p>
-                <p className="text-xl font-bold text-[#003566]">
-                  {stats.total}
-                </p>
+        {!isClientRole && (
+          <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mb-8">
+            <div className="bg-white p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                    {t?.stats?.total || "Total"}
+                  </p>
+                  <p className="text-xl font-bold text-[#003566]">
+                    {stats.total}
+                  </p>
+                </div>
+                <BarChart3 className="text-blue-600" size={18} />
               </div>
-              <BarChart3 className="text-blue-600" size={18} />
+            </div>
+            <div className="bg-white p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                    {t?.stats?.forSale || "For Sale"}
+                  </p>
+                  <p className="text-xl font-bold text-emerald-600">
+                    {stats.forSale}
+                  </p>
+                </div>
+                <Euro className="text-emerald-600" size={18} />
+              </div>
+            </div>
+            <div className="bg-white p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                    {t?.stats?.forBid || "For Bid"}
+                  </p>
+                  <p className="text-xl font-bold text-blue-600">
+                    {stats.forBid}
+                  </p>
+                </div>
+                <Users className="text-blue-600" size={18} />
+              </div>
+            </div>
+            <div className="bg-white p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                    {t?.stats?.sold || "Sold"}
+                  </p>
+                  <p className="text-xl font-bold text-amber-600">{stats.sold}</p>
+                </div>
+                <CheckCircle className="text-amber-600" size={18} />
+              </div>
+            </div>
+            <div className="bg-white p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                    {t?.stats?.draft || "Draft"}
+                  </p>
+                  <p className="text-xl font-bold text-slate-500">
+                    {stats.draft}
+                  </p>
+                </div>
+                <AlertTriangle className="text-slate-500" size={18} />
+              </div>
+            </div>
+            <div className="bg-white p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                    {t?.stats?.active || "Active"}
+                  </p>
+                  <p className="text-xl font-bold text-emerald-600">
+                    {stats.active}
+                  </p>
+                </div>
+                <CheckCircle className="text-emerald-600" size={18} />
+              </div>
+            </div>
+            <div className="bg-white p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                    {t?.stats?.inactive || "Inactive"}
+                  </p>
+                  <p className="text-xl font-bold text-red-600">
+                    {stats.inactive}
+                  </p>
+                </div>
+                <XCircle className="text-red-600" size={18} />
+              </div>
             </div>
           </div>
-          <div className="bg-white p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  {t?.stats?.forSale || "For Sale"}
-                </p>
-                <p className="text-xl font-bold text-emerald-600">
-                  {stats.forSale}
-                </p>
-              </div>
-              <Euro className="text-emerald-600" size={18} />
-            </div>
-          </div>
-          <div className="bg-white p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  {t?.stats?.forBid || "For Bid"}
-                </p>
-                <p className="text-xl font-bold text-blue-600">
-                  {stats.forBid}
-                </p>
-              </div>
-              <Users className="text-blue-600" size={18} />
-            </div>
-          </div>
-          <div className="bg-white p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  {t?.stats?.sold || "Sold"}
-                </p>
-                <p className="text-xl font-bold text-amber-600">{stats.sold}</p>
-              </div>
-              <CheckCircle className="text-amber-600" size={18} />
-            </div>
-          </div>
-          <div className="bg-white p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  {t?.stats?.draft || "Draft"}
-                </p>
-                <p className="text-xl font-bold text-slate-500">
-                  {stats.draft}
-                </p>
-              </div>
-              <AlertTriangle className="text-slate-500" size={18} />
-            </div>
-          </div>
-          <div className="bg-white p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  {t?.stats?.active || "Active"}
-                </p>
-                <p className="text-xl font-bold text-emerald-600">
-                  {stats.active}
-                </p>
-              </div>
-              <CheckCircle className="text-emerald-600" size={18} />
-            </div>
-          </div>
-          <div className="bg-white p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  {t?.stats?.inactive || "Inactive"}
-                </p>
-                <p className="text-xl font-bold text-red-600">
-                  {stats.inactive}
-                </p>
-              </div>
-              <XCircle className="text-red-600" size={18} />
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* SEARCH AND FILTERS */}
-        <div className="bg-white p-6 border border-slate-200 shadow-sm mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-center">
-            <div className="relative group lg:col-span-2">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder={t?.filters?.searchPlaceholder || "Search vessels..."}
-                className="w-full bg-slate-50 border border-slate-200 p-3 pl-12 text-[11px] font-black tracking-widest outline-none focus:ring-1 focus:ring-blue-600 transition-all"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
+        {!isClientRole && (
+          <div className="bg-white p-6 border border-slate-200 shadow-sm mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-center">
+              <div className="relative group lg:col-span-2">
+                <Search
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder={t?.filters?.searchPlaceholder || "Search vessels..."}
+                  className="w-full bg-slate-50 border border-slate-200 p-3 pl-12 text-[11px] font-black tracking-widest outline-none focus:ring-1 focus:ring-blue-600 transition-all"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                />
+              </div>
 
-            <div className="relative">
-              <Filter
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
-                size={18}
-              />
-              <select
-                className="w-full bg-slate-50 border border-slate-200 p-3 pl-12 text-[11px] font-black tracking-widest outline-none appearance-none"
-                value={selectedStatus}
-                onChange={(e) => {
-                  setSelectedStatus(e.target.value);
-                  setPagination((prev) => ({ ...prev, current_page: 1 }));
-                }}
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="relative">
+                <Filter
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
+                  size={18}
+                />
+                <select
+                  className="w-full bg-slate-50 border border-slate-200 p-3 pl-12 text-[11px] font-black tracking-widest outline-none appearance-none"
+                  value={selectedStatus}
+                  onChange={(e) => {
+                    setSelectedStatus(e.target.value);
+                    setPagination((prev) => ({ ...prev, current_page: 1 }));
+                  }}
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="relative">
-              <select
-                className="w-full bg-slate-50 border border-slate-200 p-3 text-[11px] font-black tracking-widest outline-none"
-                value={`${sortBy}-${sortOrder}`}
-                onChange={(e) => handleSortChange(e.target.value)}
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="relative">
+                <select
+                  className="w-full bg-slate-50 border border-slate-200 p-3 text-[11px] font-black tracking-widest outline-none"
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={(e) => handleSortChange(e.target.value)}
+                >
+                  {sortOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="flex justify-end items-center gap-3">
-              <select
-                className="bg-slate-50 border border-slate-200 px-3 h-11 text-[11px] font-black tracking-widest outline-none"
-                value={pagination.per_page}
-                onChange={(e) =>
-                  setPagination((prev) => ({
-                    ...prev,
-                    per_page: Number(e.target.value),
-                    current_page: 1,
-                  }))
-                }
-              >
-                <option value={25}>25 / page</option>
-                <option value={50}>50 / page</option>
-              </select>
-              <ViewToggle />
+              <div className="flex justify-end items-center gap-3">
+                <select
+                  className="bg-slate-50 border border-slate-200 px-3 h-11 text-[11px] font-black tracking-widest outline-none"
+                  value={pagination.per_page}
+                  onChange={(e) =>
+                    setPagination((prev) => ({
+                      ...prev,
+                      per_page: Number(e.target.value),
+                      current_page: 1,
+                    }))
+                  }
+                >
+                  <option value={25}>25 / page</option>
+                  <option value={50}>50 / page</option>
+                </select>
+                <ViewToggle />
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
       {/* LOADING STATE */}
       {loading && (
@@ -1030,7 +1050,7 @@ export default function FleetManagementPage() {
         </div>
       )}
       {/* FOOTER */}
-      {!loading && pagination.total > 0 && (
+      {!loading && !isClientRole && pagination.total > 0 && (
         <div className="mt-8 pt-6 border-t border-slate-200">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">

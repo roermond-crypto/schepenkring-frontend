@@ -7,29 +7,28 @@ import { useEffect } from "react";
  * Place this component once in the root layout.
  */
 export function ServiceWorkerRegister() {
-    useEffect(() => {
-        if (
-            typeof window === "undefined" ||
-            !("serviceWorker" in navigator) ||
-            process.env.NODE_ENV === "development"
-        ) {
-            return;
-        }
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
 
-        navigator.serviceWorker
-            .register("/sw.js", { scope: "/" })
-            .then((registration) => {
-                console.log("[SW] Registered:", registration.scope);
+    const registerServiceWorker = () => {
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .then((registration) => {
+          console.log("[SW] Registered:", registration.scope);
+        })
+        .catch((registrationError) => {
+          console.warn("[SW] Registration failed:", registrationError);
+        });
+    };
 
-                // Check for updates periodically (every 60 minutes)
-                setInterval(() => {
-                    registration.update();
-                }, 60 * 60 * 1000);
-            })
-            .catch((err) => {
-                console.warn("[SW] Registration failed:", err);
-            });
-    }, []);
+    if (document.readyState === "complete") {
+      registerServiceWorker();
+      return;
+    }
 
-    return null;
+    window.addEventListener("load", registerServiceWorker);
+    return () => window.removeEventListener("load", registerServiceWorker);
+  }, []);
+
+  return null;
 }

@@ -20,6 +20,7 @@ export type SessionUser = {
   has_location_assignment?: boolean;
   can_access_board?: boolean;
   location?: { id: number; name?: string; code?: string; role?: string } | null;
+  client_location?: { id: number; name?: string; code?: string; role?: string } | null;
   locations?: Array<{ id: number; name?: string; code?: string; role?: string }>;
 };
 
@@ -58,6 +59,7 @@ function decodeSession(value: string): SessionUser | null {
       has_location_assignment: parsed.has_location_assignment,
       can_access_board: parsed.can_access_board,
       location: parsed.location,
+      client_location: parsed.client_location,
       locations: parsed.locations,
     };
   } catch {

@@ -44,6 +44,7 @@ export function setClientSession(token: string, user: SessionUser) {
         has_location_assignment: user.has_location_assignment ?? false,
         can_access_board: user.can_access_board ?? false,
         location: user.location ?? null,
+        client_location: user.client_location ?? null,
         locations: user.locations ?? [],
         token,
       }),

@@ -81,7 +81,13 @@
       "openMenu": "Open menu",
       "toggleTheme": "Toggle theme",
       "userFallback": "User",
-      "logout": "Logout"
+      "logout": "Logout",
+      "installApp": "Install app",
+      "installIosInstructions": "To install this app, open the Share menu in Safari and choose \"Add to Home Screen\".",
+      "installUnavailable": "This app can't be installed from this browser yet.",
+      "installPending": "The install prompt is not ready yet. If you're testing on localhost, refresh once and try again.",
+      "installIosStepShare": "Tap Share",
+      "installIosStepAddToHomeScreen": "Tap Add to Home Screen"
     },
     "sidebar": {
       "dashboard": "Dashboard",
@@ -215,6 +221,7 @@
     "title_employee": "Sales Dashboard",
     "welcomeBack": "Welcome back, {name}",
     "todayWeather": "Today: 18° Sunny in Eindhoven",
+    "notificationSummary": "You got {count} new notification{count, plural, one {} other {s}}.",
     "activeBiddingItems": "You have {count} active bidding {count, plural, one {item} other {items}}.",
     "liveSync": "Live sync",
     "refresh": "Refresh",
@@ -284,7 +291,7 @@
       "noRecentBiddingSubtitle": "Start a bidding process to see live updates here.",
       "onboardingTitle": "Welcome to the marketplace",
       "onboardingHeading": "You have not placed any bids yet",
-      "onboardingSubtitle": "Start by creating your first boat listing or browse the marketplace to begin bidding.",
+      "onboardingSubtitle": "Start by creating your first boat listing or browse the <marketplace>marketplace</marketplace> to begin bidding.",
       "noSystemLogs": "No recent system logs yet."
     },
     "defaults": {

@@ -17,7 +17,7 @@ type SuggestionResponse = {
 const suggestionCache = new Map<string, SuggestionResponse>();
 const suggestionInFlight = new Map<string, Promise<SuggestionResponse>>();
 const autoAppliedSignatures = new Set<string>();
-
+// fixes
 const ASSISTANT_TEXT = {
     en: {
         title: "AI Creation Assistant",

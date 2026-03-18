@@ -15,6 +15,7 @@ export type SessionUser = {
   has_location_assignment?: boolean;
   can_access_board?: boolean;
   location?: { id: number; name?: string; code?: string; role?: string } | null;
+  client_location?: { id: number; name?: string; code?: string; role?: string } | null;
   locations?: Array<{ id: number; name?: string; code?: string; role?: string }>;
 };
 

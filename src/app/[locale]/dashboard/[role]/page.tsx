@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Clock,
   AlertCircle,
+  Bell,
   CheckCircle2,
   RefreshCcw,
   ArrowRight,
@@ -18,7 +19,6 @@ import {
   CircleCheck,
   CircleX,
   Sparkles,
-  Sun,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -152,6 +152,7 @@ export default function AdminDashboardHome() {
   const params = useParams<{ role?: string }>();
   const role = normalizeRole(params?.role) ?? "admin";
   const dashboardBase = `/dashboard/${role}`;
+  const marketplaceUrl = "https://www.schepenkring.nl/aanbod-boten/";
   const isAdminRole = role === "admin";
   const showAdminSalesInsights = role !== "client";
   const showAuditPanel = role !== "client";
@@ -164,6 +165,7 @@ export default function AdminDashboardHome() {
         : t("roleTitles.team");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [welcomeName, setWelcomeName] = useState(defaultUserName);
   const [data, setData] = useState<DashboardData>({
     activeBidsCount: 0,
@@ -189,13 +191,14 @@ export default function AdminDashboardHome() {
     if (showSkeleton) setLoading(true);
     setIsRefreshing(true);
     try {
-      const [yachtsRes, tasksRes, bidsRes, logsRes, summaryRes] =
+      const [yachtsRes, tasksRes, bidsRes, logsRes, summaryRes, unreadCountRes] =
         await Promise.allSettled([
           api.get("/yachts"),
           api.get("/tasks"),
           api.get("/bids?page=1"),
           api.get("/audit?per_page=5&sort_by=created_at&sort_dir=desc"),
           api.get("/dashboard/summary"),
+          api.get("/notifications/unread-count"),
         ]);
 
       const yachts =
@@ -210,6 +213,14 @@ export default function AdminDashboardHome() {
         logsRes.status === "fulfilled"
           ? logsRes.value.data?.data || logsRes.value.data?.logs || []
           : [];
+      const unreadCount =
+        unreadCountRes.status === "fulfilled"
+          ? Number(
+              unreadCountRes.value.data?.count ??
+                unreadCountRes.value.data?.unread_count ??
+                0,
+            )
+          : 0;
 
       const activeBids = yachts.filter(
         (y: any) => y.status === "For Bid",
@@ -269,6 +280,7 @@ export default function AdminDashboardHome() {
         )
         .slice(0, 3);
 
+      setUnreadNotificationCount(unreadCount);
       setData({
         activeBidsCount: activeBids,
         pendingTasks: pending,
@@ -488,8 +500,8 @@ export default function AdminDashboardHome() {
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#1E3A8A] dark:text-slate-300">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 font-semibold dark:bg-slate-800/90 dark:text-slate-100">
-                <Sun size={14} />
-                {t("todayWeather")}
+                <Bell size={14} />
+                {t("notificationSummary", { count: unreadNotificationCount })}
               </span>
               {isAdminRole && (
                 <span className="font-semibold">
@@ -772,16 +784,36 @@ export default function AdminDashboardHome() {
                 {t("empty.onboardingHeading")}
               </p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {t("empty.onboardingSubtitle")}
+                {(t as any).rich("empty.onboardingSubtitle", {
+                  marketplace: (chunks: any) => (
+                    <a
+                      href={marketplaceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 transition hover:text-[#1E3A8A] dark:text-slate-400 dark:decoration-slate-600 dark:hover:text-sky-300"
+                    >
+                      {chunks}
+                    </a>
+                  ),
+                })}
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 <Link
-                  href={`${dashboardBase}/yachts`}
+                  href={`${dashboardBase}/yachts/new`}
                   className="inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
                 >
                   {t("actions.createFirstListing")}
                   <ArrowRight size={14} />
                 </Link>
+                <a
+                  href={marketplaceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#C6D6F2] bg-white px-4 py-2 text-sm font-semibold text-[#0B1F3A] transition hover:border-[#1E3A8A] hover:text-[#1E3A8A] dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400 dark:hover:text-sky-300"
+                >
+                  {t("actions.browseMarketplace")}
+                  <ArrowRight size={14} />
+                </a>
               </div>
             </div>
           </div>
