@@ -26,6 +26,11 @@ type AskResponse = {
   header_language?: string;
 };
 
+type ConversationDetailResponse = {
+  id: string;
+  messages?: BackendChatMessage[];
+};
+
 type BackendChatMessage = {
   id: string;
   sender_type: "visitor" | "ai" | "employee" | string;
@@ -188,38 +193,54 @@ export function ClientChatPage() {
     setSending(true);
 
     try {
-      const response = await api.post<AskResponse>(
-        `/public/conversations/${conversationId}/ask`,
+      const response = await api.post<AskResponse | BackendChatMessage>(
+        `/chat/conversations/${conversationId}/messages`,
         {
+          text: trimmed,
           body: trimmed,
           client_message_id: `dashboard-msg-${Date.now()}`,
-          visitor_id: visitorId,
         },
       );
 
-      const nextMessages = [
-        response.data?.user_message
-          ? mapBackendMessage(response.data.user_message)
-          : {
-              id: tempUserId,
-              sender: "user" as const,
-              text: trimmed,
-              createdAt: nowIso,
-            },
-        response.data?.ai_message
-          ? mapBackendMessage(response.data.ai_message)
-          : {
-              id: tempAiId,
-              sender: "ai" as const,
-              text: t("errors.replyMissing"),
-              createdAt: new Date().toISOString(),
-            },
-      ];
+      const directResponse = response.data as AskResponse & BackendChatMessage;
+      const followUpConversation = await api.get<ConversationDetailResponse>(
+        `/chat/conversations/${conversationId}`,
+      );
+      const refreshedMessages = Array.isArray(followUpConversation.data?.messages)
+        ? followUpConversation.data.messages.map(mapBackendMessage)
+        : [];
 
-      setMessages((prev) => [
-        ...prev.filter((message) => message.id !== tempUserId && message.id !== tempAiId),
-        ...nextMessages,
-      ]);
+      if (refreshedMessages.length > 0) {
+        setMessages(refreshedMessages);
+      } else {
+        const nextMessages = [
+          directResponse?.user_message
+            ? mapBackendMessage(directResponse.user_message)
+            : directResponse?.id
+              ? mapBackendMessage(directResponse)
+              : {
+                  id: tempUserId,
+                  sender: "user" as const,
+                  text: trimmed,
+                  createdAt: nowIso,
+                },
+          directResponse?.ai_message
+            ? mapBackendMessage(directResponse.ai_message)
+            : {
+                id: tempAiId,
+                sender: "ai" as const,
+                text: t("errors.replyMissing"),
+                createdAt: new Date().toISOString(),
+              },
+        ];
+
+        setMessages((prev) => [
+          ...prev.filter(
+            (message) => message.id !== tempUserId && message.id !== tempAiId,
+          ),
+          ...nextMessages,
+        ]);
+      }
     } catch (error) {
       console.error("Failed to send client dashboard chat message:", error);
       setMessages((prev) =>
@@ -230,7 +251,7 @@ export function ClientChatPage() {
     } finally {
       setSending(false);
     }
-  }, [conversationId, input, t, visitorId]);
+  }, [conversationId, input, t]);
 
   if (!locationId) {
     return (

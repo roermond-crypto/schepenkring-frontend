@@ -361,6 +361,7 @@ export async function sendSupportMessage(
     method: "POST",
     url: `/chat/conversations/${conversationId}/messages`,
     data: {
+      text,
       body: text,
       client_message_id: clientMessageId,
     },
