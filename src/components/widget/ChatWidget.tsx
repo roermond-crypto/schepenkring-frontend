@@ -51,6 +51,30 @@ interface PublicConversationAskResponse {
   } | null;
 }
 
+interface WidgetInitResponse {
+  visitor_id?: string;
+  session_id?: string;
+  session_jwt?: string;
+  context?: {
+    location?: {
+      id?: number;
+      name?: string;
+      branding?: {
+        primary_color?: string | null;
+      } | null;
+      texts?: {
+        welcome?: string | null;
+      } | null;
+    } | null;
+    boat?: {
+      id?: number;
+      name?: string;
+      status?: string;
+    } | null;
+    tabs_enabled?: string[];
+  } | null;
+}
+
 interface ChatWidgetProps {
   harborId?: string;
   harborName?: string;
@@ -445,11 +469,13 @@ function BookingCalendarTab({
   locationId,
   locale,
   colors,
+  sessionJwt,
 }: {
   boatId: number;
   locationId?: number;
   locale?: string;
   colors: WidgetColors;
+  sessionJwt?: string | null;
 }) {
   const t = useTranslations("WidgetChat");
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
@@ -510,49 +536,26 @@ function BookingCalendarTab({
     for (let i = 1; i <= daysInMonth; i++) {
       days.push({
         date: new Date(year, month, i),
-        available: false,
+        available: true,
         isCurrentMonth: true,
       });
     }
 
     setCalendarDays(days);
-    setLoadingDates(true);
-
-    const query = new URLSearchParams({
-      month: String(month + 1),
-      year: String(year),
-    });
-    if (locationId) {
-      query.set("location_id", String(locationId));
-    }
-
-    void publicApi<{ availableDates?: string[] }>(
-      "GET",
-      `/yachts/${boatId}/available-dates?${query.toString()}`,
-    )
-      .then((response) => {
-        const availableDates = response.availableDates || [];
-        setCalendarDays((prev) =>
-          prev.map((day) => ({
-            ...day,
-            available: day.isCurrentMonth
-              ? availableDates.includes(formatDate(day.date))
-              : false,
-          })),
-        );
-      })
-      .catch(() => {
-        setBookingMessage(bookingDatesErrorText);
-      })
-      .finally(() => {
-        setLoadingDates(false);
-      });
-  }, [boatId, bookingDatesErrorText, currentMonth, locationId, locale]);
+    setLoadingDates(false);
+  }, [currentMonth]);
 
   useEffect(() => {
     if (!selectedDate) {
       setAvailableSlots([]);
       setSelectedTime(null);
+      return;
+    }
+
+    if (!locationId) {
+      setAvailableSlots([]);
+      setSelectedTime(null);
+      setBookingMessage(bookingDatesErrorText);
       return;
     }
 
@@ -562,16 +565,12 @@ function BookingCalendarTab({
     const query = new URLSearchParams({
       date: formatDate(selectedDate),
     });
-    if (locationId) {
-      query.set("location_id", String(locationId));
-    }
-
-    void publicApi<{ timeSlots?: string[] }>(
+    void publicApi<{ available_slots?: string[] }>(
       "GET",
-      `/yachts/${boatId}/available-slots?${query.toString()}`,
+      `/public/locations/${locationId}/availability?${query.toString()}`,
     )
       .then((response) => {
-        setAvailableSlots(response.timeSlots || []);
+        setAvailableSlots(response.available_slots || []);
       })
       .catch(() => {
         setAvailableSlots([]);
@@ -580,7 +579,7 @@ function BookingCalendarTab({
       .finally(() => {
         setLoadingSlots(false);
       });
-  }, [boatId, bookingSlotsErrorText, locationId, selectedDate]);
+  }, [bookingDatesErrorText, bookingSlotsErrorText, locationId, selectedDate]);
 
   const handleBook = async () => {
     if (!selectedDate || !selectedTime) {
@@ -596,19 +595,18 @@ function BookingCalendarTab({
     setBookingMessage(null);
 
     try {
-      const startDateTime = new Date(selectedDate);
-      const [hours, minutes] = selectedTime.split(":").map(Number);
-      startDateTime.setHours(hours, minutes, 0, 0);
-
-      await publicApi("POST", `/yachts/${boatId}/book`, {
-        json: {
-          start_at: startDateTime.toISOString(),
-          location_id: locationId,
-          name: bookingForm.name,
-          email: bookingForm.email,
-          phone: bookingForm.phone || undefined,
-          notes: bookingForm.notes || undefined,
-        },
+      await publicApi("POST", `/public/bookings`, {
+        location_id: locationId,
+        boat_id: boatId,
+        type: "viewing",
+        date: formatDate(selectedDate),
+        time: selectedTime,
+        name: bookingForm.name,
+        email: bookingForm.email,
+        phone: bookingForm.phone || undefined,
+        source: "widget_calendar",
+        notes: bookingForm.notes || undefined,
+        ...(sessionJwt ? { session_jwt: sessionJwt } : {}),
       });
 
       setBookingStatus("success");
@@ -852,6 +850,8 @@ function SmartBoatWidgetBody({
   boatId,
   locationId,
   locale,
+  enabledTabs,
+  sessionJwt,
 }: {
   activeTab: "chat" | "tasks" | "booking";
   onTabChange: (tab: "chat" | "tasks" | "booking") => void;
@@ -863,8 +863,15 @@ function SmartBoatWidgetBody({
   boatId: number;
   locationId?: number;
   locale?: string;
+  enabledTabs?: string[];
+  sessionJwt?: string | null;
 }) {
   const t = useTranslations("WidgetChat");
+  const visibleTabs = enabledTabs && enabledTabs.length > 0
+    ? enabledTabs.filter((tab): tab is "chat" | "tasks" | "booking" =>
+        ["chat", "tasks", "booking"].includes(tab),
+      )
+    : ["chat", "tasks", "booking"];
   const tabButtonClass = (tab: "chat" | "tasks" | "booking") =>
     cn(
       "rounded-full px-3 py-2 text-[11px] font-semibold transition",
@@ -883,27 +890,33 @@ function SmartBoatWidgetBody({
     <div className="flex h-full min-h-0 flex-col bg-[radial-gradient(circle_at_top,_rgba(219,234,254,0.72),_rgba(248,250,252,0.98)_42%,_#ffffff_100%)] text-slate-900">
       <div className="border-b border-slate-200/80 bg-white/70 px-4 py-3 backdrop-blur-xl">
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1">
-          <button
-            type="button"
-            onClick={() => onTabChange("chat")}
-            className={tabButtonClass("chat")}
-          >
-            {t("tabs.chat")}
-          </button>
-          <button
-            type="button"
-            onClick={() => onTabChange("tasks")}
-            className={tabButtonClass("tasks")}
-          >
-            {t("tabs.tasks")}
-          </button>
-          <button
-            type="button"
-            onClick={() => onTabChange("booking")}
-            className={tabButtonClass("booking")}
-          >
-            {t("tabs.booking")}
-          </button>
+          {visibleTabs.includes("chat") && (
+            <button
+              type="button"
+              onClick={() => onTabChange("chat")}
+              className={tabButtonClass("chat")}
+            >
+              {t("tabs.chat")}
+            </button>
+          )}
+          {visibleTabs.includes("tasks") && (
+            <button
+              type="button"
+              onClick={() => onTabChange("tasks")}
+              className={tabButtonClass("tasks")}
+            >
+              {t("tabs.tasks")}
+            </button>
+          )}
+          {visibleTabs.includes("booking") && (
+            <button
+              type="button"
+              onClick={() => onTabChange("booking")}
+              className={tabButtonClass("booking")}
+            >
+              {t("tabs.booking")}
+            </button>
+          )}
         </div>
       </div>
 
@@ -956,6 +969,7 @@ function SmartBoatWidgetBody({
           locationId={locationId}
           locale={locale}
           colors={colors}
+          sessionJwt={sessionJwt}
         />
       )}
     </div>
@@ -984,6 +998,19 @@ export function ChatWidget({
   const [isOpen, setIsOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [resolvedLocationId, setResolvedLocationId] = useState<number | undefined>(
+    locationId,
+  );
+  const [resolvedHarborName, setResolvedHarborName] = useState<string | undefined>(
+    harborName,
+  );
+  const [sessionJwt, setSessionJwt] = useState<string | null>(null);
+  const [enabledTabs, setEnabledTabs] = useState<string[]>([
+    "chat",
+    "tasks",
+    "booking",
+  ]);
+  const [initBrandColor, setInitBrandColor] = useState<string | undefined>();
   const [activeBoatTab, setActiveBoatTab] = useState<"chat" | "tasks" | "booking">(
     "chat",
   );
@@ -1010,17 +1037,77 @@ export function ChatWidget({
     }
   }, [isOpen, isEmbedded]);
 
+  useEffect(() => {
+    if (!boatId || widgetMode === "auction") {
+      return;
+    }
+
+    let cancelled = false;
+
+    const initWidget = async () => {
+      try {
+        const response = await publicApi<WidgetInitResponse>(
+          "POST",
+          "/chat/widget/init",
+          {
+            visitor_id: visitorIdRef.current,
+            boat_id: boatId,
+          },
+        );
+
+        if (cancelled) return;
+
+        setSessionJwt(response.session_jwt ?? null);
+        setResolvedLocationId(
+          response.context?.location?.id ?? locationId ?? undefined,
+        );
+        setResolvedHarborName(
+          response.context?.location?.name ?? harborName ?? undefined,
+        );
+        setInitBrandColor(
+          response.context?.location?.branding?.primary_color ?? undefined,
+        );
+        setEnabledTabs(
+          Array.isArray(response.context?.tabs_enabled) &&
+            response.context?.tabs_enabled.length > 0
+            ? response.context.tabs_enabled
+            : ["chat", "tasks", "booking"],
+        );
+
+        const welcomeOverride = response.context?.location?.texts?.welcome?.trim();
+        if (welcomeOverride) {
+          setMessages((prev) =>
+            prev.length === 1 && prev[0]?.id === "init"
+              ? [{ ...prev[0], text: welcomeOverride }]
+              : prev,
+          );
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("[ChatWidget] widget init failed:", error);
+        }
+      }
+    };
+
+    void initWidget();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [boatId, harborName, locationId, widgetMode]);
+
   const colors = useMemo<WidgetColors>(() => {
     const base = THEME_PRESETS[themePreset];
-    const fromAccent = accentColor
+    const effectiveAccent = accentColor || initBrandColor;
+    const fromAccent = effectiveAccent
       ? {
-        launcherStart: accentColor,
-        headerStart: accentColor,
-        userBubbleStart: accentColor,
+        launcherStart: effectiveAccent,
+        headerStart: effectiveAccent,
+        userBubbleStart: effectiveAccent,
       }
       : {};
     return { ...base, ...fromAccent, ...colorSettings };
-  }, [accentColor, colorSettings, themePreset]);
+  }, [accentColor, colorSettings, initBrandColor, themePreset]);
 
   const widgetStyle = useMemo(
     () =>
@@ -1060,11 +1147,12 @@ export function ChatWidget({
         const clientMessageId = `widget-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
         const response = await publicApi<PublicLeadResponse>("POST", "/public/leads", {
-          location_id: locationId ?? 1,
+          location_id: resolvedLocationId ?? locationId ?? 1,
           source_url: sourceUrl || (typeof window !== "undefined" ? window.location.href : undefined),
           message: text,
           client_message_id: clientMessageId,
           visitor_id: visitorIdRef.current,
+          ...(sessionJwt ? { session_jwt: sessionJwt } : {}),
         });
 
         if (response.conversation?.id) {
@@ -1094,6 +1182,7 @@ export function ChatWidget({
             body: text,
             client_message_id: clientMessageId,
             visitor_id: visitorIdRef.current,
+            ...(sessionJwt ? { session_jwt: sessionJwt } : {}),
           },
         );
 
@@ -1171,7 +1260,7 @@ export function ChatWidget({
                   </div>
                   <div>
                     <h4 className="text-sm font-bold leading-tight">
-                      {harborName || t("brand")}
+                      {resolvedHarborName || harborName || t("brand")}
                     </h4>
                     <p className="mt-1 text-[11px] text-white/78">
                       {boatId && widgetMode === "auction"
@@ -1250,11 +1339,13 @@ export function ChatWidget({
                     messages={messages}
                     onSend={handleSendMessage}
                     colors={colors}
-                    harborName={harborName}
+                    harborName={resolvedHarborName || harborName}
                     sending={sending}
                     boatId={boatId}
-                    locationId={locationId}
+                    locationId={resolvedLocationId ?? locationId}
                     locale={locale}
+                    enabledTabs={enabledTabs}
+                    sessionJwt={sessionJwt}
                   />
                 ) : (
                   <ChatBody
