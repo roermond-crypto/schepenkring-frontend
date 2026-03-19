@@ -1097,12 +1097,63 @@
     },
     "header": {
       "auctionWidget": "Auktions-Widget",
+      "smartBoatWidget": "Bootsassistent",
       "conversationActive": "Gespräch aktiv",
       "onlineSupport": "Online-Support",
       "boat": "Boot {boatId}",
+      "locationAware": "Boot {boatId} • standortgesteuert",
       "connected": "Verbunden",
       "supportOnline": "Support online",
       "encrypted": "Verschlüsselt"
+    },
+    "tabs": {
+      "chat": "Chat",
+      "tasks": "Aufgaben",
+      "booking": "Buchung"
+    },
+    "tasks": {
+      "kicker": "Geführter Ablauf",
+      "title": "Bootsaufgaben und nächste Schritte",
+      "description": "Wir kennen den Kontext für Boot {boatId} bereits. Nutzen Sie diese Registerkarte, um zu fragen, was für dieses standortgesteuerte Inserat noch fehlt.",
+      "prompts": {
+        "progress": "Was ist für dieses Boot noch offen?",
+        "documents": "Welche Dokumente fehlen für dieses Boot noch?",
+        "nextStep": "Was ist der nächste Schritt für dieses Inserat?"
+      }
+    },
+    "booking": {
+      "kicker": "Standortbuchung",
+      "title": "Buchung und Kalender",
+      "description": "Nutzen Sie den Chat, um Termine für Boot {boatId} bei {locationName} zu erstellen, zu ändern oder zu stornieren.",
+      "descriptionCompact": "Wählen Sie ein Datum und eine Uhrzeit für dieses Boot mit den Buchungseinstellungen des Standorts.",
+      "context": "Dieses Widget hält den Buchungskontext automatisch mit Standort {locationId} verknüpft.",
+      "locationFallback": "diesem Standort",
+      "prevMonth": "Vorheriger Monat",
+      "nextMonth": "Nächster Monat",
+      "loadingSlots": "Verfügbare Zeitfenster werden geladen...",
+      "noSlots": "Für dieses Datum sind keine Zeitfenster verfügbar.",
+      "confirm": "Termin bestätigen",
+      "confirming": "Wird bestätigt...",
+      "success": "Termin erfolgreich geplant.",
+      "fields": {
+        "name": "Name *",
+        "email": "E-Mail *",
+        "phone": "Telefon",
+        "notes": "Notizen"
+      },
+      "errors": {
+        "dates": "Verfügbare Daten konnten gerade nicht geladen werden.",
+        "slots": "Verfügbare Zeitfenster konnten gerade nicht geladen werden.",
+        "selectDateTime": "Wählen Sie zuerst ein Datum und eine Uhrzeit.",
+        "fillNameEmail": "Füllen Sie zuerst Name und E-Mail aus.",
+        "submit": "Die Buchung konnte nicht erstellt werden."
+      },
+      "prompts": {
+        "viewing": "Ich möchte dieses Boot am Freitag besichtigen",
+        "seaTrial": "Kann ich eine Probefahrt machen?",
+        "reschedule": "Verschiebe meinen Termin auf Montag",
+        "cancel": "Storniere meine Buchung"
+      }
     },
     "offline": {
       "title": "Keine Internetverbindung",

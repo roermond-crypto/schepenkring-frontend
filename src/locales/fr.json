@@ -1097,12 +1097,63 @@
     },
     "header": {
       "auctionWidget": "Widget d'enchères",
+      "smartBoatWidget": "Assistant bateau",
       "conversationActive": "Conversation active",
       "onlineSupport": "Support en ligne",
       "boat": "Bateau {boatId}",
+      "locationAware": "Bateau {boatId} • piloté par lieu",
       "connected": "Connecté",
       "supportOnline": "Support en ligne",
       "encrypted": "Chiffré"
+    },
+    "tabs": {
+      "chat": "Chat",
+      "tasks": "Tâches",
+      "booking": "Réservation"
+    },
+    "tasks": {
+      "kicker": "Parcours guidé",
+      "title": "Tâches du bateau et prochaines étapes",
+      "description": "Nous connaissons déjà le contexte du bateau {boatId}. Utilisez cet onglet pour demander ce qu'il manque encore pour cette annonce pilotée par lieu.",
+      "prompts": {
+        "progress": "Que reste-t-il à faire pour ce bateau ?",
+        "documents": "Quels documents manquent encore pour ce bateau ?",
+        "nextStep": "Quelle est la prochaine étape pour cette annonce ?"
+      }
+    },
+    "booking": {
+      "kicker": "Réservation par lieu",
+      "title": "Réservation et calendrier",
+      "description": "Utilisez le chat pour créer, modifier ou annuler des rendez-vous pour le bateau {boatId} à {locationName}.",
+      "descriptionCompact": "Choisissez une date et une heure pour ce bateau avec les paramètres de réservation du lieu.",
+      "context": "Ce widget garde automatiquement le contexte de réservation lié au lieu {locationId}.",
+      "locationFallback": "ce lieu",
+      "prevMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "loadingSlots": "Chargement des créneaux disponibles...",
+      "noSlots": "Aucun créneau disponible pour cette date.",
+      "confirm": "Confirmer le rendez-vous",
+      "confirming": "Confirmation...",
+      "success": "Rendez-vous planifié avec succès.",
+      "fields": {
+        "name": "Nom *",
+        "email": "E-mail *",
+        "phone": "Téléphone",
+        "notes": "Notes"
+      },
+      "errors": {
+        "dates": "Impossible de charger les dates disponibles pour le moment.",
+        "slots": "Impossible de charger les créneaux disponibles pour le moment.",
+        "selectDateTime": "Sélectionnez d'abord une date et une heure.",
+        "fillNameEmail": "Renseignez d'abord votre nom et votre e-mail.",
+        "submit": "La réservation n'a pas pu être créée."
+      },
+      "prompts": {
+        "viewing": "Je veux voir ce bateau vendredi",
+        "seaTrial": "Puis-je faire un essai en mer ?",
+        "reschedule": "Déplacez mon rendez-vous à lundi",
+        "cancel": "Annulez ma réservation"
+      }
     },
     "offline": {
       "title": "Aucune connexion Internet",

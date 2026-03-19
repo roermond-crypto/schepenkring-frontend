@@ -1098,12 +1098,63 @@
     },
     "header": {
       "auctionWidget": "Veilingwidget",
+      "smartBoatWidget": "Bootassistent",
       "conversationActive": "Conversatie actief",
       "onlineSupport": "Online support",
       "boat": "Boot {boatId}",
+      "locationAware": "Boot {boatId} • locatiegestuurd",
       "connected": "Verbonden",
       "supportOnline": "Support online",
       "encrypted": "Versleuteld"
+    },
+    "tabs": {
+      "chat": "Chat",
+      "tasks": "Taken",
+      "booking": "Boeking"
+    },
+    "tasks": {
+      "kicker": "Begeleide flow",
+      "title": "Boottaken en vervolgstappen",
+      "description": "We kennen de context voor boot {boatId} al. Gebruik dit tabblad om te vragen wat nog nodig is voor deze locatiegestuurde listing.",
+      "prompts": {
+        "progress": "Wat moet er nog gebeuren voor deze boot?",
+        "documents": "Welke documenten ontbreken nog voor deze boot?",
+        "nextStep": "Wat is de volgende stap voor deze listing?"
+      }
+    },
+    "booking": {
+      "kicker": "Locatieboeking",
+      "title": "Boeking en kalender",
+      "description": "Gebruik de chat om afspraken voor boot {boatId} bij {locationName} te maken, te wijzigen of te annuleren.",
+      "descriptionCompact": "Kies een datum en tijd voor deze boot met de boekingsinstellingen van de locatie.",
+      "context": "Deze widget koppelt de boekingscontext automatisch aan locatie {locationId}.",
+      "locationFallback": "deze locatie",
+      "prevMonth": "Vorige maand",
+      "nextMonth": "Volgende maand",
+      "loadingSlots": "Beschikbare tijdsloten laden...",
+      "noSlots": "Geen beschikbare tijdsloten voor deze datum.",
+      "confirm": "Afspraak bevestigen",
+      "confirming": "Bevestigen...",
+      "success": "Afspraak succesvol ingepland.",
+      "fields": {
+        "name": "Naam *",
+        "email": "E-mail *",
+        "phone": "Telefoon",
+        "notes": "Notities"
+      },
+      "errors": {
+        "dates": "Beschikbare data konden nu niet worden geladen.",
+        "slots": "Beschikbare tijdsloten konden nu niet worden geladen.",
+        "selectDateTime": "Selecteer eerst een datum en tijd.",
+        "fillNameEmail": "Vul eerst je naam en e-mail in.",
+        "submit": "Het maken van de boeking is mislukt."
+      },
+      "prompts": {
+        "viewing": "Ik wil deze boot vrijdag bekijken",
+        "seaTrial": "Kan ik een proefvaart doen?",
+        "reschedule": "Verplaats mijn afspraak naar maandag",
+        "cancel": "Annuleer mijn boeking"
+      }
     },
     "offline": {
       "title": "Geen internetverbinding",
