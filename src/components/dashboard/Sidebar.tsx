@@ -141,11 +141,6 @@ export function Sidebar({
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
       items.push({
-        title: t.bookings,
-        href: `${root}/bookings`,
-        icon: CalendarDays,
-      });
-      items.push({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,

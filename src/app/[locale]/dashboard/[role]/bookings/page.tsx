@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -156,6 +157,10 @@ function getStatusTone(status?: string | null) {
 
 export default function DashboardBookingsPage() {
   const t = useTranslations("DashboardBookings");
+  const params = useParams<{ locale?: string; role?: string }>();
+  const router = useRouter();
+  const locale = params?.locale ?? "en";
+  const role = params?.role ?? "admin";
 
   const [filters, setFilters] = useState<Filters>({
     search: "",
@@ -185,6 +190,12 @@ export default function DashboardBookingsPage() {
   const hasLoadedInitialData = useRef(false);
   const loadErrorText = t("errors.load");
   const detailErrorText = t("errors.detail");
+
+  useEffect(() => {
+    if (role !== "admin") {
+      router.replace(`/${locale}/dashboard/${role}/tasks`);
+    }
+  }, [locale, role, router]);
 
   const loadBookings = useCallback(
     async (showRefreshState = false) => {
@@ -219,15 +230,17 @@ export default function DashboardBookingsPage() {
   );
 
   useEffect(() => {
+    if (role !== "admin") return;
     if (hasLoadedInitialData.current) return;
     hasLoadedInitialData.current = true;
     void loadBookings();
-  }, [loadBookings]);
+  }, [loadBookings, role]);
 
   useEffect(() => {
+    if (role !== "admin") return;
     if (!hasLoadedInitialData.current) return;
     void loadBookings();
-  }, [appliedFilters, loadBookings]);
+  }, [appliedFilters, loadBookings, role]);
 
   const openBooking = useCallback(
     async (bookingId: number) => {
