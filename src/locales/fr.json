@@ -113,6 +113,7 @@
       "collapse": "Réduire la barre latérale",
       "audit": "Audit",
       "errors": "Erreurs",
+      "bookings": "Réservations",
       "locations": "Emplacements",
       "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Entonnoir de vente",
@@ -212,6 +213,90 @@
       "newActionModule": "bateaux",
       "newActionRoute": "/dashboard/admin/boats/create",
       "phraseText": "créer un bateau"
+    }
+  },
+  "DashboardBookings": {
+    "hero": {
+      "kicker": "Réservations",
+      "title": "Vue d'ensemble des réservations",
+      "description": "Suivez les visites de yachts, vérifiez l'activité par emplacement et ouvrez chaque réservation avec tout le contexte du client, du bateau et du planning."
+    },
+    "stats": {
+      "total": "Total des réservations",
+      "confirmed": "Confirmées",
+      "pending": "En attente",
+      "today": "Aujourd'hui"
+    },
+    "filters": {
+      "search": "Recherche",
+      "searchPlaceholder": "Rechercher par client, e-mail ou bateau",
+      "status": "Statut",
+      "allStatuses": "Tous les statuts",
+      "locationId": "ID d'emplacement",
+      "locationPlaceholder": "Filtrer par ID d'emplacement",
+      "reset": "Réinitialiser",
+      "apply": "Actualiser"
+    },
+    "resultsSummary": "{total} réservations affichées",
+    "activeFilters": {
+      "search": "Recherche : {value}",
+      "status": "Statut : {value}",
+      "location": "Emplacement : {value}"
+    },
+    "table": {
+      "id": "Réservation",
+      "guest": "Client",
+      "boat": "Bateau",
+      "schedule": "Planning",
+      "status": "Statut",
+      "action": "Action",
+      "view": "Voir",
+      "loading": "Chargement des réservations..."
+    },
+    "empty": {
+      "title": "Aucune réservation trouvée",
+      "description": "Essayez un autre statut, terme de recherche ou filtre d'emplacement pour trouver la réservation voulue."
+    },
+    "errorState": {
+      "title": "Les réservations n'ont pas pu être chargées",
+      "description": "La requête a échoué, mais la page reste stable. Réessayez lorsque l'API sera de nouveau disponible.",
+      "retry": "Réessayer"
+    },
+    "detail": {
+      "title": "Détails de la réservation",
+      "titleWithId": "Réservation #{id}",
+      "description": "Consultez les détails complets du rendez-vous pour cette visite de yacht.",
+      "loading": "Chargement des détails de la réservation...",
+      "guest": "Client",
+      "name": "Nom",
+      "email": "E-mail",
+      "source": "Source",
+      "appointment": "Rendez-vous",
+      "date": "Date",
+      "time": "Heure",
+      "duration": "Durée",
+      "status": "Statut",
+      "location": "Emplacement",
+      "locationCode": "Code d'emplacement",
+      "boat": "Bateau",
+      "boatName": "Nom du bateau",
+      "price": "Prix",
+      "type": "Type",
+      "notes": "Notes",
+      "noNotes": "Aucune note n'a été fournie pour cette réservation.",
+      "createdAt": "Créé le",
+      "updatedAt": "Mis à jour le"
+    },
+    "errors": {
+      "load": "Impossible de charger les réservations.",
+      "detail": "Impossible de charger les détails de la réservation."
+    },
+    "statuses": {
+      "pending": "En attente",
+      "confirmed": "Confirmée",
+      "cancelled": "Annulée",
+      "completed": "Terminée",
+      "rescheduled": "Replanifiée"
     }
   },
   "DashboardAdminOverview": {
@@ -901,6 +986,9 @@
     },
     "messages": {
       "today": "Aujourd'hui",
+      "systemEvent": "Événement système",
+      "bookingEvent": "Événement de réservation",
+      "bookingReference": "Réservation #{id}",
       "aiDraftReply": "Réponse brouillon IA",
       "summarize": "Résumer",
       "translateTo": "Traduire en",

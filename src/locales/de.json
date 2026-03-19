@@ -113,6 +113,7 @@
       "collapse": "Sidebar einklappen",
       "audit": "Audit",
       "errors": "Fehler",
+      "bookings": "Buchungen",
       "locations": "Standorte",
       "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Salesfunnel",
@@ -212,6 +213,90 @@
       "newActionModule": "boats",
       "newActionRoute": "/dashboard/admin/boats/create",
       "phraseText": "boot erstellen"
+    }
+  },
+  "DashboardBookings": {
+    "hero": {
+      "kicker": "Buchungen",
+      "title": "Buchungsübersicht",
+      "description": "Verfolgen Sie Yachtbesichtigungen, prüfen Sie die Standortaktivität und öffnen Sie jede Buchung mit allen Gast-, Boots- und Terminangaben."
+    },
+    "stats": {
+      "total": "Gesamtbuchungen",
+      "confirmed": "Bestätigt",
+      "pending": "Ausstehend",
+      "today": "Heute"
+    },
+    "filters": {
+      "search": "Suche",
+      "searchPlaceholder": "Nach Gast, E-Mail oder Boot suchen",
+      "status": "Status",
+      "allStatuses": "Alle Status",
+      "locationId": "Standort-ID",
+      "locationPlaceholder": "Nach Standort-ID filtern",
+      "reset": "Zurücksetzen",
+      "apply": "Aktualisieren"
+    },
+    "resultsSummary": "{total} Buchungen in der Ansicht",
+    "activeFilters": {
+      "search": "Suche: {value}",
+      "status": "Status: {value}",
+      "location": "Standort: {value}"
+    },
+    "table": {
+      "id": "Buchung",
+      "guest": "Gast",
+      "boat": "Boot",
+      "schedule": "Termin",
+      "status": "Status",
+      "action": "Aktion",
+      "view": "Anzeigen",
+      "loading": "Buchungen werden geladen..."
+    },
+    "empty": {
+      "title": "Keine Buchungen gefunden",
+      "description": "Versuchen Sie einen anderen Status, Suchbegriff oder Standortfilter, um die gesuchte Buchung zu finden."
+    },
+    "errorState": {
+      "title": "Buchungen konnten nicht geladen werden",
+      "description": "Die Anfrage ist fehlgeschlagen, aber die Seite bleibt stabil. Versuchen Sie es erneut, sobald die API wieder verfuegbar ist.",
+      "retry": "Erneut versuchen"
+    },
+    "detail": {
+      "title": "Buchungsdetails",
+      "titleWithId": "Buchung #{id}",
+      "description": "Prüfen Sie die vollständigen Termindetails für diesen Yachtbesuch.",
+      "loading": "Buchungsdetails werden geladen...",
+      "guest": "Gast",
+      "name": "Name",
+      "email": "E-Mail",
+      "source": "Quelle",
+      "appointment": "Termin",
+      "date": "Datum",
+      "time": "Zeit",
+      "duration": "Dauer",
+      "status": "Status",
+      "location": "Standort",
+      "locationCode": "Standortcode",
+      "boat": "Boot",
+      "boatName": "Bootsname",
+      "price": "Preis",
+      "type": "Typ",
+      "notes": "Notizen",
+      "noNotes": "Für diese Buchung wurden keine Notizen hinterlegt.",
+      "createdAt": "Erstellt",
+      "updatedAt": "Aktualisiert"
+    },
+    "errors": {
+      "load": "Buchungen konnten nicht geladen werden.",
+      "detail": "Buchungsdetails konnten nicht geladen werden."
+    },
+    "statuses": {
+      "pending": "Ausstehend",
+      "confirmed": "Bestätigt",
+      "cancelled": "Storniert",
+      "completed": "Abgeschlossen",
+      "rescheduled": "Verschoben"
     }
   },
   "DashboardAdminOverview": {
@@ -901,6 +986,9 @@
     },
     "messages": {
       "today": "Heute",
+      "systemEvent": "Systemereignis",
+      "bookingEvent": "Buchungsereignis",
+      "bookingReference": "Buchung #{id}",
       "aiDraftReply": "KI-Antwurf",
       "summarize": "Zusammenfassen",
       "translateTo": "Übersetzen nach",

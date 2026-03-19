@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Anchor,
   BarChart3,
+  CalendarDays,
   ClipboardList,
   Gauge,
   ChevronLeft,
@@ -97,6 +98,11 @@ export function Sidebar({
     if (role === "admin") {
       items.push({ title: t.users, href: `${root}/users`, icon: Users });
       items.push({
+        title: t.bookings,
+        href: `${root}/bookings`,
+        icon: CalendarDays,
+      });
+      items.push({
         title: t.locations,
         href: `${root}/locations`,
         icon: Anchor,
@@ -134,6 +140,11 @@ export function Sidebar({
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
+      items.push({
+        title: t.bookings,
+        href: `${root}/bookings`,
+        icon: CalendarDays,
+      });
       items.push({
         title: t.interaction,
         href: `${root}/chat`,

@@ -7,6 +7,7 @@ import {
   Paperclip,
   Image as ImageIcon,
   Smile,
+  CalendarDays,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -86,21 +87,39 @@ function StatusBadge({
 }
 
 function SystemEventBubble({ message }: { message: SupportMessage }) {
+  const t = useTranslations("DashboardChat");
+  const bookingId =
+    typeof message.metadata?.booking_id === "number" ||
+    typeof message.metadata?.booking_id === "string"
+      ? String(message.metadata.booking_id)
+      : null;
+
   return (
     <div className="flex justify-center my-4">
-      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 border border-slate-200/60">
-        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-          <Bot size={11} className="text-white" />
+      <div className="max-w-[85%] rounded-2xl border border-slate-200/70 bg-slate-100/80 px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+            <Bot size={11} className="text-white" />
+          </div>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            {bookingId ? t("messages.bookingEvent") : t("messages.systemEvent")}
+          </span>
+          <span className="text-[10px] text-slate-400">
+            {new Date(message.created_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
         </div>
-        <span className="text-xs text-slate-600 font-medium">
+        <p className="mt-2 text-xs font-medium leading-6 text-slate-700">
           {message.text}
-        </span>
-        <span className="text-[10px] text-slate-400">
-          {new Date(message.created_at).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </span>
+        </p>
+        {bookingId ? (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-semibold text-blue-700">
+            <CalendarDays size={12} />
+            {t("messages.bookingReference", { id: bookingId })}
+          </div>
+        ) : null}
       </div>
     </div>
   );

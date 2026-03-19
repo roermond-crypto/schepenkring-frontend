@@ -467,12 +467,14 @@ function isToday(date: Date) {
 function BookingCalendarTab({
   boatId,
   locationId,
+  conversationId,
   locale,
   colors,
   sessionJwt,
 }: {
   boatId: number;
   locationId?: number;
+  conversationId?: string | null;
   locale?: string;
   colors: WidgetColors;
   sessionJwt?: string | null;
@@ -595,7 +597,7 @@ function BookingCalendarTab({
     setBookingMessage(null);
 
     try {
-      await publicApi("POST", `/public/bookings`, {
+      await publicApi("POST", `/bookings`, {
         location_id: locationId,
         boat_id: boatId,
         type: "viewing",
@@ -606,6 +608,7 @@ function BookingCalendarTab({
         phone: bookingForm.phone || undefined,
         source: "widget_calendar",
         notes: bookingForm.notes || undefined,
+        ...(conversationId ? { conversation_id: conversationId } : {}),
         ...(sessionJwt ? { session_jwt: sessionJwt } : {}),
       });
 
@@ -849,6 +852,7 @@ function SmartBoatWidgetBody({
   harborName,
   boatId,
   locationId,
+  conversationId,
   locale,
   enabledTabs,
   sessionJwt,
@@ -862,6 +866,7 @@ function SmartBoatWidgetBody({
   harborName?: string;
   boatId: number;
   locationId?: number;
+  conversationId?: string | null;
   locale?: string;
   enabledTabs?: string[];
   sessionJwt?: string | null;
@@ -967,6 +972,7 @@ function SmartBoatWidgetBody({
         <BookingCalendarTab
           boatId={boatId}
           locationId={locationId}
+          conversationId={conversationId}
           locale={locale}
           colors={colors}
           sessionJwt={sessionJwt}
@@ -1343,6 +1349,7 @@ export function ChatWidget({
                     sending={sending}
                     boatId={boatId}
                     locationId={resolvedLocationId ?? locationId}
+                    conversationId={conversationId}
                     locale={locale}
                     enabledTabs={enabledTabs}
                     sessionJwt={sessionJwt}
