@@ -1097,12 +1097,63 @@
     },
     "header": {
       "auctionWidget": "Auction widget",
+      "smartBoatWidget": "Boat assistant",
       "conversationActive": "Conversation active",
       "onlineSupport": "Online support",
       "boat": "Boat {boatId}",
+      "locationAware": "Boat {boatId} • location aware",
       "connected": "Connected",
       "supportOnline": "Support online",
       "encrypted": "Encrypted"
+    },
+    "tabs": {
+      "chat": "Chat",
+      "tasks": "Tasks",
+      "booking": "Booking"
+    },
+    "tasks": {
+      "kicker": "Guided flow",
+      "title": "Boat tasks and next steps",
+      "description": "We already know the context for boat {boatId}. Use this tab to ask what is still needed for this location-driven listing.",
+      "prompts": {
+        "progress": "What is left to complete for this boat?",
+        "documents": "Which documents are still missing for this boat?",
+        "nextStep": "What is the next step for this listing?"
+      }
+    },
+    "booking": {
+      "kicker": "Location booking",
+      "title": "Booking and calendar",
+      "description": "Use the chat to create, change, or cancel appointments for boat {boatId} at {locationName}.",
+      "descriptionCompact": "Pick a date and time for this boat using the location's booking settings.",
+      "context": "This widget keeps the booking context tied to location {locationId} automatically.",
+      "locationFallback": "this location",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "loadingSlots": "Loading available time slots...",
+      "noSlots": "No time slots available for this date.",
+      "confirm": "Confirm appointment",
+      "confirming": "Confirming...",
+      "success": "Appointment scheduled successfully.",
+      "fields": {
+        "name": "Name *",
+        "email": "E-mail *",
+        "phone": "Phone",
+        "notes": "Notes"
+      },
+      "errors": {
+        "dates": "Could not load available dates right now.",
+        "slots": "Could not load available time slots right now.",
+        "selectDateTime": "Select a date and time first.",
+        "fillNameEmail": "Fill in your name and e-mail first.",
+        "submit": "Failed to create the booking."
+      },
+      "prompts": {
+        "viewing": "I want to view this boat Friday",
+        "seaTrial": "Can I do a proefvaart?",
+        "reschedule": "Move my appointment to Monday",
+        "cancel": "Cancel my booking"
+      }
     },
     "offline": {
       "title": "No internet connection",

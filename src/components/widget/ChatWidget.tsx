@@ -16,6 +16,8 @@ import {
   WifiOff,
   X,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -23,6 +25,7 @@ import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 import { AuctionWidgetBody } from "@/components/widget/AuctionWidgetBody";
 
 type ThemePreset = "ocean" | "violet" | "sunset";
+type WidgetMode = "chat" | "smart" | "auction";
 
 interface WidgetMessage {
   id: string;
@@ -70,6 +73,7 @@ interface ChatWidgetProps {
   welcomeText?: string;
   isEmbedded?: boolean;
   locale?: string;
+  widgetMode?: WidgetMode;
 }
 
 interface WidgetColors {
@@ -82,6 +86,12 @@ interface WidgetColors {
   quickChipBg: string;
   quickChipBorder: string;
   quickChipText: string;
+}
+
+interface CalendarDay {
+  date: Date;
+  available: boolean;
+  isCurrentMonth: boolean;
 }
 
 const THEME_PRESETS: Record<ThemePreset, WidgetColors> = {
@@ -532,6 +542,537 @@ function ChatBody({
   );
 }
 
+function isToday(date: Date) {
+  const today = new Date();
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  );
+}
+
+function BookingCalendarTab({
+  boatId,
+  locationId,
+  locale,
+  colors,
+}: {
+  boatId: number;
+  locationId?: number;
+  locale?: string;
+  colors: WidgetColors;
+}) {
+  const t = useTranslations("WidgetChat");
+  const [currentMonth, setCurrentMonth] = useState(() => new Date());
+  const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [loadingDates, setLoadingDates] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [bookingStatus, setBookingStatus] = useState<"idle" | "processing" | "success">(
+    "idle",
+  );
+  const [bookingMessage, setBookingMessage] = useState<string | null>(null);
+  const [bookingForm, setBookingForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    notes: "",
+  });
+
+  const dayLabels = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(locale || "en", {
+      weekday: "short",
+    });
+    const baseSunday = new Date(Date.UTC(2026, 0, 4));
+    return Array.from({ length: 7 }, (_, index) =>
+      formatter.format(new Date(baseSunday.getTime() + index * 86400000)),
+    );
+  }, [locale]);
+  const bookingDatesErrorText = t("booking.errors.dates");
+  const bookingSlotsErrorText = t("booking.errors.slots");
+  const bookingSelectDateTimeText = t("booking.errors.selectDateTime");
+  const bookingFillNameEmailText = t("booking.errors.fillNameEmail");
+  const bookingSubmitErrorText = t("booking.errors.submit");
+
+  const monthLabel = new Intl.DateTimeFormat(locale || "en", {
+    month: "long",
+    year: "numeric",
+  }).format(currentMonth);
+
+  const formatDate = (date: Date) => date.toISOString().split("T")[0];
+
+  useEffect(() => {
+    const startDate = new Date(currentMonth);
+    startDate.setDate(1);
+    const firstDay = startDate.getDay();
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days: CalendarDay[] = [];
+
+    for (let i = 0; i < firstDay; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() - (firstDay - i));
+      days.push({ date, available: false, isCurrentMonth: false });
+    }
+
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({
+        date: new Date(year, month, i),
+        available: false,
+        isCurrentMonth: true,
+      });
+    }
+
+    setCalendarDays(days);
+    setLoadingDates(true);
+
+    const query = new URLSearchParams({
+      month: String(month + 1),
+      year: String(year),
+    });
+    if (locationId) {
+      query.set("location_id", String(locationId));
+    }
+
+    void publicApi<{ availableDates?: string[] }>(
+      "GET",
+      `/yachts/${boatId}/available-dates?${query.toString()}`,
+    )
+      .then((response) => {
+        const availableDates = response.availableDates || [];
+        setCalendarDays((prev) =>
+          prev.map((day) => ({
+            ...day,
+            available: day.isCurrentMonth
+              ? availableDates.includes(formatDate(day.date))
+              : false,
+          })),
+        );
+      })
+      .catch(() => {
+        setBookingMessage(bookingDatesErrorText);
+      })
+      .finally(() => {
+        setLoadingDates(false);
+      });
+  }, [boatId, bookingDatesErrorText, currentMonth, locationId, locale]);
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setAvailableSlots([]);
+      setSelectedTime(null);
+      return;
+    }
+
+    setLoadingSlots(true);
+    setSelectedTime(null);
+
+    const query = new URLSearchParams({
+      date: formatDate(selectedDate),
+    });
+    if (locationId) {
+      query.set("location_id", String(locationId));
+    }
+
+    void publicApi<{ timeSlots?: string[] }>(
+      "GET",
+      `/yachts/${boatId}/available-slots?${query.toString()}`,
+    )
+      .then((response) => {
+        setAvailableSlots(response.timeSlots || []);
+      })
+      .catch(() => {
+        setAvailableSlots([]);
+        setBookingMessage(bookingSlotsErrorText);
+      })
+      .finally(() => {
+        setLoadingSlots(false);
+      });
+  }, [boatId, bookingSlotsErrorText, locationId, selectedDate]);
+
+  const handleBook = async () => {
+    if (!selectedDate || !selectedTime) {
+      setBookingMessage(bookingSelectDateTimeText);
+      return;
+    }
+    if (!bookingForm.name || !bookingForm.email) {
+      setBookingMessage(bookingFillNameEmailText);
+      return;
+    }
+
+    setBookingStatus("processing");
+    setBookingMessage(null);
+
+    try {
+      const startDateTime = new Date(selectedDate);
+      const [hours, minutes] = selectedTime.split(":").map(Number);
+      startDateTime.setHours(hours, minutes, 0, 0);
+
+      await publicApi("POST", `/yachts/${boatId}/book`, {
+        json: {
+          start_at: startDateTime.toISOString(),
+          location_id: locationId,
+          name: bookingForm.name,
+          email: bookingForm.email,
+          phone: bookingForm.phone || undefined,
+          notes: bookingForm.notes || undefined,
+        },
+      });
+
+      setBookingStatus("success");
+      setBookingMessage(t("booking.success"));
+    } catch (error) {
+      setBookingStatus("idle");
+      setBookingMessage(
+        error instanceof Error ? error.message : bookingSubmitErrorText,
+      );
+    }
+  };
+
+  return (
+    <div className="flex h-full flex-col overflow-y-auto px-4 py-4">
+      <div className="rounded-[28px] border border-white/90 bg-white/92 p-4 shadow-[0_22px_60px_-34px_rgba(15,23,42,0.45)]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700/70">
+          {t("booking.kicker")}
+        </p>
+        <h5 className="mt-1 text-sm font-bold text-slate-900">
+          {t("booking.title")}
+        </h5>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+          {t("booking.descriptionCompact")}
+        </p>
+
+        <div className="mt-4 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() =>
+              setCurrentMonth((prev) => {
+                const next = new Date(prev);
+                next.setMonth(next.getMonth() - 1);
+                return next;
+              })
+            }
+            className="rounded-xl border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50"
+            aria-label={t("booking.prevMonth")}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <div className="text-sm font-semibold capitalize text-slate-900">
+            {monthLabel}
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              setCurrentMonth((prev) => {
+                const next = new Date(prev);
+                next.setMonth(next.getMonth() + 1);
+                return next;
+              })
+            }
+            className="rounded-xl border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50"
+            aria-label={t("booking.nextMonth")}
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+          {dayLabels.map((day) => (
+            <span key={day}>{day}</span>
+          ))}
+        </div>
+
+        <div className="mt-2 grid grid-cols-7 gap-1">
+          {calendarDays.map((day, index) => {
+            const isSelected =
+              selectedDate?.toDateString() === day.date.toDateString();
+
+            return (
+              <button
+                key={`${day.date.toISOString()}-${index}`}
+                type="button"
+                onClick={() => {
+                  if (!day.available) return;
+                  setSelectedDate(day.date);
+                  setBookingMessage(null);
+                }}
+                disabled={!day.available || !day.isCurrentMonth || loadingDates}
+                className={cn(
+                  "aspect-square rounded-xl text-xs font-medium transition",
+                  !day.isCurrentMonth
+                    ? "text-slate-300"
+                    : isSelected
+                      ? "text-white shadow-sm"
+                      : isToday(day.date)
+                        ? "border-2 border-sky-400 bg-sky-50 text-sky-900"
+                        : day.available
+                          ? "border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
+                          : "border border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed",
+                )}
+                style={
+                  isSelected
+                    ? {
+                        background: `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                      }
+                    : undefined
+                }
+              >
+                {day.date.getDate()}
+              </button>
+            );
+          })}
+        </div>
+
+        {loadingSlots ? (
+          <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+            <Loader2 size={14} className="animate-spin" />
+            {t("booking.loadingSlots")}
+          </div>
+        ) : availableSlots.length > 0 ? (
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {availableSlots.map((slot) => (
+              <button
+                key={slot}
+                type="button"
+                onClick={() => setSelectedTime(slot)}
+                className={cn(
+                  "rounded-xl px-2 py-2 text-xs font-semibold transition",
+                  selectedTime === slot
+                    ? "text-white shadow-sm"
+                    : "bg-emerald-100 text-emerald-900 hover:bg-emerald-200",
+                )}
+                style={
+                  selectedTime === slot
+                    ? {
+                        background: `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                      }
+                    : undefined
+                }
+              >
+                {slot}
+              </button>
+            ))}
+          </div>
+        ) : selectedDate ? (
+          <p className="mt-4 rounded-2xl border border-dashed border-slate-200 px-4 py-4 text-center text-xs text-slate-500">
+            {t("booking.noSlots")}
+          </p>
+        ) : null}
+
+        {selectedTime && (
+          <div className="mt-4 space-y-3">
+            <input
+              type="text"
+              placeholder={t("booking.fields.name")}
+              value={bookingForm.name}
+              onChange={(event) =>
+                setBookingForm((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300"
+            />
+            <input
+              type="email"
+              placeholder={t("booking.fields.email")}
+              value={bookingForm.email}
+              onChange={(event) =>
+                setBookingForm((current) => ({
+                  ...current,
+                  email: event.target.value,
+                }))
+              }
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300"
+            />
+            <input
+              type="tel"
+              placeholder={t("booking.fields.phone")}
+              value={bookingForm.phone}
+              onChange={(event) =>
+                setBookingForm((current) => ({
+                  ...current,
+                  phone: event.target.value,
+                }))
+              }
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300"
+            />
+            <textarea
+              placeholder={t("booking.fields.notes")}
+              rows={2}
+              value={bookingForm.notes}
+              onChange={(event) =>
+                setBookingForm((current) => ({
+                  ...current,
+                  notes: event.target.value,
+                }))
+              }
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300"
+            />
+            <button
+              type="button"
+              onClick={handleBook}
+              disabled={
+                bookingStatus === "processing" ||
+                !bookingForm.name ||
+                !bookingForm.email
+              }
+              className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-slate-300"
+              style={{
+                background:
+                  bookingStatus === "processing" ||
+                  !bookingForm.name ||
+                  !bookingForm.email
+                    ? undefined
+                    : `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+              }}
+            >
+              {bookingStatus === "processing" ? t("booking.confirming") : t("booking.confirm")}
+            </button>
+          </div>
+        )}
+
+        {bookingMessage && (
+          <div
+            className={cn(
+              "mt-4 rounded-2xl px-4 py-3 text-xs",
+              bookingStatus === "success"
+                ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border border-slate-200 bg-slate-50 text-slate-700",
+            )}
+          >
+            {bookingMessage}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SmartBoatWidgetBody({
+  activeTab,
+  onTabChange,
+  onSend,
+  sending,
+  messages,
+  colors,
+  harborName,
+  boatId,
+  locationId,
+  locale,
+}: {
+  activeTab: "chat" | "tasks" | "booking";
+  onTabChange: (tab: "chat" | "tasks" | "booking") => void;
+  onSend: (text: string) => void;
+  sending: boolean;
+  messages: WidgetMessage[];
+  colors: WidgetColors;
+  harborName?: string;
+  boatId: number;
+  locationId?: number;
+  locale?: string;
+}) {
+  const t = useTranslations("WidgetChat");
+  const tabButtonClass = (tab: "chat" | "tasks" | "booking") =>
+    cn(
+      "rounded-full px-3 py-2 text-[11px] font-semibold transition",
+      activeTab === tab
+        ? "bg-slate-950 text-white shadow-sm"
+        : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50",
+    );
+
+  const taskPrompts = [
+    t("tasks.prompts.progress"),
+    t("tasks.prompts.documents"),
+    t("tasks.prompts.nextStep"),
+  ];
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-[radial-gradient(circle_at_top,_rgba(219,234,254,0.72),_rgba(248,250,252,0.98)_42%,_#ffffff_100%)] text-slate-900">
+      <div className="border-b border-slate-200/80 bg-white/70 px-4 py-3 backdrop-blur-xl">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1">
+          <button
+            type="button"
+            onClick={() => onTabChange("chat")}
+            className={tabButtonClass("chat")}
+          >
+            {t("tabs.chat")}
+          </button>
+          <button
+            type="button"
+            onClick={() => onTabChange("tasks")}
+            className={tabButtonClass("tasks")}
+          >
+            {t("tabs.tasks")}
+          </button>
+          <button
+            type="button"
+            onClick={() => onTabChange("booking")}
+            className={tabButtonClass("booking")}
+          >
+            {t("tabs.booking")}
+          </button>
+        </div>
+      </div>
+
+      {activeTab === "chat" ? (
+        <ChatBody
+          messages={messages}
+          onSend={onSend}
+          typing={sending}
+          colors={colors}
+          harborName={harborName}
+          sending={sending}
+          locale={locale}
+        />
+      ) : activeTab === "tasks" ? (
+        <div className="flex h-full flex-col overflow-y-auto px-4 py-4">
+          <div className="rounded-[28px] border border-white/90 bg-white/92 p-4 shadow-[0_22px_60px_-34px_rgba(15,23,42,0.45)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700/70">
+              {t("tasks.kicker")}
+            </p>
+            <h5 className="mt-1 text-sm font-bold text-slate-900">
+              {t("tasks.title")}
+            </h5>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              {t("tasks.description", {
+                boatId: String(boatId),
+                locationId: String(locationId ?? ""),
+              })}
+            </p>
+            <div className="mt-4 space-y-2">
+              {taskPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => {
+                    onTabChange("chat");
+                    onSend(prompt);
+                  }}
+                  disabled={sending}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:opacity-50"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <BookingCalendarTab
+          boatId={boatId}
+          locationId={locationId}
+          locale={locale}
+          colors={colors}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Main Widget ────────────────────────────────────────────────────
 
 export function ChatWidget({
@@ -545,6 +1086,7 @@ export function ChatWidget({
   sourceUrl,
   isEmbedded,
   locale: localeOverride,
+  widgetMode = boatId ? "smart" : "chat",
 }: ChatWidgetProps) {
   const t = useTranslations("WidgetChat");
   const routeLocale = useLocale();
@@ -807,16 +1349,20 @@ export function ChatWidget({
                       {harborName || t("brand")}
                     </h4>
                     <p className="mt-1 text-[11px] text-white/78">
-                      {boatId
+                      {boatId && widgetMode === "auction"
                         ? t("header.auctionWidget")
+                        : boatId
+                          ? t("header.smartBoatWidget")
                         : conversationId
                           ? t("header.conversationActive")
                           : t("header.onlineSupport")}
                     </p>
                     <div className="mt-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/80">
                       <span className="rounded-full bg-white/14 px-2.5 py-1 backdrop-blur">
-                        {boatId
+                        {boatId && widgetMode === "auction"
                           ? t("header.boat", { boatId })
+                          : boatId
+                            ? t("header.locationAware", { boatId })
                           : conversationId
                             ? t("header.connected")
                             : t("header.supportOnline")}
@@ -865,11 +1411,24 @@ export function ChatWidget({
                   </p>
                 </div>
               ) : (
-                boatId ? (
+                boatId && widgetMode === "auction" ? (
                   <AuctionWidgetBody
                     boatId={boatId}
                     locationId={locationId}
                     colors={colors}
+                    locale={locale}
+                  />
+                ) : boatId ? (
+                  <SmartBoatWidgetBody
+                    activeTab={activeBoatTab}
+                    onTabChange={setActiveBoatTab}
+                    messages={messages}
+                    onSend={handleSendMessage}
+                    colors={colors}
+                    harborName={harborName}
+                    sending={sending}
+                    boatId={boatId}
+                    locationId={locationId}
                     locale={locale}
                   />
                 ) : (

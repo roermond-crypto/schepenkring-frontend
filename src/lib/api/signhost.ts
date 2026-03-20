@@ -31,6 +31,7 @@ export interface ContractGeneratePayload {
     reference?: string;
     recipients?: SignRecipient[];
     pdf?: File | Blob;
+    attachments?: (File | Blob)[];
     metadata?: Record<string, unknown>;
     idempotencyKey?: string;
 }
@@ -128,6 +129,9 @@ export const signhostApi = {
         if (payload.pdf) {
             formData.append("pdf", payload.pdf);
         }
+        payload.attachments?.forEach((attachment, index) => {
+            formData.append(`attachments[${index}]`, attachment);
+        });
         if (payload.metadata) {
             appendNestedFormData(formData, "metadata", payload.metadata);
         }

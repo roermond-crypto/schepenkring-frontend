@@ -14,6 +14,7 @@ export default async function WidgetPage({
     const harborName = query.harborName;
     const boatId = query.boatId ? parseInt(query.boatId, 10) : undefined;
     const locationId = query.locationId ? parseInt(query.locationId, 10) : undefined;
+    const widgetMode = (query.widgetMode as "chat" | "smart" | "auction") || (boatId ? "smart" : "chat");
     const accentColor = query.accentColor;
     const themePreset = (query.themePreset as "ocean" | "violet" | "sunset") || "ocean";
     const welcomeText = query.welcomeText;
@@ -32,6 +33,7 @@ export default async function WidgetPage({
                 sourceUrl={sourceUrl}
                 isEmbedded={true}
                 locale={locale}
+                widgetMode={widgetMode}
             />
         </main>
     );

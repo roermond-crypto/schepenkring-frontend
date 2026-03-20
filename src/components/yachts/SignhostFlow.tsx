@@ -653,6 +653,41 @@ function buildEscrowContractUrl(
   return `${origin}/${locale}/contracts/escrow/${formLanguage}?${params.toString()}`;
 }
 
+function resolveAgreementPdfLanguage(language: ContractLanguage) {
+  return language === "fr" ? "en" : language;
+}
+
+function getAgreementPdfPath(language: ContractLanguage) {
+  const resolvedLanguage = resolveAgreementPdfLanguage(language);
+  return `/contracts/bemiddelingsvoorwaarden-${resolvedLanguage}.pdf`;
+}
+
+async function fetchAgreementPdfFile(language: ContractLanguage) {
+  const resolvedLanguage = resolveAgreementPdfLanguage(language);
+  const response = await fetch(getAgreementPdfPath(language));
+  if (!response.ok) {
+    throw new Error("Failed to load contract agreement PDF.");
+  }
+
+  const blob = await response.blob();
+  return new File(
+    [blob],
+    `bemiddelingsvoorwaarden-${resolvedLanguage}.pdf`,
+    { type: "application/pdf" },
+  );
+}
+
+function triggerFileDownload(file: File) {
+  const downloadUrl = URL.createObjectURL(file);
+  const anchor = document.createElement("a");
+  anchor.href = downloadUrl;
+  anchor.download = file.name;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(downloadUrl);
+}
+
 function getAgreementCopy(language: ContractLanguage) {
   switch (language) {
     case "nl":
@@ -1542,21 +1577,18 @@ export function SignhostFlow({
 
     setIsGenerating(true);
     try {
-      const pdfFile = await generatePdfFile();
-      const downloadUrl = URL.createObjectURL(pdfFile);
-      const anchor = document.createElement("a");
-      anchor.href = downloadUrl;
-      anchor.download = pdfFile.name;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(downloadUrl);
-      toast.success("Contract PDF downloaded.");
+      const [pdfFile, agreementFile] = await Promise.all([
+        generatePdfFile(),
+        fetchAgreementPdfFile(draft.language),
+      ]);
+      triggerFileDownload(pdfFile);
+      triggerFileDownload(agreementFile);
+      toast.success("Contract documents downloaded.");
     } catch (error: unknown) {
       const message =
         error instanceof Error
           ? error.message
-          : "Failed to download contract PDF.";
+          : "Failed to download contract documents.";
       toast.error(message);
     } finally {
       setIsGenerating(false);
@@ -1576,7 +1608,10 @@ export function SignhostFlow({
 
     setIsGenerating(true);
     try {
-      const pdfFile = await generatePdfFile();
+      const [pdfFile, agreementFile] = await Promise.all([
+        generatePdfFile(),
+        fetchAgreementPdfFile(draft.language),
+      ]);
       const shouldSendToSignhost = resolvedRecipients.length > 0;
       const contractRenderUrl =
         contractTemplateKey === "escrow_form"
@@ -1600,11 +1635,17 @@ export function SignhostFlow({
         send_to_signhost: shouldSendToSignhost,
         recipients: shouldSendToSignhost ? resolvedRecipients : undefined,
         pdf: pdfFile,
+        attachments: [agreementFile],
         reference: `vessel-${yachtId}-contract`,
         idempotencyKey: `contract_${yachtId}_${Date.now()}`,
         metadata: {
           boat_name: draft.vesselName || yachtName,
           contract_language: draft.language,
+          agreement_document_language: resolveAgreementPdfLanguage(
+            draft.language,
+          ),
+          agreement_document_path: getAgreementPdfPath(draft.language),
+          agreement_document_included: true,
           contract_template_key: contractTemplateKey,
           contract_template: contractTemplateKey,
           contract_template_payload: draft,

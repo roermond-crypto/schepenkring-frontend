@@ -12,6 +12,7 @@ export async function GET() {
   const harborName = script.getAttribute('data-harbor-name') || '';
   const boatId = script.getAttribute('data-boat-id') || '';
   const locationId = script.getAttribute('data-location-id') || '';
+  const widgetMode = script.getAttribute('data-widget-mode') || (boatId ? 'smart' : 'chat');
   const tenant = script.getAttribute('data-tenant') || 'schepenkring';
   const locale = script.getAttribute('data-locale') || document.documentElement.lang?.split('-')[0] || 'en';
   const accentColor = script.getAttribute('data-accent-color') || '';
@@ -38,6 +39,7 @@ export async function GET() {
   if (harborName) params.append('harborName', harborName);
   if (boatId) params.append('boatId', boatId);
   if (locationId) params.append('locationId', locationId);
+  if (widgetMode) params.append('widgetMode', widgetMode);
   if (tenant) params.append('tenant', tenant);
   if (locale) params.append('locale', locale);
   if (accentColor) params.append('accentColor', accentColor);
