@@ -642,10 +642,11 @@ function TaskModal({
     setErrors({});
   }, [task, isOpen, preSelectedColId, canAssignToOtherUsers]);
 
-  const API_BASE =
-    typeof window !== "undefined" && window.location.hostname == "localhost"
-      ? "http://localhost:8000/api"
-      : "https://app.schepen-kring.nl/api";
+  // const API_BASE =
+  //   typeof window !== "undefined" && window.location.hostname == "localhost"
+  //     ? "http://localhost:8000/api"
+  //     : "https://app.schepen-kring.nl/api";
+  const API_BASE = "https://app.schepen-kring.nl/api";
   const getHeaders = () => {
     const token = getStoredToken();
     return { headers: token ? { Authorization: `Bearer ${token}` } : {} };
@@ -1587,10 +1588,11 @@ export default function AdminTaskBoardPage() {
   const [deleteTaskId, setDeleteTaskId] = useState<number | null>(null);
   const [deleteTaskLoading, setDeleteTaskLoading] = useState(false);
 
-  const API_BASE =
-    typeof window !== "undefined" && window.location.hostname == "localhost"
-      ? "http://localhost:8000/api"
-      : "https://app.schepen-kring.nl/api";
+  // const API_BASE =
+  //   typeof window !== "undefined" && window.location.hostname == "localhost"
+  //     ? "http://localhost:8000/api"
+  //     : "https://app.schepen-kring.nl/api";
+  const API_BASE = "https://app.schepen-kring.nl/api";
 
   const getHeaders = () => {
     const token = getStoredToken();
@@ -1949,8 +1951,7 @@ export default function AdminTaskBoardPage() {
             ? {
                 ...task,
                 status: newStatus,
-                column_id:
-                  nextColumnId != null ? nextColumnId : task.column_id,
+                column_id: nextColumnId != null ? nextColumnId : task.column_id,
               }
             : task,
         ),
@@ -2554,7 +2555,6 @@ export default function AdminTaskBoardPage() {
                                 {t("status.pending")}
                               </span>
                             )}
-
                           </div>
 
                           {task.description && (

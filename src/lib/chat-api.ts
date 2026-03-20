@@ -132,21 +132,25 @@ function mapConversationToConversation(
 
 function mapBackendMessage(message: BackendMessage): SupportMessage {
   const senderType =
-    message.sender_type === "employee"
-      ? "admin"
-      : message.sender_type === "visitor"
-        ? "guest"
-        : message.sender_type === "ai"
-          ? "ai"
-          : "user";
+    message.sender_type === "system"
+      ? "system"
+      : message.sender_type === "employee"
+        ? "admin"
+        : message.sender_type === "visitor"
+          ? "guest"
+          : message.sender_type === "ai"
+            ? "ai"
+            : "user";
   const senderName =
     message.employee?.name ??
     message.employee?.first_name ??
-    (message.sender_type === "employee"
-      ? "Agent"
-      : message.sender_type === "ai"
-        ? "AI assistant"
-        : "Visitor");
+    (message.sender_type === "system"
+      ? "System"
+      : message.sender_type === "employee"
+        ? "Agent"
+        : message.sender_type === "ai"
+          ? "AI assistant"
+          : "Visitor");
 
   return {
     id: message.id,
@@ -361,6 +365,7 @@ export async function sendSupportMessage(
     method: "POST",
     url: `/chat/conversations/${conversationId}/messages`,
     data: {
+      text,
       body: text,
       client_message_id: clientMessageId,
     },

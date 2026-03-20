@@ -8,7 +8,6 @@ import { useParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import {
   AlertCircle,
-  ExternalLink,
   FileCheck,
   FilePenLine,
   FileText,
@@ -31,11 +30,64 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { signhostApi, type SignRequest } from "@/lib/api/signhost";
+import {
+  signhostApi,
+  type SignRequest,
+  type SignhostTransaction,
+} from "@/lib/api/signhost";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
 
 type ContractLanguage = "nl" | "en" | "de" | "fr";
 type ContractTemplateKey = "sale_agreement" | "escrow_form";
+
+function mapTransactionToSignRequest(
+  transaction: SignhostTransaction,
+): SignRequest {
+  const normalizedStatus = (transaction.status || "").toUpperCase();
+  const signUrl =
+    transaction.signing_url_seller ||
+    transaction.signing_url_buyer ||
+    null;
+
+  return {
+    id: transaction.id,
+    location_id: 0,
+    entity_type: "Yacht",
+    entity_id: transaction.yacht_id ?? transaction.deal_id ?? 0,
+    provider: "signhost",
+    status:
+      normalizedStatus === "SIGNED"
+        ? "SIGNED"
+        : normalizedStatus === "CANCELLED" ||
+            normalizedStatus === "REJECTED" ||
+            normalizedStatus === "FAILED"
+          ? "FAILED"
+          : normalizedStatus === "PENDING" ||
+              normalizedStatus === "SIGNING" ||
+              normalizedStatus === "SENT"
+            ? "SENT"
+            : "DRAFT",
+    signhost_transaction_id: transaction.signhost_transaction_id,
+    sign_url: signUrl,
+    requested_by_user_id: null,
+    metadata: {
+      sign_urls: [
+        transaction.signing_url_seller
+          ? { role: "seller", url: transaction.signing_url_seller }
+          : null,
+        transaction.signing_url_buyer
+          ? { role: "buyer", url: transaction.signing_url_buyer }
+          : null,
+      ].filter(Boolean),
+      transaction_status: transaction.status,
+      signed_pdf_path: transaction.signed_pdf_path,
+      webhook_last_payload: transaction.webhook_last_payload,
+    },
+    documents: [],
+    created_at: transaction.created_at,
+    updated_at: transaction.updated_at,
+  };
+}
 
 function resolveContractLanguage(locale: string): ContractLanguage {
   if (
@@ -1313,14 +1365,35 @@ export function SignhostFlow({
   }, [draft, storageKey]);
 
   useEffect(() => {
+    if (!yachtId) return;
+
+    let active = true;
+    void signhostApi
+      .getYachtStatus(yachtId)
+      .then((res) => {
+        if (!active || !res.transaction) return;
+        setSignRequest(mapTransactionToSignRequest(res.transaction));
+      })
+      .catch(() => {
+        // Silent when no existing Signhost transaction is present yet.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [yachtId]);
+
+  useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
-    if (signRequest?.status === "SENT") {
+    if (yachtId && signRequest?.status === "SENT") {
       interval = setInterval(async () => {
         try {
-          const res = await signhostApi.getStatus(signRequest.id);
-          if (res.sign_request.status !== signRequest.status) {
-            setSignRequest(res.sign_request);
-            if (res.sign_request.status === "SIGNED") {
+          const res = await signhostApi.getYachtStatus(yachtId);
+          if (!res.transaction) return;
+          const nextRequest = mapTransactionToSignRequest(res.transaction);
+          if (nextRequest.status !== signRequest.status) {
+            setSignRequest(nextRequest);
+            if (nextRequest.status === "SIGNED") {
               toast.success("Contract signed successfully.");
             }
           }
@@ -1333,7 +1406,7 @@ export function SignhostFlow({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [signRequest]);
+  }, [signRequest, yachtId]);
 
   const previewCopy = copyByLanguage[draft.language];
   const agreementCopy = getAgreementCopy(draft.language);
@@ -1608,10 +1681,6 @@ export function SignhostFlow({
 
     setIsGenerating(true);
     try {
-      const [pdfFile, agreementFile] = await Promise.all([
-        generatePdfFile(),
-        fetchAgreementPdfFile(draft.language),
-      ]);
       const shouldSendToSignhost = resolvedRecipients.length > 0;
       const contractRenderUrl =
         contractTemplateKey === "escrow_form"
@@ -1623,9 +1692,7 @@ export function SignhostFlow({
             )
           : undefined;
 
-      const res = await signhostApi.generateContract({
-        entity_type: "Vessel",
-        entity_id: yachtId,
+      const res = await signhostApi.generateYachtContract(yachtId, {
         location_id: locationId,
         title: `${
           contractTemplateKey === "escrow_form"
@@ -1634,8 +1701,6 @@ export function SignhostFlow({
         } - ${draft.vesselName || yachtName}`,
         send_to_signhost: shouldSendToSignhost,
         recipients: shouldSendToSignhost ? resolvedRecipients : undefined,
-        pdf: pdfFile,
-        attachments: [agreementFile],
         reference: `vessel-${yachtId}-contract`,
         idempotencyKey: `contract_${yachtId}_${Date.now()}`,
         metadata: {
@@ -1657,23 +1722,21 @@ export function SignhostFlow({
           location_snapshot: selectedLocation,
         },
       });
-      let nextSignRequest = res.sign_request;
-      let signUrl = res.sign_url || res.sign_request.sign_url;
+      const nextSignRequest = res.sign_request
+        ? res.sign_request
+        : res.transaction
+          ? mapTransactionToSignRequest(res.transaction)
+          : null;
+      const signUrl =
+        res.sign_url ||
+        res.sign_request?.sign_url ||
+        res.transaction?.signing_url_seller ||
+        res.transaction?.signing_url_buyer ||
+        null;
 
-      if (shouldSendToSignhost && !signUrl && nextSignRequest?.id) {
-        const deeplinkRes = await signhostApi.createRequest(
-          {
-            sign_request_id: nextSignRequest.id,
-            recipients: resolvedRecipients,
-            reference: `vessel-${yachtId}`,
-          },
-          `signhost_${nextSignRequest.id}_${Date.now()}`,
-        );
-        nextSignRequest = deeplinkRes.sign_request;
-        signUrl = deeplinkRes.sign_request.sign_url;
+      if (nextSignRequest) {
+        setSignRequest(nextSignRequest);
       }
-
-      setSignRequest(nextSignRequest);
       if (shouldSendToSignhost && signUrl) {
         window.open(signUrl, "_blank", "noopener,noreferrer");
         toast.success("Contract generated and sent to Signhost.");

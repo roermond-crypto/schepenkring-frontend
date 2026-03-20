@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Loader2, Send, Sparkles } from "lucide-react";
+import { Loader2, Send, Sparkles, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { api } from "@/lib/api";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
@@ -24,6 +24,11 @@ type AskResponse = {
   ai_message?: BackendChatMessage;
   language?: string;
   header_language?: string;
+};
+
+type ConversationDetailResponse = {
+  id: string;
+  messages?: BackendChatMessage[];
 };
 
 type BackendChatMessage = {
@@ -85,12 +90,20 @@ export function ClientChatPage() {
     () => (locationId ? `client-dashboard-chat:${user.id}:${locationId}` : null),
     [locationId, user.id],
   );
+  const introDismissKey = useMemo(
+    () =>
+      locationId
+        ? `client-dashboard-chat:intro-dismissed:${user.id}:${locationId}`
+        : null,
+    [locationId, user.id],
+  );
 
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ClientChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [initializing, setInitializing] = useState(true);
   const [sending, setSending] = useState(false);
+  const [introDismissed, setIntroDismissed] = useState(false);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -119,6 +132,28 @@ export function ClientChatPage() {
       JSON.stringify({ conversationId, messages }),
     );
   }, [conversationId, messages, storageKey]);
+
+  useEffect(() => {
+    if (!introDismissKey || typeof window === "undefined") return;
+    try {
+      setIntroDismissed(window.localStorage.getItem(introDismissKey) === "1");
+    } catch (error) {
+      console.error("Failed to restore client chat intro state:", error);
+    }
+  }, [introDismissKey]);
+
+  useEffect(() => {
+    if (!introDismissKey || typeof window === "undefined") return;
+    try {
+      if (introDismissed) {
+        window.localStorage.setItem(introDismissKey, "1");
+      } else {
+        window.localStorage.removeItem(introDismissKey);
+      }
+    } catch (error) {
+      console.error("Failed to persist client chat intro state:", error);
+    }
+  }, [introDismissKey, introDismissed]);
 
   useEffect(() => {
     const setupConversation = async () => {
@@ -188,38 +223,54 @@ export function ClientChatPage() {
     setSending(true);
 
     try {
-      const response = await api.post<AskResponse>(
-        `/public/conversations/${conversationId}/ask`,
+      const response = await api.post<AskResponse | BackendChatMessage>(
+        `/chat/conversations/${conversationId}/messages`,
         {
+          text: trimmed,
           body: trimmed,
           client_message_id: `dashboard-msg-${Date.now()}`,
-          visitor_id: visitorId,
         },
       );
 
-      const nextMessages = [
-        response.data?.user_message
-          ? mapBackendMessage(response.data.user_message)
-          : {
-              id: tempUserId,
-              sender: "user" as const,
-              text: trimmed,
-              createdAt: nowIso,
-            },
-        response.data?.ai_message
-          ? mapBackendMessage(response.data.ai_message)
-          : {
-              id: tempAiId,
-              sender: "ai" as const,
-              text: t("errors.replyMissing"),
-              createdAt: new Date().toISOString(),
-            },
-      ];
+      const directResponse = response.data as AskResponse & BackendChatMessage;
+      const followUpConversation = await api.get<ConversationDetailResponse>(
+        `/chat/conversations/${conversationId}`,
+      );
+      const refreshedMessages = Array.isArray(followUpConversation.data?.messages)
+        ? followUpConversation.data.messages.map(mapBackendMessage)
+        : [];
 
-      setMessages((prev) => [
-        ...prev.filter((message) => message.id !== tempUserId && message.id !== tempAiId),
-        ...nextMessages,
-      ]);
+      if (refreshedMessages.length > 0) {
+        setMessages(refreshedMessages);
+      } else {
+        const nextMessages = [
+          directResponse?.user_message
+            ? mapBackendMessage(directResponse.user_message)
+            : directResponse?.id
+              ? mapBackendMessage(directResponse)
+              : {
+                  id: tempUserId,
+                  sender: "user" as const,
+                  text: trimmed,
+                  createdAt: nowIso,
+                },
+          directResponse?.ai_message
+            ? mapBackendMessage(directResponse.ai_message)
+            : {
+                id: tempAiId,
+                sender: "ai" as const,
+                text: t("errors.replyMissing"),
+                createdAt: new Date().toISOString(),
+              },
+        ];
+
+        setMessages((prev) => [
+          ...prev.filter(
+            (message) => message.id !== tempUserId && message.id !== tempAiId,
+          ),
+          ...nextMessages,
+        ]);
+      }
     } catch (error) {
       console.error("Failed to send client dashboard chat message:", error);
       setMessages((prev) =>
@@ -230,7 +281,7 @@ export function ClientChatPage() {
     } finally {
       setSending(false);
     }
-  }, [conversationId, input, t, visitorId]);
+  }, [conversationId, input, t]);
 
   if (!locationId) {
     return (
@@ -243,24 +294,37 @@ export function ClientChatPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-[#F7FAFF] to-[#E7F0FF] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-        <p className="text-[10px] font-black uppercase tracking-[0.35em] text-blue-600">
-          {t("header.subtitle")}
-        </p>
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-serif italic text-[#003566]">
-              {t("header.title")}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-600">
-              {t("header.description")}
+      {!introDismissed ? (
+        <div className="rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-[#F7FAFF] to-[#E7F0FF] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+          <div className="flex items-start justify-between gap-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-blue-600">
+              {t("header.subtitle")}
             </p>
+            <button
+              type="button"
+              onClick={() => setIntroDismissed(true)}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white/80 text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+              aria-label={t("header.dismiss")}
+              title={t("header.dismiss")}
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
-            {t("header.location", { location: locationLabel ?? "—" })}
+          <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-serif italic text-[#003566]">
+                {t("header.title")}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-slate-600">
+                {t("header.description")}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
+              {t("header.location", { location: locationLabel ?? "—" })}
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
         <div className="border-b border-slate-200 bg-gradient-to-r from-blue-600 to-sky-500 px-6 py-5 text-white">

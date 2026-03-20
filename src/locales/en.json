@@ -113,6 +113,7 @@
       "collapse": "Collapse sidebar",
       "audit": "Audit",
       "errors": "Errors",
+      "bookings": "Bookings",
       "locations": "Locations",
       "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Salesfunnel",
@@ -212,6 +213,90 @@
       "newActionModule": "boats",
       "newActionRoute": "/dashboard/admin/boats/create",
       "phraseText": "create boat"
+    }
+  },
+  "DashboardBookings": {
+    "hero": {
+      "kicker": "Bookings",
+      "title": "Booking overview",
+      "description": "Track yacht viewings, confirm location activity, and open each booking with its full guest, boat, and schedule context."
+    },
+    "stats": {
+      "total": "Total bookings",
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "today": "Today"
+    },
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Search by guest, email, or boat",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "locationId": "Location ID",
+      "locationPlaceholder": "Filter by location ID",
+      "reset": "Reset",
+      "apply": "Refresh"
+    },
+    "resultsSummary": "{total} bookings in view",
+    "activeFilters": {
+      "search": "Search: {value}",
+      "status": "Status: {value}",
+      "location": "Location: {value}"
+    },
+    "table": {
+      "id": "Booking",
+      "guest": "Guest",
+      "boat": "Boat",
+      "schedule": "Schedule",
+      "status": "Status",
+      "action": "Action",
+      "view": "View",
+      "loading": "Loading bookings..."
+    },
+    "empty": {
+      "title": "No bookings found",
+      "description": "Try a different status, search term, or location filter to find the booking you need."
+    },
+    "errorState": {
+      "title": "Bookings could not be loaded",
+      "description": "The request failed, but the page will stay stable. Try refreshing once the API is available again.",
+      "retry": "Try again"
+    },
+    "detail": {
+      "title": "Booking details",
+      "titleWithId": "Booking #{id}",
+      "description": "Review the full appointment details for this yacht visit.",
+      "loading": "Loading booking details...",
+      "guest": "Guest",
+      "name": "Name",
+      "email": "Email",
+      "source": "Source",
+      "appointment": "Appointment",
+      "date": "Date",
+      "time": "Time",
+      "duration": "Duration",
+      "status": "Status",
+      "location": "Location",
+      "locationCode": "Location code",
+      "boat": "Boat",
+      "boatName": "Boat name",
+      "price": "Price",
+      "type": "Type",
+      "notes": "Notes",
+      "noNotes": "No notes were provided for this booking.",
+      "createdAt": "Created",
+      "updatedAt": "Updated"
+    },
+    "errors": {
+      "load": "Could not load bookings.",
+      "detail": "Could not load booking details."
+    },
+    "statuses": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed",
+      "rescheduled": "Rescheduled"
     }
   },
   "DashboardAdminOverview": {
@@ -901,6 +986,9 @@
     },
     "messages": {
       "today": "Today",
+      "systemEvent": "System event",
+      "bookingEvent": "Booking event",
+      "bookingReference": "Booking #{id}",
       "aiDraftReply": "AI Draft Reply",
       "summarize": "Summarize",
       "translateTo": "Translate to",
@@ -979,7 +1067,8 @@
       "title": "AI Client Chat",
       "subtitle": "Private assistant",
       "description": "Ask questions about your boat, insurance, viewings, or harbor support. This conversation is linked to your location so the team can follow along when needed.",
-      "location": "Connected location: {location}"
+      "location": "Connected location: {location}",
+      "dismiss": "Hide introduction"
     },
     "assistant": {
       "title": "Fluent AI Assistant",
