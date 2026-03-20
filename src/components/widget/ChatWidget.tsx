@@ -18,6 +18,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  Paperclip,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -32,6 +33,11 @@ interface WidgetMessage {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  attachment?: {
+    name: string;
+    type: string;
+    url?: string;
+  };
 }
 
 interface PublicLeadResponse {
@@ -155,12 +161,11 @@ const THEME_PRESETS: Record<ThemePreset, WidgetColors> = {
 };
 
 // ── Public API helper (no auth needed) ─────────────────────────────
-const PUBLIC_API_BASE =
-  normalizeApiBaseUrl(
-    (typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_BACKEND_API_URL
-      : process.env.BACKEND_API_URL) ?? "https://app.schepen-kring.nl/api",
-  );
+const PUBLIC_API_BASE = normalizeApiBaseUrl(
+  (typeof window !== "undefined"
+    ? process.env.NEXT_PUBLIC_BACKEND_API_URL
+    : process.env.BACKEND_API_URL) ?? "https://app.schepen-kring.nl/api",
+);
 
 async function publicApi<T>(
   method: string,
@@ -199,7 +204,9 @@ function getOrCreateVisitorId(): string {
   return created;
 }
 
-function parsePositiveNumber(value: string | number | null | undefined): number | undefined {
+function parsePositiveNumber(
+  value: string | number | null | undefined,
+): number | undefined {
   if (value === null || value === undefined || value === "") {
     return undefined;
   }
@@ -312,7 +319,10 @@ function ChatBody({
   locale: _locale,
 }: {
   messages: WidgetMessage[];
-  onSend: (text: string) => void;
+  onSend: (
+    text: string,
+    attachment?: { name: string; type: string; url?: string },
+  ) => void;
   typing: boolean;
   colors: WidgetColors;
   harborName?: string;
@@ -323,8 +333,11 @@ function ChatBody({
   const t = useTranslations("WidgetChat");
   const [input, setInput] = useState("");
   const [composerFocused, setComposerFocused] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasUserMessages = messages.some((message) => message.isUser);
   const showWelcomePanel = !hasUserMessages;
   const visibleMessages = messages.filter((message) => message.id !== "init");
@@ -346,11 +359,43 @@ function ChatBody({
     element.style.height = `${Math.min(element.scrollHeight, 140)}px`;
   }, [input]);
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => setFilePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSend = () => {
     const value = input.trim();
-    if (!value || sending) return;
-    onSend(value);
+    if ((!value && !selectedFile) || sending) return;
+    onSend(
+      value,
+      selectedFile
+        ? {
+            name: selectedFile.name,
+            type: selectedFile.type,
+            url: filePreview || undefined,
+          }
+        : undefined,
+    );
     setInput("");
+    handleRemoveFile();
   };
 
   return (
@@ -445,7 +490,10 @@ function ChatBody({
           {visibleMessages.map((msg) => (
             <div
               key={msg.id}
-              className={cn("flex", msg.isUser ? "justify-end" : "justify-start")}
+              className={cn(
+                "flex",
+                msg.isUser ? "justify-end" : "justify-start",
+              )}
             >
               <div
                 className={cn(
@@ -457,12 +505,48 @@ function ChatBody({
                 style={
                   msg.isUser
                     ? {
-                      background: `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
-                    }
+                        background: `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                      }
                     : undefined
                 }
               >
                 <p className="whitespace-pre-wrap">{msg.text}</p>
+                {msg.attachment && (
+                  <div
+                    className={cn(
+                      "mt-3 flex items-center gap-3 rounded-2xl px-3 py-2 text-xs",
+                      msg.isUser
+                        ? "bg-white/15 text-white/85"
+                        : "border border-slate-200 bg-slate-50 text-slate-600",
+                    )}
+                  >
+                    {msg.attachment.type.startsWith("image/") &&
+                    msg.attachment.url ? (
+                      <img
+                        src={msg.attachment.url}
+                        alt={msg.attachment.name}
+                        className="h-11 w-11 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-200 text-slate-600">
+                        <Paperclip size={15} />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">
+                        {msg.attachment.name}
+                      </div>
+                      <div
+                        className={cn(
+                          "text-[10px]",
+                          msg.isUser ? "text-white/70" : "text-slate-400",
+                        )}
+                      >
+                        {msg.attachment.type || "file"}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <p
                   className={cn(
                     "mt-1.5 text-[10px] font-medium",
@@ -500,6 +584,39 @@ function ChatBody({
               : "border-slate-200",
           )}
         >
+          {selectedFile && (
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+              <div className="flex min-w-0 items-center gap-3">
+                {filePreview && selectedFile.type.startsWith("image/") ? (
+                  <img
+                    src={filePreview}
+                    alt={selectedFile.name}
+                    className="h-10 w-10 rounded-xl object-cover"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-500">
+                    <Paperclip size={15} />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="truncate font-semibold text-slate-700">
+                    {selectedFile.name}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveFile}
+                className="rounded-full p-1 text-slate-400 transition hover:bg-white hover:text-slate-600"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
           <div className="flex items-end gap-3">
             <div
               className="mb-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white"
@@ -509,6 +626,21 @@ function ChatBody({
             >
               <MessageCircle size={17} />
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleFileChange}
+              accept="image/*,.pdf,.doc,.docx"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="mb-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+              aria-label="Attach file"
+            >
+              <Paperclip size={16} />
+            </button>
             <textarea
               ref={textareaRef}
               value={input}
@@ -539,8 +671,8 @@ function ChatBody({
               style={
                 input.trim() && !sending
                   ? {
-                    background: `linear-gradient(135deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
-                  }
+                      background: `linear-gradient(135deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                    }
                   : undefined
               }
               aria-label={t("composer.sendAria")}
@@ -598,9 +730,9 @@ function BookingCalendarTab({
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingDates, setLoadingDates] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [bookingStatus, setBookingStatus] = useState<"idle" | "processing" | "success">(
-    "idle",
-  );
+  const [bookingStatus, setBookingStatus] = useState<
+    "idle" | "processing" | "success"
+  >("idle");
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
   const [bookingForm, setBookingForm] = useState({
     name: "",
@@ -931,7 +1063,9 @@ function BookingCalendarTab({
                     : `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
               }}
             >
-              {bookingStatus === "processing" ? t("booking.confirming") : t("booking.confirm")}
+              {bookingStatus === "processing"
+                ? t("booking.confirming")
+                : t("booking.confirm")}
             </button>
           </div>
         )}
@@ -983,11 +1117,12 @@ function SmartBoatWidgetBody({
   sessionJwt?: string | null;
 }) {
   const t = useTranslations("WidgetChat");
-  const visibleTabs = enabledTabs && enabledTabs.length > 0
-    ? enabledTabs.filter((tab): tab is "chat" | "tasks" | "booking" =>
-        ["chat", "tasks", "booking"].includes(tab),
-      )
-    : ["chat", "tasks", "booking"];
+  const visibleTabs =
+    enabledTabs && enabledTabs.length > 0
+      ? enabledTabs.filter((tab): tab is "chat" | "tasks" | "booking" =>
+          ["chat", "tasks", "booking"].includes(tab),
+        )
+      : ["chat", "tasks", "booking"];
   const tabButtonClass = (tab: "chat" | "tasks" | "booking") =>
     cn(
       "rounded-full px-3 py-2 text-[11px] font-semibold transition",
@@ -1113,15 +1248,17 @@ export function ChatWidget({
   const locale = localeOverride || routeLocale;
   const { isOnline } = useNetworkStatus();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeBoatTab, setActiveBoatTab] = useState<"chat" | "tasks" | "booking">("chat");
+  const [activeBoatTab, setActiveBoatTab] = useState<
+    "chat" | "tasks" | "booking"
+  >("chat");
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [resolvedLocationId, setResolvedLocationId] = useState<number | undefined>(
-    locationId,
-  );
-  const [resolvedHarborName, setResolvedHarborName] = useState<string | undefined>(
-    harborName,
-  );
+  const [resolvedLocationId, setResolvedLocationId] = useState<
+    number | undefined
+  >(locationId);
+  const [resolvedHarborName, setResolvedHarborName] = useState<
+    string | undefined
+  >(harborName);
   const [sessionJwt, setSessionJwt] = useState<string | null>(null);
   const [enabledTabs, setEnabledTabs] = useState<string[]>([
     "chat",
@@ -1129,13 +1266,13 @@ export function ChatWidget({
     "booking",
   ]);
   const [initBrandColor, setInitBrandColor] = useState<string | undefined>();
-  const [activeBoatTab, setActiveBoatTab] = useState<"chat" | "tasks" | "booking">(
-    "chat",
-  const [publicDefaultLocationId, setPublicDefaultLocationId] = useState<number | undefined>(
-    undefined,
-  );
+  const [publicDefaultLocationId, setPublicDefaultLocationId] = useState<
+    number | undefined
+  >(undefined);
   const visitorIdRef = useRef<string>(getOrCreateVisitorId());
-  const publicLocationLookupRef = useRef<Promise<number | undefined> | null>(null);
+  const publicLocationLookupRef = useRef<Promise<number | undefined> | null>(
+    null,
+  );
   const [messages, setMessages] = useState<WidgetMessage[]>([
     {
       id: "init",
@@ -1153,7 +1290,7 @@ export function ChatWidget({
           isOpen,
           isMobile: window.innerWidth < 640,
         },
-        "*"
+        "*",
       );
     }
   }, [isOpen, isEmbedded]);
@@ -1195,7 +1332,8 @@ export function ChatWidget({
             : ["chat", "tasks", "booking"],
         );
 
-        const welcomeOverride = response.context?.location?.texts?.welcome?.trim();
+        const welcomeOverride =
+          response.context?.location?.texts?.welcome?.trim();
         if (welcomeOverride) {
           setMessages((prev) =>
             prev.length === 1 && prev[0]?.id === "init"
@@ -1211,16 +1349,17 @@ export function ChatWidget({
     };
 
     void initWidget();
-    
+
     rememberWidgetLocationId(locationId ?? detectRuntimeLocationId());
 
     return () => {
       cancelled = true;
     };
   }, [boatId, harborName, locationId, widgetMode]);
-    
 
-  const ensurePublicDefaultLocationId = useCallback(async (): Promise<number | undefined> => {
+  const ensurePublicDefaultLocationId = useCallback(async (): Promise<
+    number | undefined
+  > => {
     const existingLocationId =
       locationId ?? detectRuntimeLocationId() ?? publicDefaultLocationId;
 
@@ -1237,8 +1376,9 @@ export function ChatWidget({
       )
         .then((locations) => {
           const preferredLocation =
-            locations.find((location) => location.chat_widget_enabled !== false) ??
-            locations[0];
+            locations.find(
+              (location) => location.chat_widget_enabled !== false,
+            ) ?? locations[0];
           const resolvedLocationId = parsePositiveNumber(preferredLocation?.id);
 
           if (resolvedLocationId) {
@@ -1277,10 +1417,10 @@ export function ChatWidget({
     const effectiveAccent = accentColor || initBrandColor;
     const fromAccent = effectiveAccent
       ? {
-        launcherStart: effectiveAccent,
-        headerStart: effectiveAccent,
-        userBubbleStart: effectiveAccent,
-      }
+          launcherStart: effectiveAccent,
+          headerStart: effectiveAccent,
+          userBubbleStart: effectiveAccent,
+        }
       : {};
     return { ...base, ...fromAccent, ...colorSettings };
   }, [accentColor, colorSettings, initBrandColor, themePreset]);
@@ -1296,6 +1436,7 @@ export function ChatWidget({
   const resetChat = () => {
     setSending(false);
     setConversationId(null);
+    setActiveBoatTab("chat");
     setMessages([
       {
         id: "init",
@@ -1306,13 +1447,19 @@ export function ChatWidget({
     ]);
   };
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (
+    text: string,
+    attachment?: { name: string; type: string; url?: string },
+  ) => {
     // Add user message to UI immediately
+    const messageText =
+      text.trim() || (attachment ? `Attachment: ${attachment.name}` : "");
     const userMessage: WidgetMessage = {
       id: `u-${Date.now()}`,
-      text,
+      text: messageText,
       isUser: true,
       timestamp: new Date(),
+      attachment,
     };
     setMessages((prev) => [...prev, userMessage]);
     setSending(true);
@@ -1327,23 +1474,39 @@ export function ChatWidget({
           publicDefaultLocationId ??
           (boatId ? undefined : await ensurePublicDefaultLocationId());
 
-        const response = await publicApi<PublicLeadResponse>("POST", "/public/leads", {
-          location_id: resolvedLocationId,
-          boat_id: boatId,
-          source_url: sourceUrl || (typeof window !== "undefined" ? window.location.href : undefined),
-          message: text,
-          client_message_id: clientMessageId,
-          visitor_id: visitorIdRef.current,
-          ...(sessionJwt ? { session_jwt: sessionJwt } : {}),
-        });
+        const response = await publicApi<PublicLeadResponse>(
+          "POST",
+          "/public/leads",
+          {
+            location_id: resolvedLocationId,
+            boat_id: boatId,
+            source_url:
+              sourceUrl ||
+              (typeof window !== "undefined"
+                ? window.location.href
+                : undefined),
+            message: messageText,
+            text: messageText,
+            body: messageText,
+            client_message_id: clientMessageId,
+            visitor_id: visitorIdRef.current,
+            ...(attachment
+              ? { attachments: [{ name: attachment.name, type: attachment.type }] }
+              : {}),
+            ...(sessionJwt ? { session_jwt: sessionJwt } : {}),
+          },
+        );
 
         if (response.conversation?.id) {
           setConversationId(response.conversation.id);
         }
-        rememberWidgetLocationId(response.conversation?.location_id ?? resolvedLocationId);
+        rememberWidgetLocationId(
+          response.conversation?.location_id ?? resolvedLocationId,
+        );
 
         const aiText =
-          response.ai_message?.text?.trim() || response.ai_message?.body?.trim();
+          response.ai_message?.text?.trim() ||
+          response.ai_message?.body?.trim();
 
         setMessages((prev) => [
           ...prev,
@@ -1362,15 +1525,20 @@ export function ChatWidget({
           "POST",
           `/public/conversations/${conversationId}/ask`,
           {
-            body: text,
+            body: messageText,
+            text: messageText,
             client_message_id: clientMessageId,
             visitor_id: visitorIdRef.current,
+            ...(attachment
+              ? { attachments: [{ name: attachment.name, type: attachment.type }] }
+              : {}),
             ...(sessionJwt ? { session_jwt: sessionJwt } : {}),
           },
         );
 
         const aiText =
-          response.ai_message?.text?.trim() || response.ai_message?.body?.trim();
+          response.ai_message?.text?.trim() ||
+          response.ai_message?.body?.trim();
 
         setMessages((prev) => [
           ...prev,
@@ -1450,9 +1618,9 @@ export function ChatWidget({
                         ? t("header.auctionWidget")
                         : boatId
                           ? t("header.smartBoatWidget")
-                        : conversationId
-                          ? t("header.conversationActive")
-                          : t("header.onlineSupport")}
+                          : conversationId
+                            ? t("header.conversationActive")
+                            : t("header.onlineSupport")}
                     </p>
                     <div className="mt-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/80">
                       <span className="rounded-full bg-white/14 px-2.5 py-1 backdrop-blur">
@@ -1460,9 +1628,9 @@ export function ChatWidget({
                           ? t("header.boat", { boatId })
                           : boatId
                             ? t("header.locationAware", { boatId })
-                          : conversationId
-                            ? t("header.connected")
-                            : t("header.supportOnline")}
+                            : conversationId
+                              ? t("header.connected")
+                              : t("header.supportOnline")}
                       </span>
                       <span className="inline-flex items-center gap-1 text-white/75">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
@@ -1507,41 +1675,39 @@ export function ChatWidget({
                     {t("offline.description")}
                   </p>
                 </div>
+              ) : boatId && widgetMode === "auction" ? (
+                <AuctionWidgetBody
+                  boatId={boatId}
+                  locationId={locationId}
+                  colors={colors}
+                  locale={locale}
+                />
+              ) : boatId ? (
+                <SmartBoatWidgetBody
+                  activeTab={activeBoatTab}
+                  onTabChange={setActiveBoatTab}
+                  messages={messages}
+                  onSend={handleSendMessage}
+                  colors={colors}
+                  harborName={resolvedHarborName || harborName}
+                  sending={sending}
+                  boatId={boatId}
+                  locationId={resolvedLocationId ?? locationId}
+                  conversationId={conversationId}
+                  locale={locale}
+                  enabledTabs={enabledTabs}
+                  sessionJwt={sessionJwt}
+                />
               ) : (
-                boatId && widgetMode === "auction" ? (
-                  <AuctionWidgetBody
-                    boatId={boatId}
-                    locationId={locationId}
-                    colors={colors}
-                    locale={locale}
-                  />
-                ) : boatId ? (
-                  <SmartBoatWidgetBody
-                    activeTab={activeBoatTab}
-                    onTabChange={setActiveBoatTab}
-                    messages={messages}
-                    onSend={handleSendMessage}
-                    colors={colors}
-                    harborName={resolvedHarborName || harborName}
-                    sending={sending}
-                    boatId={boatId}
-                    locationId={resolvedLocationId ?? locationId}
-                    conversationId={conversationId}
-                    locale={locale}
-                    enabledTabs={enabledTabs}
-                    sessionJwt={sessionJwt}
-                  />
-                ) : (
-                  <ChatBody
-                    messages={messages}
-                    onSend={handleSendMessage}
-                    typing={sending}
-                    colors={colors}
-                    harborName={harborName}
-                    sending={sending}
-                    locale={locale}
-                  />
-                )
+                <ChatBody
+                  messages={messages}
+                  onSend={handleSendMessage}
+                  typing={sending}
+                  colors={colors}
+                  harborName={harborName}
+                  sending={sending}
+                  locale={locale}
+                />
               )}
             </div>
           </div>

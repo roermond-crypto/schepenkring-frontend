@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { ChatWidget } from "@/components/widget/ChatWidget";
+import { ContextAwareChatWidget } from "@/components/widget/ContextAwareChatWidget";
 
 export function GlobalChatWidget() {
   const pathname = usePathname() ?? "";
@@ -12,5 +12,5 @@ export function GlobalChatWidget() {
     return null;
   }
 
-  return <ChatWidget />;
+  return <ContextAwareChatWidget />;
 }
