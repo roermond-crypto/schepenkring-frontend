@@ -23,6 +23,14 @@ import { cn } from "@/lib/utils";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 import { AuctionWidgetBody } from "@/components/widget/AuctionWidgetBody";
+import {
+  clearSharedChatState,
+  getOrCreateSharedVisitorId,
+  getSharedChatStorageKey,
+  readSharedChatState,
+  type SharedChatMessage,
+  writeSharedChatState,
+} from "@/lib/chat/shared-public-chat";
 
 type ThemePreset = "ocean" | "violet" | "sunset";
 type WidgetMode = "chat" | "smart" | "auction";
@@ -32,6 +40,8 @@ interface WidgetMessage {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  provider?: string;
+  model?: string | null;
 }
 
 interface PublicLeadResponse {
@@ -43,6 +53,10 @@ interface PublicLeadResponse {
     id: string;
     text?: string | null;
     body?: string | null;
+    metadata?: {
+      provider?: string;
+      model?: string | null;
+    } | null;
   } | null;
 }
 
@@ -52,6 +66,10 @@ interface PublicConversationAskResponse {
     id: string;
     text?: string | null;
     body?: string | null;
+    metadata?: {
+      provider?: string;
+      model?: string | null;
+    } | null;
   } | null;
 }
 
@@ -161,20 +179,6 @@ async function publicApi<T>(
   return res.json();
 }
 
-function getOrCreateVisitorId(): string {
-  if (typeof window === "undefined") {
-    return `visitor-${Date.now()}`;
-  }
-
-  const storageKey = "nauticsecure_widget_visitor_id";
-  const existing = window.localStorage.getItem(storageKey);
-  if (existing) return existing;
-
-  const created = `visitor-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  window.localStorage.setItem(storageKey, created);
-  return created;
-}
-
 function parsePositiveNumber(value: string | number | null | undefined): number | undefined {
   if (value === null || value === undefined || value === "") {
     return undefined;
@@ -274,6 +278,48 @@ function rememberWidgetLocationId(locationId?: number | null) {
     "nauticsecure_widget_location_id",
     String(parsed),
   );
+}
+
+function serializeWidgetMessages(messages: WidgetMessage[]): SharedChatMessage[] {
+  return messages
+    .filter((message) => message.id !== "init")
+    .map((message) => ({
+      id: message.id,
+      sender: message.isUser ? "user" : "ai",
+      text: message.text,
+      createdAt: message.timestamp.toISOString(),
+      provider: message.provider,
+      model: message.model,
+    }));
+}
+
+function deserializeWidgetMessages(messages: SharedChatMessage[]): WidgetMessage[] {
+  return messages.map((message) => ({
+    id: message.id,
+    isUser: message.sender === "user",
+    text: message.text,
+    timestamp: new Date(message.createdAt),
+    provider: message.provider,
+    model: message.model,
+  }));
+}
+
+function formatProviderLabel(provider?: string, model?: string | null) {
+  if (!provider && !model) {
+    return null;
+  }
+
+  const normalizedProvider = (provider ?? "ai").toLowerCase();
+  const providerLabel =
+    normalizedProvider === "openai"
+      ? "OpenAI"
+      : normalizedProvider === "gemini"
+        ? "Gemini"
+        : normalizedProvider === "fallback"
+          ? "Knowledge fallback"
+          : provider ?? "AI";
+
+  return model ? `${providerLabel} · ${model}` : providerLabel;
 }
 
 // ── Chat Body Sub-Component ────────────────────────────────────────
@@ -438,6 +484,13 @@ function ChatBody({
                     : undefined
                 }
               >
+                {!msg.isUser && (msg.provider || msg.model) ? (
+                  <div className="mb-2">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                      {formatProviderLabel(msg.provider, msg.model)}
+                    </span>
+                  </div>
+                ) : null}
                 <p className="whitespace-pre-wrap">{msg.text}</p>
                 <p
                   className={cn(
@@ -1099,16 +1152,23 @@ export function ChatWidget({
   const [publicDefaultLocationId, setPublicDefaultLocationId] = useState<number | undefined>(
     undefined,
   );
-  const visitorIdRef = useRef<string>(getOrCreateVisitorId());
+  const visitorIdRef = useRef<string>(getOrCreateSharedVisitorId());
   const publicLocationLookupRef = useRef<Promise<number | undefined> | null>(null);
-  const [messages, setMessages] = useState<WidgetMessage[]>([
-    {
-      id: "init",
-      isUser: false,
-      text: welcomeText || t("initialMessage"),
-      timestamp: new Date(),
-    },
-  ]);
+  const restoredSharedChatKeyRef = useRef<string | null>(null);
+  const buildInitialMessages = useCallback(
+    () => [
+      {
+        id: "init",
+        isUser: false,
+        text: welcomeText || t("initialMessage"),
+        timestamp: new Date(),
+      },
+    ],
+    [t, welcomeText],
+  );
+  const [messages, setMessages] = useState<WidgetMessage[]>(() => buildInitialMessages());
+  const sharedChatLocationId =
+    locationId ?? detectRuntimeLocationId() ?? publicDefaultLocationId;
 
   useEffect(() => {
     if (isEmbedded && typeof window !== "undefined") {
@@ -1126,6 +1186,75 @@ export function ChatWidget({
   useEffect(() => {
     rememberWidgetLocationId(locationId ?? detectRuntimeLocationId());
   }, [locationId]);
+
+  useEffect(() => {
+    if (!sharedChatLocationId) {
+      return;
+    }
+
+    const storageKey = getSharedChatStorageKey(sharedChatLocationId);
+    if (restoredSharedChatKeyRef.current === storageKey) {
+      return;
+    }
+
+    restoredSharedChatKeyRef.current = storageKey;
+    const cachedState = readSharedChatState(sharedChatLocationId);
+
+    if (!cachedState) {
+      setConversationId(null);
+      setMessages(buildInitialMessages());
+      return;
+    }
+
+    setConversationId(cachedState.conversationId);
+    setMessages(
+      cachedState.messages.length > 0
+        ? deserializeWidgetMessages(cachedState.messages)
+        : buildInitialMessages(),
+    );
+  }, [buildInitialMessages, sharedChatLocationId]);
+
+  useEffect(() => {
+    if (!sharedChatLocationId) {
+      return;
+    }
+
+    writeSharedChatState(sharedChatLocationId, {
+      conversationId,
+      messages: serializeWidgetMessages(messages),
+      updatedAt: new Date().toISOString(),
+    });
+  }, [conversationId, messages, sharedChatLocationId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !sharedChatLocationId) {
+      return;
+    }
+
+    const storageKey = getSharedChatStorageKey(sharedChatLocationId);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== storageKey) {
+        return;
+      }
+
+      const cachedState = readSharedChatState(sharedChatLocationId);
+      if (!cachedState) {
+        setConversationId(null);
+        setMessages(buildInitialMessages());
+        return;
+      }
+
+      setConversationId(cachedState.conversationId);
+      setMessages(
+        cachedState.messages.length > 0
+          ? deserializeWidgetMessages(cachedState.messages)
+          : buildInitialMessages(),
+      );
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [buildInitialMessages, sharedChatLocationId]);
 
   const ensurePublicDefaultLocationId = useCallback(async (): Promise<number | undefined> => {
     const existingLocationId =
@@ -1202,14 +1331,8 @@ export function ChatWidget({
   const resetChat = () => {
     setSending(false);
     setConversationId(null);
-    setMessages([
-      {
-        id: "init",
-        isUser: false,
-        text: welcomeText || t("initialMessage"),
-        timestamp: new Date(),
-      },
-    ]);
+    setMessages(buildInitialMessages());
+    clearSharedChatState(sharedChatLocationId);
   };
 
   const handleSendMessage = async (text: string) => {
@@ -1257,6 +1380,8 @@ export function ChatWidget({
             isUser: false,
             text: aiText || t("system.firstReply"),
             timestamp: new Date(),
+            provider: response.ai_message?.metadata?.provider,
+            model: response.ai_message?.metadata?.model ?? null,
           },
         ]);
       } else {
@@ -1283,6 +1408,8 @@ export function ChatWidget({
             isUser: false,
             text: aiText || t("system.sentReply"),
             timestamp: new Date(),
+            provider: response.ai_message?.metadata?.provider,
+            model: response.ai_message?.metadata?.model ?? null,
           },
         ]);
       }
