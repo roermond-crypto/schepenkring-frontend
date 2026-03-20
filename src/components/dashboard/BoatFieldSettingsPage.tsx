@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   Database,
   GitBranch,
@@ -15,12 +16,16 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
+import { normalizeRole } from "@/lib/auth/roles";
 import { cn } from "@/lib/utils";
 import {
   BOAT_FIELD_PRIORITY_OPTIONS,
   BOAT_FIELD_SOURCES,
   createBoatField,
   deleteBoatField,
+  fillMissingBoatFieldHelpDefaults,
+  generateBoatFieldMappingsWithAi,
+  generateBoatFieldHelpBulk,
   generateBoatFieldHelp,
   getBoatFieldMappings,
   listBoatFields,
@@ -47,6 +52,7 @@ const FIELD_TYPE_OPTIONS = [
   "select",
 ] as const;
 const MATCH_TYPE_OPTIONS = ["exact", "contains", "regex", "manual"] as const;
+const ALL_BLOCKS_FILTER = "__all_blocks__";
 
 type EditableMappingRow = Pick<
   BoatFieldMappingRecord,
@@ -167,7 +173,19 @@ function groupFieldsByBlock(fields: BoatFieldRecord[]) {
   }, {});
 }
 
+function humanizeKey(value: string): string {
+  return value
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
 export function BoatFieldSettingsPage() {
+  const params = useParams<{
+    locale?: string;
+    role?: string;
+    fieldKey?: string;
+  }>();
+  const router = useRouter();
   const [fields, setFields] = useState<BoatFieldRecord[]>([]);
   const [storageTargets, setStorageTargets] = useState<BoatFieldStorageTarget[]>(
     [],
@@ -177,6 +195,8 @@ export function BoatFieldSettingsPage() {
     DEFAULT_FORM_STATE,
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBlockFilter, setSelectedBlockFilter] =
+    useState<string>(ALL_BLOCKS_FILTER);
   const [selectedSource, setSelectedSource] =
     useState<BoatFieldSource>("scrape");
   const [mappingRows, setMappingRows] = useState<EditableMappingRow[]>([]);
@@ -199,15 +219,37 @@ export function BoatFieldSettingsPage() {
   const [savingMappings, setSavingMappings] = useState(false);
   const [deletingField, setDeletingField] = useState(false);
   const [generatingHelp, setGeneratingHelp] = useState(false);
+  const [fillingDefaultHelp, setFillingDefaultHelp] = useState(false);
+  const [generatingBulkHelp, setGeneratingBulkHelp] = useState(false);
+  const [generatingAiMappings, setGeneratingAiMappings] = useState(false);
+  const locale = typeof params?.locale === "string" ? params.locale : "nl";
+  const role =
+    normalizeRole(typeof params?.role === "string" ? params.role : null) ??
+    "admin";
+  const requestedFieldKey =
+    typeof params?.fieldKey === "string"
+      ? decodeURIComponent(params.fieldKey)
+      : null;
+  const settingsBasePath = `/${locale}/dashboard/${role}/yachts/settings`;
 
   const selectedField =
     fields.find((field) => field.id === selectedFieldId) ?? null;
 
   const filteredFields = useMemo(() => {
     const needle = searchQuery.trim().toLowerCase();
-    if (!needle) return fields;
 
     return fields.filter((field) => {
+      if (
+        selectedBlockFilter !== ALL_BLOCKS_FILTER &&
+        field.block_key !== selectedBlockFilter
+      ) {
+        return false;
+      }
+
+      if (!needle) {
+        return true;
+      }
+
       const labels = Object.values(field.labels_json ?? {});
       return (
         field.internal_key.toLowerCase().includes(needle) ||
@@ -216,7 +258,7 @@ export function BoatFieldSettingsPage() {
         labels.some((label) => label.toLowerCase().includes(needle))
       );
     });
-  }, [fields, searchQuery]);
+  }, [fields, searchQuery, selectedBlockFilter]);
 
   const groupedFields = useMemo(
     () => groupFieldsByBlock(filteredFields),
@@ -249,6 +291,16 @@ export function BoatFieldSettingsPage() {
     [fieldForm.block_key, fields],
   );
 
+  const blockOptionsForSelectedStep = useMemo(() => {
+    const scopedFields = fields.filter(
+      (field) => field.step_key === fieldForm.step_key,
+    );
+
+    return Array.from(
+      new Set(scopedFields.map((field) => field.block_key).filter(Boolean)),
+    ).sort();
+  }, [fieldForm.step_key, fields]);
+
   const availableStorageColumns = useMemo(() => {
     const selectedTarget =
       storageTargets.find(
@@ -263,6 +315,34 @@ export function BoatFieldSettingsPage() {
       sourceSummary.find((summary) => summary.source === selectedSource) ?? null,
     [selectedSource, sourceSummary],
   );
+
+  const totalObservedRawValues = useMemo(
+    () =>
+      sourceSummary.reduce(
+        (total, summary) => total + (summary.observed_values_count ?? 0),
+        0,
+      ),
+    [sourceSummary],
+  );
+
+  const missingHelpFieldCount = useMemo(
+    () =>
+      fields.filter((field) =>
+        HELP_LOCALES.some((locale) => {
+          const value = field.help_json?.[locale];
+          return typeof value !== "string" || value.trim() === "";
+        }),
+      ).length,
+    [fields],
+  );
+
+  const syncSettingsPath = (fieldKey?: string | null) => {
+    const nextPath = fieldKey
+      ? `${settingsBasePath}/${encodeURIComponent(fieldKey)}`
+      : settingsBasePath;
+
+    router.replace(nextPath, { scroll: false });
+  };
 
   const loadFields = async (preferredFieldId?: number | null) => {
     try {
@@ -314,6 +394,73 @@ export function BoatFieldSettingsPage() {
   }, []);
 
   useEffect(() => {
+    if (!fieldForm.step_key) {
+      return;
+    }
+
+    if (blockOptionsForSelectedStep.length === 0) {
+      return;
+    }
+
+    if (blockOptionsForSelectedStep.includes(fieldForm.block_key)) {
+      return;
+    }
+
+    setFieldForm((previous) => ({
+      ...previous,
+      block_key: blockOptionsForSelectedStep[0] ?? previous.block_key,
+    }));
+  }, [blockOptionsForSelectedStep, fieldForm.block_key, fieldForm.step_key]);
+
+  useEffect(() => {
+    if (loadingFields) {
+      return;
+    }
+
+    const normalizedRequestedFieldKey = requestedFieldKey?.trim().toLowerCase();
+    if (!normalizedRequestedFieldKey) {
+      return;
+    }
+
+    const requestedField = fields.find(
+      (field) => field.internal_key.toLowerCase() === normalizedRequestedFieldKey,
+    );
+
+    if (requestedField) {
+      if (requestedField.id !== selectedFieldId) {
+        setSelectedFieldId(requestedField.id);
+        setFieldForm(mapFieldToFormState(requestedField));
+      }
+
+      setSelectedBlockFilter((previous) =>
+        previous === ALL_BLOCKS_FILTER ? requestedField.block_key : previous,
+      );
+      return;
+    }
+
+    const fallbackTarget = storageTargets[0];
+    const nextRequestedFieldKey = requestedFieldKey ?? "";
+    setSelectedFieldId(null);
+    setFieldForm((previous) => {
+      if (
+        previous.internal_key === nextRequestedFieldKey &&
+        previous.storage_relation === (fallbackTarget?.relation ?? null) &&
+        previous.storage_column === (fallbackTarget?.columns?.[0] ?? "") &&
+        selectedFieldId === null
+      ) {
+        return previous;
+      }
+
+      return {
+        ...DEFAULT_FORM_STATE,
+        internal_key: nextRequestedFieldKey,
+        storage_relation: fallbackTarget?.relation ?? null,
+        storage_column: fallbackTarget?.columns?.[0] ?? "",
+      };
+    });
+  }, [fields, loadingFields, requestedFieldKey, selectedFieldId, storageTargets]);
+
+  useEffect(() => {
     const loadMappings = async () => {
       if (!selectedFieldId) {
         setMappingRows([]);
@@ -350,6 +497,7 @@ export function BoatFieldSettingsPage() {
 
   const handleCreateNewField = () => {
     const fallbackTarget = storageTargets[0];
+    syncSettingsPath(null);
     setSelectedFieldId(null);
     setFieldForm({
       ...DEFAULT_FORM_STATE,
@@ -364,6 +512,7 @@ export function BoatFieldSettingsPage() {
   const handleSelectField = (field: BoatFieldRecord) => {
     setSelectedFieldId(field.id);
     setFieldForm(mapFieldToFormState(field));
+    syncSettingsPath(field.internal_key);
   };
 
   const handleFieldChange = <K extends keyof BoatFieldFormState>(
@@ -586,6 +735,7 @@ export function BoatFieldSettingsPage() {
       toast.success(
         selectedFieldId ? "Boat field updated." : "Boat field created.",
       );
+      syncSettingsPath(savedField.internal_key);
       await loadFields(savedField.id);
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Failed to save boat field."));
@@ -649,6 +799,59 @@ export function BoatFieldSettingsPage() {
     }
   };
 
+  const handleFillMissingHelpDefaults = async () => {
+    try {
+      setFillingDefaultHelp(true);
+      const result = await fillMissingBoatFieldHelpDefaults();
+      toast.success(
+        result.updated_fields > 0
+          ? `Filled help text for ${result.updated_fields} field${
+              result.updated_fields === 1 ? "" : "s"
+            }.`
+          : "All boat fields already had help text.",
+      );
+      await loadFields(selectedFieldId);
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(error, "Failed to fill missing help text."),
+      );
+    } finally {
+      setFillingDefaultHelp(false);
+    }
+  };
+
+  const handleGenerateBulkHelp = async () => {
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        `Generate AI help for ${missingHelpFieldCount} field${
+          missingHelpFieldCount === 1 ? "" : "s"
+        }? This can take a while and will use your OpenAI API.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setGeneratingBulkHelp(true);
+      const result = await generateBoatFieldHelpBulk();
+      toast.success(
+        result.updated_fields > 0
+          ? `AI help generated for ${result.updated_fields} field${
+              result.updated_fields === 1 ? "" : "s"
+            }.`
+          : "All boat fields already had help text.",
+      );
+      await loadFields(selectedFieldId);
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(error, "Failed to generate AI help in bulk."),
+      );
+    } finally {
+      setGeneratingBulkHelp(false);
+    }
+  };
+
   const handleDeleteField = async () => {
     if (!selectedFieldId || !selectedField) return;
     if (
@@ -662,6 +865,7 @@ export function BoatFieldSettingsPage() {
       setDeletingField(true);
       await deleteBoatField(selectedFieldId);
       toast.success("Boat field deleted.");
+      syncSettingsPath(null);
       await loadFields(null);
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Failed to delete boat field."));
@@ -708,6 +912,65 @@ export function BoatFieldSettingsPage() {
       toast.error(getApiErrorMessage(error, "Failed to save mappings."));
     } finally {
       setSavingMappings(false);
+    }
+  };
+
+  const handleGenerateAiMappings = async () => {
+    if (!selectedFieldId) {
+      toast.error("Save the field before generating mappings.");
+      return;
+    }
+
+    if (totalObservedRawValues === 0) {
+      toast.error("No observed values are available yet for AI mapping.");
+      return;
+    }
+
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        `Send all observed Yachtshift, Webscraper, and import values plus existing DB values to OpenAI for "${fieldForm.internal_key || selectedField?.internal_key || "this field"}"? Existing mappings stay untouched.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setGeneratingAiMappings(true);
+      const result = await generateBoatFieldMappingsWithAi(selectedFieldId);
+      const refreshedMappings = await getBoatFieldMappings(
+        selectedFieldId,
+        selectedSource,
+      );
+
+      setMappingRows(
+        refreshedMappings.mappings.map((mapping) => ({
+          external_key: mapping.external_key ?? "",
+          external_value: mapping.external_value,
+          normalized_value: mapping.normalized_value,
+          match_type: mapping.match_type,
+        })),
+      );
+      setSourceSummary(
+        refreshedMappings.source_summary ?? result.source_summary ?? [],
+      );
+      setObservations(refreshedMappings.observations ?? []);
+
+      toast.success(
+        result.created_mappings > 0
+          ? `AI drafted ${result.created_mappings} mapping${
+              result.created_mappings === 1 ? "" : "s"
+            } across all sources.`
+          : "No new AI mappings were needed.",
+      );
+
+      await loadFields(selectedFieldId);
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(error, "Failed to generate AI mapping drafts."),
+      );
+    } finally {
+      setGeneratingAiMappings(false);
     }
   };
 
@@ -760,6 +1023,20 @@ export function BoatFieldSettingsPage() {
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:bg-white"
                 />
               </div>
+              <div className="mt-3">
+                <select
+                  value={selectedBlockFilter}
+                  onChange={(event) => setSelectedBlockFilter(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:bg-white"
+                >
+                  <option value={ALL_BLOCKS_FILTER}>All blocks</option>
+                  {blockSuggestions.map((block) => (
+                    <option key={block} value={block}>
+                      {humanizeKey(block)}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="max-h-[calc(100vh-250px)] space-y-5 overflow-y-auto p-4">
@@ -770,14 +1047,14 @@ export function BoatFieldSettingsPage() {
                 </div>
               ) : Object.keys(groupedFields).length === 0 ? (
                 <p className="text-sm text-slate-500">
-                  No fields found for the current search.
+                  No fields found for the current search or block filter.
                 </p>
               ) : (
                 Object.entries(groupedFields).map(([blockKey, blockFields]) => (
                   <div key={blockKey} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                        {blockKey.replaceAll("_", " ")}
+                        {humanizeKey(blockKey)}
                       </p>
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
                         {blockFields.length}
@@ -961,38 +1238,62 @@ export function BoatFieldSettingsPage() {
                         <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                           Block
                         </label>
-                        <input
-                          list="boat-field-block-suggestions"
+                        <select
                           value={fieldForm.block_key}
                           onChange={(event) =>
                             handleFieldChange("block_key", event.target.value)
                           }
                           className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500"
-                        />
-                        <datalist id="boat-field-block-suggestions">
-                          {blockSuggestions.map((block) => (
-                            <option key={block} value={block} />
-                          ))}
-                        </datalist>
+                        >
+                          {blockOptionsForSelectedStep.length === 0 ? (
+                            <option value="">
+                              No blocks available for this step
+                            </option>
+                          ) : (
+                            blockOptionsForSelectedStep.map((block) => (
+                              <option key={block} value={block}>
+                                {humanizeKey(block)}
+                              </option>
+                            ))
+                          )}
+                        </select>
                       </div>
 
                       <div>
                         <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                           Step / Tab
                         </label>
-                        <input
-                          list="boat-field-step-suggestions"
+                        <select
                           value={fieldForm.step_key}
-                          onChange={(event) =>
-                            handleFieldChange("step_key", event.target.value)
-                          }
+                          onChange={(event) => {
+                            const nextStep = event.target.value;
+                            const nextBlockOptions = Array.from(
+                              new Set(
+                                fields
+                                  .filter((field) => field.step_key === nextStep)
+                                  .map((field) => field.block_key)
+                                  .filter(Boolean),
+                              ),
+                            ).sort();
+
+                            setFieldForm((previous) => ({
+                              ...previous,
+                              step_key: nextStep,
+                              block_key: nextBlockOptions.includes(
+                                previous.block_key,
+                              )
+                                ? previous.block_key
+                                : nextBlockOptions[0] ?? "",
+                            }));
+                          }}
                           className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500"
-                        />
-                        <datalist id="boat-field-step-suggestions">
+                        >
                           {stepSuggestions.map((step) => (
-                            <option key={step} value={step} />
+                            <option key={step} value={step}>
+                              {humanizeKey(step)}
+                            </option>
                           ))}
-                        </datalist>
+                        </select>
                       </div>
 
                       <div>
@@ -1068,19 +1369,50 @@ export function BoatFieldSettingsPage() {
                           the yacht form.
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleGenerateHelp}
-                        disabled={generatingHelp}
-                        className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {generatingHelp ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Sparkles size={16} />
-                        )}
-                        Generate with AI
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleFillMissingHelpDefaults}
+                          disabled={fillingDefaultHelp || missingHelpFieldCount === 0}
+                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {fillingDefaultHelp ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save size={16} />
+                          )}
+                          Fill Missing for All
+                          {missingHelpFieldCount > 0
+                            ? ` (${missingHelpFieldCount})`
+                            : ""}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleGenerateBulkHelp}
+                          disabled={generatingBulkHelp || missingHelpFieldCount === 0}
+                          className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {generatingBulkHelp ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles size={16} />
+                          )}
+                          Generate Missing with AI
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleGenerateHelp}
+                          disabled={generatingHelp}
+                          className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {generatingHelp ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles size={16} />
+                          )}
+                          Generate with AI
+                        </button>
+                      </div>
                     </div>
                     <div className="grid gap-4 md:grid-cols-3">
                       {HELP_LOCALES.map((locale) => (
@@ -1331,6 +1663,19 @@ export function BoatFieldSettingsPage() {
                         Value mappings for <span className="font-mono">{selectedSource}</span>
                       </p>
                       <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={handleGenerateAiMappings}
+                          disabled={generatingAiMappings || totalObservedRawValues === 0}
+                          className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-4 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {generatingAiMappings ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles size={16} />
+                          )}
+                          Draft All Sources with AI
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleAddMappingRow()}

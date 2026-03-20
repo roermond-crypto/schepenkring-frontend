@@ -204,6 +204,7 @@ export function useImagePipeline(
     );
 
     // Toggle keep original
+    // Toggle keep original
     const toggleKeepOriginal = useCallback(
         async (imageId: number) => {
             if (!yachtId) return;

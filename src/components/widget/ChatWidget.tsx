@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -34,7 +35,10 @@ interface WidgetMessage {
 }
 
 interface PublicLeadResponse {
-  conversation?: { id: string };
+  conversation?: {
+    id: string;
+    location_id?: number | null;
+  };
   ai_message?: {
     id: string;
     text?: string | null;
@@ -73,6 +77,12 @@ interface WidgetInitResponse {
     } | null;
     tabs_enabled?: string[];
   } | null;
+}
+
+interface PublicLocation {
+  id: number;
+  name?: string | null;
+  chat_widget_enabled?: boolean | null;
 }
 
 interface ChatWidgetProps {
@@ -187,6 +197,107 @@ function getOrCreateVisitorId(): string {
   const created = `visitor-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   window.localStorage.setItem(storageKey, created);
   return created;
+}
+
+function parsePositiveNumber(value: string | number | null | undefined): number | undefined {
+  if (value === null || value === undefined || value === "") {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return undefined;
+  }
+
+  return parsed;
+}
+
+function detectLocationIdFromUserData(): number | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  try {
+    const raw = window.localStorage.getItem("user_data");
+    if (!raw) {
+      return undefined;
+    }
+
+    const parsed = JSON.parse(raw) as {
+      location_id?: number | string | null;
+      locationId?: number | string | null;
+      client_location_id?: number | string | null;
+      location?: { id?: number | string | null } | null;
+      client_location?: { id?: number | string | null } | null;
+    };
+
+    const candidates = [
+      parsed.location_id,
+      parsed.locationId,
+      parsed.client_location_id,
+      parsed.location?.id,
+      parsed.client_location?.id,
+    ];
+
+    for (const candidate of candidates) {
+      const locationId = parsePositiveNumber(candidate);
+      if (locationId) {
+        return locationId;
+      }
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function detectRuntimeLocationId(): number | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const metaLocation =
+    document
+      .querySelector('meta[name="nauticsecure:location-id"]')
+      ?.getAttribute("content") ?? undefined;
+
+  const candidates = [
+    params.get("locationId"),
+    params.get("location_id"),
+    params.get("harborId"),
+    document.body?.dataset.locationId,
+    document.documentElement?.dataset.locationId,
+    metaLocation,
+    detectLocationIdFromUserData(),
+    window.localStorage.getItem("nauticsecure_widget_location_id"),
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = parsePositiveNumber(candidate);
+    if (parsed) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+}
+
+function rememberWidgetLocationId(locationId?: number | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const parsed = parsePositiveNumber(locationId ?? undefined);
+  if (!parsed) {
+    return;
+  }
+
+  window.localStorage.setItem(
+    "nauticsecure_widget_location_id",
+    String(parsed),
+  );
 }
 
 // ── Chat Body Sub-Component ────────────────────────────────────────
@@ -1002,6 +1113,7 @@ export function ChatWidget({
   const locale = localeOverride || routeLocale;
   const { isOnline } = useNetworkStatus();
   const [isOpen, setIsOpen] = useState(false);
+  const [activeBoatTab, setActiveBoatTab] = useState<"chat" | "tasks" | "booking">("chat");
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [resolvedLocationId, setResolvedLocationId] = useState<number | undefined>(
@@ -1019,8 +1131,11 @@ export function ChatWidget({
   const [initBrandColor, setInitBrandColor] = useState<string | undefined>();
   const [activeBoatTab, setActiveBoatTab] = useState<"chat" | "tasks" | "booking">(
     "chat",
+  const [publicDefaultLocationId, setPublicDefaultLocationId] = useState<number | undefined>(
+    undefined,
   );
   const visitorIdRef = useRef<string>(getOrCreateVisitorId());
+  const publicLocationLookupRef = useRef<Promise<number | undefined> | null>(null);
   const [messages, setMessages] = useState<WidgetMessage[]>([
     {
       id: "init",
@@ -1096,11 +1211,66 @@ export function ChatWidget({
     };
 
     void initWidget();
+    
+    rememberWidgetLocationId(locationId ?? detectRuntimeLocationId());
 
     return () => {
       cancelled = true;
     };
   }, [boatId, harborName, locationId, widgetMode]);
+    
+
+  const ensurePublicDefaultLocationId = useCallback(async (): Promise<number | undefined> => {
+    const existingLocationId =
+      locationId ?? detectRuntimeLocationId() ?? publicDefaultLocationId;
+
+    if (existingLocationId) {
+      setPublicDefaultLocationId(existingLocationId);
+      rememberWidgetLocationId(existingLocationId);
+      return existingLocationId;
+    }
+
+    if (!publicLocationLookupRef.current) {
+      publicLocationLookupRef.current = publicApi<PublicLocation[]>(
+        "GET",
+        "/public/locations",
+      )
+        .then((locations) => {
+          const preferredLocation =
+            locations.find((location) => location.chat_widget_enabled !== false) ??
+            locations[0];
+          const resolvedLocationId = parsePositiveNumber(preferredLocation?.id);
+
+          if (resolvedLocationId) {
+            setPublicDefaultLocationId(resolvedLocationId);
+            rememberWidgetLocationId(resolvedLocationId);
+          }
+
+          return resolvedLocationId;
+        })
+        .catch((error) => {
+          console.error("[ChatWidget] Failed to load public locations:", error);
+          return undefined;
+        })
+        .finally(() => {
+          publicLocationLookupRef.current = null;
+        });
+    }
+
+    return publicLocationLookupRef.current;
+  }, [locationId, publicDefaultLocationId]);
+
+  useEffect(() => {
+    if (boatId) {
+      return;
+    }
+
+    if (locationId ?? detectRuntimeLocationId()) {
+      return;
+    }
+
+    void ensurePublicDefaultLocationId();
+  }, [boatId, locationId, ensurePublicDefaultLocationId]);
 
   const colors = useMemo<WidgetColors>(() => {
     const base = THEME_PRESETS[themePreset];
@@ -1151,9 +1321,15 @@ export function ChatWidget({
       if (!conversationId) {
         // First message: create lead + conversation + initial message
         const clientMessageId = `widget-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const resolvedLocationId =
+          locationId ??
+          detectRuntimeLocationId() ??
+          publicDefaultLocationId ??
+          (boatId ? undefined : await ensurePublicDefaultLocationId());
 
         const response = await publicApi<PublicLeadResponse>("POST", "/public/leads", {
-          location_id: resolvedLocationId ?? locationId ?? 1,
+          location_id: resolvedLocationId,
+          boat_id: boatId,
           source_url: sourceUrl || (typeof window !== "undefined" ? window.location.href : undefined),
           message: text,
           client_message_id: clientMessageId,
@@ -1164,6 +1340,7 @@ export function ChatWidget({
         if (response.conversation?.id) {
           setConversationId(response.conversation.id);
         }
+        rememberWidgetLocationId(response.conversation?.location_id ?? resolvedLocationId);
 
         const aiText =
           response.ai_message?.text?.trim() || response.ai_message?.body?.trim();
