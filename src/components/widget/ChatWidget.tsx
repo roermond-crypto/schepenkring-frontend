@@ -1093,6 +1093,7 @@ export function ChatWidget({
   const locale = localeOverride || routeLocale;
   const { isOnline } = useNetworkStatus();
   const [isOpen, setIsOpen] = useState(false);
+  const [activeBoatTab, setActiveBoatTab] = useState<"chat" | "tasks" | "booking">("chat");
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [publicDefaultLocationId, setPublicDefaultLocationId] = useState<number | undefined>(
