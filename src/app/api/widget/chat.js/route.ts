@@ -17,6 +17,7 @@ export async function GET() {
   const locale = script.getAttribute('data-locale') || document.documentElement.lang?.split('-')[0] || 'en';
   const accentColor = script.getAttribute('data-accent-color') || '';
   const themePreset = script.getAttribute('data-theme') || 'ocean';
+  const welcomeText = script.getAttribute('data-welcome-text') || '';
   
   // Create container
   const container = document.createElement('div');
@@ -43,6 +44,7 @@ export async function GET() {
   if (locale) params.append('locale', locale);
   if (accentColor) params.append('accentColor', accentColor);
   if (themePreset) params.append('themePreset', themePreset);
+  if (welcomeText) params.append('welcomeText', welcomeText);
   params.append('sourceUrl', window.location.href);
   
   const iframeSrc = \`\${host}/\${locale}/widget?\${params.toString()}\`;

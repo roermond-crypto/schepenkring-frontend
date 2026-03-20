@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { isSupportedLocale } from "@/lib/i18n";
-import { ContextAwareChatWidget } from "@/components/widget/ContextAwareChatWidget";
+import { GlobalChatWidget } from "@/components/widget/GlobalChatWidget";
 
 type LocaleLayoutProps = {
   children: React.ReactNode;
@@ -17,7 +17,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   return (
     <>
       {children}
-      <ContextAwareChatWidget />
+      <GlobalChatWidget />
     </>
   );
 }

@@ -14,6 +14,7 @@ import {
   FieldCorrectionControls,
   type CorrectionLabel,
 } from "@/components/yachts/FieldCorrectionControls";
+import { BoatFieldSettingsLink } from "@/components/yachts/BoatFieldSettingsLink";
 
 type ConfigurableBoatFieldBlockProps = {
   block: BoatFormConfigBlock;
@@ -277,6 +278,7 @@ function DynamicField({
       <div className="flex items-center gap-2">
         <BlockLabel className="mb-0">{field.label}</BlockLabel>
         <FieldHelpTooltip text={field.help_text} label={field.label} />
+        <BoatFieldSettingsLink fieldName={field.internal_key} />
         {yachtId && (
           <FieldHistoryPopover
             yachtId={yachtId}

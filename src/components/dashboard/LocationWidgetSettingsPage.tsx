@@ -97,7 +97,7 @@ export function LocationWidgetSettingsPage() {
   const [accentColor, setAccentColor] = useState("#2563eb");
   const [themePreset, setThemePreset] = useState("ocean");
   const [tenant, setTenant] = useState("schepenkring");
-  const [testBoatId, setTestBoatId] = useState("4821");
+  const [testBoatId, setTestBoatId] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [welcomeText, setWelcomeText] = useState("");
   const [copied, setCopied] = useState(false);
@@ -171,19 +171,39 @@ export function LocationWidgetSettingsPage() {
       ? window.location.origin
       : "https://app.schepen-kring.nl";
 
-  const embedCode = `<!-- NauticSecure Chat Widget -->
-<script 
-  src="${domain}/api/widget/chat.js"
-  data-boat-id="${testBoatId}"
-  data-location-id="${selectedLocationId}"
-  data-harbor-id="${selectedLocationId}"
-  data-harbor-name="${locationName}"
-  data-tenant="${tenant}"
-  data-accent-color="${accentColor}"
-  data-theme="${themePreset}"
-  data-locale="${locale}"
-  defer
-></script>`;
+  const embedCodeLines = [
+    "<!-- NauticSecure Chat Widget -->",
+    "<script ",
+    `  src="${domain}/api/widget/chat.js"`,
+    `  data-location-id="${selectedLocationId}"`,
+    `  data-harbor-id="${selectedLocationId}"`,
+    `  data-harbor-name="${locationName}"`,
+    `  data-tenant="${tenant}"`,
+    `  data-accent-color="${accentColor}"`,
+    `  data-theme="${themePreset}"`,
+    `  data-locale="${locale}"`,
+    welcomeText ? `  data-welcome-text="${welcomeText.replace(/"/g, "&quot;")}"` : null,
+    testBoatId.trim() ? `  data-boat-id="${testBoatId.trim()}"` : null,
+    "  defer",
+    "></script>",
+  ].filter(Boolean);
+
+  const embedCode = embedCodeLines.join("\n");
+
+  const previewParams = new URLSearchParams({
+    locationId: selectedLocationId,
+    harborId: selectedLocationId,
+    harborName: locationName,
+    tenant,
+    accentColor,
+    themePreset,
+    welcomeText,
+  });
+
+  const trimmedBoatId = testBoatId.trim();
+  if (trimmedBoatId) {
+    previewParams.set("boatId", trimmedBoatId);
+  }
 
   const handleCopy = () => {
     navigator.clipboard.writeText(embedCode);
@@ -292,6 +312,7 @@ export function LocationWidgetSettingsPage() {
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
                   value={testBoatId}
                   onChange={(event) => setTestBoatId(event.target.value)}
+                  placeholder="Optional"
                 />
               </div>
             </div>
@@ -397,7 +418,7 @@ export function LocationWidgetSettingsPage() {
             {enabled && (
               <div className="pointer-events-none absolute bottom-0 right-0 h-[950px] w-[500px] max-w-full origin-bottom-right scale-[0.6] transition-transform duration-500 sm:scale-[0.8] md:scale-95 lg:scale-110 xl:scale-125">
                 <iframe
-                  src={`/${locale}/widget?boatId=${encodeURIComponent(testBoatId)}&locationId=${selectedLocationId}&harborId=${selectedLocationId}&harborName=${encodeURIComponent(locationName)}&tenant=${tenant}&accentColor=${encodeURIComponent(accentColor)}&themePreset=${themePreset}&welcomeText=${encodeURIComponent(welcomeText)}`}
+                  src={`/${locale}/widget?${previewParams.toString()}`}
                   className="pointer-events-auto h-full w-full border-0"
                   title={t.previewTitle}
                 />
