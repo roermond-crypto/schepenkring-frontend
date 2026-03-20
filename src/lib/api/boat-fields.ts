@@ -91,6 +91,17 @@ export interface BoatFieldSourceSummaryRecord {
   last_seen_at: string | null;
 }
 
+export interface BoatFieldAiMappingGenerationResult {
+  field_id: number;
+  created_mappings: number;
+  skipped_mappings: number;
+  considered_observations: number;
+  db_existing_values_count: number;
+  normalized_candidates_count: number;
+  created_by_source: Record<BoatFieldSource, number>;
+  source_summary: BoatFieldSourceSummaryRecord[];
+}
+
 export interface BoatFieldUpsertPayload {
   internal_key: string;
   labels_json: Record<string, string>;
@@ -169,6 +180,34 @@ export async function generateBoatFieldHelp(
   };
 }
 
+export async function fillMissingBoatFieldHelpDefaults(params?: {
+  overwrite?: boolean;
+}) {
+  const response = await api.post("/admin/boat-fields/fill-help-defaults", {
+    overwrite: params?.overwrite ?? false,
+  });
+
+  return response.data.data as {
+    overwrite: boolean;
+    updated_fields: number;
+    skipped_fields: number;
+  };
+}
+
+export async function generateBoatFieldHelpBulk(params?: {
+  overwrite?: boolean;
+}) {
+  const response = await api.post("/admin/boat-fields/generate-help-bulk", {
+    overwrite: params?.overwrite ?? false,
+  });
+
+  return response.data.data as {
+    overwrite: boolean;
+    updated_fields: number;
+    skipped_fields: number;
+  };
+}
+
 export async function getBoatFieldMappings(
   fieldId: number,
   source: BoatFieldSource,
@@ -200,4 +239,12 @@ export async function updateBoatFieldMappings(
     source: BoatFieldSource;
     mappings: BoatFieldMappingRecord[];
   };
+}
+
+export async function generateBoatFieldMappingsWithAi(fieldId: number) {
+  const response = await api.post(
+    `/admin/boat-fields/${fieldId}/mappings/generate-ai`,
+  );
+
+  return response.data.data as BoatFieldAiMappingGenerationResult;
 }

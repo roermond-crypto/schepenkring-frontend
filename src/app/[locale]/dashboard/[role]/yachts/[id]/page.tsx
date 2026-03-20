@@ -7,6 +7,8 @@ import {
   useRef,
   SyntheticEvent,
   useMemo,
+  cloneElement,
+  isValidElement,
 } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
@@ -136,6 +138,7 @@ import {
 } from "@/lib/api/boat-form-config";
 import { ConfigurableBoatFieldBlock } from "@/components/yachts/ConfigurableBoatFieldBlock";
 import { FieldHelpTooltip } from "@/components/yachts/FieldHelpTooltip";
+import { BoatFieldSettingsLink } from "@/components/yachts/BoatFieldSettingsLink";
 
 // ALi
 // Wizard step config
@@ -8289,6 +8292,7 @@ export default function YachtEditorPage() {
                         "harborLocation",
                         "Sales Location (Harbor) *",
                       )}
+                      fieldName="ref_harbor_id"
                       helpText={resolveFieldHelpText(
                         "ref_harbor_id",
                         labelText(
@@ -10422,6 +10426,7 @@ export default function YachtEditorPage() {
                   <div className="space-y-1 group">
                     <FieldLabel
                       label={labelText("ownerComment", "Owner's Comment")}
+                      fieldName="owners_comment"
                       helpText={resolveFieldHelpText(
                         "owners_comment",
                         labelText("ownerComment", "Owner's Comment"),
@@ -10437,6 +10442,7 @@ export default function YachtEditorPage() {
                   <div className="space-y-1 group">
                     <FieldLabel
                       label={labelText("knownDefects", "Known Defects")}
+                      fieldName="known_defects"
                       helpText={resolveFieldHelpText(
                         "known_defects",
                         labelText("knownDefects", "Known Defects"),
@@ -11337,6 +11343,7 @@ function FieldLabel({
     <div className="flex items-center gap-2">
       <Label className={className}>{label}</Label>
       <FieldHelpTooltip text={helpText} label={label} />
+      <BoatFieldSettingsLink fieldName={fieldName} />
       {yachtId && fieldName ? (
         <FieldHistoryPopover
           yachtId={yachtId}
@@ -11371,13 +11378,19 @@ function Input(
   props: React.InputHTMLAttributes<HTMLInputElement> & {
     needsConfirmation?: boolean;
     confidence?: number;
+    showAdminEditLink?: boolean;
   },
 ) {
   const {
     needsConfirmation,
     confidence,
+    showAdminEditLink = true,
     ...inputProps
   } = props;
+  const fieldName =
+    typeof inputProps.name === "string" ? inputProps.name : undefined;
+  const shouldShowAdminEditLink =
+    showAdminEditLink && typeof fieldName === "string" && fieldName !== "";
   const [hasValue, setHasValue] = useState(() =>
     hasFilledFieldValue(inputProps.value ?? inputProps.defaultValue),
   );
@@ -11404,10 +11417,17 @@ function Input(
           "hover:border-slate-300",
           "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
           "placeholder:text-slate-400 placeholder:font-normal",
+          shouldShowAdminEditLink && "pr-12",
           highlighted ? "border-amber-300 bg-amber-50/50" : "border-slate-200",
           inputProps.className,
         )}
       />
+      {shouldShowAdminEditLink && (
+        <BoatFieldSettingsLink
+          fieldName={fieldName}
+          className="absolute right-2 top-1/2 -translate-y-1/2"
+        />
+      )}
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
           ⚠ confirm
@@ -11421,11 +11441,13 @@ function SelectField(
   props: React.SelectHTMLAttributes<HTMLSelectElement> & {
     needsConfirmation?: boolean;
     treatUnknownAsEmpty?: boolean;
+    showAdminEditLink?: boolean;
   },
 ) {
   const {
     needsConfirmation,
     treatUnknownAsEmpty = false,
+    showAdminEditLink = true,
     defaultValue,
     value,
     onChange,
@@ -11433,6 +11455,10 @@ function SelectField(
     children,
     ...selectProps
   } = props;
+  const fieldName =
+    typeof selectProps.name === "string" ? selectProps.name : undefined;
+  const shouldShowAdminEditLink =
+    showAdminEditLink && typeof fieldName === "string" && fieldName !== "";
   const [currentValue, setCurrentValue] = useState(value ?? defaultValue ?? "");
 
   useEffect(() => {
@@ -11457,12 +11483,19 @@ function SelectField(
           "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
           "hover:border-slate-300",
           "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none cursor-pointer",
+          shouldShowAdminEditLink && "pr-16",
           highlighted ? "border-amber-300 bg-amber-50/50" : "border-slate-200",
           className,
         )}
       >
         {children}
       </select>
+      {shouldShowAdminEditLink && (
+        <BoatFieldSettingsLink
+          fieldName={fieldName}
+          className="absolute right-9 top-1/2 -translate-y-1/2"
+        />
+      )}
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
           ⚠ confirm
@@ -11490,6 +11523,16 @@ function YachtFieldWrapper({
   onCorrectionLabelChange?: (label: CorrectionLabel | null) => void;
 }) {
   const isCorrection = correctionLabel !== undefined;
+  const childWithSettingsLinkSuppressed =
+    isValidElement(children) &&
+    typeof children.type !== "string"
+      ? cloneElement(
+          children as React.ReactElement<{ showAdminEditLink?: boolean }>,
+          {
+            showAdminEditLink: false,
+          },
+        )
+      : children;
 
   return (
     <div className="space-y-2 group">
@@ -11499,7 +11542,7 @@ function YachtFieldWrapper({
         yachtId={yachtId}
         fieldName={fieldName}
       />
-      {children}
+      {childWithSettingsLinkSuppressed}
       {isCorrection && onCorrectionLabelChange && (
         <FieldCorrectionControls
           activeLabel={correctionLabel}
@@ -11517,6 +11560,7 @@ function TriStateSelect(
     yachtId?: number;
     fieldName?: string;
     label?: string;
+    showAdminEditLink?: boolean;
   },
 ) {
   const locale = useLocale();
@@ -11529,8 +11573,11 @@ function TriStateSelect(
     yachtId,
     fieldName,
     label,
+    showAdminEditLink = true,
     ...selectProps
   } = props;
+  const shouldShowAdminEditLink =
+    showAdminEditLink && typeof fieldName === "string" && fieldName !== "";
   const normalizedDefault = normalizeTriStateValue(defaultValue);
   const [currentValue, setCurrentValue] = useState<"yes" | "no" | null>(
     normalizedDefault,
@@ -11566,6 +11613,7 @@ function TriStateSelect(
           "w-full bg-white border rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
           "hover:border-slate-300",
           "focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
+          shouldShowAdminEditLink && "pr-16",
           highlighted ? "border-amber-300 bg-amber-50/50" : "border-slate-200",
           selectProps.className,
         )}
@@ -11574,6 +11622,12 @@ function TriStateSelect(
         <option value="no">{formText.common.no}</option>
         <option value="unknown">{formText.common.unknown}</option>
       </select>
+      {shouldShowAdminEditLink && (
+        <BoatFieldSettingsLink
+          fieldName={fieldName}
+          className="absolute right-9 top-1/2 -translate-y-1/2"
+        />
+      )}
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
           ⚠ {formText.common.confirm}

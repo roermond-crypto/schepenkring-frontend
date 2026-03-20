@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
+import { BoatFieldSettingsLink } from "@/components/yachts/BoatFieldSettingsLink";
 
 interface Props {
     endpoint: string;
@@ -13,6 +14,7 @@ interface Props {
     dependsOnValue?: number | string | null;
     onSelect?: (id: number | string, name: string) => void;
     needsConfirmation?: boolean;
+    showAdminEditLink?: boolean;
 }
 
 interface CatalogAutocompleteItem {
@@ -55,7 +57,8 @@ export function CatalogAutocomplete({
     dependsOn,
     dependsOnValue,
     onSelect,
-    needsConfirmation
+    needsConfirmation,
+    showAdminEditLink = true,
 }: Props) {
     const locale = useLocale();
     const text = CATALOG_TEXT[locale as keyof typeof CATALOG_TEXT] ?? CATALOG_TEXT.en;
@@ -64,6 +67,7 @@ export function CatalogAutocomplete({
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const shouldShowAdminEditLink = showAdminEditLink && Boolean(name);
 
     useEffect(() => {
         setQuery(defaultValue || "");
@@ -127,12 +131,25 @@ export function CatalogAutocomplete({
                 className={cn(
                     "w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
                     "hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
+                    shouldShowAdminEditLink && "pr-12",
                     highlighted && "ring-2 ring-amber-400 border-amber-400 bg-amber-50"
                 )}
             />
 
+            {shouldShowAdminEditLink && (
+                <BoatFieldSettingsLink
+                    fieldName={name}
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                />
+            )}
+
             {needsConfirmation && (
-                <div className="absolute right-2 top-2 text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded shadow-sm">
+                <div
+                    className={cn(
+                        "absolute top-2 text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded shadow-sm",
+                        shouldShowAdminEditLink ? "right-11" : "right-2",
+                    )}
+                >
                     {text.verifyAi}
                 </div>
             )}
