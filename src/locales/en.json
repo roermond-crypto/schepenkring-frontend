@@ -1067,7 +1067,8 @@
       "title": "AI Client Chat",
       "subtitle": "Private assistant",
       "description": "Ask questions about your boat, insurance, viewings, or harbor support. This conversation is linked to your location so the team can follow along when needed.",
-      "location": "Connected location: {location}"
+      "location": "Connected location: {location}",
+      "dismiss": "Hide introduction"
     },
     "assistant": {
       "title": "Fluent AI Assistant",

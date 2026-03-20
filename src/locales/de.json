@@ -1067,7 +1067,8 @@
       "title": "KI-Kundenchat",
       "subtitle": "Privater Assistent",
       "description": "Stellen Sie Fragen zu Ihrem Boot, zur Versicherung, zu Besichtigungen oder zur Hafenunterstützung. Diese Unterhaltung ist mit Ihrem Standort verknüpft, damit das Team bei Bedarf mitverfolgen kann.",
-      "location": "Verknüpfter Standort: {location}"
+      "location": "Verknüpfter Standort: {location}",
+      "dismiss": "Einführung ausblenden"
     },
     "assistant": {
       "title": "Flüssiger KI-Assistent",

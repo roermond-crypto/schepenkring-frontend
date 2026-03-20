@@ -1067,7 +1067,8 @@
       "title": "Chat client IA",
       "subtitle": "Assistant privé",
       "description": "Posez des questions sur votre bateau, l’assurance, les visites ou l’assistance du port. Cette conversation est liée à votre emplacement afin que l’équipe puisse la suivre si nécessaire.",
-      "location": "Emplacement lié : {location}"
+      "location": "Emplacement lié : {location}",
+      "dismiss": "Masquer l’introduction"
     },
     "assistant": {
       "title": "Assistant IA fluide",
