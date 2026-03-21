@@ -114,6 +114,7 @@
       "collapse": "Sidebar inklappen",
       "audit": "Audit",
       "errors": "Fouten",
+      "bookings": "Boekingen",
       "locations": "Locaties",
       "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Salesfunnel",
@@ -213,6 +214,90 @@
       "newActionModule": "boats",
       "newActionRoute": "/dashboard/admin/boats/create",
       "phraseText": "boot maken"
+    }
+  },
+  "DashboardBookings": {
+    "hero": {
+      "kicker": "Boekingen",
+      "title": "Boekingenoverzicht",
+      "description": "Volg bezichtigingen van jachten, controleer locatieactiviteit en open elke boeking met alle gast-, boot- en planningscontext."
+    },
+    "stats": {
+      "total": "Totaal boekingen",
+      "confirmed": "Bevestigd",
+      "pending": "In afwachting",
+      "today": "Vandaag"
+    },
+    "filters": {
+      "search": "Zoeken",
+      "searchPlaceholder": "Zoek op gast, e-mail of boot",
+      "status": "Status",
+      "allStatuses": "Alle statussen",
+      "locationId": "Locatie-ID",
+      "locationPlaceholder": "Filter op locatie-ID",
+      "reset": "Resetten",
+      "apply": "Verversen"
+    },
+    "resultsSummary": "{total} boekingen in beeld",
+    "activeFilters": {
+      "search": "Zoeken: {value}",
+      "status": "Status: {value}",
+      "location": "Locatie: {value}"
+    },
+    "table": {
+      "id": "Boeking",
+      "guest": "Gast",
+      "boat": "Boot",
+      "schedule": "Planning",
+      "status": "Status",
+      "action": "Actie",
+      "view": "Bekijken",
+      "loading": "Boekingen laden..."
+    },
+    "empty": {
+      "title": "Geen boekingen gevonden",
+      "description": "Probeer een andere status, zoekterm of locatiefilter om de juiste boeking te vinden."
+    },
+    "errorState": {
+      "title": "Boekingen konden niet worden geladen",
+      "description": "De aanvraag is mislukt, maar de pagina blijft stabiel. Probeer opnieuw zodra de API weer beschikbaar is.",
+      "retry": "Opnieuw proberen"
+    },
+    "detail": {
+      "title": "Boekingsdetails",
+      "titleWithId": "Boeking #{id}",
+      "description": "Bekijk de volledige afspraakdetails voor dit jachtbezoek.",
+      "loading": "Boekingsdetails laden...",
+      "guest": "Gast",
+      "name": "Naam",
+      "email": "E-mail",
+      "source": "Bron",
+      "appointment": "Afspraak",
+      "date": "Datum",
+      "time": "Tijd",
+      "duration": "Duur",
+      "status": "Status",
+      "location": "Locatie",
+      "locationCode": "Locatiecode",
+      "boat": "Boot",
+      "boatName": "Bootnaam",
+      "price": "Prijs",
+      "type": "Type",
+      "notes": "Notities",
+      "noNotes": "Er zijn geen notities toegevoegd aan deze boeking.",
+      "createdAt": "Aangemaakt",
+      "updatedAt": "Bijgewerkt"
+    },
+    "errors": {
+      "load": "Kon boekingen niet laden.",
+      "detail": "Kon boekingsdetails niet laden."
+    },
+    "statuses": {
+      "pending": "In afwachting",
+      "confirmed": "Bevestigd",
+      "cancelled": "Geannuleerd",
+      "completed": "Voltooid",
+      "rescheduled": "Verplaatst"
     }
   },
   "DashboardAdminOverview": {
@@ -902,6 +987,9 @@
     },
     "messages": {
       "today": "Vandaag",
+      "systemEvent": "Systeemevent",
+      "bookingEvent": "Boekingsevent",
+      "bookingReference": "Boeking #{id}",
       "aiDraftReply": "AI Concept Antwoord",
       "summarize": "Samenvatten",
       "translateTo": "Vertalen naar",
@@ -980,7 +1068,8 @@
       "title": "AI-klantchat",
       "subtitle": "Privé assistent",
       "description": "Stel vragen over je boot, verzekering, bezichtigingen of havenondersteuning. Dit gesprek is gekoppeld aan je locatie zodat het team kan meekijken wanneer dat nodig is.",
-      "location": "Gekoppelde locatie: {location}"
+      "location": "Gekoppelde locatie: {location}",
+      "dismiss": "Introductie verbergen"
     },
     "assistant": {
       "title": "Vloeiende AI-assistent",

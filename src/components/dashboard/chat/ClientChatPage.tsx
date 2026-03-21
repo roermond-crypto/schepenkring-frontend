@@ -208,6 +208,7 @@ export function ClientChatPage() {
   const [input, setInput] = useState("");
   const [initializing, setInitializing] = useState(true);
   const [sending, setSending] = useState(false);
+  const [introDismissed, setIntroDismissed] = useState(false);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -284,6 +285,28 @@ export function ClientChatPage() {
 
     setMessages(nextMessages);
   }, []);
+
+  useEffect(() => {
+    if (!introDismissKey || typeof window === "undefined") return;
+    try {
+      setIntroDismissed(window.localStorage.getItem(introDismissKey) === "1");
+    } catch (error) {
+      console.error("Failed to restore client chat intro state:", error);
+    }
+  }, [introDismissKey]);
+
+  useEffect(() => {
+    if (!introDismissKey || typeof window === "undefined") return;
+    try {
+      if (introDismissed) {
+        window.localStorage.setItem(introDismissKey, "1");
+      } else {
+        window.localStorage.removeItem(introDismissKey);
+      }
+    } catch (error) {
+      console.error("Failed to persist client chat intro state:", error);
+    }
+  }, [introDismissKey, introDismissed]);
 
   useEffect(() => {
     const setupConversation = async () => {
@@ -364,9 +387,10 @@ export function ClientChatPage() {
     setSending(true);
 
     try {
-      const response = await api.post<AskResponse>(
-        `/public/conversations/${conversationId}/ask`,
+      const response = await api.post<AskResponse | BackendChatMessage>(
+        `/chat/conversations/${conversationId}/messages`,
         {
+          text: trimmed,
           body: trimmed,
           client_message_id: `dashboard-msg-${Date.now()}`,
           visitor_id: visitorIdRef.current,
@@ -423,17 +447,11 @@ export function ClientChatPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-[#F7FAFF] to-[#E7F0FF] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-        <p className="text-[10px] font-black uppercase tracking-[0.35em] text-blue-600">
-          {t("header.subtitle")}
-        </p>
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-serif italic text-[#003566]">
-              {t("header.title")}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-600">
-              {t("header.description")}
+      {!introDismissed ? (
+        <div className="rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-[#F7FAFF] to-[#E7F0FF] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+          <div className="flex items-start justify-between gap-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-blue-600">
+              {t("header.subtitle")}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -444,11 +462,21 @@ export function ClientChatPage() {
               </span>
             </div>
           </div>
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
-            {t("header.location", { location: locationLabel ?? "—" })}
+          <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-serif italic text-[#003566]">
+                {t("header.title")}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-slate-600">
+                {t("header.description")}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
+              {t("header.location", { location: locationLabel ?? "—" })}
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
         <div className="border-b border-slate-200 bg-gradient-to-r from-blue-600 to-sky-500 px-6 py-5 text-white">

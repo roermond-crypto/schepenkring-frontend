@@ -36,6 +36,16 @@ export interface ContractGeneratePayload {
     idempotencyKey?: string;
 }
 
+export interface YachtContractGeneratePayload {
+    location_id?: number;
+    title: string;
+    send_to_signhost?: boolean;
+    reference?: string;
+    recipients?: SignRecipient[];
+    metadata?: Record<string, unknown>;
+    idempotencyKey?: string;
+}
+
 export interface SignhostDocument {
     id: number;
     sign_request_id: number;
@@ -58,6 +68,20 @@ export interface SignRequest {
     requested_by_user_id: number | null;
     metadata: Record<string, unknown>;
     documents?: SignhostDocument[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SignhostTransaction {
+    id: number;
+    deal_id?: number | null;
+    yacht_id?: number | null;
+    signhost_transaction_id: string | null;
+    status: string;
+    signing_url_buyer?: string | null;
+    signing_url_seller?: string | null;
+    signed_pdf_path?: string | null;
+    webhook_last_payload?: Record<string, unknown> | null;
     created_at: string;
     updated_at: string;
 }
@@ -153,6 +177,36 @@ export const signhostApi = {
         return response.data;
     },
 
+    generateYachtContract: async (
+        yachtId: number,
+        payload: YachtContractGeneratePayload,
+    ) => {
+        const response = await api.post<{
+            message: string;
+            contract_pdf_path?: string;
+            contract_sha256?: string;
+            contract_pdf_paths?: string[];
+            contract_sha256s?: string[];
+            sign_url?: string | null;
+            sign_request?: SignRequest;
+            transaction?: SignhostTransaction | null;
+        }>(`/yachts/${yachtId}/contract/generate`, {
+            entity_type: "Yacht",
+            entity_id: yachtId,
+            location_id: payload.location_id,
+            title: payload.title,
+            send_to_signhost: payload.send_to_signhost ?? false,
+            reference: payload.reference,
+            recipients: payload.recipients,
+            metadata: payload.metadata,
+        }, {
+            headers: payload.idempotencyKey
+                ? { "Idempotency-Key": payload.idempotencyKey }
+                : undefined,
+        });
+        return response.data;
+    },
+
     /**
      * Send a SignRequest to Signhost (transitions status from DRAFT to SENT)
      */
@@ -205,6 +259,42 @@ export const signhostApi = {
         const response = await api.get<{
             sign_request: SignRequest;
         }>(`/signhost/status?sign_request_id=${signRequestId}`);
+        return response.data;
+    },
+
+    getYachtStatus: async (yachtId: number) => {
+        try {
+            const response = await api.get<{
+                transaction?: SignhostTransaction | null;
+            }>(`/yachts/${yachtId}/signhost/status`);
+            return response.data;
+        } catch (error) {
+            const message =
+                typeof error === "object" &&
+                error !== null &&
+                "response" in error &&
+                typeof (error as { response?: { data?: { message?: string } } }).response?.data
+                    ?.message === "string"
+                    ? (error as { response?: { data?: { message?: string } } }).response!.data!
+                        .message!
+                    : "";
+
+            if (
+                message === "Sign request not found." ||
+                message === "Transaction not found."
+            ) {
+                return { transaction: null };
+            }
+
+            throw error;
+        }
+    },
+
+    getYachtSigningUrl: async (yachtId: number, role: string) => {
+        const response = await api.get<{
+            url?: string | null;
+            sign_url?: string | null;
+        }>(`/yachts/${yachtId}/signhost/url?role=${encodeURIComponent(role)}`);
         return response.data;
     },
 

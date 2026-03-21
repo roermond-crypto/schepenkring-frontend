@@ -111,6 +111,7 @@ import { convertBatchToWebP } from "@/lib/convertToWebP";
 import { CatalogAutocomplete } from "@/components/ui/CatalogAutocomplete";
 import { BoatCreationAssistant } from "@/components/yachts/BoatCreationAssistant";
 import { SignhostFlow } from "@/components/yachts/SignhostFlow";
+import { signhostApi } from "@/lib/api/signhost";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
 import { useImagePipeline, PipelineImage } from "@/hooks/useImagePipeline";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -453,6 +454,27 @@ const YACHT_FORM_TEXT = {
       clientReviewStatusTitle: "Submitted for Review",
       clientReviewStatusDescription:
         "This vessel is now waiting for broker review. The contract is not shown to clients at this stage.",
+      clientReviewProgressTitle: "Submission progress",
+      clientReviewBoatStatusLabel: "Broker review",
+      clientReviewContractStatusLabel: "Contract signing",
+      clientReviewBoatPending: "Pending broker review",
+      clientReviewBoatApproved: "Approved by broker",
+      clientReviewContractWaiting: "Waiting for Signhost invite",
+      clientReviewContractSent: "Signhost invite sent",
+      clientReviewContractSigned: "Contract signed",
+      clientReviewContractFailed: "Signing needs attention",
+      internalReviewTitle: "Broker review actions",
+      internalReviewDescription:
+        "Review this client vessel here. Keeping it as draft means it stays under review. Approving it moves the vessel into the live sales flow and lets you continue with Signhost.",
+      internalReviewStatusLabel: "Current review state",
+      internalReviewPending: "Pending broker review",
+      internalReviewApproved: "Approved for sales flow",
+      markPendingReview: "Keep in review",
+      approveVessel: "Approve vessel",
+      vesselMarkedPendingReview: "Vessel kept in broker review.",
+      vesselApprovedSuccess:
+        "Vessel approved. You can continue with Signhost now.",
+      vesselReviewActionFailed: "Could not update vessel review status.",
       pendingBrokerReview: "Pending broker review",
       saveVesselFirst: "Save Vessel First",
       imageCountLabel: "Images",
@@ -905,6 +927,28 @@ const YACHT_FORM_TEXT = {
       clientReviewStatusTitle: "Ingediend voor controle",
       clientReviewStatusDescription:
         "Dit vaartuig wacht nu op brokercontrole. Het contract wordt in deze fase niet aan klanten getoond.",
+      clientReviewProgressTitle: "Indieningsstatus",
+      clientReviewBoatStatusLabel: "Brokercontrole",
+      clientReviewContractStatusLabel: "Contractondertekening",
+      clientReviewBoatPending: "Wacht op brokercontrole",
+      clientReviewBoatApproved: "Goedgekeurd door broker",
+      clientReviewContractWaiting: "Wacht op Signhost-uitnodiging",
+      clientReviewContractSent: "Signhost-uitnodiging verzonden",
+      clientReviewContractSigned: "Contract ondertekend",
+      clientReviewContractFailed: "Ondertekening vraagt aandacht",
+      internalReviewTitle: "Broker review-acties",
+      internalReviewDescription:
+        "Beoordeel dit klantvaartuig hier. Als het concept blijft, blijft het in review. Bij goedkeuring gaat het vaartuig door naar de verkoopflow en kun je verder met Signhost.",
+      internalReviewStatusLabel: "Huidige reviewstatus",
+      internalReviewPending: "Wacht op brokercontrole",
+      internalReviewApproved: "Goedgekeurd voor verkoopflow",
+      markPendingReview: "In review houden",
+      approveVessel: "Vaartuig goedkeuren",
+      vesselMarkedPendingReview: "Vaartuig blijft in brokerreview.",
+      vesselApprovedSuccess:
+        "Vaartuig goedgekeurd. Je kunt nu verder met Signhost.",
+      vesselReviewActionFailed:
+        "De reviewstatus van het vaartuig kon niet worden bijgewerkt.",
       pendingBrokerReview: "Wacht op brokercontrole",
       saveVesselFirst: "Sla eerst het vaartuig op",
       imageCountLabel: "Afbeeldingen",
@@ -1355,6 +1399,28 @@ const YACHT_FORM_TEXT = {
       clientReviewStatusTitle: "Zur Prufung eingereicht",
       clientReviewStatusDescription:
         "Dieses Schiff wartet nun auf die Broker-Prufung. Der Vertrag wird Kunden in dieser Phase nicht angezeigt.",
+      clientReviewProgressTitle: "Einreichungsstatus",
+      clientReviewBoatStatusLabel: "Broker-Prüfung",
+      clientReviewContractStatusLabel: "Vertragsunterzeichnung",
+      clientReviewBoatPending: "Wartet auf Broker-Prüfung",
+      clientReviewBoatApproved: "Vom Broker freigegeben",
+      clientReviewContractWaiting: "Wartet auf Signhost-Einladung",
+      clientReviewContractSent: "Signhost-Einladung gesendet",
+      clientReviewContractSigned: "Vertrag unterzeichnet",
+      clientReviewContractFailed: "Unterzeichnung erfordert Aufmerksamkeit",
+      internalReviewTitle: "Broker-Prufaktionen",
+      internalReviewDescription:
+        "Prufen Sie dieses Kundenboot hier. Solange es im Entwurf bleibt, bleibt es in der Prufung. Mit der Freigabe geht das Boot in den Verkaufsablauf uber und Sie konnen mit Signhost fortfahren.",
+      internalReviewStatusLabel: "Aktueller Prufstatus",
+      internalReviewPending: "Wartet auf Broker-Prufung",
+      internalReviewApproved: "Fur Verkaufsablauf freigegeben",
+      markPendingReview: "In Prufung behalten",
+      approveVessel: "Boot freigeben",
+      vesselMarkedPendingReview: "Boot bleibt in der Broker-Prufung.",
+      vesselApprovedSuccess:
+        "Boot freigegeben. Sie konnen jetzt mit Signhost fortfahren.",
+      vesselReviewActionFailed:
+        "Der Prufstatus des Boots konnte nicht aktualisiert werden.",
       pendingBrokerReview: "Wartet auf Broker-Prufung",
       saveVesselFirst: "Schiff zuerst speichern",
       imageCountLabel: "Bilder",
@@ -1800,6 +1866,28 @@ const YACHT_FORM_TEXT = {
       clientReviewStatusTitle: "Soumis pour revision",
       clientReviewStatusDescription:
         "Ce bateau attend maintenant la revision du courtier. Le contrat n'est pas affiche aux clients a ce stade.",
+      clientReviewProgressTitle: "Progression de la soumission",
+      clientReviewBoatStatusLabel: "Revision du courtier",
+      clientReviewContractStatusLabel: "Signature du contrat",
+      clientReviewBoatPending: "En attente de revision du courtier",
+      clientReviewBoatApproved: "Approuve par le courtier",
+      clientReviewContractWaiting: "En attente de l'invitation Signhost",
+      clientReviewContractSent: "Invitation Signhost envoyee",
+      clientReviewContractSigned: "Contrat signe",
+      clientReviewContractFailed: "La signature demande de l'attention",
+      internalReviewTitle: "Actions de revision du courtier",
+      internalReviewDescription:
+        "Revisez ici ce bateau client. Le conserver en brouillon signifie qu'il reste en revision. L'approuver le fait passer au flux commercial et vous permet de continuer avec Signhost.",
+      internalReviewStatusLabel: "Etat actuel de revision",
+      internalReviewPending: "En attente de revision du courtier",
+      internalReviewApproved: "Approuve pour le flux commercial",
+      markPendingReview: "Garder en revision",
+      approveVessel: "Approuver le bateau",
+      vesselMarkedPendingReview: "Le bateau reste en revision du courtier.",
+      vesselApprovedSuccess:
+        "Bateau approuve. Vous pouvez maintenant continuer avec Signhost.",
+      vesselReviewActionFailed:
+        "Impossible de mettre a jour l'etat de revision du bateau.",
       pendingBrokerReview: "En attente de revision du courtier",
       saveVesselFirst: "Enregistrer d'abord le bateau",
       imageCountLabel: "Images",
@@ -2772,6 +2860,16 @@ export default function YachtEditorPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(!isNewMode);
   const [errors, setErrors] = useState<any>(null);
+  const [clientSignhostStatus, setClientSignhostStatus] = useState<
+    string | null
+  >(null);
+  const [clientSignhostLoading, setClientSignhostLoading] = useState(false);
+  const [reviewActionLoading, setReviewActionLoading] = useState<
+    "draft" | "approved" | null
+  >(null);
+  const [internalReviewSelection, setInternalReviewSelection] = useState<
+    "Draft" | "For Sale"
+  >("Draft");
   const [boatFormConfigBlocks, setBoatFormConfigBlocks] = useState<
     BoatFormConfigBlock[]
   >([]);
@@ -2814,6 +2912,38 @@ export default function YachtEditorPage() {
   const [pendingUploadPreviews, setPendingUploadPreviews] = useState<
     ReviewPipelineImage[]
   >([]);
+
+  useEffect(() => {
+    if (!isClientRole || !activeYachtId || activeStep < 5) {
+      return;
+    }
+
+    let active = true;
+
+    const loadClientSignhostStatus = async () => {
+      setClientSignhostLoading(true);
+      try {
+        const response = await signhostApi.getYachtStatus(Number(activeYachtId));
+        if (!active) return;
+        setClientSignhostStatus(response.transaction?.status ?? null);
+      } catch {
+        if (!active) return;
+        setClientSignhostStatus(null);
+      } finally {
+        if (active) {
+          setClientSignhostLoading(false);
+        }
+      }
+    };
+
+    void loadClientSignhostStatus();
+    const interval = window.setInterval(loadClientSignhostStatus, 15000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [activeStep, activeYachtId, isClientRole]);
 
   const loadMarketingVideos = useCallback(
     async (targetYachtId: number | string) => {
@@ -2909,11 +3039,42 @@ export default function YachtEditorPage() {
         String(image.status || "").toLowerCase(),
       ),
     ).length + pendingUploadPreviews.length;
+  const normalizedClientBoatStatus = String(
+    selectedYacht?.status || "",
+  ).toLowerCase();
+  const clientBoatApproved = [
+    "active",
+    "for sale",
+    "for_sale",
+    "sold",
+    "published",
+  ].includes(normalizedClientBoatStatus);
+  const normalizedClientContractStatus = String(
+    clientSignhostStatus || "",
+  ).toLowerCase();
+  const clientContractStatusKey =
+    normalizedClientContractStatus === "signed"
+      ? "clientReviewContractSigned"
+      : ["pending", "signing", "sent"].includes(normalizedClientContractStatus)
+        ? "clientReviewContractSent"
+        : ["cancelled", "rejected", "failed"].includes(
+              normalizedClientContractStatus,
+            )
+          ? "clientReviewContractFailed"
+          : "clientReviewContractWaiting";
+  const internalReviewApproved = clientBoatApproved;
+  const internalReviewStatusKey = internalReviewApproved
+    ? "internalReviewApproved"
+    : "internalReviewPending";
   const displayTotalImageCount =
     persistedPipelineImages.length + pendingUploadPreviews.length;
   const shouldShowImageUploadDropzone =
     reviewImages.length === 0 || hasInFlightImageUploads;
   const shouldShowImageGrid = reviewImages.length > 0;
+
+  useEffect(() => {
+    setInternalReviewSelection(internalReviewApproved ? "For Sale" : "Draft");
+  }, [internalReviewApproved]);
 
   // AI Pipeline State
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
@@ -4345,6 +4506,68 @@ export default function YachtEditorPage() {
       hasSelectedHarbor,
       offlineImages,
       pipeline.images.length,
+    ],
+  );
+
+  const updateInternalReviewStatus = useCallback(
+    async (nextStatus: "Draft" | "For Sale", nextStep?: number) => {
+      if (!activeYachtId || isClientRole) {
+        return;
+      }
+
+      setReviewActionLoading(nextStatus === "Draft" ? "draft" : "approved");
+
+      try {
+        const formData = new FormData();
+        formData.append("_method", "PUT");
+        formData.append("status", nextStatus);
+
+        await api.post(`/yachts/${activeYachtId}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        setSelectedYacht((previous: any) => ({
+          ...(previous && typeof previous === "object" ? previous : {}),
+          status: nextStatus,
+        }));
+
+        toast.success(
+          labelText(
+            nextStatus === "Draft"
+              ? "vesselMarkedPendingReview"
+              : "vesselApprovedSuccess",
+            nextStatus === "Draft"
+              ? "Vessel kept in broker review."
+              : "Vessel approved. You can continue with Signhost now.",
+          ),
+        );
+
+        if (typeof nextStep === "number") {
+          markStepComplete(activeStep);
+          handleStepChange(nextStep);
+        }
+      } catch (error) {
+        console.error("Failed to update yacht review status", error);
+        toast.error(
+          labelText(
+            "vesselReviewActionFailed",
+            "Could not update vessel review status.",
+          ),
+        );
+      } finally {
+        setReviewActionLoading(null);
+      }
+    },
+    [
+      activeStep,
+      activeYachtId,
+      handleStepChange,
+      isClientRole,
+      labelText,
+      markStepComplete,
+      selectedYacht,
     ],
   );
 
@@ -11397,12 +11620,147 @@ export default function YachtEditorPage() {
                   </div>
                 </div>
 
-                <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
-                  {labelText(
-                    "reviewContractNotice",
-                    "Save this vessel first. The contract flow opens in the next step after the vessel record is stored.",
-                  )}
-                </div>
+                {isClientRole ? (
+                  <div className="mb-8 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-5 text-sm text-blue-900">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-700">
+                      {labelText(
+                        "clientReviewProgressTitle",
+                        "Submission progress",
+                      )}
+                    </p>
+                    <p className="mt-3 text-sm leading-6">
+                      {labelText(
+                        "clientReviewStepDescription",
+                        "Your vessel has been submitted for broker review. A broker will contact you and send the Signhost contract when everything is ready.",
+                      )}
+                    </p>
+                    <div className="mt-5 grid gap-3 md:grid-cols-2">
+                      <div className="rounded-xl border border-white/80 bg-white px-4 py-4 shadow-sm">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                          {labelText(
+                            "clientReviewBoatStatusLabel",
+                            "Broker review",
+                          )}
+                        </p>
+                        <div className="mt-3 inline-flex items-center rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
+                          {labelText(
+                            clientBoatApproved
+                              ? "clientReviewBoatApproved"
+                              : "clientReviewBoatPending",
+                            clientBoatApproved
+                              ? "Approved by broker"
+                              : "Pending broker review",
+                          )}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-white/80 bg-white px-4 py-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                            {labelText(
+                              "clientReviewContractStatusLabel",
+                              "Contract signing",
+                            )}
+                          </p>
+                          {clientSignhostLoading ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />
+                          ) : null}
+                        </div>
+                        <div className="mt-3 inline-flex items-center rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
+                          {labelText(
+                            clientContractStatusKey,
+                            "Waiting for Signhost invite",
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-8 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-5 text-sm text-blue-900">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-700">
+                      {labelText(
+                        "internalReviewTitle",
+                        "Broker review actions",
+                      )}
+                    </p>
+                    <p className="mt-3 leading-6">
+                      {labelText(
+                        "internalReviewDescription",
+                        "Review this client vessel here. Keeping it as draft means it stays under review. Approving it moves the vessel into the live sales flow and lets you continue with Signhost.",
+                      )}
+                    </p>
+                    <div className="mt-5 flex flex-wrap items-center gap-3">
+                      <div className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700 shadow-sm">
+                        <span className="mr-2 text-slate-400">
+                          {labelText(
+                            "internalReviewStatusLabel",
+                            "Current review state",
+                          )}
+                          :
+                        </span>
+                        {labelText(
+                          internalReviewStatusKey,
+                          internalReviewApproved
+                            ? "Approved for sales flow"
+                            : "Pending broker review",
+                        )}
+                      </div>
+                      {activeYachtId ? (
+                        <>
+                          <select
+                            className="h-11 min-w-[220px] rounded-2xl border border-blue-300 bg-white px-4 text-sm font-semibold text-slate-800 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                            value={internalReviewSelection}
+                            disabled={reviewActionLoading !== null}
+                            onChange={(event) =>
+                              setInternalReviewSelection(
+                                event.target.value as "Draft" | "For Sale",
+                              )
+                            }
+                          >
+                            <option value="Draft">
+                              {labelText(
+                                "markPendingReview",
+                                "Keep in review",
+                              )}
+                            </option>
+                            <option value="For Sale">
+                              {labelText(
+                                "approveVessel",
+                                "Approve vessel",
+                              )}
+                            </option>
+                          </select>
+                          <Button
+                            type="button"
+                            className="rounded-2xl bg-[#003566] text-white hover:bg-blue-800"
+                            disabled={reviewActionLoading !== null}
+                            onClick={() =>
+                              void updateInternalReviewStatus(
+                                internalReviewSelection,
+                                internalReviewSelection === "For Sale"
+                                  ? 6
+                                  : undefined,
+                              )
+                            }
+                          >
+                            {reviewActionLoading !== null ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <CheckCircle size={16} className="mr-2" />
+                            )}
+                            {labelText(
+                              internalReviewSelection === "For Sale"
+                                ? "approveVessel"
+                                : "markPendingReview",
+                              internalReviewSelection === "For Sale"
+                                ? "Approve vessel"
+                                : "Keep in review",
+                            )}
+                          </Button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
 
                 <Button
                   type="submit"
