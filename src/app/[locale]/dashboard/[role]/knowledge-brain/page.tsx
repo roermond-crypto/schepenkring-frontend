@@ -174,6 +174,8 @@ export default function KnowledgeBrainPage() {
   const locale = useLocale();
   const [selectedLocationId, setSelectedLocationId] = useState<string>("");
   const [locations, setLocations] = useState<LocationOption[]>([]);
+  const [locationsReady, setLocationsReady] = useState(false);
+  const [locationsLoadFailed, setLocationsLoadFailed] = useState(false);
   const [dashboard, setDashboard] = useState<KnowledgeBrainResponse | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -434,8 +436,65 @@ export default function KnowledgeBrainPage() {
     };
   }, [locale]);
 
+  const brainUiCopy = useMemo(() => {
+    if (locale === "nl") {
+      return {
+        statusActive: "Actief",
+        statusEmpty: "Leeg",
+        statusUnavailable: "Niet geconfigureerd",
+        noLocationsTitle: "Knowledge Brain is nog niet gekoppeld aan een adminlocatie.",
+        noLocationsDescription:
+          "Er zijn geen locaties beschikbaar om te beheren, dus deze pagina kan nog niets verversen of beoordelen.",
+        emptyTitle: "Knowledge Brain is actief, maar er is nog geen kennisactiviteit voor deze locatie.",
+        emptyDescription:
+          "Zodra vragen, documenten of suggesties binnenkomen, kun je ze hier beoordelen en verbeteren.",
+      };
+    }
+
+    if (locale === "de") {
+      return {
+        statusActive: "Aktiv",
+        statusEmpty: "Leer",
+        statusUnavailable: "Nicht konfiguriert",
+        noLocationsTitle: "Knowledge Brain ist noch keiner Admin-Location zugeordnet.",
+        noLocationsDescription:
+          "Es stehen keine Standorte zur Verwaltung bereit, daher kann diese Seite noch nichts aktualisieren oder pruefen.",
+        emptyTitle: "Knowledge Brain ist aktiv, aber fuer diesen Standort gibt es noch keine Wissenssignale.",
+        emptyDescription:
+          "Sobald Fragen, Dokumente oder Vorschlaege eintreffen, koennen sie hier geprueft und verbessert werden.",
+      };
+    }
+
+    if (locale === "fr") {
+      return {
+        statusActive: "Actif",
+        statusEmpty: "Vide",
+        statusUnavailable: "Non configure",
+        noLocationsTitle: "Knowledge Brain n'est pas encore relie a un emplacement admin.",
+        noLocationsDescription:
+          "Aucun emplacement n'est disponible a gerer, donc cette page ne peut encore rien rafraichir ni valider.",
+        emptyTitle: "Knowledge Brain est actif, mais il n'y a pas encore de signaux de connaissance pour cet emplacement.",
+        emptyDescription:
+          "Des que des questions, documents ou suggestions arrivent, vous pourrez les examiner ici.",
+      };
+    }
+
+    return {
+      statusActive: "Active",
+      statusEmpty: "Empty",
+      statusUnavailable: "Not configured",
+      noLocationsTitle: "Knowledge Brain is not connected to an admin location yet.",
+      noLocationsDescription:
+        "There are no locations available to manage, so this page cannot refresh or review anything yet.",
+      emptyTitle: "Knowledge Brain is active, but this location has no knowledge activity yet.",
+      emptyDescription:
+        "As soon as questions, documents, or suggestions arrive, you can review and improve them here.",
+    };
+  }, [locale]);
+
   const loadLocations = useCallback(async () => {
     try {
+      setLocationsLoadFailed(false);
       const response = await api.get<{ data?: LocationOption[] }>("/admin/locations");
       const nextLocations = Array.isArray(response.data?.data)
         ? response.data.data
@@ -455,6 +514,10 @@ export default function KnowledgeBrainPage() {
       }
     } catch (error) {
       console.error("Failed to load locations for Knowledge Brain", error);
+      setLocations([]);
+      setLocationsLoadFailed(true);
+    } finally {
+      setLocationsReady(true);
     }
   }, [selectedLocationId]);
 
@@ -590,6 +653,26 @@ export default function KnowledgeBrainPage() {
       ]
     : [];
 
+  const knowledgeBrainState = !locationsReady
+    ? "loading"
+    : locations.length === 0 || locationsLoadFailed
+      ? "unavailable"
+      : dashboard &&
+          dashboard.overview.documents_analyzed === 0 &&
+          dashboard.overview.total_qna === 0 &&
+          dashboard.overview.approved_knowledge === 0 &&
+          dashboard.overview.pending_review === 0 &&
+          dashboard.overview.missing_questions === 0 &&
+          dashboard.overview.suggested_improvements === 0 &&
+          dashboard.overview.duplicate_clusters === 0 &&
+          dashboard.document_intelligence.documents === 0 &&
+          dashboard.document_intelligence.pending_document_reviews === 0 &&
+          dashboard.document_intelligence.approved_document_knowledge === 0 &&
+          dashboard.document_intelligence.detected_document_gaps === 0 &&
+          suggestions.length === 0
+        ? "empty"
+        : "active";
+
   return (
     <div className="space-y-6">
       <Toaster position="top-right" />
@@ -606,12 +689,30 @@ export default function KnowledgeBrainPage() {
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base">
               {copy.subtitle}
             </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  knowledgeBrainState === "active"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : knowledgeBrainState === "empty"
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-slate-200 text-slate-700"
+                }`}
+              >
+                {knowledgeBrainState === "active"
+                  ? brainUiCopy.statusActive
+                  : knowledgeBrainState === "empty"
+                    ? brainUiCopy.statusEmpty
+                    : brainUiCopy.statusUnavailable}
+              </span>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
             <select
               value={selectedLocationId}
               onChange={(event) => setSelectedLocationId(event.target.value)}
+              disabled={locations.length === 0}
               className="h-12 min-w-[220px] rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400"
             >
               <option value="">{copy.allSuggestions}</option>
@@ -626,7 +727,7 @@ export default function KnowledgeBrainPage() {
             <button
               type="button"
               onClick={() => void handleRefresh()}
-              disabled={refreshing || !selectedLocationId}
+              disabled={refreshing || !selectedLocationId || locations.length === 0}
               className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[#003566] px-5 text-sm font-semibold text-white transition hover:bg-[#0B4A8B] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw className={refreshing ? "animate-spin" : ""} size={16} />
@@ -636,12 +737,28 @@ export default function KnowledgeBrainPage() {
         </div>
       </div>
 
-      {loading ? (
+      {locationsReady && locations.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#0B1F3A]">
+            {brainUiCopy.noLocationsTitle}
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+            {brainUiCopy.noLocationsDescription}
+          </p>
+        </div>
+      ) : loading ? (
         <div className="rounded-3xl border border-slate-200 bg-white px-6 py-16 text-center text-sm text-slate-500 shadow-sm">
           {copy.loading}
         </div>
       ) : dashboard ? (
         <>
+          {knowledgeBrainState === "empty" ? (
+            <div className="rounded-3xl border border-amber-200 bg-amber-50 px-6 py-5 text-sm text-amber-900 shadow-sm">
+              <p className="font-semibold">{brainUiCopy.emptyTitle}</p>
+              <p className="mt-2 text-amber-800">{brainUiCopy.emptyDescription}</p>
+            </div>
+          ) : null}
+
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {overviewCards.map((card) => (
               <div

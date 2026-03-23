@@ -2,10 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Loader2, Send, Sparkles, X } from "lucide-react";
+import { Info, Loader2, Send, Sparkles } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { api } from "@/lib/api";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
+import {
+  getOrCreateSharedVisitorId,
+  getSharedChatStorageKey,
+  readSharedChatState,
+  type SharedChatMessage,
+  writeSharedChatState,
+} from "@/lib/chat/shared-public-chat";
 
 type ClientConversationResponse = {
   id: string;
@@ -26,24 +33,36 @@ type AskResponse = {
   header_language?: string;
 };
 
-type ConversationDetailResponse = {
-  id: string;
+type PublicConversationStateResponse = {
+  conversation?: {
+    id: string;
+    location_id?: number;
+    status?: string;
+    ai_mode?: string;
+    language_preferred?: string;
+    last_message_at?: string | null;
+  };
   messages?: BackendChatMessage[];
 };
 
 type BackendChatMessage = {
   id: string;
-  sender_type: "visitor" | "ai" | "employee" | string;
+  sender_type: "visitor" | "ai" | "employee" | "admin" | string;
   text?: string | null;
   body?: string | null;
   created_at?: string;
-  metadata?: {
-    knowledge_sources?: Array<{
-      type?: string;
-      faq_id?: number;
-      question?: string;
-    }>;
-  } | null;
+  metadata?:
+    | {
+        knowledge_sources?: Array<{
+          type?: string;
+          faq_id?: number;
+          question?: string;
+        }>;
+        provider?: string;
+        model?: string | null;
+      }
+    | Record<string, unknown>
+    | null;
 };
 
 type ClientChatMessage = {
@@ -56,15 +75,58 @@ type ClientChatMessage = {
     faq_id?: number;
     question?: string;
   }>;
+  provider?: string;
+  model?: string | null;
 };
 
 function mapBackendMessage(message: BackendChatMessage): ClientChatMessage {
+  const metadata = (message.metadata ?? {}) as {
+    knowledge_sources?: unknown;
+    provider?: unknown;
+    model?: unknown;
+  };
+  const knowledgeSources = Array.isArray(metadata.knowledge_sources)
+    ? metadata.knowledge_sources.filter(
+        (source): source is NonNullable<ClientChatMessage["knowledgeSources"]>[number] =>
+          typeof source === "object" && source !== null,
+      )
+    : undefined;
+
   return {
     id: message.id,
-    sender: message.sender_type === "ai" ? "ai" : "user",
+    sender: message.sender_type === "visitor" ? "user" : "ai",
     text: message.body ?? message.text ?? "",
     createdAt: message.created_at ?? new Date().toISOString(),
-    knowledgeSources: message.metadata?.knowledge_sources ?? undefined,
+    knowledgeSources,
+    provider: typeof metadata.provider === "string" ? metadata.provider : undefined,
+    model:
+      typeof metadata.model === "string" || metadata.model === null
+        ? (metadata.model ?? null)
+        : undefined,
+  };
+}
+
+function mapSharedMessage(message: SharedChatMessage): ClientChatMessage {
+  return {
+    id: message.id,
+    sender: message.sender,
+    text: message.text,
+    createdAt: message.createdAt,
+    knowledgeSources: message.knowledgeSources,
+    provider: message.provider,
+    model: message.model,
+  };
+}
+
+function serializeClientMessage(message: ClientChatMessage): SharedChatMessage {
+  return {
+    id: message.id,
+    sender: message.sender,
+    text: message.text,
+    createdAt: message.createdAt,
+    knowledgeSources: message.knowledgeSources,
+    provider: message.provider,
+    model: message.model,
   };
 }
 
@@ -77,26 +139,69 @@ function formatClock(value: string, locale: string) {
   }).format(date);
 }
 
+function formatProviderLabel(provider?: string, model?: string | null) {
+  if (!provider && !model) {
+    return null;
+  }
+
+  const normalizedProvider = (provider ?? "ai").toLowerCase();
+  const providerLabel =
+    normalizedProvider === "openai"
+      ? "OpenAI"
+      : normalizedProvider === "gemini"
+        ? "Gemini"
+        : normalizedProvider === "fallback"
+          ? "Knowledge fallback"
+          : provider ?? "AI";
+
+  return model ? `${providerLabel} · ${model}` : providerLabel;
+}
+
 export function ClientChatPage() {
   const locale = useLocale();
   const t = useTranslations("DashboardClientChat");
   const { user } = useClientSession();
   const endRef = useRef<HTMLDivElement | null>(null);
+  const visitorIdRef = useRef<string>(getOrCreateSharedVisitorId());
 
   const locationId = user.client_location_id ?? user.location_id ?? null;
   const locationLabel = user.location?.name ?? (locationId ? `#${locationId}` : null);
-  const visitorId = useMemo(() => `dashboard-client-${user.id}`, [user.id]);
-  const storageKey = useMemo(
-    () => (locationId ? `client-dashboard-chat:${user.id}:${locationId}` : null),
-    [locationId, user.id],
-  );
-  const introDismissKey = useMemo(
-    () =>
-      locationId
-        ? `client-dashboard-chat:intro-dismissed:${user.id}:${locationId}`
-        : null,
-    [locationId, user.id],
-  );
+
+  const interfaceCopy = useMemo(() => {
+    if (locale === "nl") {
+      return {
+        sharedThread: "Deelt dezelfde conversatie als de popup-chatwidget.",
+        uploadsPending:
+          "Bestandsupload staat nog niet aan in deze chat. Zodra documentanalyse is gekoppeld, verschijnt die hier.",
+        faqSource: "FAQ-kennis",
+      };
+    }
+
+    if (locale === "de") {
+      return {
+        sharedThread: "Verwendet denselben Verlauf wie das Popup-Chat-Widget.",
+        uploadsPending:
+          "Datei-Uploads sind in diesem Chat noch nicht aktiviert. Sobald die Dokumentanalyse verbunden ist, erscheint sie hier.",
+        faqSource: "FAQ-Wissen",
+      };
+    }
+
+    if (locale === "fr") {
+      return {
+        sharedThread: "Utilise la meme conversation que le widget popup.",
+        uploadsPending:
+          "Le televersement de fichiers n'est pas encore active dans ce chat. Il apparaitra ici quand l'analyse de documents sera connectee.",
+        faqSource: "Base FAQ",
+      };
+    }
+
+    return {
+      sharedThread: "Uses the same conversation as the popup chat widget.",
+      uploadsPending:
+        "File upload is not enabled in this chat yet. It will appear here once document analysis is connected.",
+      faqSource: "FAQ knowledge",
+    };
+  }, [locale]);
 
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ClientChatMessage[]>([]);
@@ -104,34 +209,83 @@ export function ClientChatPage() {
   const [initializing, setInitializing] = useState(true);
   const [sending, setSending] = useState(false);
   const [introDismissed, setIntroDismissed] = useState(false);
+  const introDismissKey = locationId ? `nauticsecure_dashboard_chat_intro_${locationId}` : null;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sending]);
 
   useEffect(() => {
-    if (!storageKey || typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as {
-        conversationId?: string;
-        messages?: ClientChatMessage[];
-      };
-      if (parsed.conversationId) setConversationId(parsed.conversationId);
-      if (Array.isArray(parsed.messages)) setMessages(parsed.messages);
-    } catch (error) {
-      console.error("Failed to restore client chat cache:", error);
+    if (!locationId) {
+      return;
     }
-  }, [storageKey]);
+
+    const cached = readSharedChatState(locationId);
+    if (!cached) {
+      return;
+    }
+
+    if (cached.conversationId) {
+      setConversationId(cached.conversationId);
+    }
+
+    if (cached.messages.length > 0) {
+      setMessages(cached.messages.map(mapSharedMessage));
+    }
+  }, [locationId]);
 
   useEffect(() => {
-    if (!storageKey || typeof window === "undefined") return;
-    window.localStorage.setItem(
-      storageKey,
-      JSON.stringify({ conversationId, messages }),
+    if (!locationId) {
+      return;
+    }
+
+    writeSharedChatState(locationId, {
+      conversationId,
+      messages: messages.map(serializeClientMessage),
+      updatedAt: new Date().toISOString(),
+    });
+  }, [conversationId, locationId, messages]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !locationId) {
+      return;
+    }
+
+    const storageKey = getSharedChatStorageKey(locationId);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== storageKey) {
+        return;
+      }
+
+      const cached = readSharedChatState(locationId);
+      if (!cached) {
+        return;
+      }
+
+      setConversationId(cached.conversationId);
+      setMessages(cached.messages.map(mapSharedMessage));
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [locationId]);
+
+  const loadConversationHistory = useCallback(async (nextConversationId: string) => {
+    const response = await api.get<PublicConversationStateResponse>(
+      `/public/conversations/${nextConversationId}`,
+      {
+        params: {
+          visitor_id: visitorIdRef.current,
+        },
+      },
     );
-  }, [conversationId, messages, storageKey]);
+
+    const nextMessages = Array.isArray(response.data?.messages)
+      ? response.data.messages.map(mapBackendMessage)
+      : [];
+
+    setMessages(nextMessages);
+  }, []);
 
   useEffect(() => {
     if (!introDismissKey || typeof window === "undefined") return;
@@ -162,9 +316,11 @@ export function ClientChatPage() {
         return;
       }
 
+      setInitializing(true);
+
       try {
         const response = await api.post<ClientConversationResponse>("/chat/conversations", {
-          visitor_id: visitorId,
+          visitor_id: visitorIdRef.current,
           location_id: locationId,
           channel_origin: "dashboard_client",
           ai_mode: "auto",
@@ -183,6 +339,7 @@ export function ClientChatPage() {
 
         if (response.data?.id) {
           setConversationId(response.data.id);
+          await loadConversationHistory(response.data.id);
         }
       } catch (error) {
         console.error("Failed to initialize client chat conversation:", error);
@@ -193,7 +350,15 @@ export function ClientChatPage() {
     };
 
     void setupConversation();
-  }, [locale, locationId, t, user.email, user.name, user.phone, visitorId]);
+  }, [
+    loadConversationHistory,
+    locale,
+    locationId,
+    t,
+    user.email,
+    user.name,
+    user.phone,
+  ]);
 
   const handleSend = useCallback(async () => {
     const trimmed = input.trim();
@@ -223,54 +388,43 @@ export function ClientChatPage() {
     setSending(true);
 
     try {
-      const response = await api.post<AskResponse | BackendChatMessage>(
+      const response = await api.post<AskResponse & BackendChatMessage>(
         `/chat/conversations/${conversationId}/messages`,
         {
           text: trimmed,
           body: trimmed,
           client_message_id: `dashboard-msg-${Date.now()}`,
+          visitor_id: visitorIdRef.current,
         },
       );
 
-      const directResponse = response.data as AskResponse & BackendChatMessage;
-      const followUpConversation = await api.get<ConversationDetailResponse>(
-        `/chat/conversations/${conversationId}`,
-      );
-      const refreshedMessages = Array.isArray(followUpConversation.data?.messages)
-        ? followUpConversation.data.messages.map(mapBackendMessage)
-        : [];
-
-      if (refreshedMessages.length > 0) {
-        setMessages(refreshedMessages);
-      } else {
-        const nextMessages = [
-          directResponse?.user_message
-            ? mapBackendMessage(directResponse.user_message)
-            : directResponse?.id
-              ? mapBackendMessage(directResponse)
-              : {
-                  id: tempUserId,
-                  sender: "user" as const,
-                  text: trimmed,
-                  createdAt: nowIso,
-                },
-          directResponse?.ai_message
-            ? mapBackendMessage(directResponse.ai_message)
-            : {
-                id: tempAiId,
-                sender: "ai" as const,
-                text: t("errors.replyMissing"),
-                createdAt: new Date().toISOString(),
-              },
-        ];
-
-        setMessages((prev) => [
-          ...prev.filter(
-            (message) => message.id !== tempUserId && message.id !== tempAiId,
-          ),
-          ...nextMessages,
-        ]);
+      if (response.data?.conversation?.id) {
+        setConversationId(response.data.conversation.id);
       }
+
+      const nextMessages = [
+        response.data?.user_message
+          ? mapBackendMessage(response.data.user_message)
+          : {
+              id: tempUserId,
+              sender: "user" as const,
+              text: trimmed,
+              createdAt: nowIso,
+            },
+        response.data?.ai_message
+          ? mapBackendMessage(response.data.ai_message)
+          : {
+              id: tempAiId,
+              sender: "ai" as const,
+              text: t("errors.replyMissing"),
+              createdAt: new Date().toISOString(),
+            },
+      ];
+
+      setMessages((prev) => [
+        ...prev.filter((message) => message.id !== tempUserId && message.id !== tempAiId),
+        ...nextMessages,
+      ]);
     } catch (error) {
       console.error("Failed to send client dashboard chat message:", error);
       setMessages((prev) =>
@@ -300,15 +454,14 @@ export function ClientChatPage() {
             <p className="text-[10px] font-black uppercase tracking-[0.35em] text-blue-600">
               {t("header.subtitle")}
             </p>
-            <button
-              type="button"
-              onClick={() => setIntroDismissed(true)}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white/80 text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
-              aria-label={t("header.dismiss")}
-              title={t("header.dismiss")}
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                {interfaceCopy.sharedThread}
+              </span>
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                {interfaceCopy.uploadsPending}
+              </span>
+            </div>
           </div>
           <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -358,43 +511,69 @@ export function ClientChatPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-                >
+              {messages.map((message) => {
+                const providerLabel =
+                  message.sender === "ai"
+                    ? formatProviderLabel(message.provider, message.model)
+                    : null;
+
+                return (
                   <div
-                    className={`max-w-2xl rounded-[1.75rem] px-5 py-4 shadow-sm ${
-                      message.sender === "user"
-                        ? "rounded-br-md bg-gradient-to-r from-blue-600 to-sky-500 text-white"
-                        : "rounded-bl-md border border-slate-200 bg-white text-slate-900"
-                    }`}
+                    key={message.id}
+                    className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
-                    {message.sender === "ai" && message.knowledgeSources?.length ? (
-                      <div className="mt-3 rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                        <span className="font-semibold text-slate-700">{t("sources")}:</span>{" "}
-                        {message.knowledgeSources
-                          .map((source) => source.question || source.type || "knowledge")
-                          .join(", ")}
-                      </div>
-                    ) : null}
-                    <p
-                      className={`mt-2 text-[11px] ${
-                        message.sender === "user" ? "text-white/75" : "text-slate-400"
+                    <div
+                      className={`max-w-2xl rounded-[1.75rem] px-5 py-4 shadow-sm ${
+                        message.sender === "user"
+                          ? "rounded-br-md bg-gradient-to-r from-blue-600 to-sky-500 text-white"
+                          : "rounded-bl-md border border-slate-200 bg-white text-slate-900"
                       }`}
                     >
-                      {formatClock(message.createdAt, locale)}
-                    </p>
+                      {message.sender === "ai" && (providerLabel || message.knowledgeSources?.length) ? (
+                        <div className="mb-3 flex flex-wrap gap-2">
+                          {providerLabel ? (
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                              {providerLabel}
+                            </span>
+                          ) : null}
+                          {message.knowledgeSources?.length ? (
+                            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                              {interfaceCopy.faqSource}
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
+                      {message.sender === "ai" && message.knowledgeSources?.length ? (
+                        <div className="mt-3 rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                          <span className="font-semibold text-slate-700">{t("sources")}:</span>{" "}
+                          {message.knowledgeSources
+                            .map((source) => source.question || source.type || "knowledge")
+                            .join(", ")}
+                        </div>
+                      ) : null}
+                      <p
+                        className={`mt-2 text-[11px] ${
+                          message.sender === "user" ? "text-white/75" : "text-slate-400"
+                        }`}
+                      >
+                        {formatClock(message.createdAt, locale)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={endRef} />
             </div>
           )}
         </div>
 
         <div className="border-t border-slate-200 bg-white px-6 py-5">
+          <div className="mb-3 flex items-start gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+            <p>{interfaceCopy.uploadsPending}</p>
+          </div>
+
           <div className="flex items-end gap-3 rounded-[1.75rem] border border-slate-200 bg-slate-50 p-3 shadow-sm">
             <textarea
               rows={1}
