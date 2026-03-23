@@ -43,6 +43,11 @@ interface WidgetMessage {
   timestamp: Date;
   provider?: string;
   model?: string | null;
+  attachment?: {
+    name: string;
+    type: string;
+    url?: string;
+  };
 }
 
 interface PublicLeadResponse {
@@ -1302,6 +1307,11 @@ export function ChatWidget({
   const [publicDefaultLocationId, setPublicDefaultLocationId] = useState<number | undefined>(
     undefined,
   );
+  const [sessionJwt, setSessionJwt] = useState<string | null>(null);
+  const [resolvedLocationId, setResolvedLocationId] = useState<number | undefined>(undefined);
+  const [resolvedHarborName, setResolvedHarborName] = useState<string | undefined>(undefined);
+  const [initBrandColor, setInitBrandColor] = useState<string | undefined>(undefined);
+  const [enabledTabs, setEnabledTabs] = useState<string[]>(["chat", "tasks", "booking"]);
   const visitorIdRef = useRef<string>(getOrCreateSharedVisitorId());
   const publicLocationLookupRef = useRef<Promise<number | undefined> | null>(null);
   const restoredSharedChatKeyRef = useRef<string | null>(null);
@@ -1389,6 +1399,11 @@ export function ChatWidget({
     void initWidget();
 
     rememberWidgetLocationId(locationId ?? detectRuntimeLocationId());
+
+    return () => {
+      cancelled = true;
+    };
+  }, [boatId, widgetMode, locationId, harborName]);
 
   useEffect(() => {
     if (!sharedChatLocationId) {

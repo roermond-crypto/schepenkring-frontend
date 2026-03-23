@@ -209,6 +209,7 @@ export function ClientChatPage() {
   const [initializing, setInitializing] = useState(true);
   const [sending, setSending] = useState(false);
   const [introDismissed, setIntroDismissed] = useState(false);
+  const introDismissKey = locationId ? `nauticsecure_dashboard_chat_intro_${locationId}` : null;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -387,7 +388,7 @@ export function ClientChatPage() {
     setSending(true);
 
     try {
-      const response = await api.post<AskResponse | BackendChatMessage>(
+      const response = await api.post<AskResponse & BackendChatMessage>(
         `/chat/conversations/${conversationId}/messages`,
         {
           text: trimmed,
