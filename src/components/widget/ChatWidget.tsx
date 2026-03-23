@@ -994,8 +994,8 @@ function BookingCalendarTab({
                 style={
                   isSelected
                     ? {
-                        background: `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
-                      }
+                      background: `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                    }
                     : undefined
                 }
               >
@@ -1026,8 +1026,8 @@ function BookingCalendarTab({
                 style={
                   selectedTime === slot
                     ? {
-                        background: `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
-                      }
+                      background: `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
+                    }
                     : undefined
                 }
               >
@@ -1103,8 +1103,8 @@ function BookingCalendarTab({
               style={{
                 background:
                   bookingStatus === "processing" ||
-                  !bookingForm.name ||
-                  !bookingForm.email
+                    !bookingForm.name ||
+                    !bookingForm.email
                     ? undefined
                     : `linear-gradient(145deg, ${colors.userBubbleStart}, ${colors.userBubbleEnd})`,
               }}
