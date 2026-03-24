@@ -161,6 +161,49 @@ type YachtContractData = {
   boat_name?: string | null;
   manufacturer?: string | null;
   model?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    postal_code?: string | null;
+    city?: string | null;
+  } | null;
+  owner?: {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    postal_code?: string | null;
+    city?: string | null;
+  } | null;
+  client?: {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    postal_code?: string | null;
+    city?: string | null;
+  } | null;
+  contact?: {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    postal_code?: string | null;
+    city?: string | null;
+  } | null;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  owner_name?: string | null;
+  owner_email?: string | null;
+  owner_phone?: string | null;
+  owner_address?: string | null;
+  owner_postal_code?: string | null;
+  owner_city?: string | null;
 };
 
 interface SignhostFlowProps {
@@ -1111,6 +1154,12 @@ function buildContractDraft(
   language: ContractLanguage,
 ): ContractDraft {
   const locationDefaults = resolveLocationDefaults(location);
+  const party =
+    yachtData?.user ??
+    yachtData?.owner ??
+    yachtData?.client ??
+    yachtData?.contact ??
+    null;
   const askingPrice =
     yachtData?.price != null && yachtData?.price !== ""
       ? String(yachtData.price)
@@ -1131,12 +1180,27 @@ function buildContractDraft(
     companyCity: locationDefaults.companyCity || "",
     companyPhone: locationDefaults.companyPhone || "",
     companyEmail: locationDefaults.companyEmail || "",
-    clientName: "",
-    clientAddress: "",
-    clientPostalCode: "",
-    clientCity: "",
-    clientPhone: "",
-    clientEmail: "",
+    clientName:
+      party?.name ||
+      yachtData?.customer_name ||
+      yachtData?.owner_name ||
+      "",
+    clientAddress: party?.address || yachtData?.owner_address || "",
+    clientPostalCode:
+      party?.postal_code || yachtData?.owner_postal_code || "",
+    clientCity: party?.city || yachtData?.owner_city || "",
+    clientPhone:
+      party?.phone ||
+      yachtData?.customer_phone ||
+      yachtData?.owner_phone ||
+      yachtData?.phone ||
+      "",
+    clientEmail:
+      party?.email ||
+      yachtData?.customer_email ||
+      yachtData?.owner_email ||
+      yachtData?.email ||
+      "",
     passportNumber: "",
     married: "no",
     spouseName: "",

@@ -12133,11 +12133,19 @@ function Input(
   }, [inputProps.value, inputProps.defaultValue]);
 
   const highlighted = Boolean(needsConfirmation) || hasValue;
+  const normalizedInputProps =
+    inputProps.type === "number"
+      ? {
+          inputMode: inputProps.inputMode ?? "decimal",
+          step: inputProps.step ?? "any",
+          ...inputProps,
+        }
+      : inputProps;
 
   return (
     <div className="relative">
       <input
-        {...inputProps}
+        {...normalizedInputProps}
         placeholder={undefined}
         onChange={(event) => {
           setHasValue(hasFilledFieldValue(event.target.value));

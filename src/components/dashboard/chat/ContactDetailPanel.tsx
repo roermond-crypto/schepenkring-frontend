@@ -385,6 +385,17 @@ export function ContactDetailPanel({
             </p>
             <div className="space-y-3">
               <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 px-4 py-3">
+                <Phone size={16} className="mt-0.5 text-emerald-500" />
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    {t("detail.phone")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {contact?.phone ?? conversation.guest_phone ?? t("detail.noPhone")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 px-4 py-3">
                 <Building2 size={16} className="mt-0.5 text-fuchsia-500" />
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">

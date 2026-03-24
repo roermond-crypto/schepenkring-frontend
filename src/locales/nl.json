@@ -41,18 +41,24 @@
     "signupTitle": "Client registratie",
     "signupError": "Account aanmaken is mislukt. Controleer je gegevens.",
     "email": "E-mail",
+    "phone": "Telefoon",
     "password": "Wachtwoord",
     "confirmPassword": "Bevestig wachtwoord",
     "verificationCode": "Verificatiecode",
     "rememberTerminal": "Onthoud dit apparaat",
     "verifyEmail": "E-mail verifiëren",
+    "forgotPassword": "Wachtwoord vergeten?",
     "registerCta": "Registreren",
     "processing": "Bezig...",
     "validating": "Controleren...",
     "verifyContinue": "Verifieer & ga verder",
-    "noAccountSignup": "Geen account? Registreer als Client",
+    "noAccountSignup": "Geen account? Registreer als koper / verkoper",
     "alreadyHaveAccount": "Al een account? Inloggen",
-    "clientSignup": "Client registratie",
+    "clientSignup": "Koper / verkoper registratie",
+    "termsLabel": "Ik ga akkoord met de maritieme voorwaarden en het privacybeleid.",
+    "termsRequired": "Je moet akkoord gaan met de voorwaarden om door te gaan.",
+    "selectLocation": "Selecteer hoofdvestiging",
+    "noLocationYet": "Ik heb nog geen locatie",
     "confirmPasswordRequired": "Bevestig wachtwoord is verplicht.",
     "passwordsDontMatch": "Wachtwoorden komen niet overeen.",
     "enterVerificationCode": "Voer je verificatiecode in.",
@@ -63,9 +69,9 @@
     "newClient": "Nieuwe client?",
     "hasAccount": "Heb je al een account?",
     "signin": "Inloggen",
-    "signupNotice": "Registratie is alleen beschikbaar voor Client. Employee, Location en Admin accounts worden door de beheerder aangemaakt.",
+    "signupNotice": "Registratie is alleen beschikbaar voor kopers en verkopers. Employee-, Location- en Admin-accounts worden door de beheerder aangemaakt.",
     "submitLogin": "Inloggen",
-    "submitSignup": "Registreren als Client"
+    "submitSignup": "Registreren als koper / verkoper"
   },
   "dashboard": {
     "welcome": "Welkom terug",
@@ -985,6 +991,20 @@
         "days": "{count}d"
       }
     },
+    "legacyList": {
+      "unreadCount": "{count} ongelezen bericht(en)",
+      "newChat": "Nieuwe chat",
+      "emptyTitle": "Geen gesprekken gevonden",
+      "emptySearch": "Pas je zoekopdracht aan",
+      "emptyDefault": "Start een nieuw gesprek om te beginnen",
+      "filters": {
+        "unread": "Ongelezen",
+        "online": "Online",
+        "allChats": "Alle chats",
+        "unreadOnly": "Alleen ongelezen",
+        "onlineUsers": "Online gebruikers"
+      }
+    },
     "messages": {
       "today": "Vandaag",
       "systemEvent": "Systeemevent",
@@ -1042,6 +1062,7 @@
       "saveFailed": "Kon het contact niet bijwerken.",
       "unknownVisitor": "Anonieme bezoeker",
       "noCompany": "Nog geen bedrijf",
+      "noPhone": "Nog geen telefoonnummer",
       "unknownLocation": "Onbekende locatie",
       "noActivity": "Nog geen activiteit geregistreerd.",
       "placeholders": {

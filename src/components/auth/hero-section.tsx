@@ -38,6 +38,7 @@ type HeroSectionProps = {
     verificationCode: string;
     rememberTerminal: string;
     verifyEmail: string;
+    forgotPassword: string;
     login: string;
     register: string;
     processing: string;
@@ -46,6 +47,11 @@ type HeroSectionProps = {
     noAccountSignup: string;
     alreadyHaveAccount: string;
     clientSignup: string;
+    termsLabel: string;
+    termsRequired: string;
+    selectLocation: string;
+    noLocationYet: string;
+    phone: string;
     confirmPasswordRequired: string;
     passwordsDontMatch: string;
     enterVerificationCode: string;
@@ -87,6 +93,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     useState<StepUpChallenge | null>(null);
   const [locations, setLocations] = useState<PublicLocation[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -242,6 +249,11 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
 
   async function executeAuth() {
     if (mode === "register") {
+      if (!acceptTerms) {
+        setError(copy.termsRequired);
+        return;
+      }
+
       if (!formData.confirmPassword) {
         setError(copy.confirmPasswordRequired);
         return;
@@ -418,7 +430,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
               <input
                 name="phone"
                 type="tel"
-                placeholder="Phone"
+                placeholder={copy.phone}
                 value={formData.phone}
                 onChange={onInputChange}
                 className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
@@ -430,14 +442,14 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                 name="location_id"
                 value={formData.location_id}
                 onChange={onInputChange}
-                required
                 className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
               >
-                <option value="" disabled>
+                <option value="">
                   {loadingLocations
                     ? "Loading locations..."
-                    : "Select location"}
+                    : copy.selectLocation}
                 </option>
+                <option value="">{copy.noLocationYet}</option>
                 {locations.map((location) => (
                   <option
                     key={location.id}
@@ -504,6 +516,18 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
               />
             ) : null}
 
+            {mode !== "login" ? (
+              <label className="flex items-start gap-2 text-xs text-gray-600 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(event) => setAcceptTerms(event.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5 cursor-pointer rounded border-gray-300 text-[#003566] focus:ring-[#003566]"
+                />
+                <span>{copy.termsLabel}</span>
+              </label>
+            ) : null}
+
             {mode === "login" ? (
               <div className="mt-2 flex items-center justify-between">
                 <label className="flex items-center space-x-2 text-xs text-gray-600 dark:text-slate-400">
@@ -520,7 +544,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                   href={`/${locale}/auth/verify-email`}
                   className="text-xs text-gray-600 hover:text-[#003566] dark:text-slate-300"
                 >
-                  {copy.verifyEmail}
+                  {copy.forgotPassword}
                 </Link>
               </div>
             ) : null}
