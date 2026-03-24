@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useTransition } from "react"
+import { useTranslations } from "next-intl"
 import { Search, Plus, Filter } from "lucide-react"
 import type { Chat } from "@/types/chat"
 import { getChats } from "@/app/[locale]/actions/chat"
@@ -16,6 +17,7 @@ interface ChatListProps {
 }
 
 export function ChatList({ onChatSelect, onNewChat, currentUserId }: ChatListProps) {
+    const t = useTranslations("DashboardChat")
     const [chats, setChats] = useState<Chat[]>([])
     const [filteredChats, setFilteredChats] = useState<Chat[]>([])
     const [searchQuery, setSearchQuery] = useState("")
@@ -69,13 +71,13 @@ export function ChatList({ onChatSelect, onNewChat, currentUserId }: ChatListPro
                         <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
                         {unreadCount > 0 && (
                             <p className="text-sm text-gray-600">
-                                {unreadCount} unread message{unreadCount > 1 ? "s" : ""}
+                                {t("legacyList.unreadCount", { count: unreadCount })}
                             </p>
                         )}
                     </div>
                     <Button onClick={onNewChat} size="sm" className="bg-blue-600 hover:bg-blue-700">
                         <Plus className="w-4 h-4 mr-2" />
-                        New Chat
+                        {t("legacyList.newChat")}
                     </Button>
                 </div>
 
@@ -84,7 +86,7 @@ export function ChatList({ onChatSelect, onNewChat, currentUserId }: ChatListPro
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                         <Input
-                            placeholder="Search conversations..."
+                            placeholder={t("list.searchPlaceholder")}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-10"
@@ -94,13 +96,13 @@ export function ChatList({ onChatSelect, onNewChat, currentUserId }: ChatListPro
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm" className="px-3 bg-transparent">
                                 <Filter className="w-4 h-4 mr-2" />
-                                {filter === "all" ? "All" : filter === "unread" ? "Unread" : "Online"}
+                                {filter === "all" ? t("list.tabs.all") : filter === "unread" ? t("legacyList.filters.unread") : t("legacyList.filters.online")}
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setFilter("all")}>All Chats</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setFilter("unread")}>Unread Only</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setFilter("online")}>Online Users</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setFilter("all")}>{t("legacyList.filters.allChats")}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setFilter("unread")}>{t("legacyList.filters.unreadOnly")}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setFilter("online")}>{t("legacyList.filters.onlineUsers")}</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -117,9 +119,9 @@ export function ChatList({ onChatSelect, onNewChat, currentUserId }: ChatListPro
                         <div className="text-gray-400 mb-4">
                             <Search className="w-12 h-12" />
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No conversations found</h3>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">{t("legacyList.emptyTitle")}</h3>
                         <p className="text-gray-600 text-center">
-                            {searchQuery ? "Try adjusting your search terms" : "Start a new conversation to get started"}
+                            {searchQuery ? t("legacyList.emptySearch") : t("legacyList.emptyDefault")}
                         </p>
                     </div>
                 ) : (
