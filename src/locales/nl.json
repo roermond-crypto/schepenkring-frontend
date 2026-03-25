@@ -45,6 +45,7 @@
     "confirmPassword": "Bevestig wachtwoord",
     "verificationCode": "Verificatiecode",
     "rememberTerminal": "Onthoud dit apparaat",
+    "forgotPassword": "Wachtwoord vergeten?",
     "verifyEmail": "E-mail verifiëren",
     "registerCta": "Registreren",
     "processing": "Bezig...",
@@ -59,6 +60,10 @@
     "verificationCodeSent": "Verificatiecode is naar je e-mail gestuurd.",
     "invalidLoginResponse": "Ongeldige login-respons.",
     "authFailed": "Authenticatie mislukt.",
+    "termsRequired": "Je moet akkoord gaan met de voorwaarden om te registreren.",
+    "termsLabelBeforeLink": "Ik ga akkoord met de",
+    "termsLinkLabel": "voorwaarden",
+    "termsLabelAfterLink": ".",
     "name": "Volledige naam",
     "newClient": "Nieuwe client?",
     "hasAccount": "Heb je al een account?",
@@ -341,6 +346,7 @@
     },
     "actions": {
       "viewBiddings": "Bekijk biedingen",
+      "viewBoats": "Bekijk boten",
       "createFirstListing": "Eerste listing maken",
       "browseMarketplace": "Marketplace bekijken"
     },
@@ -375,6 +381,10 @@
     "empty": {
       "noRecentBiddingTitle": "Geen recente biedactiviteit",
       "noRecentBiddingSubtitle": "Start een biedproces om hier live updates te zien.",
+      "brokerReviewTitle": "Brokercontrole",
+      "brokerReviewHeadingOne": "Je hebt {count} boot in controle bij de broker",
+      "brokerReviewHeadingOther": "Je hebt {count} boten in controle bij de broker",
+      "brokerReviewSubtitle": "Je listing is ingediend en wacht op goedkeuring van de broker voordat deze in de verkoopflow komt.",
       "onboardingTitle": "Welkom op de marketplace",
       "onboardingHeading": "Je hebt nog geen biedingen geplaatst",
       "onboardingSubtitle": "Begin met het maken van je eerste bootlisting of bekijk de <marketplace>marketplace</marketplace> om te bieden.",

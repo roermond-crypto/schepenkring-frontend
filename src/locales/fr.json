@@ -45,6 +45,7 @@
     "confirmPassword": "Confirmer le mot de passe",
     "verificationCode": "Code de vérification",
     "rememberTerminal": "Se souvenir du terminal",
+    "forgotPassword": "Mot de passe oublié ?",
     "verifyEmail": "Vérifier l'e-mail",
     "registerCta": "S'enregistrer",
     "processing": "Traitement...",
@@ -59,6 +60,10 @@
     "verificationCodeSent": "Code de vérification envoyé à votre e-mail.",
     "invalidLoginResponse": "Réponse de connexion invalide.",
     "authFailed": "Échec de l'authentification.",
+    "termsRequired": "Vous devez accepter les conditions générales pour vous inscrire.",
+    "termsLabelBeforeLink": "J'accepte les",
+    "termsLinkLabel": "conditions générales",
+    "termsLabelAfterLink": ".",
     "name": "Nom complet",
     "newClient": "Nouveau client ?",
     "hasAccount": "Vous avez déjà un compte ?",
@@ -340,6 +345,7 @@
     },
     "actions": {
       "viewBiddings": "Voir les enchères",
+      "viewBoats": "Voir les bateaux",
       "createFirstListing": "Creer la premiere annonce",
       "browseMarketplace": "Parcourir le marketplace"
     },
@@ -374,6 +380,10 @@
     "empty": {
       "noRecentBiddingTitle": "Aucune activité d'enchères récente",
       "noRecentBiddingSubtitle": "Démarrez un processus d'enchères pour voir les mises à jour en direct ici.",
+      "brokerReviewTitle": "Vérification du courtier",
+      "brokerReviewHeadingOne": "Vous avez {count} bateau en cours de vérification chez le courtier",
+      "brokerReviewHeadingOther": "Vous avez {count} bateaux en cours de vérification chez le courtier",
+      "brokerReviewSubtitle": "Votre annonce a été envoyée et attend l'approbation du courtier avant d'entrer dans le flux de vente.",
       "onboardingTitle": "Bienvenue sur le marketplace",
       "onboardingHeading": "Vous n'avez encore place aucune offre",
       "onboardingSubtitle": "Commencez par creer votre premiere annonce de bateau ou parcourez le <marketplace>marketplace</marketplace> pour enchérir.",

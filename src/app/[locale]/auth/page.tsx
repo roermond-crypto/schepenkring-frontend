@@ -48,6 +48,7 @@ export default async function AuthPage({ params, searchParams }: AuthPageProps) 
         confirmPassword: dict.auth.confirmPassword,
         verificationCode: dict.auth.verificationCode,
         rememberTerminal: dict.auth.rememberTerminal,
+        forgotPassword: dict.auth.forgotPassword,
         verifyEmail: dict.auth.verifyEmail,
         login: dict.auth.submitLogin,
         register: dict.auth.registerCta,
@@ -63,6 +64,10 @@ export default async function AuthPage({ params, searchParams }: AuthPageProps) 
         verificationCodeSent: dict.auth.verificationCodeSent,
         invalidLoginResponse: dict.auth.invalidLoginResponse,
         authFailed: dict.auth.authFailed,
+        termsRequired: dict.auth.termsRequired,
+        termsLabelBeforeLink: dict.auth.termsLabelBeforeLink,
+        termsLinkLabel: dict.auth.termsLinkLabel,
+        termsLabelAfterLink: dict.auth.termsLabelAfterLink,
       }}
     />
   );

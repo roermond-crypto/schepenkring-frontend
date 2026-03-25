@@ -20,6 +20,7 @@ import boatsHeroImage from "../../../public/boatslogo.jpg";
 import schepenkringLogo from "../../../public/schepenkring-logo.png";
 
 type AuthMode = "login" | "register";
+const PENDING_VERIFICATION_EMAIL_KEY = "pending_verification_email";
 
 type HeroSectionProps = {
   locale: AppLocale;
@@ -37,6 +38,7 @@ type HeroSectionProps = {
     confirmPassword: string;
     verificationCode: string;
     rememberTerminal: string;
+    forgotPassword: string;
     verifyEmail: string;
     login: string;
     register: string;
@@ -52,6 +54,10 @@ type HeroSectionProps = {
     verificationCodeSent: string;
     invalidLoginResponse: string;
     authFailed: string;
+    termsRequired: string;
+    termsLabelBeforeLink: string;
+    termsLinkLabel: string;
+    termsLabelAfterLink: string;
   };
 };
 
@@ -73,6 +79,11 @@ type AuthPayload = {
   };
 };
 
+function getTermsPdfPath(locale: AppLocale) {
+  const termsLocale = locale === "fr" ? "en" : locale;
+  return `/contracts/bemiddelingsvoorwaarden-${termsLocale}.pdf`;
+}
+
 export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -87,6 +98,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     useState<StepUpChallenge | null>(null);
   const [locations, setLocations] = useState<PublicLocation[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -96,6 +108,11 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     password: "",
     confirmPassword: "",
   });
+  const normalizedFormEmail = formData.email.trim();
+  const verifyEmailHref = normalizedFormEmail
+    ? `/${locale}/auth/verify-email?email=${encodeURIComponent(normalizedFormEmail)}`
+    : `/${locale}/auth/verify-email`;
+  const termsHref = getTermsPdfPath(locale);
 
   useEffect(() => {
     const modeParam = searchParams.get("mode");
@@ -251,6 +268,11 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
         setError(copy.passwordsDontMatch);
         return;
       }
+
+      if (!acceptedTerms) {
+        setError(copy.termsRequired);
+        return;
+      }
     }
 
     if (mode === "login") {
@@ -284,10 +306,12 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
         : undefined,
       website: formData.website,
       password: formData.password,
+      terms_accepted: acceptedTerms,
     });
 
     if ("verification_required" in response && response.verification_required) {
       setSuccess(response.message ?? copy.verificationCodeSent);
+      sessionStorage.setItem(PENDING_VERIFICATION_EMAIL_KEY, response.email);
       setTimeout(() => {
         router.push(
           `/${locale}/auth/verify-email?email=${encodeURIComponent(response.email)}`,
@@ -504,6 +528,30 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
               />
             ) : null}
 
+            {mode !== "login" ? (
+              <label className="flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-3 text-xs text-gray-600 dark:border-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(event) => setAcceptedTerms(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-gray-300 text-[#003566] focus:ring-[#003566]"
+                  required
+                />
+                <span className="leading-5">
+                  {copy.termsLabelBeforeLink}{" "}
+                  <a
+                    href={termsHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-[#003566] underline underline-offset-2"
+                  >
+                    {copy.termsLinkLabel}
+                  </a>
+                  {copy.termsLabelAfterLink}
+                </span>
+              </label>
+            ) : null}
+
             {mode === "login" ? (
               <div className="mt-2 flex items-center justify-between">
                 <label className="flex items-center space-x-2 text-xs text-gray-600 dark:text-slate-400">
@@ -516,12 +564,20 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                   <span>{copy.rememberTerminal}</span>
                 </label>
 
-                <Link
-                  href={`/${locale}/auth/verify-email`}
-                  className="text-xs text-gray-600 hover:text-[#003566] dark:text-slate-300"
-                >
-                  {copy.verifyEmail}
-                </Link>
+                <div className="flex flex-col items-end gap-1">
+                  <Link
+                    href={`/${locale}/auth/forgot-password`}
+                    className="text-xs text-[#003566] hover:underline dark:text-sky-300"
+                  >
+                    {copy.forgotPassword}
+                  </Link>
+                  <Link
+                    href={verifyEmailHref}
+                    className="text-xs text-gray-600 hover:text-[#003566] dark:text-slate-300"
+                  >
+                    {copy.verifyEmail}
+                  </Link>
+                </div>
               </div>
             ) : null}
 

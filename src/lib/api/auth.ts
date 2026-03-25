@@ -119,6 +119,7 @@ export async function signup(payload: {
   location_id?: number;
   website?: string;
   password: string;
+  terms_accepted: boolean;
 }) {
   const body = {
     name: payload.name,
@@ -128,7 +129,7 @@ export async function signup(payload: {
     website: payload.website ?? "",
     password: payload.password,
     password_confirmation: payload.password,
-    accept_terms: true,
+    terms_accepted: payload.terms_accepted,
   };
 
   return apiRequest<SignupResponse>({
@@ -147,7 +148,7 @@ export async function verifyEmail(payload: { email: string; code: string }) {
 }
 
 export async function resendVerification(payload: { email: string }) {
-  return apiRequest<{ sent: true; message?: string }>({
+  return apiRequest<{ sent: true; verified?: boolean; message?: string }>({
     url: "/resend-verification",
     method: "POST",
     data: payload,
@@ -165,5 +166,26 @@ export async function getSession() {
   return apiRequest<SessionResponse>({
     url: "/session",
     method: "GET",
+  });
+}
+
+export async function requestPasswordReset(payload: { email: string }) {
+  return apiRequest<{ status?: string; message?: string }>({
+    url: "/auth/forgot-password",
+    method: "POST",
+    data: payload,
+  });
+}
+
+export async function resetPassword(payload: {
+  email: string;
+  token: string;
+  password: string;
+  password_confirmation: string;
+}) {
+  return apiRequest<{ status?: string; message?: string }>({
+    url: "/auth/reset-password",
+    method: "POST",
+    data: payload,
   });
 }
