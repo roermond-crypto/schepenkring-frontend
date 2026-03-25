@@ -154,6 +154,9 @@ const WIZARD_STEP_IDS = [
 const MAX_IMAGES_UPLOAD = 50;
 const UPLOAD_BATCH_SIZE = 10;
 const UPLOAD_MAX_PARALLEL_BATCHES = 2;
+const EXTRACTION_ESTIMATED_DURATION_SECONDS = 120;
+const EXTRACTION_INITIAL_PROGRESS = 5;
+const EXTRACTION_PROGRESS_CAP = 95;
 
 // Configuration
 const STORAGE_URL = "https://app.schepen-kring.nl/storage/";
@@ -3143,9 +3146,6 @@ export default function YachtEditorPage() {
   const [mainPreview, setMainPreview] = useState<string | null>(null);
   const [mainFile, setMainFile] = useState<File | null>(null);
   const hasInFlightImageUploads = isUploading || pipeline.isUploading;
-  const selectedHarborId =
-    selectedYacht?.ref_harbor_id ?? selectedYacht?.location_id ?? null;
-  const hasSelectedHarbor = hasFilledFieldValue(selectedHarborId);
   const persistedPipelineImages = useMemo(
     () => pipeline.images.filter((image) => image.id > 0),
     [pipeline.images],
@@ -3274,7 +3274,9 @@ export default function YachtEditorPage() {
   // New AI UI Feedback States
   const [extractionProgress, setExtractionProgress] = useState(0);
   const [extractionStatus, setExtractionStatus] = useState("");
-  const [extractionCountdown, setExtractionCountdown] = useState(60);
+  const [extractionCountdown, setExtractionCountdown] = useState(
+    EXTRACTION_ESTIMATED_DURATION_SECONDS,
+  );
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -3380,6 +3382,14 @@ export default function YachtEditorPage() {
     currentUserHarborName,
     harbors,
   ]);
+  const selectedHarborId =
+    selectedYacht?.ref_harbor_id ??
+    selectedYacht?.location_id ??
+    preferredHarborId ??
+    currentUserHarborId ??
+    null;
+  const hasSelectedHarbor = hasFilledFieldValue(selectedHarborId);
+  const isHarborSelectionBlocking = !isClientRole && !hasSelectedHarbor;
   const draftBoatType =
     (draft?.data as any)?.step2?.selectedYacht?.boat_type ?? null;
   const boatTypeForConfig = selectedYacht?.boat_type ?? draftBoatType ?? null;
@@ -4651,7 +4661,7 @@ export default function YachtEditorPage() {
         );
         return;
       }
-      if (targetStep > 2 && !hasSelectedHarbor) {
+      if (targetStep > 2 && isHarborSelectionBlocking) {
         toast.error(
           labelText(
             "locationRequiredForNextStep",
@@ -4667,7 +4677,7 @@ export default function YachtEditorPage() {
       isOnline,
       isNewMode,
       canProceedFromStep1,
-      hasSelectedHarbor,
+      isHarborSelectionBlocking,
       offlineImages,
       pipeline.images.length,
     ],
@@ -5713,9 +5723,9 @@ export default function YachtEditorPage() {
     }
 
     // ── ONLINE PATH: original server upload flow ──
-    // Check max limit (30)
+    // Check total gallery limit before starting any upload batches.
     if (pipeline.stats.total + files.length > MAX_IMAGES_UPLOAD) {
-      toast.error(`Maximum ${MAX_IMAGES_UPLOAD} images allowed per batch.`);
+      toast.error(`Maximum ${MAX_IMAGES_UPLOAD} images allowed for this vessel.`);
       return;
     }
 
@@ -6070,8 +6080,17 @@ export default function YachtEditorPage() {
     // );
 
     // ── Start Progress & Countdown ──
-    setExtractionProgress(5);
-    setExtractionCountdown(60);
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    setExtractionProgress(EXTRACTION_INITIAL_PROGRESS);
+    setExtractionCountdown(EXTRACTION_ESTIMATED_DURATION_SECONDS);
     setExtractionStatus(
       labelText(
         "connectingGeminiVisionApi",
@@ -6079,49 +6098,57 @@ export default function YachtEditorPage() {
       ),
     );
 
+    const extractionStartedAt = Date.now();
+    const extractionDurationMs = EXTRACTION_ESTIMATED_DURATION_SECONDS * 1000;
+    const progressRange =
+      EXTRACTION_PROGRESS_CAP - EXTRACTION_INITIAL_PROGRESS;
+
     progressIntervalRef.current = setInterval(() => {
-      setExtractionProgress((prev) => {
-        if (prev >= 95) return prev;
-        // Slow down as we approach the end
-        const step = prev < 40 ? 4 : prev < 70 ? 2 : 1;
-        const next = prev + step;
+      const elapsedMs = Date.now() - extractionStartedAt;
+      const clampedElapsedMs = Math.min(elapsedMs, extractionDurationMs);
+      const progressRatio = clampedElapsedMs / extractionDurationMs;
+      const nextProgress = Math.min(
+        EXTRACTION_PROGRESS_CAP,
+        Math.round(
+          EXTRACTION_INITIAL_PROGRESS + progressRatio * progressRange,
+        ),
+      );
+      const secondsRemaining = Math.max(
+        1,
+        Math.ceil((extractionDurationMs - clampedElapsedMs) / 1000),
+      );
 
-        // Update status messages based on progress
-        if (next < 25)
-          setExtractionStatus(
-            labelText(
-              "analyzingVesselImagesGemini",
-              "Analyzing vessel images with Gemini Vision...",
-            ),
-          );
-        else if (next < 50)
-          setExtractionStatus(
-            labelText(
-              "searchingCatalogMatchingModels",
-              "Searching catalog for matching models...",
-            ),
-          );
-        else if (next < 80)
-          setExtractionStatus(
-            labelText(
-              "crossReferencingTechnicalSpecs",
-              "Cross-referencing technical specifications...",
-            ),
-          );
-        else
-          setExtractionStatus(
-            labelText(
-              "finalizingDataValidatingResults",
-              "Finalizing data and validating results...",
-            ),
-          );
+      setExtractionProgress(nextProgress);
+      setExtractionCountdown(secondsRemaining);
 
-        return next;
-      });
-    }, 1500);
-
-    countdownIntervalRef.current = setInterval(() => {
-      setExtractionCountdown((prev) => (prev > 1 ? prev - 1 : 1));
+      if (nextProgress < 25)
+        setExtractionStatus(
+          labelText(
+            "analyzingVesselImagesGemini",
+            "Analyzing vessel images with Gemini Vision...",
+          ),
+        );
+      else if (nextProgress < 50)
+        setExtractionStatus(
+          labelText(
+            "searchingCatalogMatchingModels",
+            "Searching catalog for matching models...",
+          ),
+        );
+      else if (nextProgress < 80)
+        setExtractionStatus(
+          labelText(
+            "crossReferencingTechnicalSpecs",
+            "Cross-referencing technical specifications...",
+          ),
+        );
+      else
+        setExtractionStatus(
+          labelText(
+            "finalizingDataValidatingResults",
+            "Finalizing data and validating results...",
+          ),
+        );
     }, 1000);
 
     try {
@@ -6515,7 +6542,10 @@ export default function YachtEditorPage() {
         clearInterval(progressIntervalRef.current);
       if (countdownIntervalRef.current)
         clearInterval(countdownIntervalRef.current);
+      progressIntervalRef.current = null;
+      countdownIntervalRef.current = null;
       setExtractionProgress(0);
+      setExtractionCountdown(EXTRACTION_ESTIMATED_DURATION_SECONDS);
     }
   };
 
@@ -6981,8 +7011,7 @@ export default function YachtEditorPage() {
     formData.set("status", normalizedStatus);
 
     const harborId =
-      getFieldValue("ref_harbor_id") ??
-      toFormValue(selectedYacht?.ref_harbor_id ?? selectedYacht?.location_id);
+      getFieldValue("ref_harbor_id") ?? toFormValue(selectedHarborId);
 
     if (harborId !== null) {
       formData.set("ref_harbor_id", harborId);
@@ -7218,8 +7247,19 @@ export default function YachtEditorPage() {
       console.error("Submission error:", err);
 
       if (err.response?.status === 422) {
-        setErrors(err.response.data.errors);
-        toast.error("Please check required fields");
+        setErrors(err.response?.data?.errors || {});
+
+        const serverMessage =
+          err.response?.data?.message ||
+          Object.values(err.response?.data?.errors || {})
+            .flat()
+            .find((msg) => typeof msg === "string");
+
+        toast.error(
+          typeof serverMessage === "string" && serverMessage.trim()
+            ? serverMessage
+            : "Please check required fields",
+        );
       } else if (err.response?.status === 403) {
         toast.error("Permission denied.");
       } else if (err.response?.status === 500) {
@@ -9234,6 +9274,14 @@ export default function YachtEditorPage() {
                           );
 
                           if (!currentHarbor) {
+                            if (currentUserHarborName && currentUserHarborCode) {
+                              return `${currentUserHarborName} (${currentUserHarborCode})`;
+                            }
+
+                            if (currentUserHarborName) {
+                              return currentUserHarborName;
+                            }
+
                             return labelText(
                               "locationAssignedAutomatically",
                               "Location is assigned automatically from your account.",
@@ -12309,13 +12357,11 @@ export default function YachtEditorPage() {
                         "Submitted for Review",
                       )}
                     </p>
-                    <p className="mt-3">
-                      {labelText(
-                        "clientReviewStatusDescription",
-                        "This vessel is now waiting for broker review. The contract is not shown to clients at this stage.",
-                      )}
-                    </p>
-                    <div className="mt-4 inline-flex items-center rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 shadow-sm">
+                    <div className="mt-4 inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-100/80 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-blue-800">
+                      <span
+                        aria-hidden
+                        className="h-1.5 w-1.5 rounded-full bg-blue-700"
+                      />
                       {labelText(
                         "pendingBrokerReview",
                         "Pending broker review",
@@ -12381,12 +12427,12 @@ export default function YachtEditorPage() {
                 }}
                 disabled={
                   (isNewMode && !canProceedFromStep1 && activeStep === 1) ||
-                  (activeStep === 2 && !hasSelectedHarbor)
+                  (activeStep === 2 && isHarborSelectionBlocking)
                 }
                 className={cn(
                   "h-11 px-6 text-xs font-bold uppercase tracking-wider",
                   (isNewMode && !canProceedFromStep1 && activeStep === 1) ||
-                    (activeStep === 2 && !hasSelectedHarbor)
+                    (activeStep === 2 && isHarborSelectionBlocking)
                     ? "bg-slate-300 text-slate-500 cursor-not-allowed"
                     : "bg-[#003566] text-white hover:bg-blue-800",
                 )}
@@ -12396,7 +12442,7 @@ export default function YachtEditorPage() {
                     {t?.wizard?.nav?.runExtractionFirst ||
                       labelText("approveImagesFirst", "Approve Images First")}
                   </>
-                ) : activeStep === 2 && !hasSelectedHarbor ? (
+                ) : activeStep === 2 && isHarborSelectionBlocking ? (
                   <>
                     {labelText(
                       "locationRequiredForNextStep",

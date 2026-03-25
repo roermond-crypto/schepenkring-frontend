@@ -45,6 +45,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Toaster, toast } from "react-hot-toast";
 import DynamicKanbanBoard from "./DynamicKanbanBoard";
 import { normalizeRole } from "@/lib/auth/roles";
+import { getClientToken } from "@/lib/auth/client-session";
 import {
   getBoardColumnDisplayName,
   getBoardStatusForColumn,
@@ -133,31 +134,7 @@ type PriorityFilter = "all" | "Low" | "Medium" | "High";
 type TypeFilter = "all" | "assigned" | "personal";
 
 function getStoredToken() {
-  if (typeof window === "undefined") return null;
-
-  const cookieToken = document.cookie
-    .split("; ")
-    .find((part) => part.startsWith("schepenkring_auth_token="))
-    ?.split("=")[1];
-  if (cookieToken) return decodeURIComponent(cookieToken);
-
-  const authToken = localStorage.getItem("auth_token");
-  if (authToken) return authToken;
-
-  const adminToken = localStorage.getItem("admin_token");
-  if (adminToken) return adminToken;
-
-  const userDataRaw = localStorage.getItem("user_data");
-  if (userDataRaw) {
-    try {
-      const userData = JSON.parse(userDataRaw);
-      if (userData?.token) return userData.token;
-    } catch {
-      // Ignore malformed local storage payloads.
-    }
-  }
-
-  return null;
+  return getClientToken();
 }
 
 function getLocalUserId(): string | null {
@@ -646,7 +623,7 @@ function TaskModal({
   //   typeof window !== "undefined" && window.location.hostname == "localhost"
   //     ? "http://localhost:8000/api"
   //     : "https://app.schepen-kring.nl/api";
-  const API_BASE = "https://app.schepen-kring.nl/api";
+  const API_BASE = "/api/proxy";
   const getHeaders = () => {
     const token = getStoredToken();
     return { headers: token ? { Authorization: `Bearer ${token}` } : {} };
@@ -1592,7 +1569,7 @@ export default function AdminTaskBoardPage() {
   //   typeof window !== "undefined" && window.location.hostname == "localhost"
   //     ? "http://localhost:8000/api"
   //     : "https://app.schepen-kring.nl/api";
-  const API_BASE = "https://app.schepen-kring.nl/api";
+  const API_BASE = "/api/proxy";
 
   const getHeaders = () => {
     const token = getStoredToken();
@@ -1602,12 +1579,7 @@ export default function AdminTaskBoardPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = getStoredToken();
       const locationId = getCurrentLocationId();
-      if (!token) {
-        toast.error(t("toasts.authRequired"));
-        return;
-      }
 
       const taskEndpoint = canManageTaskWorkspace ? "/tasks" : "/tasks/my";
       const tasksRes = await axios.get(`${API_BASE}${taskEndpoint}`, {
@@ -1790,10 +1762,9 @@ export default function AdminTaskBoardPage() {
   const handleTaskSubmit = async (taskData: TaskSubmitData) => {
     try {
       const token = getStoredToken();
-      if (!token) throw new Error(t("errors.noToken"));
 
       const headers = {
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         "Content-Type": "application/json",
       };
       const normalizedStatus = taskData.status as Task["status"];
