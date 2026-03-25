@@ -40,7 +40,6 @@ type HeroSectionProps = {
     rememberTerminal: string;
     forgotPassword: string;
     verifyEmail: string;
-    forgotPassword: string;
     login: string;
     register: string;
     processing: string;
@@ -60,7 +59,6 @@ type HeroSectionProps = {
     verificationCodeSent: string;
     invalidLoginResponse: string;
     authFailed: string;
-    termsRequired: string;
     termsLabelBeforeLink: string;
     termsLinkLabel: string;
     termsLabelAfterLink: string;
@@ -265,7 +263,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
 
   async function executeAuth() {
     if (mode === "register") {
-      if (!acceptTerms) {
+      if (!acceptedTerms) {
         setError(copy.termsRequired);
         return;
       }

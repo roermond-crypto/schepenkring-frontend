@@ -95,7 +95,6 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
   const [resending, setResending] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [emailValue, setEmailValue] = useState(email);
   const copy = VERIFY_COPY[locale] ?? VERIFY_COPY.en;
 
   const normalizedEmail = emailValue.trim();
