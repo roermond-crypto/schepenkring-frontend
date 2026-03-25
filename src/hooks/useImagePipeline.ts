@@ -231,9 +231,23 @@ export function useImagePipeline(
         if (!yachtId) return [];
 
         const res = await api.post(`/yachts/${yachtId}/images/auto-classify`);
-        await refreshImages();
-        return res.data?.images || [];
-    }, [yachtId, refreshImages]);
+        const data = res.data ?? {};
+        const nextImages = Array.isArray(data.images) ? data.images : [];
+
+        if (nextImages.length > 0) {
+            setImages(nextImages);
+        }
+
+        if (data.stats) {
+            setStats(data.stats);
+        }
+
+        if (typeof data.step2_unlocked === "boolean") {
+            setIsStep2Unlocked(data.step2_unlocked);
+        }
+
+        return nextImages;
+    }, [yachtId]);
 
     // Approve all ready images
     const approveAll = useCallback(async () => {

@@ -5,7 +5,6 @@ import {
   useEffect,
   useCallback,
   useRef,
-  SyntheticEvent,
   useMemo,
   cloneElement,
   isValidElement,
@@ -155,11 +154,62 @@ const WIZARD_STEP_IDS = [
 const MAX_IMAGES_UPLOAD = 50;
 const UPLOAD_BATCH_SIZE = 10;
 const UPLOAD_MAX_PARALLEL_BATCHES = 2;
+const EXTRACTION_ESTIMATED_DURATION_SECONDS = 120;
+const EXTRACTION_INITIAL_PROGRESS = 5;
+const EXTRACTION_PROGRESS_CAP = 95;
 
 // Configuration
 const STORAGE_URL = "https://app.schepen-kring.nl/storage/";
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=600&q=80";
+const YACHT_STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  "for sale": "For Sale",
+  "for bid": "For Bid",
+  sold: "Sold",
+  active: "Active",
+  inactive: "Inactive",
+  maintenance: "Maintenance",
+};
+
+function normalizeStatusForForm(status: unknown): string | null {
+  if (status === null || status === undefined) return null;
+
+  const rawValue = String(status).trim();
+  if (!rawValue) return null;
+
+  return YACHT_STATUS_LABELS[rawValue.toLowerCase()] ?? rawValue;
+}
+
+function normalizeStatusForApi(status: unknown): string | null {
+  const normalizedFormValue = normalizeStatusForForm(status);
+  if (!normalizedFormValue) return null;
+
+  const matchingEntry = Object.entries(YACHT_STATUS_LABELS).find(
+    ([, label]) => label === normalizedFormValue,
+  );
+
+  return matchingEntry?.[0] ?? normalizedFormValue.toLowerCase();
+}
+
+function normalizeStatusForNewYacht(
+  status: unknown,
+  isClientRole = false,
+): string {
+  const fallbackStatus = isClientRole ? "Draft" : "For Sale";
+  const normalized = normalizeStatusForForm(status);
+  if (!normalized) return fallbackStatus;
+
+  return ["Draft", "For Sale", "For Bid"].includes(normalized)
+    ? normalized
+    : fallbackStatus;
+}
+
+function isVideoGeneratingStatus(status: unknown): boolean {
+  return ["queued", "processing", "pending", "rendering"].includes(
+    String(status || "").toLowerCase(),
+  );
+}
 
 const suppressedToast = Object.assign(
   ((..._args: any[]) => "suppressed") as any,
@@ -195,6 +245,58 @@ type AvailabilityRule = {
   start_time: string;
   end_time: string;
 };
+
+function normalizePipelineImageName(value: unknown): string {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+const AUTO_SORT_CATEGORY_ORDER: Record<string, number> = {
+  Exterior: 0,
+  Bridge: 1,
+  Interior: 2,
+  "Engine Room": 3,
+  General: 4,
+};
+
+function inferAutoSortCategoryFromName(originalName: unknown): string {
+  const normalized = normalizePipelineImageName(originalName);
+
+  if (normalized.includes("engine")) {
+    return "Engine Room";
+  }
+
+  if (
+    normalized.includes("bridge") ||
+    normalized.includes("helm") ||
+    normalized.includes("cockpit")
+  ) {
+    return "Bridge";
+  }
+
+  if (
+    normalized.includes("interior") ||
+    normalized.includes("cabin") ||
+    normalized.includes("salon") ||
+    normalized.includes("galley") ||
+    normalized.includes("kitchen") ||
+    normalized.includes("bed")
+  ) {
+    return "Interior";
+  }
+
+  if (
+    normalized.includes("exterior") ||
+    normalized.includes("outside") ||
+    normalized.includes("deck") ||
+    normalized.includes("hull")
+  ) {
+    return "Exterior";
+  }
+
+  return "General";
+}
 
 // Available explicitly from FieldCorrectionControls import
 
@@ -2897,6 +2999,12 @@ export default function YachtEditorPage() {
       ? String(createdYachtId)
       : null
     : (yachtId as string);
+  const socialLibraryHref = useMemo(() => {
+    const targetId = isNewMode ? createdYachtId || yachtId : yachtId;
+    const basePath = `/${locale}/dashboard/${role}/social`;
+
+    return targetId ? `${basePath}?yacht_id=${targetId}` : basePath;
+  }, [createdYachtId, isNewMode, locale, role, yachtId]);
   const currentBoatDocumentId = isNewMode ? createdYachtId : yachtId;
   const isPersistedYachtRoute =
     !isNewMode && typeof yachtId === "string" && /^[0-9]+$/.test(yachtId);
@@ -2923,7 +3031,9 @@ export default function YachtEditorPage() {
     const loadClientSignhostStatus = async () => {
       setClientSignhostLoading(true);
       try {
-        const response = await signhostApi.getYachtStatus(Number(activeYachtId));
+        const response = await signhostApi.getYachtStatus(
+          Number(activeYachtId),
+        );
         if (!active) return;
         setClientSignhostStatus(response.transaction?.status ?? null);
       } catch {
@@ -2961,13 +3071,32 @@ export default function YachtEditorPage() {
                 ? response.data.data
                 : [];
 
-        setMarketingVideos(
-          payload.filter(
+        const nextVideos = payload
+          .filter(
             (video: any) =>
               Number(video?.yacht_id ?? video?.boat_id) ===
               Number(targetYachtId),
-          ),
-        );
+          )
+          .sort(
+            (left: any, right: any) =>
+              new Date(right?.created_at || 0).getTime() -
+              new Date(left?.created_at || 0).getTime(),
+          );
+
+        setMarketingVideos((previous: any[]) => {
+          const placeholders = previous.filter(
+            (video) =>
+              Number(video?.id) < 0 &&
+              Number(video?.yacht_id ?? video?.boat_id) ===
+                Number(targetYachtId),
+          );
+
+          return nextVideos.some((video: any) =>
+            isVideoGeneratingStatus(video?.status),
+          )
+            ? nextVideos
+            : [...nextVideos, ...placeholders];
+        });
       } catch (error) {
         console.error("Failed to fetch marketing videos", error);
       }
@@ -2980,9 +3109,7 @@ export default function YachtEditorPage() {
     if (!targetId || marketingVideos.length === 0) return;
 
     const hasProcessingVideo = marketingVideos.some((video) =>
-      ["queued", "processing", "pending", "rendering"].includes(
-        String(video?.status || "").toLowerCase(),
-      ),
+      isVideoGeneratingStatus(video?.status),
     );
 
     if (!hasProcessingVideo) return;
@@ -3014,6 +3141,8 @@ export default function YachtEditorPage() {
     ReviewPipelineImage[]
   >([]);
   const [isSavingManualSort, setIsSavingManualSort] = useState(false);
+  const [pipelineImageSourceIndexByKey, setPipelineImageSourceIndexByKey] =
+    useState<Record<string, number>>({});
 
   // Legacy staging for non-image features (Main Profile etc)
   const [aiStaging, setAiStaging] = useState<AiStagedImage[]>([]);
@@ -3021,10 +3150,17 @@ export default function YachtEditorPage() {
   const [mainPreview, setMainPreview] = useState<string | null>(null);
   const [mainFile, setMainFile] = useState<File | null>(null);
   const hasInFlightImageUploads = isUploading || pipeline.isUploading;
-  const hasSelectedHarbor = hasFilledFieldValue(selectedYacht?.ref_harbor_id);
   const persistedPipelineImages = useMemo(
     () => pipeline.images.filter((image) => image.id > 0),
     [pipeline.images],
+  );
+  const approvedMarketingImageIds = useMemo(
+    () =>
+      persistedPipelineImages
+        .filter((image) => image.status === "approved")
+        .sort((left, right) => left.sort_order - right.sort_order)
+        .map((image) => image.id),
+    [persistedPipelineImages],
   );
   const canManualSortImages = persistedPipelineImages.length > 1;
   const displayReadyForReviewCount = persistedPipelineImages.filter(
@@ -3071,6 +3207,11 @@ export default function YachtEditorPage() {
   const shouldShowImageUploadDropzone =
     reviewImages.length === 0 || hasInFlightImageUploads;
   const shouldShowImageGrid = reviewImages.length > 0;
+  const selectedYachtStatusForForm = isNewMode
+    ? normalizeStatusForNewYacht(selectedYacht?.status, isClientRole)
+    : (normalizeStatusForForm(selectedYacht?.status) ??
+      selectedYacht?.status ??
+      "Draft");
 
   useEffect(() => {
     setInternalReviewSelection(internalReviewApproved ? "For Sale" : "Draft");
@@ -3137,7 +3278,9 @@ export default function YachtEditorPage() {
   // New AI UI Feedback States
   const [extractionProgress, setExtractionProgress] = useState(0);
   const [extractionStatus, setExtractionStatus] = useState("");
-  const [extractionCountdown, setExtractionCountdown] = useState(60);
+  const [extractionCountdown, setExtractionCountdown] = useState(
+    EXTRACTION_ESTIMATED_DURATION_SECONDS,
+  );
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -3243,6 +3386,14 @@ export default function YachtEditorPage() {
     currentUserHarborName,
     harbors,
   ]);
+  const selectedHarborId =
+    selectedYacht?.ref_harbor_id ??
+    selectedYacht?.location_id ??
+    preferredHarborId ??
+    currentUserHarborId ??
+    null;
+  const hasSelectedHarbor = hasFilledFieldValue(selectedHarborId);
+  const isHarborSelectionBlocking = !isClientRole && !hasSelectedHarbor;
   const draftBoatType =
     (draft?.data as any)?.step2?.selectedYacht?.boat_type ?? null;
   const boatTypeForConfig = selectedYacht?.boat_type ?? draftBoatType ?? null;
@@ -3514,13 +3665,13 @@ export default function YachtEditorPage() {
       pipeline.images
         .filter((image) => image.id > 0)
         .forEach((image) => {
-          const key = image.original_name || "";
+          const key = normalizePipelineImageName(image.original_name);
           pipelineCounts.set(key, (pipelineCounts.get(key) || 0) + 1);
         });
 
       const nextPending: ReviewPipelineImage[] = [];
       previous.forEach((image) => {
-        const key = image.original_name || "";
+        const key = normalizePipelineImageName(image.original_name);
         const availableCount = pipelineCounts.get(key) || 0;
         if (availableCount > 0) {
           pipelineCounts.set(key, availableCount - 1);
@@ -3855,6 +4006,29 @@ export default function YachtEditorPage() {
   const localPreviewUrlsRef = useRef<Set<string>>(new Set());
   const verifiedDraftYachtIdRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    if (!isNewMode || !selectedYacht || typeof selectedYacht !== "object") {
+      return;
+    }
+
+    const nextStatus = normalizeStatusForNewYacht(
+      selectedYacht.status,
+      isClientRole,
+    );
+    const currentStatus =
+      normalizeStatusForForm(selectedYacht.status) ?? selectedYacht.status;
+
+    if (currentStatus === nextStatus) {
+      return;
+    }
+
+    setSelectedYacht((previous: any) => ({
+      ...(previous && typeof previous === "object" ? previous : {}),
+      status: nextStatus,
+    }));
+    setFormKey((current) => current + 1);
+  }, [isClientRole, isNewMode, selectedYacht?.status, yachtId]);
+
   // Restore draft payload for new-yacht flow once.
   useEffect(() => {
     if (!isDraftLoaded || !isNewMode || restoredDraftRef.current) return;
@@ -3915,6 +4089,10 @@ export default function YachtEditorPage() {
         ref_harbor_id: hasFilledFieldValue(restoredSelectedYacht.ref_harbor_id)
           ? restoredSelectedYacht.ref_harbor_id
           : (currentUserHarborId ?? restoredSelectedYacht.ref_harbor_id),
+        status: normalizeStatusForNewYacht(
+          restoredSelectedYacht.status,
+          isClientRole,
+        ),
       });
       setFormKey((k) => k + 1);
     }
@@ -4232,7 +4410,7 @@ export default function YachtEditorPage() {
 
   useEffect(() => {
     const activePreviewUrls = new Set(
-      pipeline.images
+      [...pipeline.images, ...pendingUploadPreviews]
         .map((image) => image.client_preview_url)
         .filter(
           (value): value is string =>
@@ -4246,7 +4424,7 @@ export default function YachtEditorPage() {
         localPreviewUrlsRef.current.delete(url);
       }
     });
-  }, [pipeline.images]);
+  }, [pendingUploadPreviews, pipeline.images]);
 
   useEffect(() => {
     return () => {
@@ -4487,7 +4665,7 @@ export default function YachtEditorPage() {
         );
         return;
       }
-      if (targetStep > 2 && !hasSelectedHarbor) {
+      if (targetStep > 2 && isHarborSelectionBlocking) {
         toast.error(
           labelText(
             "locationRequiredForNextStep",
@@ -4503,7 +4681,7 @@ export default function YachtEditorPage() {
       isOnline,
       isNewMode,
       canProceedFromStep1,
-      hasSelectedHarbor,
+      isHarborSelectionBlocking,
       offlineImages,
       pipeline.images.length,
     ],
@@ -4583,7 +4761,11 @@ export default function YachtEditorPage() {
         setLoading(true);
         const res = await api.get(`/yachts/${yachtId}`);
         const yacht = res.data;
-        setSelectedYacht(yacht);
+        setSelectedYacht({
+          ...yacht,
+          ref_harbor_id: yacht?.ref_harbor_id ?? yacht?.location_id ?? null,
+          status: normalizeStatusForForm(yacht?.status) ?? yacht?.status,
+        });
 
         // Populate Main Image
         setMainPreview(
@@ -4680,32 +4862,61 @@ export default function YachtEditorPage() {
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    let draftToastId: string | undefined;
 
-    // Auto-create draft yacht if needed
-    let targetId = isNewMode ? createdYachtId : yachtId;
-    if (isNewMode && !targetId) {
-      toast.loading("Creating vessel draft...");
-      const fd = new FormData();
-      fd.append("status", "draft");
-      const createRes = await api.post("/yachts", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      targetId = createRes.data.id;
-      setCreatedYachtId(targetId as number);
-    }
-
-    setIsUploadingVideo(true);
-    const formData = new FormData();
-    formData.append("video", file);
     try {
+      const isMp4 =
+        file.type === "video/mp4" || /\.mp4$/i.test(file.name || "");
+      if (!isMp4) {
+        toast.error("Please upload an MP4 file.");
+        return;
+      }
+
+      setIsUploadingVideo(true);
+
+      // Auto-create draft yacht if needed
+      let targetId = isNewMode ? createdYachtId : yachtId;
+
+      if (isNewMode && !targetId) {
+        draftToastId = toast.loading("Creating vessel draft...");
+        const fd = new FormData();
+        fd.append("status", "draft");
+        const createRes = await api.post("/yachts", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        targetId = createRes.data.id;
+        setCreatedYachtId(targetId as number);
+        toast.dismiss(draftToastId);
+        draftToastId = undefined;
+      }
+
+      if (!targetId) {
+        toast.error("Save the vessel first before uploading a video.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("video", file);
+
       const res = await api.post(`/yachts/${targetId}/boat-videos`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setBoatVideos((prev) => [res.data, ...prev]);
+      const uploadedVideo = res.data?.video ?? res.data?.data ?? res.data;
+      setBoatVideos((prev) => [uploadedVideo, ...prev]);
       toast.success(t?.video?.uploaded || "Video uploaded successfully");
-    } catch (err) {
-      toast.error(t?.video?.uploadFailed || "Video upload failed");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        t?.video?.uploadFailed ||
+        "Video upload failed";
+      console.error("Video upload failed", err);
+      toast.error(message);
     } finally {
+      if (draftToastId) {
+        toast.dismiss(draftToastId);
+      }
       setIsUploadingVideo(false);
       if (e.target) e.target.value = "";
     }
@@ -4736,10 +4947,42 @@ export default function YachtEditorPage() {
       return;
     }
 
+    if (approvedMarketingImageIds.length === 0) {
+      toast.error(
+        "Approve at least one uploaded image before generating a marketing video.",
+      );
+      return;
+    }
+
     setIsGeneratingMarketingVideo(true);
     try {
+      const queuedPlaceholderId = -Date.now();
+      setMarketingVideos((previous: any[]) => [
+        {
+          id: queuedPlaceholderId,
+          yacht_id: Number(targetId),
+          boat_id: Number(targetId),
+          status: "queued",
+          template_type: "vertical_slideshow_v1",
+          generation_trigger: force ? "manual_force" : "manual",
+          created_at: new Date().toISOString(),
+          renderable_image_count: approvedMarketingImageIds.length,
+        },
+        ...previous.filter(
+          (video) =>
+            !(
+              Number(video?.id) < 0 &&
+              Number(video?.yacht_id ?? video?.boat_id) === Number(targetId)
+            ),
+        ),
+      ]);
+
       const response = await api.post("/social/videos/generate", {
         yacht_id: Number(targetId),
+        boat_id: Number(targetId),
+        image_ids: approvedMarketingImageIds,
+        approved_image_ids: approvedMarketingImageIds,
+        use_approved_images_only: true,
         template_type: "vertical_slideshow_v1",
         force,
       });
@@ -4750,9 +4993,24 @@ export default function YachtEditorPage() {
           ? `Video queued with ${queuedCount} renderable image(s).`
           : "Video generation queued.";
 
+      const queuedVideo =
+        response.data?.video ??
+        response.data?.data?.video ??
+        response.data?.data ??
+        null;
+      if (queuedVideo) {
+        setMarketingVideos((previous: any[]) => [
+          queuedVideo,
+          ...previous.filter((video) => video?.id !== queuedVideo?.id),
+        ]);
+      }
+
       toast.success(response.data?.message || message);
       await loadMarketingVideos(targetId);
     } catch (error: any) {
+      setMarketingVideos((previous: any[]) =>
+        previous.filter((video) => Number(video?.id) >= 0),
+      );
       toast.error(
         error?.response?.data?.message ||
           "Could not queue marketing video generation.",
@@ -5095,18 +5353,132 @@ export default function YachtEditorPage() {
     }
   }, [labelText, manualSortImages, pipeline]);
 
+  const buildOptimisticAutoSortedImages = useCallback(
+    (images: ReviewPipelineImage[]) =>
+      [...images]
+        .map((image) => {
+          const existingCategory = String(image.category || "").trim();
+          const nextCategory =
+            existingCategory && existingCategory !== "General"
+              ? existingCategory
+              : inferAutoSortCategoryFromName(image.original_name);
+
+          return {
+            ...image,
+            category: nextCategory,
+          };
+        })
+        .sort((left, right) => {
+          const leftRank =
+            AUTO_SORT_CATEGORY_ORDER[left.category || "General"] ?? 999;
+          const rightRank =
+            AUTO_SORT_CATEGORY_ORDER[right.category || "General"] ?? 999;
+
+          if (leftRank !== rightRank) {
+            return leftRank - rightRank;
+          }
+
+          if (left.sort_order !== right.sort_order) {
+            return left.sort_order - right.sort_order;
+          }
+
+          return left.id - right.id;
+        })
+        .map((image, index) => ({
+          ...image,
+          sort_order: index,
+        })),
+    [],
+  );
+
+  const applyOptimisticAutoSort = useCallback(
+    (
+      images: ReviewPipelineImage[],
+      sortedPersistedImages: ReviewPipelineImage[],
+    ) => {
+      const persistedIds = new Set(
+        sortedPersistedImages.map((image) => image.id),
+      );
+      const sortedById = new Map(
+        sortedPersistedImages.map((image) => [image.id, image]),
+      );
+
+      const persisted = images
+        .filter((image) => persistedIds.has(image.id))
+        .map((image) => {
+          const sorted = sortedById.get(image.id);
+          if (!sorted) return image;
+
+          return {
+            ...image,
+            category: sorted.category,
+            sort_order: sorted.sort_order,
+          };
+        })
+        .sort((left, right) => left.sort_order - right.sort_order);
+
+      const transient = images.filter((image) => !persistedIds.has(image.id));
+
+      return [...persisted, ...transient];
+    },
+    [],
+  );
+
   const handleAutoSortImages = useCallback(async () => {
+    if (persistedPipelineImages.length <= 1) {
+      return;
+    }
+
+    const previousPipelineImages = pipeline.images;
+    const previousReviewImages = reviewImages;
+    const previousManualSortImages = manualSortImages;
+    const optimisticPersistedImages = buildOptimisticAutoSortedImages(
+      persistedPipelineImages,
+    );
+
     try {
       setIsAutoSortingImages(true);
+
+      const optimisticPipelineImages = applyOptimisticAutoSort(
+        pipeline.images,
+        optimisticPersistedImages,
+      );
+      const optimisticReviewImages = applyOptimisticAutoSort(
+        reviewImages,
+        optimisticPersistedImages,
+      );
+
+      pipeline.setImagesDirectly?.({
+        images: optimisticPipelineImages,
+        stats: pipeline.stats,
+        step2_unlocked: pipeline.isStep2Unlocked,
+      });
+      setReviewImages(optimisticReviewImages);
+      setManualSortImages(optimisticPersistedImages);
+
       await pipeline.autoClassifyImages();
-      toast.success("AI sorted images into better categories.");
+      toast.success("Images sorted instantly.");
     } catch (error) {
-      toast.error("AI image sorting failed.");
+      pipeline.setImagesDirectly?.({
+        images: previousPipelineImages,
+        stats: pipeline.stats,
+        step2_unlocked: pipeline.isStep2Unlocked,
+      });
+      setReviewImages(previousReviewImages);
+      setManualSortImages(previousManualSortImages);
+      toast.error("Auto-sort failed.");
       console.error(error);
     } finally {
       setIsAutoSortingImages(false);
     }
-  }, [pipeline]);
+  }, [
+    applyOptimisticAutoSort,
+    buildOptimisticAutoSortedImages,
+    manualSortImages,
+    persistedPipelineImages,
+    pipeline,
+    reviewImages,
+  ]);
 
   const handleDeleteAllImages = useCallback(async () => {
     if (reviewImages.length === 0) return;
@@ -5148,19 +5520,129 @@ export default function YachtEditorPage() {
     [reviewImages, selectedLightboxIndex],
   );
 
-  const handleImageError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.src = PLACEHOLDER_IMAGE;
-    e.currentTarget.classList.add("opacity-50", "grayscale");
-  };
+  const resolvePipelineAssetUrl = useCallback(
+    (value: string | null | undefined) => {
+      if (typeof value !== "string") return null;
 
-  const getPipelineImageSrc = (image: PipelineImage) =>
-    image.thumb_full_url ||
-    image.optimized_url ||
-    image.full_url ||
-    image.client_preview_url ||
-    image.url ||
-    image.original_temp_url ||
-    PLACEHOLDER_IMAGE;
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+
+      if (
+        /^(blob:|data:|https?:\/\/)/i.test(trimmed) ||
+        trimmed.startsWith("/")
+      ) {
+        return trimmed;
+      }
+
+      const configuredBaseUrl =
+        typeof api.defaults.baseURL === "string" ? api.defaults.baseURL : "";
+      if (!configuredBaseUrl) return null;
+
+      const relativePath = trimmed
+        .replace(/^storage\//, "")
+        .replace(/^\/+/, "");
+
+      try {
+        const parsedBaseUrl = new URL(
+          configuredBaseUrl,
+          typeof window !== "undefined" ? window.location.origin : undefined,
+        );
+        return `${parsedBaseUrl.origin}/storage/${relativePath}`;
+      } catch {
+        const origin = configuredBaseUrl
+          .replace(/\/api\/?$/, "")
+          .replace(/\/$/, "");
+        return origin ? `${origin}/storage/${relativePath}` : null;
+      }
+    },
+    [],
+  );
+
+  const getPipelineImageCandidates = useCallback(
+    (image: PipelineImage) =>
+      Array.from(
+        new Set(
+          [
+            image.client_preview_url,
+            image.thumb_full_url,
+            image.optimized_url,
+            image.full_url,
+            resolvePipelineAssetUrl(image.thumb_url),
+            resolvePipelineAssetUrl(image.optimized_master_url),
+            resolvePipelineAssetUrl(image.original_kept_url),
+            resolvePipelineAssetUrl(image.original_temp_url),
+            resolvePipelineAssetUrl(image.url),
+          ].filter(
+            (value): value is string =>
+              typeof value === "string" && value.trim().length > 0,
+          ),
+        ),
+      ),
+    [resolvePipelineAssetUrl],
+  );
+
+  const getPipelineImageSourceKey = useCallback(
+    (image: PipelineImage) =>
+      [
+        image.id,
+        image.updated_at,
+        image.client_preview_url,
+        image.thumb_full_url,
+        image.optimized_url,
+        image.full_url,
+      ]
+        .map((value) => String(value ?? ""))
+        .join("::"),
+    [],
+  );
+
+  const getPipelineImageSrc = useCallback(
+    (image: PipelineImage) => {
+      const candidates = getPipelineImageCandidates(image);
+      const sourceKey = getPipelineImageSourceKey(image);
+      const index = pipelineImageSourceIndexByKey[sourceKey] ?? 0;
+      return candidates[index] ?? PLACEHOLDER_IMAGE;
+    },
+    [
+      getPipelineImageCandidates,
+      getPipelineImageSourceKey,
+      pipelineImageSourceIndexByKey,
+    ],
+  );
+
+  const isPipelineImageFallbackExhausted = useCallback(
+    (image: PipelineImage) => {
+      const candidates = getPipelineImageCandidates(image);
+      const sourceKey = getPipelineImageSourceKey(image);
+      const index = pipelineImageSourceIndexByKey[sourceKey] ?? 0;
+      return index >= candidates.length;
+    },
+    [
+      getPipelineImageCandidates,
+      getPipelineImageSourceKey,
+      pipelineImageSourceIndexByKey,
+    ],
+  );
+
+  const handlePipelineImageError = useCallback(
+    (image: PipelineImage) => {
+      const candidateCount = getPipelineImageCandidates(image).length;
+      const sourceKey = getPipelineImageSourceKey(image);
+      setPipelineImageSourceIndexByKey((previous) => {
+        const currentIndex = previous[sourceKey] ?? 0;
+        const nextIndex = Math.min(currentIndex + 1, candidateCount);
+        if (nextIndex === currentIndex) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          [sourceKey]: nextIndex,
+        };
+      });
+    },
+    [getPipelineImageCandidates, getPipelineImageSourceKey],
+  );
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -5245,9 +5727,11 @@ export default function YachtEditorPage() {
     }
 
     // ── ONLINE PATH: original server upload flow ──
-    // Check max limit (30)
+    // Check total gallery limit before starting any upload batches.
     if (pipeline.stats.total + files.length > MAX_IMAGES_UPLOAD) {
-      toast.error(`Maximum ${MAX_IMAGES_UPLOAD} images allowed per batch.`);
+      toast.error(
+        `Maximum ${MAX_IMAGES_UPLOAD} images allowed for this vessel.`,
+      );
       return;
     }
 
@@ -5266,37 +5750,35 @@ export default function YachtEditorPage() {
       let shouldSetCreatedYachtId = false;
 
       const optimisticBaseId = -Date.now();
-      const optimisticImages: ReviewPipelineImage[] = fileArray.map(
-        (file, index) => {
-          const previewUrl = URL.createObjectURL(file);
-          localPreviewUrlsRef.current.add(previewUrl);
-          return {
-            id: optimisticBaseId - index,
-            yacht_id: Number(targetId || 0),
-            client_upload_key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
-            client_preview_url: previewUrl,
-            url: previewUrl,
-            original_temp_url: previewUrl,
-            optimized_master_url: previewUrl,
-            thumb_url: previewUrl,
-            original_kept_url: null,
-            status: "processing",
-            keep_original: false,
-            quality_score: null,
-            quality_flags: null,
-            quality_label: labelText("processingStatusLabel", "Processing..."),
-            category: "general",
-            original_name: file.name,
-            sort_order: pipeline.images.length + index,
-            optimized_url: previewUrl,
-            thumb_full_url: previewUrl,
-            full_url: previewUrl,
-            enhancement_method: "pending",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-        },
-      );
+      optimisticImages = fileArray.map((file, index) => {
+        const previewUrl = URL.createObjectURL(file);
+        localPreviewUrlsRef.current.add(previewUrl);
+        return {
+          id: optimisticBaseId - index,
+          yacht_id: Number(targetId || 0),
+          client_upload_key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
+          client_preview_url: previewUrl,
+          url: previewUrl,
+          original_temp_url: previewUrl,
+          optimized_master_url: previewUrl,
+          thumb_url: previewUrl,
+          original_kept_url: null,
+          status: "processing",
+          keep_original: false,
+          quality_score: null,
+          quality_flags: null,
+          quality_label: labelText("processingStatusLabel", "Processing..."),
+          category: "general",
+          original_name: file.name,
+          sort_order: pipeline.images.length + index,
+          optimized_url: previewUrl,
+          thumb_full_url: previewUrl,
+          full_url: previewUrl,
+          enhancement_method: "pending",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      });
 
       // Render instant previews while upload/process is still running.
       setPendingUploadPreviews((previous) => [
@@ -5387,7 +5869,7 @@ export default function YachtEditorPage() {
               ? (res.data.images as PipelineImage[])
               : [];
             return {
-              count: responseImages.length || batchFiles.length,
+              count: responseImages.length,
               images: responseImages,
             };
           }),
@@ -5408,6 +5890,8 @@ export default function YachtEditorPage() {
         throw new Error("No images uploaded");
       }
 
+      const failedImageCount = Math.max(fileArray.length - uploadedCount, 0);
+
       // Auto-set the first uploaded file as main profile
       if (!mainFile && !mainPreview && filesToUpload.length > 0) {
         setMainFile(filesToUpload[0]);
@@ -5415,8 +5899,8 @@ export default function YachtEditorPage() {
       }
 
       toast.success(
-        failedBatches > 0
-          ? `${uploadedCount} images queued. ${failedBatches} batch(es) failed.`
+        failedBatches > 0 || failedImageCount > 0
+          ? `${uploadedCount} images queued.${failedBatches > 0 ? ` ${failedBatches} batch(es) failed.` : ""}${failedImageCount > 0 ? ` ${failedImageCount} image(s) could not be attached.` : ""}`
           : `${uploadedCount} images sent for processing!`,
         {
           id: toastId,
@@ -5481,7 +5965,7 @@ export default function YachtEditorPage() {
 
         const uploadedCountsByName = new Map<string, number>();
         hydratedUploadedImages.forEach((image) => {
-          const key = image.original_name || "";
+          const key = normalizePipelineImageName(image.original_name);
           uploadedCountsByName.set(
             key,
             (uploadedCountsByName.get(key) || 0) + 1,
@@ -5490,13 +5974,20 @@ export default function YachtEditorPage() {
 
         setPendingUploadPreviews((previous) =>
           previous.filter((image) => {
-            const key = image.original_name || "";
-            const availableCount = uploadedCountsByName.get(key) || 0;
-            if (availableCount > 0) {
-              uploadedCountsByName.set(key, availableCount - 1);
+            if (
+              optimisticImages.some((optimistic) => optimistic.id === image.id)
+            ) {
               return false;
             }
-            return true;
+
+            const key = normalizePipelineImageName(image.original_name);
+            const availableCount = uploadedCountsByName.get(key) || 0;
+            if (availableCount <= 0) {
+              return true;
+            }
+
+            uploadedCountsByName.set(key, availableCount - 1);
+            return false;
           }),
         );
       }
@@ -5595,8 +6086,17 @@ export default function YachtEditorPage() {
     // );
 
     // ── Start Progress & Countdown ──
-    setExtractionProgress(5);
-    setExtractionCountdown(60);
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    setExtractionProgress(EXTRACTION_INITIAL_PROGRESS);
+    setExtractionCountdown(EXTRACTION_ESTIMATED_DURATION_SECONDS);
     setExtractionStatus(
       labelText(
         "connectingGeminiVisionApi",
@@ -5604,49 +6104,54 @@ export default function YachtEditorPage() {
       ),
     );
 
+    const extractionStartedAt = Date.now();
+    const extractionDurationMs = EXTRACTION_ESTIMATED_DURATION_SECONDS * 1000;
+    const progressRange = EXTRACTION_PROGRESS_CAP - EXTRACTION_INITIAL_PROGRESS;
+
     progressIntervalRef.current = setInterval(() => {
-      setExtractionProgress((prev) => {
-        if (prev >= 95) return prev;
-        // Slow down as we approach the end
-        const step = prev < 40 ? 4 : prev < 70 ? 2 : 1;
-        const next = prev + step;
+      const elapsedMs = Date.now() - extractionStartedAt;
+      const clampedElapsedMs = Math.min(elapsedMs, extractionDurationMs);
+      const progressRatio = clampedElapsedMs / extractionDurationMs;
+      const nextProgress = Math.min(
+        EXTRACTION_PROGRESS_CAP,
+        Math.round(EXTRACTION_INITIAL_PROGRESS + progressRatio * progressRange),
+      );
+      const secondsRemaining = Math.max(
+        1,
+        Math.ceil((extractionDurationMs - clampedElapsedMs) / 1000),
+      );
 
-        // Update status messages based on progress
-        if (next < 25)
-          setExtractionStatus(
-            labelText(
-              "analyzingVesselImagesGemini",
-              "Analyzing vessel images with Gemini Vision...",
-            ),
-          );
-        else if (next < 50)
-          setExtractionStatus(
-            labelText(
-              "searchingCatalogMatchingModels",
-              "Searching catalog for matching models...",
-            ),
-          );
-        else if (next < 80)
-          setExtractionStatus(
-            labelText(
-              "crossReferencingTechnicalSpecs",
-              "Cross-referencing technical specifications...",
-            ),
-          );
-        else
-          setExtractionStatus(
-            labelText(
-              "finalizingDataValidatingResults",
-              "Finalizing data and validating results...",
-            ),
-          );
+      setExtractionProgress(nextProgress);
+      setExtractionCountdown(secondsRemaining);
 
-        return next;
-      });
-    }, 1500);
-
-    countdownIntervalRef.current = setInterval(() => {
-      setExtractionCountdown((prev) => (prev > 1 ? prev - 1 : 1));
+      if (nextProgress < 25)
+        setExtractionStatus(
+          labelText(
+            "analyzingVesselImagesGemini",
+            "Analyzing vessel images with Gemini Vision...",
+          ),
+        );
+      else if (nextProgress < 50)
+        setExtractionStatus(
+          labelText(
+            "searchingCatalogMatchingModels",
+            "Searching catalog for matching models...",
+          ),
+        );
+      else if (nextProgress < 80)
+        setExtractionStatus(
+          labelText(
+            "crossReferencingTechnicalSpecs",
+            "Cross-referencing technical specifications...",
+          ),
+        );
+      else
+        setExtractionStatus(
+          labelText(
+            "finalizingDataValidatingResults",
+            "Finalizing data and validating results...",
+          ),
+        );
     }, 1000);
 
     try {
@@ -6040,7 +6545,10 @@ export default function YachtEditorPage() {
         clearInterval(progressIntervalRef.current);
       if (countdownIntervalRef.current)
         clearInterval(countdownIntervalRef.current);
+      progressIntervalRef.current = null;
+      countdownIntervalRef.current = null;
       setExtractionProgress(0);
+      setExtractionCountdown(EXTRACTION_ESTIMATED_DURATION_SECONDS);
     }
   };
 
@@ -6500,8 +7008,17 @@ export default function YachtEditorPage() {
       }
     });
 
-    if (!formData.has("status")) {
-      formData.append("status", toFormValue(selectedYacht?.status) ?? "Draft");
+    const normalizedStatus =
+      normalizeStatusForApi(getFieldValue("status") ?? selectedYacht?.status) ??
+      "draft";
+    formData.set("status", normalizedStatus);
+
+    const harborId =
+      getFieldValue("ref_harbor_id") ?? toFormValue(selectedHarborId);
+
+    if (harborId !== null) {
+      formData.set("ref_harbor_id", harborId);
+      formData.set("location_id", harborId);
     }
 
     // Handle boolean fields - SIMPLIFIED
@@ -6733,12 +7250,25 @@ export default function YachtEditorPage() {
       console.error("Submission error:", err);
 
       if (err.response?.status === 422) {
-        setErrors(err.response.data.errors);
-        toast.error("Please check required fields");
+        setErrors(err.response?.data?.errors || {});
+
+        const serverMessage =
+          err.response?.data?.message ||
+          Object.values(err.response?.data?.errors || {})
+            .flat()
+            .find((msg) => typeof msg === "string");
+
+        toast.error(
+          typeof serverMessage === "string" && serverMessage.trim()
+            ? serverMessage
+            : "Please check required fields",
+        );
       } else if (err.response?.status === 403) {
         toast.error("Permission denied.");
       } else if (err.response?.status === 500) {
-        toast.error("Server error. Please try again.");
+        const serverMessage =
+          err.response?.data?.message || err.response?.data?.error;
+        toast.error(serverMessage || "Server error. Please try again.");
       } else {
         toast.error(`Error: ${err.response?.data?.message || "System Error"}`);
       }
@@ -7292,8 +7822,13 @@ export default function YachtEditorPage() {
                                                 "pending" && "opacity-95",
                                               img.status === "processing" &&
                                                 "opacity-60",
+                                              isPipelineImageFallbackExhausted(
+                                                img,
+                                              ) && "opacity-50 grayscale",
                                             )}
-                                            onError={handleImageError}
+                                            onError={() =>
+                                              handlePipelineImageError(img)
+                                            }
                                           />
 
                                           {/* Loading Overlay for Processing */}
@@ -7591,7 +8126,9 @@ export default function YachtEditorPage() {
                                                   `Yacht image ${index + 1}`
                                                 }
                                                 className="relative h-20 w-20 rounded-[24px] border border-white/80 object-cover shadow-[0_16px_35px_-20px_rgba(15,23,42,0.55)]"
-                                                onError={handleImageError}
+                                                onError={() =>
+                                                  handlePipelineImageError(img)
+                                                }
                                               />
                                             </div>
 
@@ -7767,7 +8304,11 @@ export default function YachtEditorPage() {
                                     "Selected yacht image"
                                   }
                                   className="max-h-[62vh] w-auto max-w-full rounded-[28px] border border-slate-200/80 bg-white/80 object-contain shadow-[0_24px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-950/70 dark:shadow-[0_30px_100px_rgba(15,23,42,0.65)]"
-                                  onError={handleImageError}
+                                  onError={() =>
+                                    handlePipelineImageError(
+                                      selectedLightboxImage,
+                                    )
+                                  }
                                 />
                               </div>
 
@@ -8324,7 +8865,7 @@ export default function YachtEditorPage() {
                     <input
                       type="file"
                       className="hidden"
-                      accept="video/*"
+                      accept=".mp4,video/mp4"
                       onChange={handleVideoUpload}
                       disabled={isUploadingVideo}
                     />
@@ -8354,9 +8895,7 @@ export default function YachtEditorPage() {
                         type="button"
                         variant="outline"
                         className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
-                        onClick={() =>
-                          router.push(`/${locale}/dashboard/${role}/social`)
-                        }
+                        onClick={() => router.push(socialLibraryHref)}
                       >
                         {labelText("openSocialLibrary", "Open Social Library")}
                       </Button>
@@ -8500,11 +9039,7 @@ export default function YachtEditorPage() {
                               type="button"
                               variant="outline"
                               className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
-                              onClick={() =>
-                                router.push(
-                                  `/${locale}/dashboard/${role}/social`,
-                                )
-                              }
+                              onClick={() => router.push(socialLibraryHref)}
                             >
                               View in Social
                             </Button>
@@ -8736,6 +9271,17 @@ export default function YachtEditorPage() {
                           );
 
                           if (!currentHarbor) {
+                            if (
+                              currentUserHarborName &&
+                              currentUserHarborCode
+                            ) {
+                              return `${currentUserHarborName} (${currentUserHarborCode})`;
+                            }
+
+                            if (currentUserHarborName) {
+                              return currentUserHarborName;
+                            }
+
                             return labelText(
                               "locationAssignedAutomatically",
                               "Location is assigned automatically from your account.",
@@ -9007,7 +9553,7 @@ export default function YachtEditorPage() {
                     />
                     <SelectField
                       name="status"
-                      defaultValue={selectedYacht?.status || "Draft"}
+                      defaultValue={selectedYachtStatusForForm}
                     >
                       <option value="For Sale">
                         {commonText("statusForSale", "For Sale")}
@@ -11717,16 +12263,10 @@ export default function YachtEditorPage() {
                             }
                           >
                             <option value="Draft">
-                              {labelText(
-                                "markPendingReview",
-                                "Keep in review",
-                              )}
+                              {labelText("markPendingReview", "Keep in review")}
                             </option>
                             <option value="For Sale">
-                              {labelText(
-                                "approveVessel",
-                                "Approve vessel",
-                              )}
+                              {labelText("approveVessel", "Approve vessel")}
                             </option>
                           </select>
                           <Button
@@ -11877,12 +12417,12 @@ export default function YachtEditorPage() {
                 }}
                 disabled={
                   (isNewMode && !canProceedFromStep1 && activeStep === 1) ||
-                  (activeStep === 2 && !hasSelectedHarbor)
+                  (activeStep === 2 && isHarborSelectionBlocking)
                 }
                 className={cn(
                   "h-11 px-6 text-xs font-bold uppercase tracking-wider",
                   (isNewMode && !canProceedFromStep1 && activeStep === 1) ||
-                    (activeStep === 2 && !hasSelectedHarbor)
+                    (activeStep === 2 && isHarborSelectionBlocking)
                     ? "bg-slate-300 text-slate-500 cursor-not-allowed"
                     : "bg-[#003566] text-white hover:bg-blue-800",
                 )}
@@ -11892,7 +12432,7 @@ export default function YachtEditorPage() {
                     {t?.wizard?.nav?.runExtractionFirst ||
                       labelText("approveImagesFirst", "Approve Images First")}
                   </>
-                ) : activeStep === 2 && !hasSelectedHarbor ? (
+                ) : activeStep === 2 && isHarborSelectionBlocking ? (
                   <>
                     {labelText(
                       "locationRequiredForNextStep",
@@ -12257,8 +12797,7 @@ function YachtFieldWrapper({
 }) {
   const isCorrection = correctionLabel !== undefined;
   const childWithSettingsLinkSuppressed =
-    isValidElement(children) &&
-    typeof children.type !== "string"
+    isValidElement(children) && typeof children.type !== "string"
       ? cloneElement(
           children as React.ReactElement<{ showAdminEditLink?: boolean }>,
           {

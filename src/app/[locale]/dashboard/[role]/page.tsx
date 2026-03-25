@@ -1,9 +1,15 @@
 "use client";
 
-import { startTransition, useEffect, useState, useCallback } from "react";
+import {
+  startTransition,
+  useEffect,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { AreaChart, Area, Tooltip, ResponsiveContainer } from "recharts";
 import {
   TrendingUp,
@@ -17,7 +23,6 @@ import {
   Activity,
   AlertTriangle,
   CircleCheck,
-  CircleX,
   Sparkles,
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -38,9 +43,10 @@ type DashboardData = {
   avgDaysToSale: number;
   hasBoatListings: boolean;
   hasPlacedBids: boolean;
-  recentBids: any[];
+  brokerReviewCount: number;
+  recentBids: DashboardYachtWithStatus[];
   recentRegistrations: any[];
-  auditLogs: any[];
+  auditLogs: DashboardAuditItem[];
   trends: {
     activeBids: { change: number; sparkline: number[] };
     pendingTasks: { change: number; sparkline: number[] };
@@ -62,6 +68,31 @@ type DashboardAuditItem = {
   description?: string;
   title?: string;
 };
+
+type DashboardTask = {
+  status?: string | null;
+};
+
+type DashboardYacht = {
+  id: number | string;
+  name?: string | null;
+  status?: string | null;
+  price?: string | number | null;
+  updated_at?: string | null;
+  created_at?: string | null;
+  current_bid?: string | number | null;
+  vessel_id?: string | number | null;
+  [key: string]: unknown;
+};
+
+type DashboardYachtWithStatus = DashboardYacht & {
+  normalizedStatus: string;
+};
+
+function toNumericValue(value: unknown) {
+  const parsed = Number.parseFloat(String(value ?? 0));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 function CountUpNumber({
   value,
@@ -149,7 +180,6 @@ function Sparkline({ points }: { points: number[] }) {
 }
 
 export default function AdminDashboardHome() {
-  const locale = useLocale();
   const t = useTranslations("DashboardAdminOverview");
   const params = useParams<{ role?: string }>();
   const role = normalizeRole(params?.role) ?? "admin";
@@ -159,12 +189,6 @@ export default function AdminDashboardHome() {
   const showAdminSalesInsights = role !== "client";
   const showAuditPanel = role !== "client";
   const defaultUserName = t("defaults.userName");
-  const overviewTitle =
-    role === "admin"
-      ? t("roleTitles.admin")
-      : role === "client"
-        ? t("roleTitles.client")
-        : t("roleTitles.team");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
@@ -180,6 +204,7 @@ export default function AdminDashboardHome() {
     avgDaysToSale: 0,
     hasBoatListings: false,
     hasPlacedBids: false,
+    brokerReviewCount: 0,
     recentBids: [],
     recentRegistrations: [],
     auditLogs: [],
@@ -190,30 +215,46 @@ export default function AdminDashboardHome() {
       completedSales: { change: 0, sparkline: [] },
     },
   });
+  const brokerReviewHeading =
+    data.brokerReviewCount === 1
+      ? t("empty.brokerReviewHeadingOne").replace(
+          "{count}",
+          String(data.brokerReviewCount),
+        )
+      : t("empty.brokerReviewHeadingOther").replace(
+          "{count}",
+          String(data.brokerReviewCount),
+        );
 
   const fetchDashboardData = useCallback(async (showSkeleton = true) => {
     if (showSkeleton) setLoading(true);
     setIsRefreshing(true);
     try {
-      const [yachtsRes, tasksRes, bidsRes, logsRes, summaryRes, unreadCountRes] =
-        await Promise.allSettled([
-          api.get("/yachts"),
-          api.get("/tasks"),
-          api.get("/bids?page=1"),
-          api.get("/audit?per_page=5&sort_by=created_at&sort_dir=desc"),
-          api.get("/dashboard/summary"),
-          api.get("/notifications/unread-count"),
-        ]);
+      const [
+        yachtsRes,
+        tasksRes,
+        bidsRes,
+        logsRes,
+        summaryRes,
+        unreadCountRes,
+      ] = await Promise.allSettled([
+        api.get("/yachts"),
+        api.get("/tasks"),
+        api.get("/bids?page=1"),
+        api.get("/audit?per_page=5&sort_by=created_at&sort_dir=desc"),
+        api.get("/dashboard/summary"),
+        api.get("/notifications/unread-count"),
+      ]);
 
-      const yachts =
+      const yachts: DashboardYacht[] =
         yachtsRes.status === "fulfilled" ? yachtsRes.value.data || [] : [];
-      const tasks =
+      const tasks: DashboardTask[] =
         tasksRes.status === "fulfilled" ? tasksRes.value.data || [] : [];
       const bidsRaw =
         bidsRes.status === "fulfilled"
           ? bidsRes.value.data?.data || bidsRes.value.data || []
           : [];
-      const auditLogs =
+      const auditLogs: DashboardAuditItem[] =
         logsRes.status === "fulfilled"
           ? logsRes.value.data?.data || logsRes.value.data?.logs || []
           : [];
@@ -226,8 +267,37 @@ export default function AdminDashboardHome() {
             )
           : 0;
 
-      const activeBids = yachts.filter(
-        (y: any) => y.status === "For Bid",
+      const normalizeYachtStatus = (status: unknown) => {
+        const normalized = String(status ?? "")
+          .trim()
+          .toLowerCase();
+        if (!normalized) return "draft";
+
+        const statusMap: Record<string, string> = {
+          draft: "draft",
+          "for sale": "for sale",
+          for_sale: "for sale",
+          "for bid": "for bid",
+          for_bid: "for bid",
+          sold: "sold",
+          active: "active",
+          inactive: "inactive",
+          maintenance: "maintenance",
+          published: "published",
+        };
+
+        return statusMap[normalized] || normalized;
+      };
+
+      const yachtsWithNormalizedStatus: DashboardYachtWithStatus[] = yachts.map(
+        (yacht) => ({
+          ...yacht,
+          normalizedStatus: normalizeYachtStatus(yacht?.status),
+        }),
+      );
+
+      const activeBids = yachtsWithNormalizedStatus.filter(
+        (yacht) => yacht.normalizedStatus === "for bid",
       ).length;
       const pendingRegistrations = yachts.filter((y: any) => {
         const normalizedStatus = String(y?.status || "").toLowerCase();
@@ -238,27 +308,36 @@ export default function AdminDashboardHome() {
           normalizedStatus === "pending review"
         );
       });
-      const intake = yachts.filter(
-        (y: any) => y.status === "Draft" || y.status === "For Sale",
+      const intake = yachtsWithNormalizedStatus.filter(
+        (yacht) =>
+          yacht.normalizedStatus === "draft" ||
+          yacht.normalizedStatus === "for sale",
       ).length;
-      const pending = tasks.filter((t: any) => t.status !== "Done").length;
-      const soldYachts = yachts.filter((y: any) => y.status === "Sold");
+      const pending = tasks.filter((task) => task.status !== "Done").length;
+      const soldYachts = yachtsWithNormalizedStatus.filter(
+        (yacht) => yacht.normalizedStatus === "sold",
+      );
+      const brokerReviewCount = yachtsWithNormalizedStatus.filter(
+        (yacht) => yacht.normalizedStatus === "draft",
+      ).length;
       const now = new Date();
 
       const salesTotal = soldYachts.reduce(
-        (sum: number, y: any) => sum + (parseFloat(y.price) || 0),
+        (sum, yacht) => sum + toNumericValue(yacht.price),
         0,
       );
       const monthlyRevenue = soldYachts
-        .filter((y: any) => {
-          const updatedAt = y.updated_at ? new Date(y.updated_at) : null;
+        .filter((yacht) => {
+          const updatedAt = yacht.updated_at
+            ? new Date(yacht.updated_at)
+            : null;
           return (
             updatedAt &&
             updatedAt.getMonth() === now.getMonth() &&
             updatedAt.getFullYear() === now.getFullYear()
           );
         })
-        .reduce((sum: number, y: any) => sum + (parseFloat(y.price) || 0), 0);
+        .reduce((sum, yacht) => sum + toNumericValue(yacht.price), 0);
       const conversionRate =
         yachts.length > 0
           ? Math.round((soldYachts.length / yachts.length) * 100)
@@ -266,9 +345,13 @@ export default function AdminDashboardHome() {
       const avgDaysToSale =
         soldYachts.length > 0
           ? Math.round(
-              soldYachts.reduce((acc: number, y: any) => {
-                const created = y.created_at ? new Date(y.created_at) : null;
-                const updated = y.updated_at ? new Date(y.updated_at) : null;
+              soldYachts.reduce((acc, yacht) => {
+                const created = yacht.created_at
+                  ? new Date(yacht.created_at)
+                  : null;
+                const updated = yacht.updated_at
+                  ? new Date(yacht.updated_at)
+                  : null;
                 if (!created || !updated) return acc;
                 return (
                   acc +
@@ -284,12 +367,12 @@ export default function AdminDashboardHome() {
             )
           : 0;
 
-      const recentBids = yachts
-        .filter((y: any) => parseFloat(y.current_bid) > 0)
+      const recentBids = yachtsWithNormalizedStatus
+        .filter((yacht) => toNumericValue(yacht.current_bid) > 0)
         .sort(
-          (a: any, b: any) =>
-            new Date(b.updated_at).getTime() -
-            new Date(a.updated_at).getTime(),
+          (left, right) =>
+            new Date(String(right.updated_at ?? 0)).getTime() -
+            new Date(String(left.updated_at ?? 0)).getTime(),
         )
         .slice(0, 3);
       const recentRegistrations = pendingRegistrations
@@ -312,8 +395,9 @@ export default function AdminDashboardHome() {
           monthlyRevenue,
           conversionRate,
           avgDaysToSale,
-          hasBoatListings: yachts.length > 0,
+          hasBoatListings: yachtsWithNormalizedStatus.length > 0,
           hasPlacedBids: Array.isArray(bidsRaw) && bidsRaw.length > 0,
+          brokerReviewCount,
           recentBids,
           recentRegistrations,
           auditLogs: auditLogs.slice(0, 5),
@@ -389,8 +473,15 @@ export default function AdminDashboardHome() {
     };
   }, [defaultUserName]);
 
+  const showClientBrokerReview =
+    role === "client" &&
+    !loading &&
+    data.brokerReviewCount > 0 &&
+    data.recentBids.length === 0 &&
+    !data.hasPlacedBids;
   const showRecentBiddingPanel =
-    role !== "client" || data.hasBoatListings || data.hasPlacedBids;
+    role !== "client" ||
+    (!showClientBrokerReview && (data.hasBoatListings || data.hasPlacedBids));
   const showClientOnboarding =
     role === "client" &&
     !loading &&
@@ -462,7 +553,7 @@ export default function AdminDashboardHome() {
     },
   ];
 
-  const auditStatus = (task: any) => {
+  const auditStatus = (task: DashboardAuditItem) => {
     const status = (task?.status || "").toLowerCase();
     if (status.includes("done") || status.includes("completed")) {
       return {
@@ -745,9 +836,7 @@ export default function AdminDashboardHome() {
                     {yacht.vessel_id || yacht.ref_code || t("labels.unknown")}
                   </p>
                   <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                    <span>
-                      {yacht.status || t("labels.unknown")}
-                    </span>
+                    <span>{yacht.status || t("labels.unknown")}</span>
                     <span>
                       {formatDistanceToNow(
                         new Date(
@@ -812,7 +901,7 @@ export default function AdminDashboardHome() {
                 ))}
 
               {!loading &&
-                data.recentBids.map((yacht: any, idx) => (
+                data.recentBids.map((yacht, idx) => (
                   <motion.div
                     key={yacht.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -837,7 +926,7 @@ export default function AdminDashboardHome() {
                     <div className="text-right">
                       <p className="text-lg font-black text-[#1E3A8A]">
                         €
-                        {parseFloat(yacht.current_bid || 0).toLocaleString(
+                        {toNumericValue(yacht.current_bid).toLocaleString(
                           "de-DE",
                         )}
                       </p>
@@ -872,6 +961,47 @@ export default function AdminDashboardHome() {
           </div>
         )}
 
+        {showClientBrokerReview && (
+          <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
+            <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("sections.marketPulse")}
+                </p>
+                <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                  {t("empty.brokerReviewTitle")}
+                </h2>
+              </div>
+              <Link
+                href={`${dashboardBase}/yachts`}
+                className="inline-flex items-center gap-1 rounded-lg border border-[#BED0EE] bg-[#EFF4FF] px-3 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-[#dfe9ff] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                {t("actions.viewBoats")}
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+
+            <div className="rounded-2xl border border-dashed border-[#C6D6F2] bg-gradient-to-b from-[#F8FBFF] to-white p-10 text-center dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#0B1F3A]/10">
+                <Sailboat className="text-[#1E3A8A]" size={26} />
+              </div>
+              <p className="text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
+                {brokerReviewHeading}
+              </p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {t("empty.brokerReviewSubtitle")}
+              </p>
+              <Link
+                href={`${dashboardBase}/yachts`}
+                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
+              >
+                {t("actions.viewBoats")}
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+        )}
+
         {showClientOnboarding && (
           <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
             <div className="mb-6 border-b border-slate-100 pb-4 dark:border-slate-700">
@@ -892,7 +1022,7 @@ export default function AdminDashboardHome() {
               </p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {(t as any).rich("empty.onboardingSubtitle", {
-                  marketplace: (chunks: any) => (
+                  marketplace: (chunks: ReactNode) => (
                     <a
                       href={marketplaceUrl}
                       target="_blank"

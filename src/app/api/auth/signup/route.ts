@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       location_id?: number;
       website?: string;
       password?: string;
+      terms_accepted?: boolean;
     };
 
     const name = body.name?.trim();
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       website: body.website ?? "",
       password,
       password_confirmation: password,
-      accept_terms: true,
+      terms_accepted: body.terms_accepted === true,
     });
 
     const payload = backendResponse.data;

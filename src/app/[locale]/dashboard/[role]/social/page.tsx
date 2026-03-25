@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "@/shims/next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,12 @@ function formatMetric(value: number | null | undefined) {
     return Intl.NumberFormat().format(Number(value));
 }
 
+function isVideoGeneratingStatus(status: string | null | undefined) {
+    return ["queued", "processing", "pending", "rendering"].includes(
+        String(status || "").toLowerCase(),
+    );
+}
+
 function parsePublishers(value: VideoPost["publishers"]) {
     if (Array.isArray(value)) return value;
     if (typeof value === "string") {
@@ -124,6 +131,9 @@ function parsePublishers(value: VideoPost["publishers"]) {
 export default function AdminSocialAutomationPage() {
     const t = useTranslations("DashboardAdminSocial");
     const locale = useLocale();
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
 
     const [videos, setVideos] = useState<SocialVideo[]>([]);
     const [posts, setPosts] = useState<VideoPost[]>([]);
@@ -135,7 +145,7 @@ export default function AdminSocialAutomationPage() {
     const [reschedulePostId, setReschedulePostId] = useState<number | null>(null);
     const [rescheduleValue, setRescheduleValue] = useState("");
     const [previewVideoId, setPreviewVideoId] = useState<number | null>(null);
-    const hasLoadedInitialData = useRef(false);
+    const lastLoadKeyRef = useRef<string | null>(null);
     const [scheduleForm, setScheduleForm] = useState<ScheduleForm>(() => ({
         start_date: new Date().toISOString().slice(0, 10),
         cadence: "daily",
@@ -143,20 +153,32 @@ export default function AdminSocialAutomationPage() {
         publishers: ["facebook", "instagram"],
         skip_weekends: false,
     }));
+    const filteredYachtId = useMemo(() => {
+        const rawValue = searchParams.get("yacht_id");
+        if (!rawValue || !/^\d+$/.test(rawValue)) return null;
+
+        return Number(rawValue);
+    }, [searchParams]);
 
     const loadData = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
             const [videosRes, postsRes] = await Promise.all([
-                api.get("/social/videos"),
+                api.get("/social/videos", {
+                    params: filteredYachtId ? { yacht_id: filteredYachtId } : undefined,
+                }),
                 api.get("/social/posts"),
             ]);
 
             const nextVideos = normalizeList<SocialVideo>(videosRes.data, [
                 "videos",
                 "items",
-            ]);
+            ]).sort(
+                (left, right) =>
+                    new Date(right.created_at || 0).getTime() -
+                    new Date(left.created_at || 0).getTime(),
+            );
             const nextPosts = normalizeList<VideoPost>(postsRes.data, [
                 "posts",
                 "items",
@@ -172,13 +194,15 @@ export default function AdminSocialAutomationPage() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [filteredYachtId]);
 
     useEffect(() => {
-        if (hasLoadedInitialData.current) return;
-        hasLoadedInitialData.current = true;
+        const nextLoadKey = `${filteredYachtId ?? "all"}:${activeTab}`;
+        if (lastLoadKeyRef.current === nextLoadKey) return;
+
+        lastLoadKeyRef.current = nextLoadKey;
         void loadData();
-    }, [loadData]);
+    }, [activeTab, filteredYachtId, loadData]);
 
     const readyVideos = useMemo(
         () =>
@@ -187,6 +211,20 @@ export default function AdminSocialAutomationPage() {
             ),
         [videos],
     );
+    const hasGeneratingVideos = useMemo(
+        () => videos.some((video) => isVideoGeneratingStatus(video.status)),
+        [videos],
+    );
+
+    useEffect(() => {
+        if (!hasGeneratingVideos) return;
+
+        const timer = window.setInterval(() => {
+            void loadData();
+        }, 8000);
+
+        return () => window.clearInterval(timer);
+    }, [hasGeneratingVideos, loadData]);
 
     const stats = useMemo(() => {
         const scheduled = posts.filter(
@@ -540,6 +578,20 @@ export default function AdminSocialAutomationPage() {
                             <h2 className="mt-1 text-2xl font-serif italic text-[#003566]">
                                 {activeTab === "videos" ? t("library.videos") : t("library.posts")}
                             </h2>
+                            {filteredYachtId ? (
+                                <div className="mt-3 flex flex-wrap items-center gap-3">
+                                    <p className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
+                                        Boat #{filteredYachtId}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.replace(pathname)}
+                                        className="text-[10px] font-black uppercase tracking-[0.2em] text-[#003566]"
+                                    >
+                                        Show all boats
+                                    </button>
+                                </div>
+                            ) : null}
                         </div>
                         <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-50 p-1">
                             <button
