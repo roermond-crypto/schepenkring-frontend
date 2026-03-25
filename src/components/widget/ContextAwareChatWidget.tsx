@@ -10,7 +10,24 @@ type YachtContext = {
   boatId?: number;
   locationId?: number;
   harborName?: string;
+  boatName?: string;
 };
+
+function getMeaningfulText(...values: Array<string | number | null | undefined>) {
+  for (const value of values) {
+    const text = String(value ?? "").trim();
+    if (!text) continue;
+
+    const normalized = text.toLowerCase();
+    if (["-", "—", "–", "n/a", "na", "null", "undefined"].includes(normalized)) {
+      continue;
+    }
+
+    return text;
+  }
+
+  return null;
+}
 
 function extractYachtIdFromPath(pathname: string): number | null {
   const match = pathname.match(/\/yachts\/(\d+)(?:\/|$)/);
@@ -77,15 +94,25 @@ export function ContextAwareChatWidget() {
             fallbackLocationId ??
             0,
         );
+        const harborName = getMeaningfulText(
+          yacht.location?.name,
+          yacht.harbor?.name,
+          yacht.ref_harbor?.name,
+          yacht.vessel_lying,
+          yacht.where,
+          yacht.location,
+        );
+        const boatName = getMeaningfulText(
+          yacht.boat_name,
+          yacht.name,
+          [yacht.manufacturer, yacht.model].filter(Boolean).join(" "),
+        );
 
         setContext({
           boatId: yachtId,
           locationId: Number.isFinite(locationId) && locationId > 0 ? locationId : undefined,
-          harborName:
-            yacht.location?.name ??
-            yacht.harbor?.name ??
-            yacht.ref_harbor?.name ??
-            undefined,
+          harborName: harborName ?? undefined,
+          boatName: boatName ?? undefined,
         });
       } catch {
         if (cancelled) return;
@@ -114,6 +141,7 @@ export function ContextAwareChatWidget() {
       boatId={resolvedContext.boatId}
       locationId={resolvedContext.locationId}
       harborName={resolvedContext.harborName}
+      boatName={resolvedContext.boatName}
       locale={locale}
       widgetMode={resolvedContext.boatId ? "smart" : "chat"}
     />
