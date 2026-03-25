@@ -303,6 +303,19 @@ export function ChatPage() {
           </div>
         )}
       </div>
+
+      {selectedConv && showDetailPanel && (
+        <div className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm lg:hidden">
+          <div className="absolute inset-y-0 right-0 w-full max-w-sm border-l border-slate-200/60 bg-white shadow-2xl">
+            <ContactDetailPanel
+              contact={contact}
+              conversation={selectedConv}
+              onUpdateContact={handleUpdateContact}
+              onClose={() => setShowDetailPanel(false)}
+            />
+          </div>
+        </div>
+      )}
       <style jsx global>{`
         .dark .chat-page-theme .bg-white,
         .dark .chat-page-theme .bg-white\/70,

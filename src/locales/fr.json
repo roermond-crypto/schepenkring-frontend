@@ -41,19 +41,25 @@
     "signupTitle": "Inscription client",
     "signupError": "Impossible de créer le compte. Veuillez vérifier vos informations.",
     "email": "E-mail",
+    "phone": "Téléphone",
     "password": "Mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
     "verificationCode": "Code de vérification",
     "rememberTerminal": "Se souvenir du terminal",
     "forgotPassword": "Mot de passe oublié ?",
     "verifyEmail": "Vérifier l'e-mail",
+    "forgotPassword": "Mot de passe oublié ?",
     "registerCta": "S'enregistrer",
     "processing": "Traitement...",
     "validating": "Validation en cours...",
     "verifyContinue": "Vérifier et continuer",
-    "noAccountSignup": "Pas de compte ? S'inscrire en tant que Client",
+    "noAccountSignup": "Pas de compte ? S'inscrire comme acheteur / vendeur",
     "alreadyHaveAccount": "Vous avez déjà un compte ? Connexion",
-    "clientSignup": "Inscription client",
+    "clientSignup": "Inscription acheteur / vendeur",
+    "termsLabel": "J'accepte les conditions maritimes et la politique de confidentialité.",
+    "termsRequired": "Vous devez accepter les conditions avant de continuer.",
+    "selectLocation": "Sélectionner le siège",
+    "noLocationYet": "Je n'ai pas encore d'emplacement",
     "confirmPasswordRequired": "La confirmation du mot de passe est requise.",
     "passwordsDontMatch": "Les mots de passe ne correspondent pas.",
     "enterVerificationCode": "Saisissez votre code de vérification.",
@@ -68,9 +74,9 @@
     "newClient": "Nouveau client ?",
     "hasAccount": "Vous avez déjà un compte ?",
     "signin": "Se connecter",
-    "signupNotice": "L'inscription n'est disponible que pour les Clients. Les utilisateurs Employee, Location et Admin sont créés par l'administrateur système.",
+    "signupNotice": "L'inscription n'est disponible que pour les acheteurs et vendeurs. Les utilisateurs Employee, Location et Admin sont créés par l'administrateur système.",
     "submitLogin": "Connexion",
-    "submitSignup": "S'inscrire en tant que Client"
+    "submitSignup": "S'inscrire comme acheteur / vendeur"
   },
   "dashboard": {
     "welcome": "Content de vous revoir",
@@ -994,6 +1000,20 @@
         "days": "{count}d"
       }
     },
+    "legacyList": {
+      "unreadCount": "{count} message(s) non lu(s)",
+      "newChat": "Nouveau chat",
+      "emptyTitle": "Aucune conversation trouvée",
+      "emptySearch": "Essayez d'ajuster votre recherche",
+      "emptyDefault": "Commencez une nouvelle conversation pour démarrer",
+      "filters": {
+        "unread": "Non lus",
+        "online": "En ligne",
+        "allChats": "Tous les chats",
+        "unreadOnly": "Non lus uniquement",
+        "onlineUsers": "Utilisateurs en ligne"
+      }
+    },
     "messages": {
       "today": "Aujourd'hui",
       "systemEvent": "Événement système",
@@ -1051,6 +1071,7 @@
       "saveFailed": "Impossible de mettre à jour le contact.",
       "unknownVisitor": "Visiteur anonyme",
       "noCompany": "Aucune entreprise",
+      "noPhone": "Aucun numéro de téléphone pour le moment",
       "unknownLocation": "Emplacement inconnu",
       "noActivity": "Aucune activité enregistrée pour le moment.",
       "placeholders": {

@@ -41,19 +41,25 @@
     "signupTitle": "Client signup",
     "signupError": "Unable to create account. Please verify your details.",
     "email": "Email",
+    "phone": "Phone",
     "password": "Password",
     "confirmPassword": "Confirm password",
     "verificationCode": "Verification code",
     "rememberTerminal": "Remember terminal",
     "forgotPassword": "Forgot password?",
     "verifyEmail": "Verify email",
+    "forgotPassword": "Forgot password?",
     "registerCta": "Register",
     "processing": "Processing...",
     "validating": "Validating...",
     "verifyContinue": "Verify & Continue",
-    "noAccountSignup": "No account? Sign up as Client",
+    "noAccountSignup": "No account? Register as buyer / seller",
     "alreadyHaveAccount": "Already have an account? Login",
-    "clientSignup": "Client Signup",
+    "clientSignup": "Buyer / Seller Signup",
+    "termsLabel": "I agree to the maritime terms and privacy policy.",
+    "termsRequired": "You must agree to the terms before continuing.",
+    "selectLocation": "Select headquarters",
+    "noLocationYet": "I don't have a location yet",
     "confirmPasswordRequired": "Confirm password is required.",
     "passwordsDontMatch": "Passwords do not match.",
     "enterVerificationCode": "Enter your verification code.",
@@ -68,9 +74,9 @@
     "newClient": "New client?",
     "hasAccount": "Already have an account?",
     "signin": "Sign in",
-    "signupNotice": "Signup is available only for Client. Employee, Location, and Admin users are created by the system administrator.",
+    "signupNotice": "Signup is available only for buyers and sellers. Employee, Location, and Admin users are created by the system administrator.",
     "submitLogin": "Login",
-    "submitSignup": "Sign up as Client"
+    "submitSignup": "Sign up as buyer / seller"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -994,6 +1000,20 @@
         "days": "{count}d"
       }
     },
+    "legacyList": {
+      "unreadCount": "{count} unread message(s)",
+      "newChat": "New Chat",
+      "emptyTitle": "No conversations found",
+      "emptySearch": "Try adjusting your search terms",
+      "emptyDefault": "Start a new conversation to get started",
+      "filters": {
+        "unread": "Unread",
+        "online": "Online",
+        "allChats": "All Chats",
+        "unreadOnly": "Unread Only",
+        "onlineUsers": "Online Users"
+      }
+    },
     "messages": {
       "today": "Today",
       "systemEvent": "System event",
@@ -1051,6 +1071,7 @@
       "saveFailed": "Could not update the contact.",
       "unknownVisitor": "Anonymous Visitor",
       "noCompany": "No company yet",
+      "noPhone": "No phone number yet",
       "unknownLocation": "Unknown location",
       "noActivity": "No activity recorded yet.",
       "placeholders": {

@@ -41,19 +41,25 @@
     "signupTitle": "Client Registrierung",
     "signupError": "Konto konnte nicht erstellt werden. Bitte Daten prufen.",
     "email": "E-Mail",
+    "phone": "Telefon",
     "password": "Passwort",
     "confirmPassword": "Passwort bestatigen",
     "verificationCode": "Verifizierungscode",
     "rememberTerminal": "Gerat merken",
     "forgotPassword": "Passwort vergessen?",
     "verifyEmail": "E-Mail verifizieren",
+    "forgotPassword": "Passwort vergessen?",
     "registerCta": "Registrieren",
     "processing": "Wird verarbeitet...",
     "validating": "Wird gepruft...",
     "verifyContinue": "Verifizieren & fortfahren",
-    "noAccountSignup": "Kein Konto? Als Client registrieren",
+    "noAccountSignup": "Kein Konto? Als Kaeufer / Verkaeufer registrieren",
     "alreadyHaveAccount": "Bereits ein Konto? Anmelden",
-    "clientSignup": "Client Registrierung",
+    "clientSignup": "Kaeufer / Verkaeufer Registrierung",
+    "termsLabel": "Ich stimme den maritimen Bedingungen und der Datenschutzrichtlinie zu.",
+    "termsRequired": "Sie muessen den Bedingungen zustimmen, bevor Sie fortfahren.",
+    "selectLocation": "Hauptstandort auswaehlen",
+    "noLocationYet": "Ich habe noch keinen Standort",
     "confirmPasswordRequired": "Passwortbestatigung ist erforderlich.",
     "passwordsDontMatch": "Passworter stimmen nicht uberein.",
     "enterVerificationCode": "Bitte Verifizierungscode eingeben.",
@@ -68,9 +74,9 @@
     "newClient": "Neuer Client?",
     "hasAccount": "Bereits ein Konto?",
     "signin": "Anmelden",
-    "signupNotice": "Registrierung ist nur fur Client verfugbar. Employee-, Location- und Admin-Konten werden vom Administrator erstellt.",
+    "signupNotice": "Die Registrierung ist nur fuer Kaeufer und Verkaeufer verfuegbar. Employee-, Location- und Admin-Konten werden vom Administrator erstellt.",
     "submitLogin": "Anmelden",
-    "submitSignup": "Als Client registrieren"
+    "submitSignup": "Als Kaeufer / Verkaeufer registrieren"
   },
   "dashboard": {
     "welcome": "Willkommen zuruck",
@@ -994,6 +1000,20 @@
         "days": "{count}T"
       }
     },
+    "legacyList": {
+      "unreadCount": "{count} ungelesene Nachricht(en)",
+      "newChat": "Neuer Chat",
+      "emptyTitle": "Keine Gespraeche gefunden",
+      "emptySearch": "Passen Sie Ihre Suchbegriffe an",
+      "emptyDefault": "Starten Sie ein neues Gespraech, um zu beginnen",
+      "filters": {
+        "unread": "Ungelesen",
+        "online": "Online",
+        "allChats": "Alle Chats",
+        "unreadOnly": "Nur ungelesene",
+        "onlineUsers": "Online-Benutzer"
+      }
+    },
     "messages": {
       "today": "Heute",
       "systemEvent": "Systemereignis",
@@ -1051,6 +1071,7 @@
       "saveFailed": "Kontakt konnte nicht aktualisiert werden.",
       "unknownVisitor": "Anonymer Besucher",
       "noCompany": "Noch kein Unternehmen",
+      "noPhone": "Noch keine Telefonnummer",
       "unknownLocation": "Unbekannter Standort",
       "noActivity": "Noch keine Aktivität erfasst.",
       "placeholders": {

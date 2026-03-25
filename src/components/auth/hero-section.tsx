@@ -40,6 +40,7 @@ type HeroSectionProps = {
     rememberTerminal: string;
     forgotPassword: string;
     verifyEmail: string;
+    forgotPassword: string;
     login: string;
     register: string;
     processing: string;
@@ -48,6 +49,11 @@ type HeroSectionProps = {
     noAccountSignup: string;
     alreadyHaveAccount: string;
     clientSignup: string;
+    termsLabel: string;
+    termsRequired: string;
+    selectLocation: string;
+    noLocationYet: string;
+    phone: string;
     confirmPasswordRequired: string;
     passwordsDontMatch: string;
     enterVerificationCode: string;
@@ -259,6 +265,11 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
 
   async function executeAuth() {
     if (mode === "register") {
+      if (!acceptTerms) {
+        setError(copy.termsRequired);
+        return;
+      }
+
       if (!formData.confirmPassword) {
         setError(copy.confirmPasswordRequired);
         return;
@@ -442,7 +453,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
               <input
                 name="phone"
                 type="tel"
-                placeholder="Phone"
+                placeholder={copy.phone}
                 value={formData.phone}
                 onChange={onInputChange}
                 className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
@@ -454,14 +465,14 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                 name="location_id"
                 value={formData.location_id}
                 onChange={onInputChange}
-                required
                 className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
               >
-                <option value="" disabled>
+                <option value="">
                   {loadingLocations
                     ? "Loading locations..."
-                    : "Select location"}
+                    : copy.selectLocation}
                 </option>
+                <option value="">{copy.noLocationYet}</option>
                 {locations.map((location) => (
                   <option
                     key={location.id}
