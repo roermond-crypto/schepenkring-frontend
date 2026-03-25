@@ -46,6 +46,7 @@
     "confirmPassword": "Passwort bestatigen",
     "verificationCode": "Verifizierungscode",
     "rememberTerminal": "Gerat merken",
+    "forgotPassword": "Passwort vergessen?",
     "verifyEmail": "E-Mail verifizieren",
     "forgotPassword": "Passwort vergessen?",
     "registerCta": "Registrieren",
@@ -65,6 +66,10 @@
     "verificationCodeSent": "Verifizierungscode wurde an Ihre E-Mail gesendet.",
     "invalidLoginResponse": "Ungultige Login-Antwort.",
     "authFailed": "Authentifizierung fehlgeschlagen.",
+    "termsRequired": "Sie müssen den Geschäftsbedingungen zustimmen, um sich zu registrieren.",
+    "termsLabelBeforeLink": "Ich stimme den",
+    "termsLinkLabel": "Geschäftsbedingungen",
+    "termsLabelAfterLink": " zu.",
     "name": "Vollstandiger Name",
     "newClient": "Neuer Client?",
     "hasAccount": "Bereits ein Konto?",
@@ -346,6 +351,7 @@
     },
     "actions": {
       "viewBiddings": "Gebote anzeigen",
+      "viewBoats": "Boote ansehen",
       "createFirstListing": "Erstes Inserat erstellen",
       "browseMarketplace": "Marktplatz durchsuchen"
     },
@@ -380,6 +386,10 @@
     "empty": {
       "noRecentBiddingTitle": "Keine kürzliche Gebotsaktivität",
       "noRecentBiddingSubtitle": "Starten Sie einen Gebotsprozess, um hier Echtzeit-Updates zu sehen.",
+      "brokerReviewTitle": "Maklerprüfung",
+      "brokerReviewHeadingOne": "Sie haben {count} Boot zur Prüfung beim Makler",
+      "brokerReviewHeadingOther": "Sie haben {count} Boote zur Prüfung beim Makler",
+      "brokerReviewSubtitle": "Ihr Inserat wurde eingereicht und wartet auf die Freigabe des Maklers, bevor es in den Verkaufsablauf gelangt.",
       "onboardingTitle": "Willkommen auf dem Marktplatz",
       "onboardingHeading": "Sie haben noch keine Gebote abgegeben",
       "onboardingSubtitle": "Beginnen Sie mit Ihrem ersten Bootsinserat oder durchsuchen Sie den <marketplace>Marktplatz</marketplace>, um Gebote abzugeben.",

@@ -46,6 +46,7 @@
     "confirmPassword": "Confirm password",
     "verificationCode": "Verification code",
     "rememberTerminal": "Remember terminal",
+    "forgotPassword": "Forgot password?",
     "verifyEmail": "Verify email",
     "forgotPassword": "Forgot password?",
     "registerCta": "Register",
@@ -65,6 +66,10 @@
     "verificationCodeSent": "Verification code sent to your email.",
     "invalidLoginResponse": "Invalid login response.",
     "authFailed": "Authentication failed.",
+    "termsRequired": "You must accept the terms and conditions to register.",
+    "termsLabelBeforeLink": "I agree to the",
+    "termsLinkLabel": "terms and conditions",
+    "termsLabelAfterLink": ".",
     "name": "Full name",
     "newClient": "New client?",
     "hasAccount": "Already have an account?",
@@ -346,6 +351,7 @@
     },
     "actions": {
       "viewBiddings": "View Biddings",
+      "viewBoats": "View boats",
       "createFirstListing": "Create First Listing",
       "browseMarketplace": "Browse Marketplace"
     },
@@ -380,6 +386,10 @@
     "empty": {
       "noRecentBiddingTitle": "No recent bidding activity",
       "noRecentBiddingSubtitle": "Start a bidding process to see live updates here.",
+      "brokerReviewTitle": "Broker review status",
+      "brokerReviewHeadingOne": "You have {count} boat under review with the broker",
+      "brokerReviewHeadingOther": "You have {count} boats under review with the broker",
+      "brokerReviewSubtitle": "Your listing has been submitted and is waiting for broker approval before it enters the sales flow.",
       "onboardingTitle": "Welcome to the marketplace",
       "onboardingHeading": "You have not placed any bids yet",
       "onboardingSubtitle": "Start by creating your first boat listing or browse the <marketplace>marketplace</marketplace> to begin bidding.",
