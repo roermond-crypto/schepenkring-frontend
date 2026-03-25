@@ -313,6 +313,7 @@
     "welcomeBack": "Welcome back, {name}",
     "todayWeather": "Today: 18° Sunny in Eindhoven",
     "notificationSummary": "You got {count} new notification{count, plural, one {} other {s}}.",
+    "registrationSummary": "You have {count} new registration{count, plural, one {} other {s}} awaiting review.",
     "activeBiddingItems": "You have {count} active bidding {count, plural, one {item} other {items}}.",
     "liveSync": "Live sync",
     "refresh": "Refresh",
@@ -339,6 +340,7 @@
     "sections": {
       "businessInsights": "Business insights",
       "performanceSnapshot": "Performance Snapshot",
+      "newRegistrations": "New registrations",
       "marketPulse": "Market pulse",
       "recentBiddingActivity": "Recent Bidding Activity",
       "liveDiagnostics": "Live diagnostics",
@@ -346,6 +348,7 @@
     },
     "actions": {
       "viewBiddings": "View Biddings",
+      "reviewRegistrations": "Review registrations",
       "createFirstListing": "Create First Listing",
       "browseMarketplace": "Browse Marketplace"
     },
@@ -364,6 +367,7 @@
     },
     "labels": {
       "registry": "Registry",
+      "submittedForReview": "Submitted for review",
       "unknown": "Unknown",
       "currentBid": "Current bid"
     },
@@ -383,6 +387,7 @@
       "onboardingTitle": "Welcome to the marketplace",
       "onboardingHeading": "You have not placed any bids yet",
       "onboardingSubtitle": "Start by creating your first boat listing or browse the <marketplace>marketplace</marketplace> to begin bidding.",
+      "noNewRegistrations": "No new vessel registrations are waiting for review right now.",
       "noSystemLogs": "No recent system logs yet."
     },
     "defaults": {

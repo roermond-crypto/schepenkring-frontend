@@ -35,6 +35,7 @@ import {
   type SignRequest,
   type SignhostTransaction,
 } from "@/lib/api/signhost";
+import { getAdminUser, type MeUser } from "@/lib/api/account";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
 
 type ContractLanguage = "nl" | "en" | "de" | "fr";
@@ -147,6 +148,7 @@ type ContractDraft = {
 };
 
 type YachtContractData = {
+  user_id?: number | null;
   price?: string | number | null;
   year?: string | number | null;
   loa?: string | number | null;
@@ -205,6 +207,15 @@ type YachtContractData = {
   owner_address?: string | null;
   owner_postal_code?: string | null;
   owner_city?: string | null;
+};
+
+type ContractParty = {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
 };
 
 interface SignhostFlowProps {
@@ -988,6 +999,51 @@ function formatAgreementDate(language: ContractLanguage, value: string) {
   }).format(date);
 }
 
+function getPartyFromYachtData(
+  yachtData: YachtContractData | null | undefined,
+): ContractParty | null {
+  return (
+    yachtData?.user ??
+    yachtData?.owner ??
+    yachtData?.client ??
+    yachtData?.contact ??
+    (yachtData?.customer_name ||
+    yachtData?.customer_email ||
+    yachtData?.customer_phone ||
+    yachtData?.owner_name ||
+    yachtData?.owner_email ||
+    yachtData?.owner_phone ||
+    yachtData?.owner_address ||
+    yachtData?.owner_postal_code ||
+    yachtData?.owner_city
+      ? {
+          name: yachtData?.customer_name || yachtData?.owner_name || "",
+          email: yachtData?.customer_email || yachtData?.owner_email || "",
+          phone:
+            yachtData?.customer_phone ||
+            yachtData?.owner_phone ||
+            yachtData?.phone ||
+            "",
+          address: yachtData?.owner_address || "",
+          postal_code: yachtData?.owner_postal_code || "",
+          city: yachtData?.owner_city || "",
+        }
+      : null)
+  );
+}
+
+function mapAdminUserToContractParty(user: MeUser | null): ContractParty | null {
+  if (!user) return null;
+  return {
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    address: [user.address_line1, user.address_line2].filter(Boolean).join(", "),
+    postal_code: user.postal_code,
+    city: user.city,
+  };
+}
+
 function getSpecificationRows(draft: ContractDraft) {
   const registerValue = boolLabel(draft.language, draft.shipRegisterEntry);
   const mortgageValue = boolLabel(draft.language, draft.hasMortgage);
@@ -1161,12 +1217,7 @@ function buildContractDraft(
   language: ContractLanguage,
 ): ContractDraft {
   const locationDefaults = resolveLocationDefaults(location);
-  const party =
-    yachtData?.user ??
-    yachtData?.owner ??
-    yachtData?.client ??
-    yachtData?.contact ??
-    null;
+  const party = getPartyFromYachtData(yachtData);
   const askingPrice =
     yachtData?.price != null && yachtData?.price !== ""
       ? String(yachtData.price)
@@ -1349,6 +1400,8 @@ export function SignhostFlow({
   const storageKey = `contract_draft_${yachtId ?? "draft"}`;
 
   const [signRequest, setSignRequest] = useState<SignRequest | null>(null);
+  const [linkedClient, setLinkedClient] = useState<MeUser | null>(null);
+  const [linkedClientLoading, setLinkedClientLoading] = useState(false);
   const [draft, setDraft] = useState<ContractDraft>(() =>
     buildContractDraft(
       yachtName,
@@ -1404,6 +1457,34 @@ export function SignhostFlow({
   }, [localeContractLanguage]);
 
   useEffect(() => {
+    if (!canManageContract || !yachtData?.user_id) {
+      setLinkedClient(null);
+      return;
+    }
+
+    let active = true;
+    setLinkedClientLoading(true);
+
+    void getAdminUser(yachtData.user_id)
+      .then((response) => {
+        if (!active) return;
+        setLinkedClient(response.data ?? null);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLinkedClient(null);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLinkedClientLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canManageContract, yachtData?.user_id]);
+
+  useEffect(() => {
     const trimmedName = user.name?.trim() || "";
     const trimmedEmail = user.email?.trim() || "";
     const trimmedPhone = user.phone?.trim() || "";
@@ -1427,6 +1508,29 @@ export function SignhostFlow({
       return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
     });
   }, [user.email, user.name, user.phone, user.role]);
+
+  useEffect(() => {
+    const linkedParty = mapAdminUserToContractParty(linkedClient);
+    if (!linkedParty) return;
+
+    setDraft((prev) => {
+      const updates: Partial<ContractDraft> = {};
+
+      if (!prev.clientName && linkedParty.name) updates.clientName = linkedParty.name;
+      if (!prev.clientEmail && linkedParty.email)
+        updates.clientEmail = linkedParty.email;
+      if (!prev.clientPhone && linkedParty.phone)
+        updates.clientPhone = linkedParty.phone;
+      if (!prev.clientAddress && linkedParty.address)
+        updates.clientAddress = linkedParty.address;
+      if (!prev.clientPostalCode && linkedParty.postal_code)
+        updates.clientPostalCode = linkedParty.postal_code;
+      if (!prev.clientCity && linkedParty.city)
+        updates.clientCity = linkedParty.city;
+
+      return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
+    });
+  }, [linkedClient]);
 
   useEffect(() => {
     try {
@@ -1483,6 +1587,61 @@ export function SignhostFlow({
   const previewCopy = copyByLanguage[draft.language];
   const agreementCopy = getAgreementCopy(draft.language);
   const editorCopy = editorCopyByLanguage[draft.language];
+  const linkedOwnerCopy = {
+    nl: {
+      title: "Gekoppelde klant / booteigenaar",
+      subtitle:
+        "Deze gegevens worden gebruikt voor de bemiddelingsovereenkomst en Signhost.",
+      linkedUser: "Gekoppelde gebruiker",
+      missing:
+        "Er zijn nog geen klantgegevens gekoppeld aan dit vaartuig. Koppel of maak eerst een klant aan, anders blijft de overeenkomst leeg.",
+      loading: "Klantgegevens laden...",
+    },
+    en: {
+      title: "Linked client / boat owner",
+      subtitle:
+        "These details are used for the brokerage agreement and Signhost.",
+      linkedUser: "Linked user",
+      missing:
+        "No client details are linked to this vessel yet. Link or create a client first, otherwise the agreement will stay blank.",
+      loading: "Loading client details...",
+    },
+    de: {
+      title: "Verknüpfter Kunde / Bootseigner",
+      subtitle:
+        "Diese Angaben werden für den Maklervertrag und Signhost verwendet.",
+      linkedUser: "Verknüpfter Benutzer",
+      missing:
+        "Für dieses Boot sind noch keine Kundendaten verknüpft. Verknüpfen oder erstellen Sie zuerst einen Kunden, sonst bleibt der Vertrag leer.",
+      loading: "Kundendaten werden geladen...",
+    },
+    fr: {
+      title: "Client / proprietaire du bateau lie",
+      subtitle:
+        "Ces donnees sont utilisees pour le contrat de courtage et Signhost.",
+      linkedUser: "Utilisateur lie",
+      missing:
+        "Aucune donnee client n'est encore liee a ce bateau. Liez ou creez d'abord un client, sinon le contrat restera vide.",
+      loading: "Chargement des donnees client...",
+    },
+  }[draft.language];
+  const linkedParty = mapAdminUserToContractParty(linkedClient);
+  const yachtParty = getPartyFromYachtData(yachtData);
+  const ownerSnapshot = {
+    name: draft.clientName || linkedParty?.name || yachtParty?.name || "",
+    email: draft.clientEmail || linkedParty?.email || yachtParty?.email || "",
+    phone: draft.clientPhone || linkedParty?.phone || yachtParty?.phone || "",
+    address:
+      draft.clientAddress || linkedParty?.address || yachtParty?.address || "",
+    postalCode:
+      draft.clientPostalCode ||
+      linkedParty?.postal_code ||
+      yachtParty?.postal_code ||
+      "",
+    city: draft.clientCity || linkedParty?.city || yachtParty?.city || "",
+  };
+  const ownerSnapshotMissing =
+    !ownerSnapshot.name && !ownerSnapshot.email && !ownerSnapshot.phone;
   const selectedTemplate =
     contractTemplateOptions.find(
       (option) => option.value === contractTemplateKey,
@@ -1887,6 +2046,73 @@ export function SignhostFlow({
           <p className="mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
             {editorCopy.pageSubtitle}
           </p>
+        </div>
+
+        <div className="mb-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                {linkedOwnerCopy.title}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {linkedOwnerCopy.subtitle}
+              </p>
+            </div>
+            {yachtData?.user_id ? (
+              <div className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600">
+                {linkedOwnerCopy.linkedUser}: #{yachtData.user_id}
+              </div>
+            ) : null}
+          </div>
+
+          {linkedClientLoading ? (
+            <p className="mt-4 text-sm text-slate-500">
+              {linkedOwnerCopy.loading}
+            </p>
+          ) : ownerSnapshotMissing ? (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {linkedOwnerCopy.missing}
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {agreementCopy.nameLabel}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {fieldValue(ownerSnapshot.name)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {agreementCopy.emailLabel}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900 break-all">
+                  {fieldValue(ownerSnapshot.email)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {agreementCopy.phoneLabel}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {fieldValue(ownerSnapshot.phone)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {agreementCopy.addressLabel}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {fieldValue(
+                    [ownerSnapshot.address, ownerSnapshot.postalCode, ownerSnapshot.city]
+                      .filter(Boolean)
+                      .join(", "),
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

@@ -314,6 +314,7 @@
     "welcomeBack": "Welkom terug, {name}",
     "todayWeather": "Vandaag: 18° zonnig in Eindhoven",
     "notificationSummary": "Je hebt {count} nieuwe melding{count, plural, one {} other {en}}.",
+    "registrationSummary": "Je hebt {count} nieuwe registratie{count, plural, one {} other {s}} die wacht op controle.",
     "activeBiddingItems": "Je hebt {count} actief{count, plural, one {} other {e}} bieding{count, plural, one {} other {en}}.",
     "liveSync": "Live synchronisatie",
     "refresh": "Verversen",
@@ -340,6 +341,7 @@
     "sections": {
       "businessInsights": "Bedrijfsinzichten",
       "performanceSnapshot": "Prestatieoverzicht",
+      "newRegistrations": "Nieuwe registraties",
       "marketPulse": "Marktbeeld",
       "recentBiddingActivity": "Recente biedactiviteit",
       "liveDiagnostics": "Live diagnostiek",
@@ -347,6 +349,7 @@
     },
     "actions": {
       "viewBiddings": "Bekijk biedingen",
+      "reviewRegistrations": "Bekijk registraties",
       "createFirstListing": "Eerste listing maken",
       "browseMarketplace": "Marketplace bekijken"
     },
@@ -365,6 +368,7 @@
     },
     "labels": {
       "registry": "Register",
+      "submittedForReview": "Ingediend voor controle",
       "unknown": "Onbekend",
       "currentBid": "Huidig bod"
     },
@@ -384,6 +388,7 @@
       "onboardingTitle": "Welkom op de marketplace",
       "onboardingHeading": "Je hebt nog geen biedingen geplaatst",
       "onboardingSubtitle": "Begin met het maken van je eerste bootlisting of bekijk de <marketplace>marketplace</marketplace> om te bieden.",
+      "noNewRegistrations": "Er zijn nu geen nieuwe vaartuigregistraties die op controle wachten.",
       "noSystemLogs": "Nog geen recente systeemlogs."
     },
     "defaults": {

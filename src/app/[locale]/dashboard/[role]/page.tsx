@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { startTransition, useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
@@ -31,6 +31,7 @@ type DashboardData = {
   activeBidsCount: number;
   pendingTasks: number;
   fleetIntake: number;
+  pendingRegistrations: number;
   totalSalesNumber: number;
   monthlyRevenue: number;
   conversionRate: number;
@@ -38,6 +39,7 @@ type DashboardData = {
   hasBoatListings: boolean;
   hasPlacedBids: boolean;
   recentBids: any[];
+  recentRegistrations: any[];
   auditLogs: any[];
   trends: {
     activeBids: { change: number; sparkline: number[] };
@@ -171,6 +173,7 @@ export default function AdminDashboardHome() {
     activeBidsCount: 0,
     pendingTasks: 0,
     fleetIntake: 0,
+    pendingRegistrations: 0,
     totalSalesNumber: 0,
     monthlyRevenue: 0,
     conversionRate: 0,
@@ -178,6 +181,7 @@ export default function AdminDashboardHome() {
     hasBoatListings: false,
     hasPlacedBids: false,
     recentBids: [],
+    recentRegistrations: [],
     auditLogs: [],
     trends: {
       activeBids: { change: 0, sparkline: [] },
@@ -225,6 +229,15 @@ export default function AdminDashboardHome() {
       const activeBids = yachts.filter(
         (y: any) => y.status === "For Bid",
       ).length;
+      const pendingRegistrations = yachts.filter((y: any) => {
+        const normalizedStatus = String(y?.status || "").toLowerCase();
+        return (
+          normalizedStatus === "draft" ||
+          normalizedStatus === "pending" ||
+          normalizedStatus === "pending_review" ||
+          normalizedStatus === "pending review"
+        );
+      });
       const intake = yachts.filter(
         (y: any) => y.status === "Draft" || y.status === "For Sale",
       ).length;
@@ -279,29 +292,41 @@ export default function AdminDashboardHome() {
             new Date(a.updated_at).getTime(),
         )
         .slice(0, 3);
+      const recentRegistrations = pendingRegistrations
+        .slice()
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.updated_at || b.created_at || 0).getTime() -
+            new Date(a.updated_at || a.created_at || 0).getTime(),
+        )
+        .slice(0, 4);
 
-      setUnreadNotificationCount(unreadCount);
-      setData({
-        activeBidsCount: activeBids,
-        pendingTasks: pending,
-        fleetIntake: intake,
-        totalSalesNumber: salesTotal,
-        monthlyRevenue,
-        conversionRate,
-        avgDaysToSale,
-        hasBoatListings: yachts.length > 0,
-        hasPlacedBids: Array.isArray(bidsRaw) && bidsRaw.length > 0,
-        recentBids,
-        auditLogs: auditLogs.slice(0, 5),
-        trends:
-          summaryRes.status === "fulfilled" && summaryRes.value.data
-            ? summaryRes.value.data
-            : {
-                activeBids: { change: 0, sparkline: [] },
-                pendingTasks: { change: 0, sparkline: [] },
-                fleetIntake: { change: 0, sparkline: [] },
-                completedSales: { change: 0, sparkline: [] },
-              },
+      startTransition(() => {
+        setUnreadNotificationCount(unreadCount);
+        setData({
+          activeBidsCount: activeBids,
+          pendingTasks: pending,
+          fleetIntake: intake,
+          pendingRegistrations: pendingRegistrations.length,
+          totalSalesNumber: salesTotal,
+          monthlyRevenue,
+          conversionRate,
+          avgDaysToSale,
+          hasBoatListings: yachts.length > 0,
+          hasPlacedBids: Array.isArray(bidsRaw) && bidsRaw.length > 0,
+          recentBids,
+          recentRegistrations,
+          auditLogs: auditLogs.slice(0, 5),
+          trends:
+            summaryRes.status === "fulfilled" && summaryRes.value.data
+              ? summaryRes.value.data
+              : {
+                  activeBids: { change: 0, sparkline: [] },
+                  pendingTasks: { change: 0, sparkline: [] },
+                  fleetIntake: { change: 0, sparkline: [] },
+                  completedSales: { change: 0, sparkline: [] },
+                },
+        });
       });
     } catch (error) {
       console.error("Admin dashboard sync error:", error);
@@ -503,6 +528,14 @@ export default function AdminDashboardHome() {
                 <Bell size={14} />
                 {t("notificationSummary", { count: unreadNotificationCount })}
               </span>
+              {isAdminRole && data.pendingRegistrations > 0 && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                  <AlertCircle size={14} />
+                  {t("registrationSummary", {
+                    count: data.pendingRegistrations,
+                  })}
+                </span>
+              )}
               {isAdminRole && (
                 <span className="font-semibold">
                   {t("activeBiddingItems", {
@@ -659,6 +692,80 @@ export default function AdminDashboardHome() {
             </div>
           </section>
         </>
+      )}
+
+      {isAdminRole && (
+        <section className="rounded-2xl border border-[#CFDCF2] bg-white/90 p-6 shadow-[0_8px_28px_rgba(11,31,58,0.08)] backdrop-blur dark:border-slate-700 dark:bg-[#0f172a]/90">
+          <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
+            <div>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {t("sections.businessInsights")}
+              </p>
+              <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                {t("sections.newRegistrations")}
+              </h2>
+            </div>
+            <Link
+              href={`${dashboardBase}/yachts`}
+              className="inline-flex items-center gap-1 rounded-lg border border-[#BED0EE] bg-[#EFF4FF] px-3 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-[#dfe9ff] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              {t("actions.reviewRegistrations")}
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              {Array.from({ length: 2 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="animate-pulse rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+                >
+                  <div className="h-4 w-40 rounded bg-slate-200 dark:bg-slate-700" />
+                  <div className="mt-2 h-3 w-24 rounded bg-slate-100 dark:bg-slate-800" />
+                </div>
+              ))}
+            </div>
+          ) : data.recentRegistrations.length > 0 ? (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {data.recentRegistrations.map((yacht: any) => (
+                <Link
+                  key={yacht.id}
+                  href={`${dashboardBase}/yachts/${yacht.id}?step=5`}
+                  className="rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 transition hover:border-[#BBD0F2] hover:shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800 dark:hover:border-slate-600"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
+                    {t("labels.submittedForReview")}
+                  </p>
+                  <p className="mt-2 text-base font-bold text-[#0B1F3A] dark:text-slate-100">
+                    {yacht.boat_name || yacht.name || t("labels.unknown")}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {t("labels.registry")}:{" "}
+                    {yacht.vessel_id || yacht.ref_code || t("labels.unknown")}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>
+                      {yacht.status || t("labels.unknown")}
+                    </span>
+                    <span>
+                      {formatDistanceToNow(
+                        new Date(
+                          yacht.updated_at || yacht.created_at || Date.now(),
+                        ),
+                        { addSuffix: true },
+                      )}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-200 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              {t("empty.noNewRegistrations")}
+            </div>
+          )}
+        </section>
       )}
 
       <div

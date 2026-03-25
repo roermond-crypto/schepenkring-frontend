@@ -427,7 +427,7 @@ const YACHT_FORM_TEXT = {
       stepDisplay: "Display",
       stepReview: "Review",
       stepContract: "Contract",
-      stepBrokerReview: "Broker Review",
+      stepBrokerReview: "Broker Check",
       stepOneTitle: "Vessel Assets & AI Extraction",
       stepOneDescription:
         "Upload images -> system auto-optimizes -> approve -> then AI fills all form fields.",
@@ -450,10 +450,10 @@ const YACHT_FORM_TEXT = {
       reviewContractNotice:
         "Save this vessel first. The contract flow opens in the next step after the vessel record is stored.",
       clientReviewStepDescription:
-        "Your vessel has been submitted for broker review. A broker will contact you and send the Signhost contract when everything is ready.",
+        "This vessel has been submitted for review. A broker will contact you and send the Signhost contract by email once everything is ready.",
       clientReviewStatusTitle: "Submitted for Review",
       clientReviewStatusDescription:
-        "This vessel is now waiting for broker review. The contract is not shown to clients at this stage.",
+        "This vessel has been submitted for review. A broker will contact you and send the Signhost contract by email once everything is ready.",
       clientReviewProgressTitle: "Submission progress",
       clientReviewBoatStatusLabel: "Broker review",
       clientReviewContractStatusLabel: "Contract signing",
@@ -900,7 +900,7 @@ const YACHT_FORM_TEXT = {
       stepDisplay: "Weergave",
       stepReview: "Controle",
       stepContract: "Contract",
-      stepBrokerReview: "Brokercontrole",
+      stepBrokerReview: "Broker check",
       stepOneTitle: "Vaartuigmedia & AI-extractie",
       stepOneDescription:
         "Upload afbeeldingen -> systeem optimaliseert automatisch -> keur goed -> daarna vult AI alle velden in.",
@@ -915,7 +915,7 @@ const YACHT_FORM_TEXT = {
       completed: "Voltooid",
       pending: "Open",
       continueToContract: "Opslaan en naar contract",
-      submitForBrokerReview: "Indienen voor brokercontrole",
+      submitForBrokerReview: "Indienen voor broker check",
       finishFlow: "Afronden",
       finishFlowToast: "Vaartuigflow voltooid.",
       contractStepDescription:
@@ -923,10 +923,10 @@ const YACHT_FORM_TEXT = {
       reviewContractNotice:
         "Sla dit vaartuig eerst op. De contractflow opent in de volgende stap zodra het vaartuigrecord is opgeslagen.",
       clientReviewStepDescription:
-        "Je vaartuig is ingediend voor brokercontrole. Een broker neemt contact op en stuurt het Signhost-contract zodra alles klaar is.",
+        "Dit vaartuig is ingediend voor controle. Een broker neemt contact op en stuurt het Signhost-contract per e-mail zodra alles klaar is.",
       clientReviewStatusTitle: "Ingediend voor controle",
       clientReviewStatusDescription:
-        "Dit vaartuig wacht nu op brokercontrole. Het contract wordt in deze fase niet aan klanten getoond.",
+        "Dit vaartuig is ingediend voor controle. Een broker neemt contact op en stuurt het Signhost-contract per e-mail zodra alles klaar is.",
       clientReviewProgressTitle: "Indieningsstatus",
       clientReviewBoatStatusLabel: "Brokercontrole",
       clientReviewContractStatusLabel: "Contractondertekening",
@@ -1372,7 +1372,7 @@ const YACHT_FORM_TEXT = {
       stepDisplay: "Anzeige",
       stepReview: "Prufung",
       stepContract: "Vertrag",
-      stepBrokerReview: "Broker-Prufung",
+      stepBrokerReview: "Broker-Check",
       stepOneTitle: "Schiffsmedien & KI-Extraktion",
       stepOneDescription:
         "Bilder hochladen -> System optimiert automatisch -> freigeben -> danach fullt die KI alle Felder aus.",
@@ -1395,10 +1395,10 @@ const YACHT_FORM_TEXT = {
       reviewContractNotice:
         "Speichern Sie dieses Schiff zuerst. Der Vertragsablauf wird im nächsten Schritt geöffnet, sobald der Datensatz gespeichert ist.",
       clientReviewStepDescription:
-        "Ihr Schiff wurde zur Broker-Prufung eingereicht. Ein Broker wird Sie kontaktieren und den Signhost-Vertrag senden, sobald alles bereit ist.",
+        "Dieses Schiff wurde zur Prufung eingereicht. Ein Broker wird Sie kontaktieren und den Signhost-Vertrag per E-Mail senden, sobald alles bereit ist.",
       clientReviewStatusTitle: "Zur Prufung eingereicht",
       clientReviewStatusDescription:
-        "Dieses Schiff wartet nun auf die Broker-Prufung. Der Vertrag wird Kunden in dieser Phase nicht angezeigt.",
+        "Dieses Schiff wurde zur Prufung eingereicht. Ein Broker wird Sie kontaktieren und den Signhost-Vertrag per E-Mail senden, sobald alles bereit ist.",
       clientReviewProgressTitle: "Einreichungsstatus",
       clientReviewBoatStatusLabel: "Broker-Prüfung",
       clientReviewContractStatusLabel: "Vertragsunterzeichnung",
@@ -1839,7 +1839,7 @@ const YACHT_FORM_TEXT = {
       stepDisplay: "Affichage",
       stepReview: "Revision",
       stepContract: "Contrat",
-      stepBrokerReview: "Revision du courtier",
+      stepBrokerReview: "Controle du courtier",
       stepOneTitle: "Medias du bateau et extraction IA",
       stepOneDescription:
         "Telechargez des images -> le systeme optimise automatiquement -> approuvez -> puis l'IA remplit les champs.",
@@ -1862,10 +1862,10 @@ const YACHT_FORM_TEXT = {
       reviewContractNotice:
         "Enregistrez d'abord ce bateau. Le flux du contrat s'ouvre a l'etape suivante une fois la fiche enregistree.",
       clientReviewStepDescription:
-        "Votre bateau a ete soumis a la revision du courtier. Un courtier vous contactera et enverra le contrat Signhost lorsque tout sera pret.",
+        "Ce bateau a ete soumis pour revision. Un courtier vous contactera et enverra le contrat Signhost par e-mail lorsque tout sera pret.",
       clientReviewStatusTitle: "Soumis pour revision",
       clientReviewStatusDescription:
-        "Ce bateau attend maintenant la revision du courtier. Le contrat n'est pas affiche aux clients a ce stade.",
+        "Ce bateau a ete soumis pour revision. Un courtier vous contactera et enverra le contrat Signhost par e-mail lorsque tout sera pret.",
       clientReviewProgressTitle: "Progression de la soumission",
       clientReviewBoatStatusLabel: "Revision du courtier",
       clientReviewContractStatusLabel: "Signature du contrat",
@@ -11814,15 +11814,9 @@ export default function YachtEditorPage() {
                     <p className="mt-3">
                       {labelText(
                         "clientReviewStatusDescription",
-                        "This vessel is now waiting for broker review. The contract is not shown to clients at this stage.",
+                        "This vessel has been submitted for review. A broker will contact you and send the Signhost contract by email once everything is ready.",
                       )}
                     </p>
-                    <div className="mt-4 inline-flex items-center rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 shadow-sm">
-                      {labelText(
-                        "pendingBrokerReview",
-                        "Pending broker review",
-                      )}
-                    </div>
                   </div>
                 ) : activeYachtId ? (
                   <SignhostFlow

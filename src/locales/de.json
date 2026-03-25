@@ -313,6 +313,7 @@
     "welcomeBack": "Willkommen zurück, {name}",
     "todayWeather": "Heute: 18° Sonnig in Eindhoven",
     "notificationSummary": "Sie haben {count} neue Benachrichtigung{count, plural, one {} other {en}}.",
+    "registrationSummary": "Sie haben {count} neue Registrierung{count, plural, one {} other {en}}, die auf Prüfung warten.",
     "activeBiddingItems": "Sie haben {count} aktive Gebote {count, plural, one {Artikel} other {Artikel}}.",
     "liveSync": "Live-Synchronisation",
     "refresh": "Aktualisieren",
@@ -339,6 +340,7 @@
     "sections": {
       "businessInsights": "Geschäftsinsight",
       "performanceSnapshot": "Leistungsübersicht",
+      "newRegistrations": "Neue Registrierungen",
       "marketPulse": "Marktpuls",
       "recentBiddingActivity": "Kürzliche Gebotsaktivität",
       "liveDiagnostics": "Live-Diagnose",
@@ -346,6 +348,7 @@
     },
     "actions": {
       "viewBiddings": "Gebote anzeigen",
+      "reviewRegistrations": "Registrierungen prüfen",
       "createFirstListing": "Erstes Inserat erstellen",
       "browseMarketplace": "Marktplatz durchsuchen"
     },
@@ -364,6 +367,7 @@
     },
     "labels": {
       "registry": "Registrierung",
+      "submittedForReview": "Zur Prüfung eingereicht",
       "unknown": "Unbekannt",
       "currentBid": "Aktueller Gebot"
     },
@@ -383,6 +387,7 @@
       "onboardingTitle": "Willkommen auf dem Marktplatz",
       "onboardingHeading": "Sie haben noch keine Gebote abgegeben",
       "onboardingSubtitle": "Beginnen Sie mit Ihrem ersten Bootsinserat oder durchsuchen Sie den <marketplace>Marktplatz</marketplace>, um Gebote abzugeben.",
+      "noNewRegistrations": "Derzeit warten keine neuen Bootsregistrierungen auf Prüfung.",
       "noSystemLogs": "Noch keine kürzlichen Systemprotokolle."
     },
     "defaults": {
