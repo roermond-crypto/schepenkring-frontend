@@ -318,6 +318,7 @@
     "welcomeBack": "Bon retour, {name}",
     "todayWeather": "Aujourd'hui : 18° Ensoleillé à Eindhoven",
     "notificationSummary": "Vous avez {count} nouvelle{count, plural, one {} other {s}} notification{count, plural, one {} other {s}}.",
+    "registrationSummary": "Vous avez {count} nouvelle{count, plural, one {} other {s}} inscription{count, plural, one {} other {s}} en attente de revision.",
     "activeBiddingItems": "Vous avez {count} enchères actives.",
     "liveSync": "Synchronisation en direct",
     "refresh": "Actualiser",
@@ -344,6 +345,7 @@
     "sections": {
       "businessInsights": "Aperçus commerciaux",
       "performanceSnapshot": "Aperçu des performances",
+      "newRegistrations": "Nouvelles inscriptions",
       "marketPulse": "Pouls du marché",
       "recentBiddingActivity": "Activité d'enchères récente",
       "liveDiagnostics": "Diagnostics en direct",
@@ -351,6 +353,7 @@
     },
     "actions": {
       "viewBiddings": "Voir les enchères",
+      "reviewRegistrations": "Examiner les inscriptions",
       "viewBoats": "Voir les bateaux",
       "createFirstListing": "Creer la premiere annonce",
       "browseMarketplace": "Parcourir le marketplace"
@@ -370,6 +373,7 @@
     },
     "labels": {
       "registry": "Registre",
+      "submittedForReview": "Soumis pour revision",
       "unknown": "Inconnu",
       "currentBid": "Enchère actuelle"
     },
@@ -393,6 +397,7 @@
       "onboardingTitle": "Bienvenue sur le marketplace",
       "onboardingHeading": "Vous n'avez encore place aucune offre",
       "onboardingSubtitle": "Commencez par creer votre premiere annonce de bateau ou parcourez le <marketplace>marketplace</marketplace> pour enchérir.",
+      "noNewRegistrations": "Aucune nouvelle inscription de bateau n'attend actuellement une revision.",
       "noSystemLogs": "Aucun journal système récent pour le moment."
     },
     "defaults": {

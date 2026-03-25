@@ -247,7 +247,9 @@ type AvailabilityRule = {
 };
 
 function normalizePipelineImageName(value: unknown): string {
-  return String(value ?? "").trim().toLowerCase();
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
 }
 
 const AUTO_SORT_CATEGORY_ORDER: Record<string, number> = {
@@ -527,7 +529,7 @@ const YACHT_FORM_TEXT = {
       stepDisplay: "Display",
       stepReview: "Review",
       stepContract: "Contract",
-      stepBrokerReview: "Broker Review",
+      stepBrokerReview: "Broker Check",
       stepOneTitle: "Vessel Assets & AI Extraction",
       stepOneDescription:
         "Upload images -> system auto-optimizes -> approve -> then AI fills all form fields.",
@@ -550,10 +552,10 @@ const YACHT_FORM_TEXT = {
       reviewContractNotice:
         "Save this vessel first. The contract flow opens in the next step after the vessel record is stored.",
       clientReviewStepDescription:
-        "Your vessel has been submitted for broker review. A broker will contact you and send the Signhost contract when everything is ready.",
+        "This vessel has been submitted for review. A broker will contact you and send the Signhost contract by email once everything is ready.",
       clientReviewStatusTitle: "Submitted for Review",
       clientReviewStatusDescription:
-        "This vessel is now waiting for broker review. The contract is not shown to clients at this stage.",
+        "This vessel has been submitted for review. A broker will contact you and send the Signhost contract by email once everything is ready.",
       clientReviewProgressTitle: "Submission progress",
       clientReviewBoatStatusLabel: "Broker review",
       clientReviewContractStatusLabel: "Contract signing",
@@ -1000,7 +1002,7 @@ const YACHT_FORM_TEXT = {
       stepDisplay: "Weergave",
       stepReview: "Controle",
       stepContract: "Contract",
-      stepBrokerReview: "Brokercontrole",
+      stepBrokerReview: "Broker check",
       stepOneTitle: "Vaartuigmedia & AI-extractie",
       stepOneDescription:
         "Upload afbeeldingen -> systeem optimaliseert automatisch -> keur goed -> daarna vult AI alle velden in.",
@@ -1015,7 +1017,7 @@ const YACHT_FORM_TEXT = {
       completed: "Voltooid",
       pending: "Open",
       continueToContract: "Opslaan en naar contract",
-      submitForBrokerReview: "Indienen voor brokercontrole",
+      submitForBrokerReview: "Indienen voor broker check",
       finishFlow: "Afronden",
       finishFlowToast: "Vaartuigflow voltooid.",
       contractStepDescription:
@@ -1023,10 +1025,10 @@ const YACHT_FORM_TEXT = {
       reviewContractNotice:
         "Sla dit vaartuig eerst op. De contractflow opent in de volgende stap zodra het vaartuigrecord is opgeslagen.",
       clientReviewStepDescription:
-        "Je vaartuig is ingediend voor brokercontrole. Een broker neemt contact op en stuurt het Signhost-contract zodra alles klaar is.",
+        "Dit vaartuig is ingediend voor controle. Een broker neemt contact op en stuurt het Signhost-contract per e-mail zodra alles klaar is.",
       clientReviewStatusTitle: "Ingediend voor controle",
       clientReviewStatusDescription:
-        "Dit vaartuig wacht nu op brokercontrole. Het contract wordt in deze fase niet aan klanten getoond.",
+        "Dit vaartuig is ingediend voor controle. Een broker neemt contact op en stuurt het Signhost-contract per e-mail zodra alles klaar is.",
       clientReviewProgressTitle: "Indieningsstatus",
       clientReviewBoatStatusLabel: "Brokercontrole",
       clientReviewContractStatusLabel: "Contractondertekening",
@@ -1472,7 +1474,7 @@ const YACHT_FORM_TEXT = {
       stepDisplay: "Anzeige",
       stepReview: "Prufung",
       stepContract: "Vertrag",
-      stepBrokerReview: "Broker-Prufung",
+      stepBrokerReview: "Broker-Check",
       stepOneTitle: "Schiffsmedien & KI-Extraktion",
       stepOneDescription:
         "Bilder hochladen -> System optimiert automatisch -> freigeben -> danach fullt die KI alle Felder aus.",
@@ -1495,10 +1497,10 @@ const YACHT_FORM_TEXT = {
       reviewContractNotice:
         "Speichern Sie dieses Schiff zuerst. Der Vertragsablauf wird im nächsten Schritt geöffnet, sobald der Datensatz gespeichert ist.",
       clientReviewStepDescription:
-        "Ihr Schiff wurde zur Broker-Prufung eingereicht. Ein Broker wird Sie kontaktieren und den Signhost-Vertrag senden, sobald alles bereit ist.",
+        "Dieses Schiff wurde zur Prufung eingereicht. Ein Broker wird Sie kontaktieren und den Signhost-Vertrag per E-Mail senden, sobald alles bereit ist.",
       clientReviewStatusTitle: "Zur Prufung eingereicht",
       clientReviewStatusDescription:
-        "Dieses Schiff wartet nun auf die Broker-Prufung. Der Vertrag wird Kunden in dieser Phase nicht angezeigt.",
+        "Dieses Schiff wurde zur Prufung eingereicht. Ein Broker wird Sie kontaktieren und den Signhost-Vertrag per E-Mail senden, sobald alles bereit ist.",
       clientReviewProgressTitle: "Einreichungsstatus",
       clientReviewBoatStatusLabel: "Broker-Prüfung",
       clientReviewContractStatusLabel: "Vertragsunterzeichnung",
@@ -1939,7 +1941,7 @@ const YACHT_FORM_TEXT = {
       stepDisplay: "Affichage",
       stepReview: "Revision",
       stepContract: "Contrat",
-      stepBrokerReview: "Revision du courtier",
+      stepBrokerReview: "Controle du courtier",
       stepOneTitle: "Medias du bateau et extraction IA",
       stepOneDescription:
         "Telechargez des images -> le systeme optimise automatiquement -> approuvez -> puis l'IA remplit les champs.",
@@ -1962,10 +1964,10 @@ const YACHT_FORM_TEXT = {
       reviewContractNotice:
         "Enregistrez d'abord ce bateau. Le flux du contrat s'ouvre a l'etape suivante une fois la fiche enregistree.",
       clientReviewStepDescription:
-        "Votre bateau a ete soumis a la revision du courtier. Un courtier vous contactera et enverra le contrat Signhost lorsque tout sera pret.",
+        "Ce bateau a ete soumis pour revision. Un courtier vous contactera et enverra le contrat Signhost par e-mail lorsque tout sera pret.",
       clientReviewStatusTitle: "Soumis pour revision",
       clientReviewStatusDescription:
-        "Ce bateau attend maintenant la revision du courtier. Le contrat n'est pas affiche aux clients a ce stade.",
+        "Ce bateau a ete soumis pour revision. Un courtier vous contactera et enverra le contrat Signhost par e-mail lorsque tout sera pret.",
       clientReviewProgressTitle: "Progression de la soumission",
       clientReviewBoatStatusLabel: "Revision du courtier",
       clientReviewContractStatusLabel: "Signature du contrat",
@@ -3029,7 +3031,9 @@ export default function YachtEditorPage() {
     const loadClientSignhostStatus = async () => {
       setClientSignhostLoading(true);
       try {
-        const response = await signhostApi.getYachtStatus(Number(activeYachtId));
+        const response = await signhostApi.getYachtStatus(
+          Number(activeYachtId),
+        );
         if (!active) return;
         setClientSignhostStatus(response.transaction?.status ?? null);
       } catch {
@@ -3206,8 +3210,8 @@ export default function YachtEditorPage() {
   const selectedYachtStatusForForm = isNewMode
     ? normalizeStatusForNewYacht(selectedYacht?.status, isClientRole)
     : (normalizeStatusForForm(selectedYacht?.status) ??
-        selectedYacht?.status ??
-        "Draft");
+      selectedYacht?.status ??
+      "Draft");
 
   useEffect(() => {
     setInternalReviewSelection(internalReviewApproved ? "For Sale" : "Draft");
@@ -5573,7 +5577,7 @@ export default function YachtEditorPage() {
               typeof value === "string" && value.trim().length > 0,
           ),
         ),
-    ),
+      ),
     [resolvePipelineAssetUrl],
   );
 
@@ -5725,7 +5729,9 @@ export default function YachtEditorPage() {
     // ── ONLINE PATH: original server upload flow ──
     // Check total gallery limit before starting any upload batches.
     if (pipeline.stats.total + files.length > MAX_IMAGES_UPLOAD) {
-      toast.error(`Maximum ${MAX_IMAGES_UPLOAD} images allowed for this vessel.`);
+      toast.error(
+        `Maximum ${MAX_IMAGES_UPLOAD} images allowed for this vessel.`,
+      );
       return;
     }
 
@@ -5744,37 +5750,35 @@ export default function YachtEditorPage() {
       let shouldSetCreatedYachtId = false;
 
       const optimisticBaseId = -Date.now();
-      optimisticImages = fileArray.map(
-        (file, index) => {
-          const previewUrl = URL.createObjectURL(file);
-          localPreviewUrlsRef.current.add(previewUrl);
-          return {
-            id: optimisticBaseId - index,
-            yacht_id: Number(targetId || 0),
-            client_upload_key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
-            client_preview_url: previewUrl,
-            url: previewUrl,
-            original_temp_url: previewUrl,
-            optimized_master_url: previewUrl,
-            thumb_url: previewUrl,
-            original_kept_url: null,
-            status: "processing",
-            keep_original: false,
-            quality_score: null,
-            quality_flags: null,
-            quality_label: labelText("processingStatusLabel", "Processing..."),
-            category: "general",
-            original_name: file.name,
-            sort_order: pipeline.images.length + index,
-            optimized_url: previewUrl,
-            thumb_full_url: previewUrl,
-            full_url: previewUrl,
-            enhancement_method: "pending",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-        },
-      );
+      optimisticImages = fileArray.map((file, index) => {
+        const previewUrl = URL.createObjectURL(file);
+        localPreviewUrlsRef.current.add(previewUrl);
+        return {
+          id: optimisticBaseId - index,
+          yacht_id: Number(targetId || 0),
+          client_upload_key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
+          client_preview_url: previewUrl,
+          url: previewUrl,
+          original_temp_url: previewUrl,
+          optimized_master_url: previewUrl,
+          thumb_url: previewUrl,
+          original_kept_url: null,
+          status: "processing",
+          keep_original: false,
+          quality_score: null,
+          quality_flags: null,
+          quality_label: labelText("processingStatusLabel", "Processing..."),
+          category: "general",
+          original_name: file.name,
+          sort_order: pipeline.images.length + index,
+          optimized_url: previewUrl,
+          thumb_full_url: previewUrl,
+          full_url: previewUrl,
+          enhancement_method: "pending",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      });
 
       // Render instant previews while upload/process is still running.
       setPendingUploadPreviews((previous) => [
@@ -5970,7 +5974,9 @@ export default function YachtEditorPage() {
 
         setPendingUploadPreviews((previous) =>
           previous.filter((image) => {
-            if (optimisticImages.some((optimistic) => optimistic.id === image.id)) {
+            if (
+              optimisticImages.some((optimistic) => optimistic.id === image.id)
+            ) {
               return false;
             }
 
@@ -6100,8 +6106,7 @@ export default function YachtEditorPage() {
 
     const extractionStartedAt = Date.now();
     const extractionDurationMs = EXTRACTION_ESTIMATED_DURATION_SECONDS * 1000;
-    const progressRange =
-      EXTRACTION_PROGRESS_CAP - EXTRACTION_INITIAL_PROGRESS;
+    const progressRange = EXTRACTION_PROGRESS_CAP - EXTRACTION_INITIAL_PROGRESS;
 
     progressIntervalRef.current = setInterval(() => {
       const elapsedMs = Date.now() - extractionStartedAt;
@@ -6109,9 +6114,7 @@ export default function YachtEditorPage() {
       const progressRatio = clampedElapsedMs / extractionDurationMs;
       const nextProgress = Math.min(
         EXTRACTION_PROGRESS_CAP,
-        Math.round(
-          EXTRACTION_INITIAL_PROGRESS + progressRatio * progressRange,
-        ),
+        Math.round(EXTRACTION_INITIAL_PROGRESS + progressRatio * progressRange),
       );
       const secondsRemaining = Math.max(
         1,
@@ -8892,9 +8895,7 @@ export default function YachtEditorPage() {
                         type="button"
                         variant="outline"
                         className="text-[10px] h-9 px-4 font-bold uppercase tracking-wider bg-white"
-                        onClick={() =>
-                          router.push(socialLibraryHref)
-                        }
+                        onClick={() => router.push(socialLibraryHref)}
                       >
                         {labelText("openSocialLibrary", "Open Social Library")}
                       </Button>
@@ -9038,11 +9039,7 @@ export default function YachtEditorPage() {
                               type="button"
                               variant="outline"
                               className="text-[10px] h-8 px-3 font-bold uppercase tracking-wider bg-white"
-                              onClick={() =>
-                                router.push(
-                                  socialLibraryHref,
-                                )
-                              }
+                              onClick={() => router.push(socialLibraryHref)}
                             >
                               View in Social
                             </Button>
@@ -9274,7 +9271,10 @@ export default function YachtEditorPage() {
                           );
 
                           if (!currentHarbor) {
-                            if (currentUserHarborName && currentUserHarborCode) {
+                            if (
+                              currentUserHarborName &&
+                              currentUserHarborCode
+                            ) {
                               return `${currentUserHarborName} (${currentUserHarborCode})`;
                             }
 
@@ -12263,16 +12263,10 @@ export default function YachtEditorPage() {
                             }
                           >
                             <option value="Draft">
-                              {labelText(
-                                "markPendingReview",
-                                "Keep in review",
-                              )}
+                              {labelText("markPendingReview", "Keep in review")}
                             </option>
                             <option value="For Sale">
-                              {labelText(
-                                "approveVessel",
-                                "Approve vessel",
-                              )}
+                              {labelText("approveVessel", "Approve vessel")}
                             </option>
                           </select>
                           <Button
@@ -12357,16 +12351,12 @@ export default function YachtEditorPage() {
                         "Submitted for Review",
                       )}
                     </p>
-                    <div className="mt-4 inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-100/80 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-blue-800">
-                      <span
-                        aria-hidden
-                        className="h-1.5 w-1.5 rounded-full bg-blue-700"
-                      />
+                    <p className="mt-3">
                       {labelText(
-                        "pendingBrokerReview",
-                        "Pending broker review",
+                        "clientReviewStatusDescription",
+                        "This vessel has been submitted for review. A broker will contact you and send the Signhost contract by email once everything is ready.",
                       )}
-                    </div>
+                    </p>
                   </div>
                 ) : activeYachtId ? (
                   <SignhostFlow
@@ -12807,8 +12797,7 @@ function YachtFieldWrapper({
 }) {
   const isCorrection = correctionLabel !== undefined;
   const childWithSettingsLinkSuppressed =
-    isValidElement(children) &&
-    typeof children.type !== "string"
+    isValidElement(children) && typeof children.type !== "string"
       ? cloneElement(
           children as React.ReactElement<{ showAdminEditLink?: boolean }>,
           {
