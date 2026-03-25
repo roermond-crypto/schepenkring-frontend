@@ -141,6 +141,7 @@ type ContractDraft = {
   vatDeclaration: "yes" | "no";
   askingPrice: string;
   askingPriceWords: string;
+  storageFee: string;
   agreementDate: string;
   agreementCity: string;
 };
@@ -406,6 +407,7 @@ const editorCopyByLanguage: Record<
     yesVatDeclaration: string;
     askingPrice: string;
     askingPriceWords: string;
+    storageFee: string;
     agreementDate: string;
     agreementCity: string;
     pageTitle: string;
@@ -469,6 +471,7 @@ const editorCopyByLanguage: Record<
     yesVatDeclaration: "Yes, VAT declaration",
     askingPrice: "Asking price",
     askingPriceWords: "Asking price in full words",
+    storageFee: "Storage fee per month",
     agreementDate: "Agreement date",
     agreementCity: "Agreement city",
     pageTitle: "Digital Signhost signing",
@@ -532,6 +535,7 @@ const editorCopyByLanguage: Record<
     yesVatDeclaration: "Ja, btw-verklaring",
     askingPrice: "Vraagprijs",
     askingPriceWords: "Vraagprijs voluit",
+    storageFee: "Stallingssom per maand",
     agreementDate: "Overeenkomstsdatum",
     agreementCity: "Plaats overeenkomst",
     pageTitle: "Digitale ondertekening via Signhost",
@@ -595,6 +599,7 @@ const editorCopyByLanguage: Record<
     yesVatDeclaration: "Ja, MwSt.-Erklärung",
     askingPrice: "Angebotspreis",
     askingPriceWords: "Angebotspreis ausgeschrieben",
+    storageFee: "Liegegebühr pro Monat",
     agreementDate: "Vertragsdatum",
     agreementCity: "Vertragsort",
     pageTitle: "Digitale Signhost-Unterzeichnung",
@@ -658,6 +663,7 @@ const editorCopyByLanguage: Record<
     yesVatDeclaration: "Oui, declaration TVA",
     askingPrice: "Prix demande",
     askingPriceWords: "Prix demande en toutes lettres",
+    storageFee: "Frais de stationnement par mois",
     agreementDate: "Date du contrat",
     agreementCity: "Ville du contrat",
     pageTitle: "Signature numerique Signhost",
@@ -867,6 +873,7 @@ function getAgreementCopy(language: ContractLanguage) {
 function getAgreementClauses(draft: ContractDraft) {
   const yesNoRegister = `${boolLabel(draft.language, draft.shipRegisterEntry)}${draft.shipRegisterPlace ? ` ${draft.language === "en" ? "in" : draft.language === "de" ? "in" : draft.language === "fr" ? "a" : "te"} ${draft.shipRegisterPlace}` : ""}`;
   const yesNoMortgage = `${boolLabel(draft.language, draft.hasMortgage)}${draft.mortgageInFavorOf ? `${draft.language === "en" ? ", in favor of " : draft.language === "de" ? ", zugunsten von " : draft.language === "fr" ? ", au profit de " : ", ten gunste van "}${draft.mortgageInFavorOf}` : ""}`;
+  const storageFee = draft.storageFee || "………";
 
   switch (draft.language) {
     case "nl":
@@ -876,7 +883,7 @@ function getAgreementClauses(draft: ContractDraft) {
         "3. dat aan de cliënt courtage in rekening wordt gebracht over de laatst schriftelijk vastgelegde verkoopprijs zodra overeenstemming over koop/verkoop is bereikt, ongeacht of die prijs in geld, natura of diensten wordt voldaan.",
         "4. dat de courtage bedraagt:<br />- 8% voor vaartuigen met een koop/verkoopprijs tot en met EUR 100.000 met een minimum van EUR 2.500<br />- 6% voor vaartuigen met een koop/verkoopprijs boven EUR 100.000 met een minimum van EUR 8.000<br />De verschuldigde courtage wordt verhoogd met de wettelijk verschuldigde btw.",
         "5. dat de bemiddelaar de opbrengst voor de cliënt ontvangt via derdengelden.",
-        "6. dat het vaartuig van de cliënt gedurende de looptijd van de overeenkomst wordt gestald in de verkoophaven van de bemiddelaar. De stallingssom bedraagt EUR ……… (inclusief btw) per maand of gedeelte daarvan en dient maandelijks vooruit door de cliënt te worden voldaan.<br />De bovenstaande liggelden:<br />- zijn verschuldigd bij beëindiging van de bemiddelingsovereenkomst door rechtsgeldige opzegging.<br />- zijn verschuldigd bij verwijdering van het object uit het verkoopgebied van de bemiddelaar zonder beëindiging van de opdracht.<br />- worden maandelijks berekend indien de boot niet binnen 6 maanden wordt verkocht.<br />Bij verkoop via de jachtmakelaar worden over de eerste 6 maanden geen liggelden berekend.",
+        `6. dat het vaartuig van de cliënt gedurende de looptijd van de overeenkomst wordt gestald in de verkoophaven van de bemiddelaar. De stallingssom bedraagt EUR ${storageFee} (inclusief btw) per maand of gedeelte daarvan en dient maandelijks vooruit door de cliënt te worden voldaan.<br />De bovenstaande liggelden:<br />- zijn verschuldigd bij beëindiging van de bemiddelingsovereenkomst door rechtsgeldige opzegging.<br />- zijn verschuldigd bij verwijdering van het object uit het verkoopgebied van de bemiddelaar zonder beëindiging van de opdracht.<br />- worden maandelijks berekend indien de boot niet binnen 6 maanden wordt verkocht.<br />Bij verkoop via de jachtmakelaar worden over de eerste 6 maanden geen liggelden berekend.`,
         "7. dat de cliënt de bemiddelaar machtigt om proef te varen wanneer hij niet aanwezig is (en zonder zijn voorafgaande toestemming).",
         "8. dat het vaartuig voor rekening en risico van de cliënt blijft, ook tijdens een proefvaart, totdat de eigendomsoverdracht aan de koper is voltooid en de cliënt tot dat moment voor passende verzekering zorgt.",
         "9. dat de cliënt verantwoordelijk is voor de juistheid van zijn beschrijving en de door hem verstrekte gegevens met betrekking tot het vaartuig en dat hij de bemiddelaar vrijwaart voor aanspraken van derden.",
@@ -890,7 +897,7 @@ function getAgreementClauses(draft: ContractDraft) {
         "3. dass vom Kunden eine Maklerprovision auf den zuletzt schriftlich festgelegten Verkaufspreis geschuldet wird, sobald Einigkeit über Kauf/Verkauf erzielt wurde, unabhängig davon, ob dieser Preis in Geld, in Natur oder in Leistungen erfüllt wird.",
         "4. dass die Maklerprovision beträgt:<br />- 8% für Wasserfahrzeuge mit einem Kauf-/Verkaufspreis bis EUR 100.000 mit einem Minimum von EUR 2.500<br />- 6% für Wasserfahrzeuge mit einem Kauf-/Verkaufspreis über EUR 100.000 mit einem Minimum von EUR 8.000<br />Die geschuldete Provision erhöht sich um die gesetzlich geschuldete Mehrwertsteuer.",
         "5. dass der Vermittler den Erlös für den Kunden über ein Treuhandkonto entgegennimmt.",
-        "6. dass das Wasserfahrzeug des Kunden für die Dauer des Vertrags im Verkaufshafen des Vermittlers liegt. Die Liegegebühr beträgt EUR ……… (inklusive Mehrwertsteuer) pro Monat oder Teil eines Monats und ist vom Kunden monatlich im Voraus zu zahlen.<br />Die oben genannten Liegegebühren:<br />- sind bei Beendigung des Maklervertrags durch wirksame Kündigung fällig.<br />- sind fällig bei Entfernung des Objekts aus dem Verkaufsbereich des Maklers ohne Beendigung des Auftrags.<br />- werden monatlich berechnet, wenn das Boot nicht innerhalb von 6 Monaten verkauft wird.<br />Bei Verkauf über den Yachtmakler werden in den ersten 6 Monaten keine Liegegebühren berechnet.",
+        `6. dass das Wasserfahrzeug des Kunden für die Dauer des Vertrags im Verkaufshafen des Vermittlers liegt. Die Liegegebühr beträgt EUR ${storageFee} (inklusive Mehrwertsteuer) pro Monat oder Teil eines Monats und ist vom Kunden monatlich im Voraus zu zahlen.<br />Die oben genannten Liegegebühren:<br />- sind bei Beendigung des Maklervertrags durch wirksame Kündigung fällig.<br />- sind fällig bei Entfernung des Objekts aus dem Verkaufsbereich des Maklers ohne Beendigung des Auftrags.<br />- werden monatlich berechnet, wenn das Boot nicht innerhalb von 6 Monaten verkauft wird.<br />Bei Verkauf über den Yachtmakler werden in den ersten 6 Monaten keine Liegegebühren berechnet.`,
         "7. dass der Kunde den Vermittler ermächtigt, eine Probefahrt vorzunehmen, wenn er nicht anwesend ist (und ohne seine vorherige Zustimmung).",
         "8. dass das Wasserfahrzeug auf Rechnung und Gefahr des Kunden bleibt, auch während einer Probefahrt, bis das Eigentum auf den Käufer übertragen ist und der Kunde bis dahin eine angemessene Versicherung unterhält.",
         "9. dass der Kunde für die Richtigkeit seiner Beschreibung und der von ihm bereitgestellten Daten zum Wasserfahrzeug verantwortlich ist und den Vermittler von Ansprüchen Dritter freistellt.",
@@ -904,7 +911,7 @@ function getAgreementClauses(draft: ContractDraft) {
         "3. qu'une commission de courtage est due par le client sur le dernier prix de vente etabli par ecrit des qu'un accord sur l'achat/la vente est atteint, que ce prix soit regle en especes, en nature ou en services.",
         "4. que la commission de courtage est de :<br />- 8% pour les bateaux ayant un prix d'achat/vente jusqu'a EUR 100.000 avec un minimum de EUR 2.500<br />- 6% pour les bateaux ayant un prix d'achat/vente superieur a EUR 100.000 avec un minimum de EUR 8.000<br />La commission due est augmentee de la TVA legalement applicable.",
         "5. que l'intermediaire recevra les fonds pour le client par l'intermediaire d'un compte de tiers.",
-        "6. que le bateau du client sera stationne pendant la duree du contrat dans le port de vente de l'intermediaire. Les frais de stationnement sont de EUR ……… (TVA comprise) par mois ou partie de mois et doivent etre payes d'avance chaque mois par le client.<br />Les frais de stationnement ci-dessus :<br />- sont exigibles lors de la resiliation valable du contrat de courtage.<br />- sont exigibles lors du retrait de l'objet de la zone de vente du courtier sans resiliation de la mission.<br />- sont factures mensuellement si le bateau n'est pas vendu dans les 6 mois.<br />En cas de vente par le courtier en yachts, aucun frais d'emplacement n'est facture pendant les 6 premiers mois.",
+        `6. que le bateau du client sera stationne pendant la duree du contrat dans le port de vente de l'intermediaire. Les frais de stationnement sont de EUR ${storageFee} (TVA comprise) par mois ou partie de mois et doivent etre payes d'avance chaque mois par le client.<br />Les frais de stationnement ci-dessus :<br />- sont exigibles lors de la resiliation valable du contrat de courtage.<br />- sont exigibles lors du retrait de l'objet de la zone de vente du courtier sans resiliation de la mission.<br />- sont factures mensuellement si le bateau n'est pas vendu dans les 6 mois.<br />En cas de vente par le courtier en yachts, aucun frais d'emplacement n'est facture pendant les 6 premiers mois.`,
         "7. que le client autorise l'intermediaire a effectuer un essai en navigation lorsqu'il n'est pas present (et sans son autorisation prealable).",
         "8. que le bateau reste aux frais et risques du client, meme pendant l'essai, jusqu'au transfert de propriete a l'acheteur et que le client souscrit une assurance adequate jusqu'a ce moment.",
         "9. que le client est responsable de l'exactitude de sa description et des donnees fournies concernant le bateau et qu'il garantit l'intermediaire contre toute reclamation de tiers.",
@@ -918,7 +925,7 @@ function getAgreementClauses(draft: ContractDraft) {
         "3. that a broker's commission is payable by the client for the last sales price established in writing as soon as the consensus ad idem has been reached about the purchase/sale, regardless of the fact whether this sales price is settled in cash, in kind or in services.",
         "4. that the broker's commission is:<br />- 8% for vessels with a purchase/sales price up to EUR 100,000 with a minimum of EUR 2,500<br />- 6% for vessels with a purchase/sales price above EUR 100,000 with a minimum of EUR 8,000<br />The payable broker's commission is increased by the legally payable VAT.",
         "5. that the intermediary will receive proceeds for the client by means of Third party funds.",
-        "6. that the vessel of the client will be stored for the term of the agreement in the sales harbor of the intermediary. The storage sum is EUR ……… (including VAT) per month or part of the month, this sum has to be paid in advance by the client every month.<br />The above mooring fees:<br />- are payable upon termination of the brokerage agreement by valid notice.<br />- are payable upon removal of the object from the broker's sales area without termination of the commission.<br />- are charged monthly if the boat is not sold within 6 months.<br />In case of sale through the yacht broker, no berth fees will be charged for the first 6 months.",
+        `6. that the vessel of the client will be stored for the term of the agreement in the sales harbor of the intermediary. The storage sum is EUR ${storageFee} (including VAT) per month or part of the month, this sum has to be paid in advance by the client every month.<br />The above mooring fees:<br />- are payable upon termination of the brokerage agreement by valid notice.<br />- are payable upon removal of the object from the broker's sales area without termination of the commission.<br />- are charged monthly if the boat is not sold within 6 months.<br />In case of sale through the yacht broker, no berth fees will be charged for the first 6 months.`,
         "7. that the client authorizes the intermediary to make a trial run when he is not present (and without his prior permission).",
         "8. that the vessel remains at the account and risk of the client, even during the trial run, until the time that the transfer of property to the buyer is completed and the client takes up adequate insurance until the transfer of the property.",
         "9. that the client is responsible for the correctness of his description and the data provided by him with regard to the vessel and that he/she indemnifies the intermediary from claims by third parties.",
@@ -1224,6 +1231,7 @@ function buildContractDraft(
     vatDeclaration: "no",
     askingPrice,
     askingPriceWords: "",
+    storageFee: "",
     agreementDate: new Date().toISOString().slice(0, 10),
     agreementCity: locationDefaults.agreementCity || "",
   };
@@ -2654,6 +2662,16 @@ export function SignhostFlow({
                       handleFieldChange("askingPriceWords", event.target.value)
                     }
                     placeholder={editorCopy.askingPriceWords}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.storageFee}</FieldLabel>
+                  <Input
+                    value={draft.storageFee}
+                    onChange={(event) =>
+                      handleFieldChange("storageFee", event.target.value)
+                    }
+                    placeholder={editorCopy.storageFee}
                   />
                 </div>
                 <div>
