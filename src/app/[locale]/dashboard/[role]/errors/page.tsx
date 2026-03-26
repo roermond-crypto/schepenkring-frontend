@@ -56,7 +56,7 @@ type PlatformError = {
   ai_user_message_de?: string | null;
   ai_dev_summary?: string | null;
   ai_category?: string | null;
-  tags?: Record<string, any> | null;
+  tags?: Record<string, unknown> | null;
   assignee?: {
     id?: number;
     name?: string;
@@ -73,7 +73,7 @@ type ErrorStats = {
 
 type ErrorDetailResponse = {
   error: PlatformError & {
-    last_event_sample_json?: Record<string, any> | null;
+    last_event_sample_json?: Record<string, unknown> | null;
     notes?: Array<{
       id?: number;
       note?: string;
@@ -81,7 +81,7 @@ type ErrorDetailResponse = {
       user?: { name?: string };
     }>;
   };
-  reports?: Array<Record<string, any>>;
+  reports?: Array<Record<string, unknown>>;
 };
 
 type PaginationMeta = {
@@ -91,44 +91,34 @@ type PaginationMeta = {
   last_page?: number;
 };
 
-const API_BASE = "https://app.schepen-kring.nl/api";
+const API_BASE = "/api/proxy";
 
-function getStoredToken() {
-  if (typeof window === "undefined") return null;
-
-  const cookieToken = document.cookie
-    .split("; ")
-    .find((part) => part.startsWith("schepenkring_auth_token="))
-    ?.split("=")[1];
-  if (cookieToken) return decodeURIComponent(cookieToken);
-
-  const authToken = localStorage.getItem("auth_token");
-  if (authToken) return authToken;
-
-  const adminToken = localStorage.getItem("admin_token");
-  if (adminToken) return adminToken;
-
-  const userDataRaw = localStorage.getItem("user_data");
-  if (userDataRaw) {
-    try {
-      const userData = JSON.parse(userDataRaw);
-      if (userData?.token) return userData.token;
-    } catch {
-      // Ignore invalid user payloads.
-    }
-  }
-
-  return null;
-}
-
-function getAuthHeaders() {
-  const token = getStoredToken();
-
+function getRequestHeaders(includeJson = false) {
   return {
     Accept: "application/json",
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(includeJson ? { "Content-Type": "application/json" } : {}),
   };
+}
+
+async function getErrorMessage(response: Response, fallback: string) {
+  try {
+    const data = await response.json();
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+  } catch {
+    // Ignore malformed error payloads.
+  }
+
+  return fallback;
+}
+
+function getThrownErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallback;
 }
 
 function formatDate(value?: string | null, locale = "en") {
@@ -430,11 +420,11 @@ export default function AdminErrorsPage() {
 
   const loadStats = useCallback(async () => {
     const response = await fetch(`${API_BASE}/admin/errors/stats`, {
-      headers: getAuthHeaders(),
+      headers: getRequestHeaders(),
     });
 
     if (!response.ok) {
-      throw new Error(copy.loadFailed);
+      throw new Error(await getErrorMessage(response, copy.loadFailed));
     }
 
     const data = await response.json();
@@ -471,24 +461,28 @@ export default function AdminErrorsPage() {
       const response = await fetch(
         `${API_BASE}/admin/errors?${params.toString()}`,
         {
-          headers: getAuthHeaders(),
+          headers: getRequestHeaders(),
         },
       );
 
       if (!response.ok) {
-        throw new Error(copy.loadFailed);
+        throw new Error(await getErrorMessage(response, copy.loadFailed));
       }
 
       const payload = await response.json();
       setRows(Array.isArray(payload?.data) ? payload.data : []);
       setPagination({
-        current_page: Number(payload?.meta?.current_page || filters.page),
-        per_page: Number(payload?.meta?.per_page || filters.perPage),
-        total: Number(payload?.meta?.total || 0),
-        last_page: Number(payload?.meta?.last_page || 1),
+        current_page: Number(
+          payload?.meta?.current_page ?? payload?.current_page ?? filters.page,
+        ),
+        per_page: Number(
+          payload?.meta?.per_page ?? payload?.per_page ?? filters.perPage,
+        ),
+        total: Number(payload?.meta?.total ?? payload?.total ?? 0),
+        last_page: Number(payload?.meta?.last_page ?? payload?.last_page ?? 1),
       });
-    } catch (error: any) {
-      setApiError(error?.message || copy.loadFailed);
+    } catch (error: unknown) {
+      setApiError(getThrownErrorMessage(error, copy.loadFailed));
       setRows([]);
     } finally {
       setLoading(false);
@@ -505,20 +499,20 @@ export default function AdminErrorsPage() {
         const response = await fetch(
           `${API_BASE}/admin/errors/${errorId}?include_reports=true`,
           {
-            headers: getAuthHeaders(),
+            headers: getRequestHeaders(),
           },
         );
 
         if (!response.ok) {
-          throw new Error(copy.loadFailed);
+          throw new Error(await getErrorMessage(response, copy.loadFailed));
         }
 
         const payload = await response.json();
         setSelectedError(payload);
         setNoteInput("");
         setAssignUserId("");
-      } catch (error: any) {
-        setApiError(error?.message || copy.loadFailed);
+      } catch (error: unknown) {
+        setApiError(getThrownErrorMessage(error, copy.loadFailed));
         setSelectedError(null);
       } finally {
         setDetailLoading(false);
@@ -533,8 +527,8 @@ export default function AdminErrorsPage() {
       if (selectedErrorId) {
         await loadDetail(selectedErrorId);
       }
-    } catch (error: any) {
-      setApiError(error?.message || copy.loadFailed);
+    } catch (error: unknown) {
+      setApiError(getThrownErrorMessage(error, copy.loadFailed));
     }
   }, [copy.loadFailed, loadDetail, loadErrors, loadStats, selectedErrorId]);
 
@@ -579,17 +573,17 @@ export default function AdminErrorsPage() {
     try {
       const response = await fetch(target, {
         method: "POST",
-        headers: getAuthHeaders(),
+        headers: getRequestHeaders(Boolean(body)),
         body: body ? JSON.stringify(body) : undefined,
       });
 
       if (!response.ok) {
-        throw new Error(copy.loadFailed);
+        throw new Error(await getErrorMessage(response, copy.loadFailed));
       }
 
       await refreshAll();
-    } catch (error: any) {
-      setApiError(error?.message || copy.loadFailed);
+    } catch (error: unknown) {
+      setApiError(getThrownErrorMessage(error, copy.loadFailed));
     } finally {
       setActionLoading(null);
     }
