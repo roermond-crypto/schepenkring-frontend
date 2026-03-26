@@ -94,6 +94,15 @@ function toNumericValue(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function normalizeList<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === "object") {
+    const data = (value as { data?: unknown }).data;
+    if (Array.isArray(data)) return data as T[];
+  }
+  return [];
+}
+
 function CountUpNumber({
   value,
   duration = 700,
@@ -247,16 +256,22 @@ export default function AdminDashboardHome() {
       ]);
 
       const yachts: DashboardYacht[] =
-        yachtsRes.status === "fulfilled" ? yachtsRes.value.data || [] : [];
+        yachtsRes.status === "fulfilled"
+          ? normalizeList<DashboardYacht>(yachtsRes.value.data)
+          : [];
       const tasks: DashboardTask[] =
-        tasksRes.status === "fulfilled" ? tasksRes.value.data || [] : [];
+        tasksRes.status === "fulfilled"
+          ? normalizeList<DashboardTask>(tasksRes.value.data)
+          : [];
       const bidsRaw =
         bidsRes.status === "fulfilled"
-          ? bidsRes.value.data?.data || bidsRes.value.data || []
+          ? normalizeList(bidsRes.value.data)
           : [];
       const auditLogs: DashboardAuditItem[] =
         logsRes.status === "fulfilled"
-          ? logsRes.value.data?.data || logsRes.value.data?.logs || []
+          ? normalizeList<DashboardAuditItem>(
+              logsRes.value.data?.logs ?? logsRes.value.data,
+            )
           : [];
       const unreadCount =
         unreadCountRes.status === "fulfilled"
