@@ -117,6 +117,8 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     ? `/${locale}/auth/verify-email?email=${encodeURIComponent(normalizedFormEmail)}`
     : `/${locale}/auth/verify-email`;
   const termsHref = getTermsPdfPath(locale);
+  const authDescription =
+    mode === "login" ? copy.loginDescription : copy.registerDescription;
 
   useEffect(() => {
     const modeParam = searchParams.get("mode");
@@ -415,11 +417,11 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
             <h2 className="mb-1 text-xl font-bold text-gray-800 dark:text-slate-100">
               {mode === "login" ? copy.welcomeBack : copy.createAccount}
             </h2>
-            <p className="text-xs text-gray-500 dark:text-slate-400">
-              {mode === "login"
-                ? copy.loginDescription
-                : copy.registerDescription}
-            </p>
+            {authDescription ? (
+              <p className="text-xs text-gray-500 dark:text-slate-400">
+                {authDescription}
+              </p>
+            ) : null}
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>

@@ -35,7 +35,7 @@
     "welcomeBack": "Welkom terug",
     "createAccount": "Account aanmaken",
     "loginDescription": "Log in op je dashboard-account.",
-    "registerDescription": "Registratie is alleen voor Client. Andere rollen maakt de admin aan.",
+    "registerDescription": "",
     "loginTitle": "Inloggen",
     "loginError": "Ongeldige inloggegevens. Probeer opnieuw.",
     "signupTitle": "Client registratie",
