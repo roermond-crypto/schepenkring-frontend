@@ -18,6 +18,7 @@ export function ForgotPasswordClient({
     title: string;
     email: string;
     submit: string;
+    submitLoading: string;
     backToLogin: string;
     successMessage: string;
     errorMessage: string;
@@ -105,7 +106,7 @@ export function ForgotPasswordClient({
                 disabled={status === "loading"}
                 className="mt-2 w-full rounded-lg bg-[#003566] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#001d3d] disabled:opacity-60"
               >
-                {status === "loading" ? "..." : copy.submit}
+                {status === "loading" ? copy.submitLoading : copy.submit}
               </button>
             </form>
           )}

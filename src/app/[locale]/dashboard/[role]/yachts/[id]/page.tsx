@@ -731,10 +731,10 @@ const YACHT_FORM_TEXT = {
       imageGalleryReadyNoCorrections:
         "AI marked this image as gallery-ready without major corrections.",
       aiReadyAnalyzeApprovedImages:
-        "AI is ready to analyze {count} approved optimized images",
+        "Automatically check and enrich the details",
       uploadApproveImagesFirstAi:
         "Upload and approve images first, then AI will analyze them",
-      runAiExtractionManually: "Run AI Extraction Manually",
+      runAiExtractionManually: "Execute",
       noSchedulingRules: "No scheduling rules defined yet.",
       vesselVideoOperations: "Vessel Video Operations",
       manageVideosSocialPosting: "Manage Videos & Social Posting",
@@ -1206,10 +1206,10 @@ const YACHT_FORM_TEXT = {
       imageGalleryReadyNoCorrections:
         "AI heeft deze afbeelding galerijklaar gemarkeerd zonder grote correcties.",
       aiReadyAnalyzeApprovedImages:
-        "AI staat klaar om {count} goedgekeurde geoptimaliseerde afbeeldingen te analyseren",
+        "Gegevens automatisch laten controleren en aanvullen",
       uploadApproveImagesFirstAi:
         "Upload en keur eerst afbeeldingen goed, daarna analyseert AI ze",
-      runAiExtractionManually: "Voer AI-extractie handmatig uit",
+      runAiExtractionManually: "Uitvoeren",
       noSchedulingRules: "Er zijn nog geen planningsregels ingesteld.",
       vesselVideoOperations: "Beheer van scheepsvideo's",
       manageVideosSocialPosting: "Beheer video's en social posting",
@@ -1671,10 +1671,10 @@ const YACHT_FORM_TEXT = {
       imageGalleryReadyNoCorrections:
         "Die KI hat dieses Bild ohne größere Korrekturen als galeriegeeignet markiert.",
       aiReadyAnalyzeApprovedImages:
-        "Die KI ist bereit, {count} freigegebene optimierte Bilder zu analysieren",
+        "Daten automatisch prüfen und ergänzen",
       uploadApproveImagesFirstAi:
         "Lade zuerst Bilder hoch und gib sie frei, dann analysiert die KI sie",
-      runAiExtractionManually: "KI-Extraktion manuell ausführen",
+      runAiExtractionManually: "Ausführen",
       noSchedulingRules: "Es sind noch keine Planungsregeln definiert.",
       vesselVideoOperations: "Vessel-Videoverwaltung",
       manageVideosSocialPosting: "Videos und Social Posting verwalten",
@@ -2138,10 +2138,10 @@ const YACHT_FORM_TEXT = {
       imageGalleryReadyNoCorrections:
         "L'IA a marque cette image comme prete pour la galerie sans corrections majeures.",
       aiReadyAnalyzeApprovedImages:
-        "L'IA est prete a analyser {count} images optimisees approuvees",
+        "Verifier et completer automatiquement les donnees",
       uploadApproveImagesFirstAi:
         "Telechargez et approuvez d'abord les images, puis l'IA les analysera",
-      runAiExtractionManually: "Lancer l'extraction IA manuellement",
+      runAiExtractionManually: "Executer",
       noSchedulingRules: "Aucune regle de planification n'est encore definie.",
       vesselVideoOperations: "Operations video du navire",
       manageVideosSocialPosting: "Gerer les videos et la publication sociale",

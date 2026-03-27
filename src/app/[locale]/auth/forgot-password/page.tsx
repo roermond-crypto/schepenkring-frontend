@@ -16,12 +16,17 @@ export default async function ForgotPasswordPage({ params }: { params: Promise<{
     <ForgotPasswordClient
       locale={currentLocale}
       copy={{
-        title: dict.auth?.forgotPassword || "Wachtwoord vergeten?",
-        email: dict.auth?.email || "E-mail",
-        submit: dict.auth?.processing ? "Verstuur bericht" : "Verstuur bericht",
-        backToLogin: dict.auth?.loginTitle || "Terug naar inloggen",
-        successMessage: "Als uw e-mailadres in ons systeem staat, ontvangt u een link om uw wachtwoord opnieuw in te stellen.",
-        errorMessage: "Er is een fout opgetreden. Probeer het later opnieuw."
+        title: dict.auth?.forgotPassword || "Forgot password?",
+        email: dict.auth?.email || "Email",
+        submit: dict.auth?.forgotPasswordSubmit || "Send reset link",
+        submitLoading: dict.auth?.processing || "Processing...",
+        backToLogin: dict.auth?.forgotPasswordBackToLogin || "Back to login",
+        successMessage:
+          dict.auth?.forgotPasswordSuccess ||
+          "If your email address exists in our system, you will receive a password reset link shortly.",
+        errorMessage:
+          dict.auth?.forgotPasswordError ||
+          "Something went wrong. Please try again later.",
       }}
     />
   );
