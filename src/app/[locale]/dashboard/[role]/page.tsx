@@ -5,7 +5,6 @@ import {
   useEffect,
   useState,
   useCallback,
-  type ReactNode,
 } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -502,6 +501,10 @@ export default function AdminDashboardHome() {
     !loading &&
     !data.hasBoatListings &&
     !data.hasPlacedBids;
+  const onboardingSubtitleTemplate = t("empty.onboardingSubtitle");
+  const onboardingSubtitleParts = onboardingSubtitleTemplate.match(
+    /^(.*)<marketplace>(.*)<\/marketplace>(.*)$/,
+  );
 
   const stats = [
     {
@@ -1036,18 +1039,22 @@ export default function AdminDashboardHome() {
                 {t("empty.onboardingHeading")}
               </p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {(t as any).rich("empty.onboardingSubtitle", {
-                  marketplace: (chunks: ReactNode) => (
+                {onboardingSubtitleParts ? (
+                  <>
+                    {onboardingSubtitleParts[1]}
                     <a
                       href={marketplaceUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 transition hover:text-[#1E3A8A] dark:text-slate-400 dark:decoration-slate-600 dark:hover:text-sky-300"
                     >
-                      {chunks}
+                      {onboardingSubtitleParts[2]}
                     </a>
-                  ),
-                })}
+                    {onboardingSubtitleParts[3]}
+                  </>
+                ) : (
+                  onboardingSubtitleTemplate
+                )}
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 <Link

@@ -628,7 +628,8 @@
       "full": "Volledig",
       "active": "Actief",
       "inactive": "Inactief",
-      "pending": "In afwachting"
+      "pending": "In afwachting",
+      "selectLocation": "Selecteer locatie"
     },
     "permissions": {
       "pageAccessControl": "Paginatoegang",
