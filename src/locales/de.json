@@ -627,7 +627,8 @@
       "full": "Voll",
       "active": "Aktiv",
       "inactive": "Inaktiv",
-      "pending": "Ausstehend"
+      "pending": "Ausstehend",
+      "selectLocation": "Standort auswählen"
     },
     "permissions": {
       "pageAccessControl": "Seitenzugriff",
