@@ -130,20 +130,20 @@ export function DashboardHeader({
           <Link
             href={accountHref}
             className="flex items-center gap-3 rounded-lg"
-            aria-label="Open account settings"
+            aria-label={tHeader.accountSettings}
           >
             <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-[#E7F0FF] text-xs font-semibold text-[#0B1F3A] dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
               {displayAvatar ? (
                 <Image
                   src={displayAvatar}
-                  alt={displayName || "Avatar"}
+                  alt={displayName || tHeader.avatarFallback}
                   width={32}
                   height={32}
                   className="h-full w-full object-cover"
                   unoptimized
                 />
               ) : (
-                initials || "U"
+                initials || tHeader.initialsFallback
               )}
             </div>
             <div className="max-w-40 text-right">

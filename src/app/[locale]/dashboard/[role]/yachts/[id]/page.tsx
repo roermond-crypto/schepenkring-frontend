@@ -3255,11 +3255,33 @@ export default function YachtEditorPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [mainPreview, setMainPreview] = useState<string | null>(null);
   const [mainFile, setMainFile] = useState<File | null>(null);
+  const lastSuccessfulExtractionSignatureRef = useRef<string | null>(null);
   const hasInFlightImageUploads = isUploading || pipeline.isUploading;
   const persistedPipelineImages = useMemo(
     () => pipeline.images.filter((image) => image.id > 0),
     [pipeline.images],
   );
+  const currentPipelineExtractionSignature = useMemo(() => {
+    const targetId = isNewMode ? createdYachtId : yachtId;
+    if (
+      !targetId ||
+      targetId === "new" ||
+      persistedPipelineImages.length === 0
+    ) {
+      return null;
+    }
+
+    return `${targetId}:${persistedPipelineImages
+      .map(
+        (image) =>
+          `${image.id}:${String(image.status ?? "")}:${String(image.updated_at ?? "")}`,
+      )
+      .join("|")}`;
+  }, [createdYachtId, isNewMode, persistedPipelineImages, yachtId]);
+  const shouldRefreshAiExtraction =
+    currentPipelineExtractionSignature !== null &&
+    lastSuccessfulExtractionSignatureRef.current !==
+      currentPipelineExtractionSignature;
   const approvedMarketingImageIds = useMemo(
     () =>
       persistedPipelineImages
@@ -6696,6 +6718,8 @@ export default function YachtEditorPage() {
         setGeminiExtracted(true);
         setConfidenceMeta(meta || null);
         setCorrectionLabel(null);
+        lastSuccessfulExtractionSignatureRef.current =
+          currentPipelineExtractionSignature;
 
         // Prefill form: merge into selectedYacht
         setSelectedYacht((prev: any) => ({
@@ -6822,28 +6846,31 @@ export default function YachtEditorPage() {
 
   useEffect(() => {
     if (
-      !isOnline ||
-      hasCompletedAiExtraction ||
-      isExtracting ||
-      hasInFlightImageUploads
+      hasCompletedAiExtraction &&
+      currentPipelineExtractionSignature &&
+      lastSuccessfulExtractionSignatureRef.current === null
+    ) {
+      lastSuccessfulExtractionSignatureRef.current =
+        currentPipelineExtractionSignature;
+    }
+  }, [currentPipelineExtractionSignature, hasCompletedAiExtraction]);
+
+  useEffect(() => {
+    if (!isOnline || isExtracting || hasInFlightImageUploads) {
+      return;
+    }
+
+    if (!currentPipelineExtractionSignature || !shouldRefreshAiExtraction) {
+      return;
+    }
+
+    if (
+      autoExtractionSignatureRef.current === currentPipelineExtractionSignature
     ) {
       return;
     }
 
-    const targetId = isNewMode ? createdYachtId : yachtId;
-    if (!targetId || targetId === "new" || persistedPipelineImages.length === 0) {
-      return;
-    }
-
-    const signature = `${targetId}:${persistedPipelineImages
-      .map((image) => `${image.id}:${String(image.updated_at ?? "")}`)
-      .join("|")}`;
-
-    if (autoExtractionSignatureRef.current === signature) {
-      return;
-    }
-
-    autoExtractionSignatureRef.current = signature;
+    autoExtractionSignatureRef.current = currentPipelineExtractionSignature;
 
     const timer = window.setTimeout(() => {
       void handleAiExtractRef.current?.({
@@ -6856,14 +6883,11 @@ export default function YachtEditorPage() {
     return () => window.clearTimeout(timer);
   }, [
     autoExtractionSignatureRef,
-    createdYachtId,
-    hasCompletedAiExtraction,
     hasInFlightImageUploads,
     isExtracting,
-    isNewMode,
     isOnline,
-    persistedPipelineImages,
-    yachtId,
+    currentPipelineExtractionSignature,
+    shouldRefreshAiExtraction,
   ]);
 
   const handleRegenerateDescription = useCallback(
@@ -9025,7 +9049,10 @@ export default function YachtEditorPage() {
                             const result = await pipeline.approveAll();
                             if (result.step2_unlocked) {
                               if (isNewMode) {
-                                if (hasCompletedAiExtraction) {
+                                if (
+                                  hasCompletedAiExtraction &&
+                                  !shouldRefreshAiExtraction
+                                ) {
                                   setActiveStep(2);
                                 } else {
                                   const extractionOk = await handleAiExtract({

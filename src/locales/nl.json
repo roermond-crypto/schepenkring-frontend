@@ -92,6 +92,9 @@
       "openMenu": "Menu openen",
       "toggleTheme": "Thema wisselen",
       "userFallback": "Gebruiker",
+      "accountSettings": "Accountinstellingen openen",
+      "avatarFallback": "Avatar",
+      "initialsFallback": "G",
       "logout": "Uitloggen",
       "installApp": "App installeren",
       "installIosInstructions": "Open het deelmenu in Safari en kies \"Zet op beginscherm\" om deze app te installeren.",
@@ -129,7 +132,12 @@
       "locations": "Locaties",
       "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Salesfunnel",
-      "socialAutomation": "Sociale automatisering"
+      "socialAutomation": "Sociale automatisering",
+      "faq": "FAQ",
+      "integrations": "Integraties",
+      "roleAdmin": "Admin",
+      "roleClient": "Klant",
+      "roleEmployee": "Medewerker"
     },
     "notifications": {
       "label": "Meldingen",
@@ -147,6 +155,108 @@
       "minutesAgo": "m geleden",
       "hoursAgo": "u geleden",
       "daysAgo": "d geleden"
+    }
+  },
+  "DashboardYachts": {
+    "header": {
+      "title": "Vlootbeheer",
+      "subtitle": "Vaartuigregistratie & beheer"
+    },
+    "actions": {
+      "refresh": "Vernieuwen",
+      "newVessel": "Nieuw vaartuig",
+      "registerFirst": "Eerste vaartuig registreren",
+      "editManifest": "Manifest bewerken",
+      "viewDetails": "Details bekijken",
+      "deleteVessel": "Vaartuig verwijderen",
+      "manageVessel": "Vaartuig beheren",
+      "backToTop": "Terug naar boven",
+      "fieldSettings": "Veldinstellingen",
+      "boatAudit": "Bootaudit",
+      "edit": "Bewerken",
+      "view": "Bekijken",
+      "delete": "Verwijderen"
+    },
+    "stats": {
+      "total": "Totaal",
+      "forSale": "Te koop",
+      "forBid": "Bieden",
+      "sold": "Verkocht",
+      "draft": "Concept",
+      "active": "Actief",
+      "inactive": "Inactief"
+    },
+    "filters": {
+      "searchPlaceholder": "Zoek vaartuigen..."
+    },
+    "sort": {
+      "nameAsc": "Naam A-Z",
+      "nameDesc": "Naam Z-A",
+      "priceDesc": "Prijs hoog-laag",
+      "priceAsc": "Prijs laag-hoog",
+      "yearDesc": "Bouwjaar nieuwste",
+      "yearAsc": "Bouwjaar oudste",
+      "createdDesc": "Nieuwste",
+      "updatedDesc": "Recent bijgewerkt"
+    },
+    "status": {
+      "all": "Alle",
+      "forSale": "Te koop",
+      "forBid": "Bieden",
+      "sold": "Verkocht",
+      "draft": "Concept",
+      "active": "Actief",
+      "inactive": "Inactief",
+      "maintenance": "Onderhoud"
+    },
+    "loading": "Vloot laden...",
+    "empty": {
+      "title": "Geen vaartuigen gevonden",
+      "adjustFilters": "Probeer je filters aan te passen",
+      "noVessels": "Registreer je eerste vaartuig om te beginnen"
+    },
+    "sections": {
+      "dimensions": "Afmetingen",
+      "details": "Details"
+    },
+    "table": {
+      "vessel": "Vaartuig",
+      "price": "Prijs",
+      "specifications": "Specificaties",
+      "status": "Status",
+      "year": "Jaar",
+      "actions": "Acties"
+    },
+    "fallbacks": {
+      "price": "Prijs op aanvraag",
+      "length": "Lengte onbekend",
+      "unnamedVessel": "Naamloos vaartuig"
+    },
+    "toasts": {
+      "loadFailed": "Vloot laden mislukt",
+      "deleted": "Vaartuig verwijderd"
+    },
+    "errors": {
+      "permissionDenied": "Toegang geweigerd",
+      "deleteFailed": "Verwijderen van vaartuig mislukt",
+      "statusUpdateFailed": "Status bijwerken mislukt"
+    },
+    "deleteConfirmTitle": "Vaartuig verwijderen",
+    "deleteConfirmDescription": "Weet je zeker dat je {name} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+    "deleteConfirmAction": "Verwijderen",
+    "cancel": "Annuleren",
+    "view": {
+      "grid": "Rasterweergave",
+      "list": "Lijstweergave"
+    },
+    "pagination": {
+      "perPage": "{count} / pagina",
+      "showingRange": "{from} tot {to} van {total} vaartuigen",
+      "firstPage": "Eerste pagina",
+      "previousPage": "Vorige pagina",
+      "nextPage": "Volgende pagina",
+      "lastPage": "Laatste pagina",
+      "pageOf": "Pagina {current} van {total}"
     }
   },
   "DashboardAdminCopilot": {
@@ -353,8 +463,8 @@
     "actions": {
       "viewBiddings": "Bekijk biedingen",
       "viewBoats": "Bekijk boten",
-      "createFirstListing": "Eerste listing maken",
-      "browseMarketplace": "Marketplace bekijken"
+      "createFirstListing": "Boot verkopen",
+      "browseMarketplace": "Aanbod bekijken"
     },
     "schedule": {
       "live": "Live planning",
@@ -392,8 +502,8 @@
       "brokerReviewHeadingOther": "Je hebt {count} boten in controle bij de broker",
       "brokerReviewSubtitle": "Je listing is ingediend en wacht op goedkeuring van de broker voordat deze in de verkoopflow komt.",
       "onboardingTitle": "Welkom op de marketplace",
-      "onboardingHeading": "Je hebt nog geen biedingen geplaatst",
-      "onboardingSubtitle": "Begin met het maken van je eerste bootlisting of bekijk de <marketplace>marketplace</marketplace> om te bieden.",
+      "onboardingHeading": "Je hebt nog geen acties ondernomen",
+      "onboardingSubtitle": "Begin met het verkopen van je boot of bekijk het <marketplace>aanbod</marketplace> op de marketplace.",
       "noSystemLogs": "Nog geen recente systeemlogs."
     },
     "defaults": {

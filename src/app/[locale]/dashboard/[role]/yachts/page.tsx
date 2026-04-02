@@ -439,13 +439,22 @@ export default function FleetManagementPage() {
     setPagination((prev) => ({ ...prev, current_page: 1 }));
   };
 
+  const formatMessage = (
+    template: string,
+    replacements: Record<string, string | number>,
+  ) =>
+    Object.entries(replacements).reduce(
+      (result, [key, value]) => result.replaceAll(`{${key}}`, String(value)),
+      template,
+    );
+
   // View toggle buttons
   const ViewToggle = () => (
     <div className="flex border border-slate-200 rounded-sm overflow-hidden">
       <button
         onClick={() => setViewMode("grid")}
-        title="Grid View"
-        aria-label="Grid View"
+        title={t?.view?.grid || "Grid View"}
+        aria-label={t?.view?.grid || "Grid View"}
         className={cn(
           "px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors",
           viewMode === "grid"
@@ -457,8 +466,8 @@ export default function FleetManagementPage() {
       </button>
       <button
         onClick={() => setViewMode("list")}
-        title="List View"
-        aria-label="List View"
+        title={t?.view?.list || "List View"}
+        aria-label={t?.view?.list || "List View"}
         className={cn(
           "px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors border-l border-slate-200",
           viewMode === "list"
@@ -548,7 +557,7 @@ export default function FleetManagementPage() {
                 className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
               >
                 <Settings size={14} />
-                Field Settings
+                {t?.actions?.fieldSettings || "Field Settings"}
               </Button>
             )}
             {!isClientRole && (
@@ -558,7 +567,7 @@ export default function FleetManagementPage() {
                   className="bg-white text-[#003566] border border-slate-200 hover:bg-slate-50 rounded-none h-12 px-6 font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center gap-2"
                 >
                   <ShieldCheck size={14} />
-                  Boat Audit
+                  {t?.actions?.boatAudit || "Boat Audit"}
                 </Button>
                 <Button
                   onClick={fetchFleet}
@@ -739,8 +748,16 @@ export default function FleetManagementPage() {
                     }))
                   }
                 >
-                  <option value={25}>25 / page</option>
-                  <option value={50}>50 / page</option>
+                  <option value={25}>
+                    {formatMessage(t?.pagination?.perPage || "{count} / page", {
+                      count: 25,
+                    })}
+                  </option>
+                  <option value={50}>
+                    {formatMessage(t?.pagination?.perPage || "{count} / page", {
+                      count: 50,
+                    })}
+                  </option>
                 </select>
                 <ViewToggle />
               </div>
@@ -1024,14 +1041,14 @@ export default function FleetManagementPage() {
                       router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
                     }
                     className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
-                    title="Edit"
+                    title={t?.actions?.edit || "Edit"}
                   >
                     <Edit3 size={16} />
                   </button>
                   <button
                     onClick={() => window.open(publicUrl, "_blank")}
                     className="p-2 text-emerald-600 hover:text-emerald-800 transition-colors"
-                    title="View"
+                    title={t?.actions?.view || "View"}
                   >
                     <Eye size={16} />
                   </button>
@@ -1039,7 +1056,7 @@ export default function FleetManagementPage() {
                     onClick={() => handleDelete(yacht)}
                     disabled={isSubmitting}
                     className="p-2 text-red-600 hover:text-red-800 transition-colors"
-                    title="Delete"
+                    title={t?.actions?.delete || "Delete"}
                   >
                     <Trash size={16} />
                   </button>
@@ -1054,15 +1071,15 @@ export default function FleetManagementPage() {
         <div className="mt-8 pt-6 border-t border-slate-200">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Showing{" "}
-              <span className="text-blue-600">
-                {pagination.from}
-              </span>{" "}
-              to{" "}
-              <span className="text-blue-600">
-                {pagination.to}
-              </span>{" "}
-              of {pagination.total} vessels
+              {formatMessage(
+                t?.pagination?.showingRange ||
+                  "Showing {from} to {to} of {total} vessels",
+                {
+                  from: pagination.from,
+                  to: pagination.to,
+                  total: pagination.total,
+                },
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1">
@@ -1072,7 +1089,7 @@ export default function FleetManagementPage() {
                   }
                   disabled={pagination.current_page <= 1 || loading}
                   className="p-2 rounded-sm border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  aria-label="First page"
+                  aria-label={t?.pagination?.firstPage || "First page"}
                 >
                   <ChevronsLeft size={14} />
                 </button>
@@ -1085,12 +1102,18 @@ export default function FleetManagementPage() {
                   }
                   disabled={pagination.current_page <= 1 || loading}
                   className="p-2 rounded-sm border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Previous page"
+                  aria-label={t?.pagination?.previousPage || "Previous page"}
                 >
                   <ChevronLeft size={14} />
                 </button>
                 <div className="px-3 h-9 inline-flex items-center border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-600">
-                  Page {pagination.current_page} of {pagination.last_page}
+                  {formatMessage(
+                    t?.pagination?.pageOf || "Page {current} of {total}",
+                    {
+                      current: pagination.current_page,
+                      total: pagination.last_page,
+                    },
+                  )}
                 </div>
                 <button
                   onClick={() =>
@@ -1103,7 +1126,7 @@ export default function FleetManagementPage() {
                     pagination.current_page >= pagination.last_page || loading
                   }
                   className="p-2 rounded-sm border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Next page"
+                  aria-label={t?.pagination?.nextPage || "Next page"}
                 >
                   <ChevronRight size={14} />
                 </button>
@@ -1118,7 +1141,7 @@ export default function FleetManagementPage() {
                     pagination.current_page >= pagination.last_page || loading
                   }
                   className="p-2 rounded-sm border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Last page"
+                  aria-label={t?.pagination?.lastPage || "Last page"}
                 >
                   <ChevronsRight size={14} />
                 </button>

@@ -136,7 +136,10 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
         setLoading(true);
       }
 
-      const response = await resendVerification({ email: normalizedEmail });
+      const response = await resendVerification({
+        email: normalizedEmail,
+        locale,
+      });
 
       if (response.verified) {
         setCodeRequested(false);
@@ -175,7 +178,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
     setSuccess("");
 
     if (!normalizedEmail) {
-      setError("Email is required.");
+      setError(copy.emailRequired);
       return;
     }
 
@@ -195,7 +198,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
         email: normalizedEmail,
         code: code.trim(),
       });
-      setSuccess("Email verified successfully.");
+      setSuccess(copy.verified);
       sessionStorage.removeItem(PENDING_VERIFICATION_EMAIL_KEY);
 
       if (response.user && response.token) {
@@ -209,7 +212,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
       }
       router.refresh();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Verification failed.";
+      const message = err instanceof Error ? err.message : copy.verifyFailed;
       setError(message);
     } finally {
       setLoading(false);
@@ -218,11 +221,11 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
 
   return (
     <div className="w-full max-w-md rounded-xl border border-border bg-white p-6 shadow-sm dark:bg-slate-900">
-      <h1 className="text-xl font-semibold">Verify Email</h1>
+      <h1 className="text-xl font-semibold">{copy.title}</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         {codeRequested
-          ? `Enter the verification code sent to ${normalizedEmail || "your email"}.`
-          : "Enter your email address to receive a verification code."}
+          ? `${copy.description} ${normalizedEmail || copy.fallbackEmail}.`
+          : `${copy.description} ${copy.fallbackEmail}.`}
       </p>
 
       <form className="mt-5 space-y-4" onSubmit={onVerify}>
@@ -255,7 +258,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
               sessionStorage.removeItem(PENDING_VERIFICATION_EMAIL_KEY);
             }
           }}
-          placeholder="Email address"
+          placeholder={copy.emailPlaceholder}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-brand focus:ring-2"
           required
         />
@@ -264,7 +267,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
           <input
             value={code}
             onChange={(event) => setCode(event.target.value)}
-            placeholder="Verification code"
+            placeholder={copy.codePlaceholder}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-brand focus:ring-2"
             required
           />
@@ -277,9 +280,9 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
         >
           {loading
             ? codeRequested
-              ? "Verifying..."
-              : "Sending code..."
-            : "Verify email"}
+              ? copy.verifying
+              : copy.resending
+            : copy.verifyButton}
         </button>
       </form>
 
@@ -290,7 +293,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
           disabled={resending}
           className="mt-3 w-full rounded-md border border-input py-2 text-sm hover:bg-accent disabled:opacity-60"
         >
-          {resending ? "Resending..." : "Resend code"}
+          {resending ? copy.resending : copy.resendButton}
         </button>
       ) : null}
     </div>

@@ -147,7 +147,7 @@ export async function verifyEmail(payload: { email: string; code: string }) {
   });
 }
 
-export async function resendVerification(payload: { email: string }) {
+export async function resendVerification(payload: { email: string; locale?: string }) {
   return apiRequest<{ sent: true; verified?: boolean; message?: string }>({
     url: "/resend-verification",
     method: "POST",
@@ -169,7 +169,7 @@ export async function getSession() {
   });
 }
 
-export async function requestPasswordReset(payload: { email: string }) {
+export async function requestPasswordReset(payload: { email: string; locale?: string }) {
   return apiRequest<{ status?: string; message?: string }>({
     url: "/auth/forgot-password",
     method: "POST",

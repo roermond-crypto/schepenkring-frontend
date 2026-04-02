@@ -50,6 +50,7 @@ interface Props {
     onAddTask: (columnId: number) => void;
     onEditTask: (task: Task) => void;
     onDeleteTask: (id: number) => void;
+    canManageBoard?: boolean;
 }
 
 const DynamicKanbanBoard: React.FC<Props> = ({
@@ -63,6 +64,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
     onAddTask,
     onEditTask,
     onDeleteTask,
+    canManageBoard = true,
 }) => {
     const t = useTranslations("DashboardAdminTasks");
     const [editingColId, setEditingColId] = useState<number | null>(null);
@@ -143,6 +145,8 @@ const DynamicKanbanBoard: React.FC<Props> = ({
     }, [sortedColumns, tasks]);
 
     const handleDragEnd = (result: DropResult) => {
+        if (!canManageBoard) return;
+
         const { source, destination, type } = result;
 
         if (!destination) return;
@@ -203,7 +207,12 @@ const DynamicKanbanBoard: React.FC<Props> = ({
 
     return (
         <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="board" type="column" direction="horizontal">
+            <Droppable
+                droppableId="board"
+                type="column"
+                direction="horizontal"
+                isDropDisabled={!canManageBoard}
+            >
                 {(provided) => (
                     <div
                         className="flex gap-6 overflow-x-auto pb-4 items-start min-h-[500px]"
@@ -215,7 +224,12 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                             const displayName = getBoardColumnDisplayName(col.name, t);
 
                             return (
-                            <Draggable key={`col-${col.id}`} draggableId={`col-${col.id}`} index={index}>
+                            <Draggable
+                                key={`col-${col.id}`}
+                                draggableId={`col-${col.id}`}
+                                index={index}
+                                isDragDisabled={!canManageBoard}
+                            >
                                 {(providedCol, snapshotCol) => (
                                     <div
                                         ref={providedCol.innerRef}
@@ -228,7 +242,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                     >
                                         {/* Column Header */}
                                         <div
-                                            {...providedCol.dragHandleProps}
+                                            {...(providedCol.dragHandleProps ?? {})}
                                             className={cn("rounded-t-lg flex group border-b",
                                                 columnHeaderStyles.container,
                                                 collapsedCols[col.id] ? "flex-col items-center py-4 h-full border-b-0 cursor-pointer" : "p-4 border-b items-center justify-between"
@@ -250,7 +264,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                 </>
                                             ) : (
                                                 <>
-                                                    {editingColId === col.id ? (
+                                                    {canManageBoard && editingColId === col.id ? (
                                                         <input
                                                             autoFocus
                                                             className="w-full bg-white dark:bg-slate-900 border border-sky-400 dark:border-sky-500 rounded px-2 py-1 text-sm font-bold shadow-inner focus:outline-none"
@@ -263,10 +277,17 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                             }}
                                                         />
                                                     ) : (
-                                                        <div className="flex items-center gap-2 cursor-pointer flex-1" onClick={() => {
-                                                            setEditingColId(col.id);
-                                                            setEditingColName(col.name);
-                                                        }}>
+                                                        <div
+                                                            className={cn(
+                                                                "flex items-center gap-2 flex-1",
+                                                                canManageBoard && "cursor-pointer"
+                                                            )}
+                                                            onClick={() => {
+                                                                if (!canManageBoard) return;
+                                                                setEditingColId(col.id);
+                                                                setEditingColName(col.name);
+                                                            }}
+                                                        >
                                                             <h3 className={cn("font-black text-xs uppercase tracking-widest truncate max-w-[180px]", columnHeaderStyles.title)}>
                                                                 {displayName}
                                                             </h3>
@@ -276,36 +297,42 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                         </div>
                                                     )}
 
-                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center ml-2">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-6 w-6 p-0 text-slate-400 hover:text-sky-500 mr-1"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                toggleCollapse(col.id);
-                                                            }}
-                                                        >
-                                                            <Minimize2 size={14} />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-6 w-6 p-0 text-slate-400 hover:text-red-500"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onDeleteColumn(col.id);
-                                                            }}
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </Button>
-                                                    </div>
+                                                    {canManageBoard && (
+                                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center ml-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-6 w-6 p-0 text-slate-400 hover:text-sky-500 mr-1"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    toggleCollapse(col.id);
+                                                                }}
+                                                            >
+                                                                <Minimize2 size={14} />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-6 w-6 p-0 text-slate-400 hover:text-red-500"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onDeleteColumn(col.id);
+                                                                }}
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </Button>
+                                                        </div>
+                                                    )}
                                                 </>
                                             )}
                                         </div>
 
                                         {/* Column Droppable Area */}
-                                        <Droppable droppableId={`col-${col.id}`} type="task">
+                                        <Droppable
+                                            droppableId={`col-${col.id}`}
+                                            type="task"
+                                            isDropDisabled={!canManageBoard}
+                                        >
                                             {(providedTask, snapshotTask) => (
                                                 <div
                                                     ref={providedTask.innerRef}
@@ -317,12 +344,17 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                     )}
                                                 >
                                                     {tasksByCol[col.id]?.map((task, tIndex) => (
-                                                        <Draggable key={`task-${task.id}`} draggableId={`task-${task.id}`} index={tIndex}>
+                                                        <Draggable
+                                                            key={`task-${task.id}`}
+                                                            draggableId={`task-${task.id}`}
+                                                            index={tIndex}
+                                                            isDragDisabled={!canManageBoard}
+                                                        >
                                                             {(providedDraggable, snapshotDraggable) => (
                                                                 <div
                                                                     ref={providedDraggable.innerRef}
                                                                     {...providedDraggable.draggableProps}
-                                                                    {...providedDraggable.dragHandleProps}
+                                                                    {...(providedDraggable.dragHandleProps ?? {})}
                                                                     className={cn(
                                                                         "bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-lg p-4 shadow-sm group hover:shadow-md transition-shadow relative overflow-hidden cursor-pointer",
                                                                         snapshotDraggable.isDragging ? "shadow-xl ring-2 ring-sky-400 dark:ring-sky-500 rotate-1" : "hover:border-slate-300 dark:hover:border-slate-600"
@@ -340,11 +372,13 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                                             {task.title}
                                                                         </h4>
 
-                                                                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-slate-900/90 rounded border dark:border-slate-700 shadow-sm">
-                                                                            <button onClick={(e) => { e.stopPropagation(); onDeleteTask(task.id); }} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
-                                                                                <Trash2 size={12} />
-                                                                            </button>
-                                                                        </div>
+                                                                        {canManageBoard && (
+                                                                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-slate-900/90 rounded border dark:border-slate-700 shadow-sm">
+                                                                                <button onClick={(e) => { e.stopPropagation(); onDeleteTask(task.id); }} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
+                                                                                    <Trash2 size={12} />
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
 
                                                                     {task.description && (
@@ -376,13 +410,15 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                     {providedTask.placeholder}
 
                                                     {/* Add Task Button inside Column */}
-                                                    <div
-                                                        onClick={() => onAddTask(col.id)}
-                                                        className="flex items-center justify-center p-2 text-slate-400 dark:text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg cursor-pointer transition-colors border border-dashed border-transparent hover:border-sky-200 dark:hover:border-sky-800 mt-2"
-                                                    >
-                                                        <Plus size={16} className="mr-1" />
-                                                        <span className="text-xs font-semibold uppercase tracking-wider">Add Task</span>
-                                                    </div>
+                                                    {canManageBoard && (
+                                                        <div
+                                                            onClick={() => onAddTask(col.id)}
+                                                            className="flex items-center justify-center p-2 text-slate-400 dark:text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg cursor-pointer transition-colors border border-dashed border-transparent hover:border-sky-200 dark:hover:border-sky-800 mt-2"
+                                                        >
+                                                            <Plus size={16} className="mr-1" />
+                                                            <span className="text-xs font-semibold uppercase tracking-wider">Add Task</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </Droppable>
@@ -394,8 +430,9 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                         {provided.placeholder}
 
                         {/* Add Column Button */}
-                        <div className="min-w-[320px] max-w-[320px] h-full flex-shrink-0">
-                            {isAddingCol ? (
+                        {canManageBoard && (
+                            <div className="min-w-[320px] max-w-[320px] h-full flex-shrink-0">
+                                {isAddingCol ? (
                                 <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border-2 border-dashed border-sky-300 dark:border-sky-700">
                                     <input
                                         autoFocus
@@ -413,7 +450,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                         <Button className="h-8 flex-1" variant="outline" onClick={() => setIsAddingCol(false)}>Cancel</Button>
                                     </div>
                                 </div>
-                            ) : (
+                                ) : (
                                 <button
                                     onClick={() => setIsAddingCol(true)}
                                     className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
@@ -421,8 +458,9 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                     <Plus size={18} />
                                     <span className="text-sm font-bold uppercase tracking-widest">Add Column</span>
                                 </button>
-                            )}
-                        </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </Droppable>

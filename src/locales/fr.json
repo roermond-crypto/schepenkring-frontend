@@ -92,6 +92,9 @@
       "openMenu": "Ouvrir le menu",
       "toggleTheme": "Basculer le thème",
       "userFallback": "Utilisateur",
+      "accountSettings": "Ouvrir les parametres du compte",
+      "avatarFallback": "Avatar",
+      "initialsFallback": "U",
       "logout": "Se déconnecter",
       "installApp": "Installer l'application",
       "installIosInstructions": "Pour installer cette application, ouvrez le menu Partager dans Safari puis choisissez \"Sur l'écran d'accueil\".",
@@ -128,7 +131,12 @@
       "locations": "Emplacements",
       "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Entonnoir de vente",
-      "socialAutomation": "Automatisation sociale"
+      "socialAutomation": "Automatisation sociale",
+      "faq": "FAQ",
+      "integrations": "Integrations",
+      "roleAdmin": "Admin",
+      "roleClient": "Client",
+      "roleEmployee": "Vente"
     },
     "notifications": {
       "label": "Notifications",
@@ -146,6 +154,108 @@
       "minutesAgo": "il y a m",
       "hoursAgo": "il y a h",
       "daysAgo": "il y a d"
+    }
+  },
+  "DashboardYachts": {
+    "header": {
+      "title": "Gestion de flotte",
+      "subtitle": "Registre et gestion des navires"
+    },
+    "actions": {
+      "refresh": "Actualiser",
+      "newVessel": "Nouveau navire",
+      "registerFirst": "Enregistrer le premier navire",
+      "editManifest": "Modifier la fiche",
+      "viewDetails": "Voir les details",
+      "deleteVessel": "Supprimer le navire",
+      "manageVessel": "Gerer le navire",
+      "backToTop": "Retour en haut",
+      "fieldSettings": "Parametres des champs",
+      "boatAudit": "Audit bateau",
+      "edit": "Modifier",
+      "view": "Voir",
+      "delete": "Supprimer"
+    },
+    "stats": {
+      "total": "Total",
+      "forSale": "A vendre",
+      "forBid": "Aux encheres",
+      "sold": "Vendu",
+      "draft": "Brouillon",
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "filters": {
+      "searchPlaceholder": "Rechercher des navires..."
+    },
+    "sort": {
+      "nameAsc": "Nom A-Z",
+      "nameDesc": "Nom Z-A",
+      "priceDesc": "Prix decroissant",
+      "priceAsc": "Prix croissant",
+      "yearDesc": "Annee la plus recente",
+      "yearAsc": "Annee la plus ancienne",
+      "createdDesc": "Plus recents",
+      "updatedDesc": "Recemment mis a jour"
+    },
+    "status": {
+      "all": "Tous",
+      "forSale": "A vendre",
+      "forBid": "Aux encheres",
+      "sold": "Vendu",
+      "draft": "Brouillon",
+      "active": "Actif",
+      "inactive": "Inactif",
+      "maintenance": "Maintenance"
+    },
+    "loading": "Chargement de la flotte...",
+    "empty": {
+      "title": "Aucun navire trouve",
+      "adjustFilters": "Essayez d'ajuster vos filtres",
+      "noVessels": "Enregistrez votre premier navire pour commencer"
+    },
+    "sections": {
+      "dimensions": "Dimensions",
+      "details": "Details"
+    },
+    "table": {
+      "vessel": "Navire",
+      "price": "Prix",
+      "specifications": "Specifications",
+      "status": "Statut",
+      "year": "Annee",
+      "actions": "Actions"
+    },
+    "fallbacks": {
+      "price": "Prix sur demande",
+      "length": "Longueur inconnue",
+      "unnamedVessel": "Navire sans nom"
+    },
+    "toasts": {
+      "loadFailed": "Echec du chargement de la flotte",
+      "deleted": "Navire supprime"
+    },
+    "errors": {
+      "permissionDenied": "Acces refuse",
+      "deleteFailed": "Echec de la suppression du navire",
+      "statusUpdateFailed": "Echec de la mise a jour du statut"
+    },
+    "deleteConfirmTitle": "Supprimer le navire",
+    "deleteConfirmDescription": "Voulez-vous vraiment supprimer {name} ? Cette action est definitive.",
+    "deleteConfirmAction": "Supprimer",
+    "cancel": "Annuler",
+    "view": {
+      "grid": "Vue grille",
+      "list": "Vue liste"
+    },
+    "pagination": {
+      "perPage": "{count} / page",
+      "showingRange": "{from} a {to} sur {total} navires",
+      "firstPage": "Premiere page",
+      "previousPage": "Page precedente",
+      "nextPage": "Page suivante",
+      "lastPage": "Derniere page",
+      "pageOf": "Page {current} sur {total}"
     }
   },
   "DashboardAdminCopilot": {
@@ -352,8 +462,8 @@
     "actions": {
       "viewBiddings": "Voir les enchères",
       "viewBoats": "Voir les bateaux",
-      "createFirstListing": "Creer la premiere annonce",
-      "browseMarketplace": "Parcourir le marketplace"
+      "createFirstListing": "Vendre un bateau",
+      "browseMarketplace": "Voir les offres"
     },
     "schedule": {
       "live": "Horaire en direct",
@@ -391,8 +501,8 @@
       "brokerReviewHeadingOther": "Vous avez {count} bateaux en cours de vérification chez le courtier",
       "brokerReviewSubtitle": "Votre annonce a été envoyée et attend l'approbation du courtier avant d'entrer dans le flux de vente.",
       "onboardingTitle": "Bienvenue sur le marketplace",
-      "onboardingHeading": "Vous n'avez encore place aucune offre",
-      "onboardingSubtitle": "Commencez par creer votre premiere annonce de bateau ou parcourez le <marketplace>marketplace</marketplace> pour enchérir.",
+      "onboardingHeading": "Vous n'avez encore effectue aucune action",
+      "onboardingSubtitle": "Commencez par vendre votre bateau ou consultez les <marketplace>offres</marketplace> sur la marketplace.",
       "noSystemLogs": "Aucun journal système récent pour le moment."
     },
     "defaults": {

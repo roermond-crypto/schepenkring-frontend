@@ -119,7 +119,7 @@ export function Sidebar({
         icon: MessageSquare,
       });
       items.push({
-        title: "FAQ",
+        title: t.faq,
         href: `${root}/faq`,
         icon: HelpCircle,
       });
@@ -140,7 +140,7 @@ export function Sidebar({
         icon: TriangleAlert,
       });
       items.push({
-        title: "Integrations",
+        title: t.integrations,
         href: `${root}/integrations`,
         icon: Plug,
       });
@@ -176,7 +176,7 @@ export function Sidebar({
       >
         {(!isCollapsed || isDrawer) && (
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-            {`${role === "employee" ? "medewerker" : role === "client" ? "klant" : role} ${t.terminalSuffix}`}
+            {`${role === "employee" ? t.roleEmployee : role === "client" ? t.roleClient : t.roleAdmin} ${t.terminalSuffix}`}
           </p>
         )}
         {isOnline ? (

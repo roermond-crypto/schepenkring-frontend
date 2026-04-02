@@ -35,10 +35,10 @@ export function ForgotPasswordClient({
     setMessage("");
 
     try {
-      await requestPasswordReset({ email });
+      await requestPasswordReset({ email, locale });
       setStatus("success");
       setMessage(copy.successMessage);
-    } catch (err) {
+    } catch {
       setStatus("error");
       setMessage(copy.errorMessage);
     }
