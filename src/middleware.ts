@@ -20,6 +20,8 @@ export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const encodedSession = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
   const cookieRole = getRoleFromSessionCookie(encodedSession) ?? "admin";
+  const hasToken = Boolean(request.cookies.get(AUTH_TOKEN_COOKIE)?.value);
+  const isAuthed = hasToken && Boolean(encodedSession);
 
   if (
     pathname.startsWith("/_next") ||
@@ -30,7 +32,10 @@ export function middleware(request: NextRequest) {
   }
 
   if (pathname === "/") {
-    return NextResponse.redirect(new URL(`/${DEFAULT_LOCALE}`, request.url));
+    const destination = isAuthed
+      ? `/${DEFAULT_LOCALE}/dashboard/${cookieRole}`
+      : `/${DEFAULT_LOCALE}/auth?mode=login`;
+    return NextResponse.redirect(new URL(destination, request.url));
   }
 
   if (pathname === "/dashboard" || pathname === "/dashboard/") {
@@ -62,11 +67,10 @@ export function middleware(request: NextRequest) {
 
   const isPublicRoute = isLoginRoute || isSignupRoute || isAuthRoute;
 
-  const hasToken = Boolean(request.cookies.get(AUTH_TOKEN_COOKIE)?.value);
-  const isAuthed = hasToken && Boolean(encodedSession);
-
   if (!isAuthed && !isPublicRoute) {
-    return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
+    return NextResponse.redirect(
+      new URL(`/${locale}/auth?mode=login`, request.url),
+    );
   }
 
   if (isAuthed && isPublicRoute) {

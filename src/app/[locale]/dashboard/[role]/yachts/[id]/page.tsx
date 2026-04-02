@@ -231,9 +231,11 @@ type GalleryState = { [key: string]: any[] };
 
 type ImageGridDensity = "regular" | "compact" | "dense";
 type ReviewPipelineImage = PipelineImage & { client_upload_key?: string };
+type BoatDocumentType = "ai_reference" | "compliance";
 type BoatDocumentItem = {
   id: number;
   file_path: string;
+  file_url?: string | null;
   file_type?: string | null;
   document_type?: string | null;
   uploaded_at?: string | null;
@@ -383,6 +385,114 @@ function toObjectRecord(value: unknown): Record<string, unknown> {
     return {};
   }
   return value as Record<string, unknown>;
+}
+
+function isPlaceholderFieldText(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+
+  return (
+    normalized === "" ||
+    [
+      "unknown",
+      "[object object]",
+      "object object",
+      "n/a",
+      "na",
+      "null",
+      "undefined",
+      "onbekend",
+      "unbekannt",
+      "inconnu",
+    ].includes(normalized)
+  );
+}
+
+function sanitizeScalarFieldValue(value: unknown): string | number | boolean | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const normalized = sanitizeScalarFieldValue(item);
+      if (normalized !== null) {
+        return normalized;
+      }
+    }
+
+    return null;
+  }
+
+  if (typeof value === "object") {
+    const record = toObjectRecord(value);
+
+    for (const key of [
+      "value",
+      "normalized_value",
+      "answer",
+      "result",
+      "text",
+      "name",
+      "label",
+    ]) {
+      if (!(key in record)) {
+        continue;
+      }
+
+      const normalized = sanitizeScalarFieldValue(record[key]);
+      if (normalized !== null) {
+        return normalized;
+      }
+    }
+
+    return null;
+  }
+
+  const text = String(value).trim();
+  return isPlaceholderFieldText(text) ? null : text;
+}
+
+function normalizeDomFieldValue(
+  value: unknown,
+): string | number | readonly string[] | undefined {
+  const sanitized = sanitizeScalarFieldValue(value);
+
+  if (sanitized === null) {
+    return undefined;
+  }
+
+  if (typeof sanitized === "boolean") {
+    return sanitized ? "true" : "false";
+  }
+
+  return sanitized;
+}
+
+function normalizeBoatDocumentResponse(value: unknown): BoatDocumentItem[] {
+  if (Array.isArray(value)) {
+    return value as BoatDocumentItem[];
+  }
+
+  const payload = toObjectRecord(value);
+  const documents = payload.documents;
+  if (Array.isArray(documents)) {
+    return documents as BoatDocumentItem[];
+  }
+
+  const document = payload.document;
+  if (document && typeof document === "object") {
+    return [document as BoatDocumentItem];
+  }
+
+  return [];
 }
 
 function hasObjectValues(value: unknown): boolean {
@@ -3226,7 +3336,26 @@ export default function YachtEditorPage() {
   // Gemini Extraction State (Step 1)
   const [boatHint, setBoatHint] = useState("");
   const [geminiExtracted, setGeminiExtracted] = useState(false);
+  const autoExtractionSignatureRef = useRef<string | null>(null);
+  const handleAiExtractRef = useRef<
+    ((
+      options?: {
+        background?: boolean;
+        navigateToStep2?: boolean;
+        speedMode?: "fast" | "balanced" | "deep";
+      },
+    ) => Promise<boolean>) | null
+  >(null);
   const [extractionResult, setExtractionResult] = useState<any>(null);
+  const hasCompletedAiExtraction = useMemo(() => {
+    if (!geminiExtracted) {
+      return false;
+    }
+
+    return Object.values(toObjectRecord(extractionResult)).some(
+      (value) => sanitizeScalarFieldValue(value) !== null,
+    );
+  }, [extractionResult, geminiExtracted]);
   const [showExtractModal, setShowExtractModal] = useState(false);
   const [extractionType, setExtractionType] = useState<"gemini" | "magic">(
     "gemini",
@@ -3388,11 +3517,43 @@ export default function YachtEditorPage() {
     preferredHarborId ??
     currentUserHarborId ??
     null;
+  const bootstrapDraftHarborId = useMemo(() => {
+    if (
+      selectedHarborId === null ||
+      selectedHarborId === undefined ||
+      selectedHarborId === ""
+    ) {
+      return null;
+    }
+
+    const parsed = Number(selectedHarborId);
+    return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : null;
+  }, [selectedHarborId]);
   const hasSelectedHarbor = hasFilledFieldValue(selectedHarborId);
   const isHarborSelectionBlocking = !isClientRole && !hasSelectedHarbor;
   const draftBoatType =
     (draft?.data as any)?.step2?.selectedYacht?.boat_type ?? null;
   const boatTypeForConfig = selectedYacht?.boat_type ?? draftBoatType ?? null;
+  const createBootstrapDraftYacht = useCallback(async () => {
+    const fd = new FormData();
+    fd.append("status", "draft");
+
+    if (bootstrapDraftHarborId) {
+      fd.append("ref_harbor_id", bootstrapDraftHarborId);
+    }
+
+    const createRes = await api.post("/yachts", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    const nextId = Number(createRes.data?.id);
+
+    if (!Number.isFinite(nextId) || nextId <= 0) {
+      throw new Error("Failed to initialize draft vessel.");
+    }
+
+    setCreatedYachtId(nextId);
+    return nextId;
+  }, [bootstrapDraftHarborId]);
   const boatFormFieldHelpMap = useMemo(() => {
     const nextMap = new Map<string, string>();
 
@@ -3733,6 +3894,8 @@ export default function YachtEditorPage() {
   const [checklistTemplates, setChecklistTemplates] = useState<any[]>([]);
   const [boatDocuments, setBoatDocuments] = useState<BoatDocumentItem[]>([]);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+  const [documentDropTarget, setDocumentDropTarget] =
+    useState<BoatDocumentType | null>(null);
   const [fetchingChecklist, setFetchingChecklist] = useState(false);
   const [deleteDocumentDialogOpen, setDeleteDocumentDialogOpen] =
     useState(false);
@@ -4875,13 +5038,7 @@ export default function YachtEditorPage() {
 
       if (isNewMode && !targetId) {
         draftToastId = toast.loading("Creating vessel draft...");
-        const fd = new FormData();
-        fd.append("status", "draft");
-        const createRes = await api.post("/yachts", fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        targetId = createRes.data.id;
-        setCreatedYachtId(targetId as number);
+        targetId = await createBootstrapDraftYacht();
         toast.dismiss(draftToastId);
         draftToastId = undefined;
       }
@@ -4923,13 +5080,7 @@ export default function YachtEditorPage() {
     if (isNewMode && !targetId) {
       const loadingToastId = toast.loading("Creating vessel draft...");
       try {
-        const fd = new FormData();
-        fd.append("status", "draft");
-        const createRes = await api.post("/yachts", fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        targetId = createRes.data.id;
-        setCreatedYachtId(targetId as number);
+        targetId = await createBootstrapDraftYacht();
         toast.dismiss(loadingToastId);
       } catch (error) {
         toast.dismiss(loadingToastId);
@@ -5043,51 +5194,128 @@ export default function YachtEditorPage() {
   };
 
   // Document Handlers (Step 1 reference docs + Step 5 compliance docs)
-  const handleDocumentUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    documentType: "ai_reference" | "compliance" = "compliance",
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    let targetId = currentBoatDocumentId;
-    if (isNewMode && !targetId) {
-      const loadingToastId = toast.loading(
-        "Creating vessel draft for document upload...",
+  const uploadDocumentFiles = useCallback(
+    async (
+      inputFiles: FileList | File[],
+      documentType: BoatDocumentType = "compliance",
+    ) => {
+      const files = Array.from(inputFiles).filter(
+        (file): file is File => file instanceof File,
       );
+      if (files.length === 0) return;
+
+      let targetId = currentBoatDocumentId;
+      if (isNewMode && !targetId) {
+        const loadingToastId = toast.loading(
+          "Creating vessel draft for document upload...",
+        );
+        try {
+          targetId = await createBootstrapDraftYacht();
+          toast.dismiss(loadingToastId);
+        } catch (err) {
+          toast.dismiss(loadingToastId);
+          toast.error("Failed to initialize draft vessel.");
+          return;
+        }
+      }
+
+      setIsUploadingDocument(true);
+      const formData = new FormData();
+      if (files.length === 1) {
+        formData.append("file", files[0]);
+      } else {
+        files.forEach((file) => formData.append("files[]", file));
+      }
+      formData.append("document_type", documentType);
+
       try {
-        const fd = new FormData();
-        fd.append("status", "draft");
-        const createRes = await api.post("/yachts", fd, {
+        const res = await api.post(`/yachts/${targetId}/documents`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        targetId = createRes.data.id;
-        setCreatedYachtId(targetId as number);
-        toast.dismiss(loadingToastId);
-      } catch (err) {
-        toast.dismiss(loadingToastId);
-        toast.error("Failed to initialize draft vessel.");
-        return;
+        const uploadedDocuments = normalizeBoatDocumentResponse(res.data);
+        setBoatDocuments((prev) => [
+          ...uploadedDocuments,
+          ...prev.filter(
+            (existing) =>
+              !uploadedDocuments.some((uploaded) => uploaded.id === existing.id),
+          ),
+        ]);
+        toast.success(
+          uploadedDocuments.length > 1
+            ? `${uploadedDocuments.length} documents uploaded successfully`
+            : "Document uploaded successfully",
+        );
+      } catch (err: any) {
+        toast.error(
+          err.response?.data?.error ||
+            err.response?.data?.message ||
+            "Document upload failed",
+        );
+      } finally {
+        setIsUploadingDocument(false);
+        setDocumentDropTarget(null);
       }
+    },
+    [createBootstrapDraftYacht, currentBoatDocumentId, isNewMode],
+  );
+
+  const handleDocumentInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    documentType: BoatDocumentType = "compliance",
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) {
+      return;
     }
 
-    setIsUploadingDocument(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("document_type", documentType);
+    await uploadDocumentFiles(files, documentType);
+    e.target.value = "";
+  };
 
-    try {
-      const res = await api.post(`/yachts/${targetId}/documents`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setBoatDocuments((prev) => [...prev, res.data]);
-      toast.success("Document uploaded successfully");
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Document upload failed");
-    } finally {
-      setIsUploadingDocument(false);
-      if (e.target) e.target.value = "";
+  const handleDocumentDrop = async (
+    event: React.DragEvent<HTMLElement>,
+    documentType: BoatDocumentType,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const files = event.dataTransfer.files;
+    if (!files || files.length === 0) {
+      setDocumentDropTarget(null);
+      return;
     }
+
+    await uploadDocumentFiles(files, documentType);
+  };
+
+  const handleDocumentDragOver = (
+    event: React.DragEvent<HTMLElement>,
+    documentType: BoatDocumentType,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = "copy";
+    setDocumentDropTarget(documentType);
+  };
+
+  const handleDocumentDragLeave = (
+    event: React.DragEvent<HTMLElement>,
+    documentType: BoatDocumentType,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const nextTarget = event.relatedTarget;
+    if (
+      nextTarget instanceof Node &&
+      event.currentTarget.contains(nextTarget)
+    ) {
+      return;
+    }
+
+    setDocumentDropTarget((current) =>
+      current === documentType ? null : current,
+    );
   };
 
   const handleDocumentDelete = (id: number) => {
@@ -5554,6 +5782,69 @@ export default function YachtEditorPage() {
     [],
   );
 
+  const resolveBoatDocumentUrl = useCallback((document: BoatDocumentItem) => {
+    const candidate =
+      typeof document.file_url === "string" && document.file_url.trim() !== ""
+        ? document.file_url
+        : document.file_path;
+
+    if (typeof candidate !== "string") {
+      return null;
+    }
+
+    const trimmed = candidate.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const configuredBaseUrl =
+      typeof api.defaults.baseURL === "string" ? api.defaults.baseURL : "";
+    let apiOrigin = "";
+
+    try {
+      if (configuredBaseUrl) {
+        apiOrigin = new URL(
+          configuredBaseUrl,
+          typeof window !== "undefined" ? window.location.origin : undefined,
+        ).origin;
+      }
+    } catch {
+      apiOrigin = configuredBaseUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
+    }
+
+    if (/^(blob:|data:)/i.test(trimmed)) {
+      return trimmed;
+    }
+
+    if (/^https?:\/\//i.test(trimmed)) {
+      if (!apiOrigin) {
+        return trimmed;
+      }
+
+      try {
+        const parsedCandidate = new URL(trimmed);
+        if (parsedCandidate.pathname.startsWith("/storage/")) {
+          return `${apiOrigin}${parsedCandidate.pathname}${parsedCandidate.search}${parsedCandidate.hash}`;
+        }
+      } catch {
+        return trimmed;
+      }
+
+      return trimmed;
+    }
+
+    if (!apiOrigin) {
+      return trimmed.startsWith("/storage/") ? trimmed : null;
+    }
+
+    if (trimmed.startsWith("/storage/")) {
+      return `${apiOrigin}${trimmed}`;
+    }
+
+    const relativePath = trimmed.replace(/^storage\//, "").replace(/^\/+/, "");
+    return `${apiOrigin}/storage/${relativePath}`;
+  }, []);
+
   const getPipelineImageCandidates = useCallback(
     (image: PipelineImage) =>
       Array.from(
@@ -5820,12 +6111,7 @@ export default function YachtEditorPage() {
       // Auto-create draft yacht upon first image drop in new mode
       if (isNewMode && !targetId) {
         toast.loading("Creating vessel draft...", { id: toastId });
-        const fd = new FormData();
-        fd.append("status", "draft");
-        const createRes = await api.post("/yachts", fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        targetId = createRes.data.id;
+        targetId = await createBootstrapDraftYacht();
         shouldSetCreatedYachtId = true;
         verifiedDraftYachtIdRef.current = Number(targetId);
       }
@@ -6170,15 +6456,7 @@ export default function YachtEditorPage() {
         }
       }
       if (!targetId || targetId === "new") {
-        const fd = new FormData();
-        fd.append("status", "draft");
-        const createRes = await api.post("/yachts", fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        targetId = createRes.data.id;
-        if (isNewMode) {
-          setCreatedYachtId(Number(targetId));
-        }
+        targetId = await createBootstrapDraftYacht();
       }
 
       formData.append("yacht_id", String(targetId));
@@ -6231,24 +6509,15 @@ export default function YachtEditorPage() {
       console.log("🔵 [Pipeline] Parsed API response:", responseData);
 
       if (responseData?.success && responseData?.step2_form_values) {
-        const formValues = responseData.step2_form_values;
+        const formValues = toObjectRecord(responseData.step2_form_values);
         const meta = responseData.meta;
 
-        // ── Sanitize: strip ALL "unknown" values from AI response ──
-        // AI models sometimes ignore prompt instructions. This guarantees
-        // "unknown" never appears in any form field.
-        for (const key of Object.keys(formValues)) {
-          if (
-            typeof formValues[key] === "string" &&
-            formValues[key].toLowerCase().trim() === "unknown"
-          ) {
-            formValues[key] = "";
-          }
-        }
-
-        const normalizedFormValues: Record<string, unknown> = {
-          ...toObjectRecord(formValues),
-        };
+        const normalizedFormValues: Record<string, unknown> = Object.fromEntries(
+          Object.entries(formValues).map(([key, value]) => [
+            key,
+            sanitizeScalarFieldValue(value),
+          ]),
+        );
 
         const currentYear = new Date().getFullYear();
         const parseNum = (value: unknown): number | null => {
@@ -6380,11 +6649,9 @@ export default function YachtEditorPage() {
 
               if (
                 isEmptyCurrent &&
-                value !== null &&
-                value !== undefined &&
-                value !== ""
+                sanitizeScalarFieldValue(value) !== null
               ) {
-                normalizedFormValues[field] = value;
+                normalizedFormValues[field] = sanitizeScalarFieldValue(value);
               }
             });
           }
@@ -6400,7 +6667,7 @@ export default function YachtEditorPage() {
           const raw = normalizedFormValues[field];
           normalizedFormValues[field] =
             raw === null || raw === undefined || raw === ""
-              ? "unknown"
+              ? null
               : normalizeTriStateValue(raw);
         });
 
@@ -6441,25 +6708,25 @@ export default function YachtEditorPage() {
         if (formValues.short_description_en) {
           setAiTexts((prev) => ({
             ...prev,
-            en: formValues.short_description_en,
+            en: String(sanitizeScalarFieldValue(formValues.short_description_en) ?? ""),
           }));
         }
         if (formValues.short_description_nl) {
           setAiTexts((prev) => ({
             ...prev,
-            nl: formValues.short_description_nl,
+            nl: String(sanitizeScalarFieldValue(formValues.short_description_nl) ?? ""),
           }));
         }
         if (formValues.short_description_de) {
           setAiTexts((prev) => ({
             ...prev,
-            de: formValues.short_description_de,
+            de: String(sanitizeScalarFieldValue(formValues.short_description_de) ?? ""),
           }));
         }
         if (formValues.short_description_fr) {
           setAiTexts((prev) => ({
             ...prev,
-            fr: formValues.short_description_fr,
+            fr: String(sanitizeScalarFieldValue(formValues.short_description_fr) ?? ""),
           }));
         }
 
@@ -6548,6 +6815,56 @@ export default function YachtEditorPage() {
       setExtractionCountdown(EXTRACTION_ESTIMATED_DURATION_SECONDS);
     }
   };
+
+  useEffect(() => {
+    handleAiExtractRef.current = handleAiExtract;
+  }, [handleAiExtract]);
+
+  useEffect(() => {
+    if (
+      !isOnline ||
+      hasCompletedAiExtraction ||
+      isExtracting ||
+      hasInFlightImageUploads
+    ) {
+      return;
+    }
+
+    const targetId = isNewMode ? createdYachtId : yachtId;
+    if (!targetId || targetId === "new" || persistedPipelineImages.length === 0) {
+      return;
+    }
+
+    const signature = `${targetId}:${persistedPipelineImages
+      .map((image) => `${image.id}:${String(image.updated_at ?? "")}`)
+      .join("|")}`;
+
+    if (autoExtractionSignatureRef.current === signature) {
+      return;
+    }
+
+    autoExtractionSignatureRef.current = signature;
+
+    const timer = window.setTimeout(() => {
+      void handleAiExtractRef.current?.({
+        background: true,
+        navigateToStep2: false,
+        speedMode: "balanced",
+      });
+    }, 1200);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    autoExtractionSignatureRef,
+    createdYachtId,
+    hasCompletedAiExtraction,
+    hasInFlightImageUploads,
+    isExtracting,
+    isNewMode,
+    isOnline,
+    persistedPipelineImages,
+    yachtId,
+  ]);
 
   const handleRegenerateDescription = useCallback(
     async (options?: {
@@ -6829,9 +7146,10 @@ export default function YachtEditorPage() {
     const formData = new FormData();
 
     const toFormValue = (value: unknown): string | null => {
-      if (value === null || value === undefined) return null;
-      if (typeof value === "boolean") return value ? "true" : "false";
-      const stringValue = String(value);
+      const sanitized = sanitizeScalarFieldValue(value);
+      if (sanitized === null) return null;
+      if (typeof sanitized === "boolean") return sanitized ? "true" : "false";
+      const stringValue = String(sanitized);
       return stringValue.trim() === "" ? null : stringValue;
     };
 
@@ -8489,11 +8807,25 @@ export default function YachtEditorPage() {
 
                   <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,360px)_1fr]">
                     <label
+                      onDragOver={(event) =>
+                        handleDocumentDragOver(event, "ai_reference")
+                      }
+                      onDragEnter={(event) =>
+                        handleDocumentDragOver(event, "ai_reference")
+                      }
+                      onDragLeave={(event) =>
+                        handleDocumentDragLeave(event, "ai_reference")
+                      }
+                      onDrop={(event) =>
+                        void handleDocumentDrop(event, "ai_reference")
+                      }
                       className={cn(
                         "flex min-h-[220px] flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-slate-50 px-6 py-8 text-center transition-colors",
                         isUploadingDocument
                           ? "border-slate-300 opacity-70 cursor-wait"
-                          : "border-slate-300 cursor-pointer hover:border-blue-400 hover:bg-blue-50/60",
+                          : documentDropTarget === "ai_reference"
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-slate-300 cursor-pointer hover:border-blue-400 hover:bg-blue-50/60",
                       )}
                     >
                       {isUploadingDocument ? (
@@ -8512,21 +8844,22 @@ export default function YachtEditorPage() {
                           ? labelText("documentUploading", "Uploading...")
                           : labelText(
                               "clickOrDropReferenceDocument",
-                              "Click or drag an invoice, leaflet, or brochure",
+                              "Click or drag one or more invoices, leaflets, or brochures",
                             )}
                       </p>
                       <p className="mt-2 max-w-xs text-xs text-slate-500">
                         {labelText(
                           "referenceDocumentsHint",
-                          "PDF, DOC, DOCX, JPG, PNG. Stored separately from gallery images.",
+                          "PDF, DOC, DOCX, JPG, PNG. You can drop multiple files. Stored separately from gallery images.",
                         )}
                       </p>
                       <input
                         type="file"
                         className="hidden"
+                        multiple
                         accept=".pdf,.doc,.docx,image/jpeg,image/png"
                         onChange={(e) =>
-                          void handleDocumentUpload(e, "ai_reference")
+                          void handleDocumentInputChange(e, "ai_reference")
                         }
                         disabled={isUploadingDocument}
                       />
@@ -8553,7 +8886,10 @@ export default function YachtEditorPage() {
 
                       {referenceBoatDocuments.length > 0 ? (
                         <div className="mt-4 space-y-3">
-                          {referenceBoatDocuments.map((doc) => (
+                          {referenceBoatDocuments.map((doc) => {
+                            const documentUrl = resolveBoatDocumentUrl(doc);
+
+                            return (
                             <div
                               key={doc.id}
                               className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
@@ -8579,14 +8915,20 @@ export default function YachtEditorPage() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <a
-                                  href={doc.file_path}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                                >
-                                  <Eye size={14} />
-                                </a>
+                                {documentUrl ? (
+                                  <a
+                                    href={documentUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                                  >
+                                    <Eye size={14} />
+                                  </a>
+                                ) : (
+                                  <span className="rounded-lg p-2 text-slate-300">
+                                    <Eye size={14} />
+                                  </span>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => handleDocumentDelete(doc.id)}
@@ -8596,7 +8938,8 @@ export default function YachtEditorPage() {
                                 </button>
                               </div>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-400">
@@ -8682,20 +9025,24 @@ export default function YachtEditorPage() {
                             const result = await pipeline.approveAll();
                             if (result.step2_unlocked) {
                               if (isNewMode) {
-                                const extractionOk = await handleAiExtract({
-                                  background: false,
-                                  navigateToStep2: true,
-                                  speedMode: "balanced",
-                                });
-                                if (!extractionOk) {
-                                  toast(
-                                    labelText(
-                                      "aiTimedOutStepTwo",
-                                      "AI extraction timed out. Step 2 is unlocked; you can continue manually and retry AI later.",
-                                    ),
-                                    { icon: "⚠️" },
-                                  );
+                                if (hasCompletedAiExtraction) {
                                   setActiveStep(2);
+                                } else {
+                                  const extractionOk = await handleAiExtract({
+                                    background: false,
+                                    navigateToStep2: true,
+                                    speedMode: "balanced",
+                                  });
+                                  if (!extractionOk) {
+                                    toast(
+                                      labelText(
+                                        "aiTimedOutStepTwo",
+                                        "AI extraction timed out. Step 2 is unlocked; you can continue manually and retry AI later.",
+                                      ),
+                                      { icon: "⚠️" },
+                                    );
+                                    setActiveStep(2);
+                                  }
                                 }
                               } else {
                                 toast.success(
@@ -8779,7 +9126,7 @@ export default function YachtEditorPage() {
                         </div>
                       )
                     )}
-                    {!geminiExtracted && !isExtracting && isOnline && (
+                    {!hasCompletedAiExtraction && !isExtracting && isOnline && (
                       <div className="flex flex-col items-center gap-3">
                         <p className="text-xs text-slate-400 text-center">
                           {imagesApproved
@@ -8789,7 +9136,7 @@ export default function YachtEditorPage() {
                               )
                             : labelText(
                                 "uploadApproveImagesFirstAi",
-                                "Upload and approve images first, then AI will analyze them",
+                                "AI starts after upload and fills Step 2 in the background. Approve images to unlock Step 2.",
                               )}
                         </p>
 
@@ -9335,10 +9682,7 @@ export default function YachtEditorPage() {
                       onApply={(specs, mode = "manual") => {
                         const isAuto = mode === "auto";
                         const isEmpty = (value: unknown) =>
-                          value === null ||
-                          value === undefined ||
-                          value === "" ||
-                          value === "unknown";
+                          sanitizeScalarFieldValue(value) === null;
 
                         setSelectedYacht((prev: any) => {
                           const base = { ...(prev || {}) };
@@ -9352,14 +9696,12 @@ export default function YachtEditorPage() {
 
                           Object.entries(normalizedSpecs).forEach(
                             ([field, value]) => {
-                              if (
-                                value === null ||
-                                value === undefined ||
-                                value === ""
-                              )
+                              const sanitizedValue =
+                                sanitizeScalarFieldValue(value);
+                              if (sanitizedValue === null)
                                 return;
                               if (isAuto && !isEmpty(base[field])) return;
-                              base[field] = value;
+                              base[field] = sanitizedValue;
                             },
                           );
 
@@ -12052,11 +12394,25 @@ export default function YachtEditorPage() {
 
                       {/* Upload Dropzone */}
                       <label
+                        onDragOver={(event) =>
+                          handleDocumentDragOver(event, "compliance")
+                        }
+                        onDragEnter={(event) =>
+                          handleDocumentDragOver(event, "compliance")
+                        }
+                        onDragLeave={(event) =>
+                          handleDocumentDragLeave(event, "compliance")
+                        }
+                        onDrop={(event) =>
+                          void handleDocumentDrop(event, "compliance")
+                        }
                         className={cn(
                           "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors bg-white",
                           isUploadingDocument
                             ? "border-slate-300 opacity-70"
-                            : "border-slate-300 hover:bg-slate-50 hover:border-blue-400",
+                            : documentDropTarget === "compliance"
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-slate-300 hover:bg-slate-50 hover:border-blue-400",
                         )}
                       >
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -12076,19 +12432,20 @@ export default function YachtEditorPage() {
                               ? labelText("documentUploading", "Uploading...")
                               : labelText(
                                   "clickOrDropDocument",
-                                  "Click or drag a document",
+                                  "Click or drag one or more documents",
                                 )}
                           </p>
                           <p className="text-xs text-slate-500 mt-1">
-                            PDF, DOCX, JPG (Max 10MB)
+                            PDF, DOC, DOCX, JPG, PNG (Max 10MB each)
                           </p>
                         </div>
                         <input
                           type="file"
                           className="hidden"
+                          multiple
                           accept=".pdf,.doc,.docx,image/jpeg,image/png"
                           onChange={(e) =>
-                            void handleDocumentUpload(e, "compliance")
+                            void handleDocumentInputChange(e, "compliance")
                           }
                           disabled={isUploadingDocument}
                         />
@@ -12107,7 +12464,10 @@ export default function YachtEditorPage() {
                             )}
                           </h6>
                           <div className="space-y-2">
-                            {complianceBoatDocuments.map((doc) => (
+                            {complianceBoatDocuments.map((doc) => {
+                              const documentUrl = resolveBoatDocumentUrl(doc);
+
+                              return (
                               <div
                                 key={doc.id}
                                 className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm"
@@ -12134,14 +12494,20 @@ export default function YachtEditorPage() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <a
-                                    href={doc.file_path}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
-                                  >
-                                    <Eye size={14} />
-                                  </a>
+                                  {documentUrl ? (
+                                    <a
+                                      href={documentUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                                    >
+                                      <Eye size={14} />
+                                    </a>
+                                  ) : (
+                                    <span className="p-1.5 text-slate-300">
+                                      <Eye size={14} />
+                                    </span>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => handleDocumentDelete(doc.id)}
@@ -12151,7 +12517,8 @@ export default function YachtEditorPage() {
                                   </button>
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       ) : (
@@ -12639,14 +13006,21 @@ function hasFilledFieldValue(
   if (value === null || value === undefined) return false;
   if (typeof value === "number") return Number.isFinite(value);
   if (typeof value === "boolean") return true;
+  if (typeof value === "object") {
+    return sanitizeScalarFieldValue(value) !== null;
+  }
 
   const normalized = String(value).trim();
   if (!normalized) return false;
-  if (treatUnknownAsEmpty && normalized.toLowerCase() === "unknown") {
+  if (
+    treatUnknownAsEmpty &&
+    (normalized.toLowerCase() === "unknown" ||
+      isPlaceholderFieldText(normalized))
+  ) {
     return false;
   }
 
-  return true;
+  return !isPlaceholderFieldText(normalized);
 }
 
 function Input(
@@ -12666,17 +13040,7 @@ function Input(
     typeof inputProps.name === "string" ? inputProps.name : undefined;
   const shouldShowAdminEditLink =
     showAdminEditLink && typeof fieldName === "string" && fieldName !== "";
-  const [hasValue, setHasValue] = useState(() =>
-    hasFilledFieldValue(inputProps.value ?? inputProps.defaultValue),
-  );
-
-  useEffect(() => {
-    setHasValue(
-      hasFilledFieldValue(inputProps.value ?? inputProps.defaultValue),
-    );
-  }, [inputProps.value, inputProps.defaultValue]);
-
-  const highlighted = Boolean(needsConfirmation) || hasValue;
+  const [liveValue, setLiveValue] = useState<string | null>(null);
   const normalizedInputProps =
     inputProps.type === "number"
       ? {
@@ -12685,14 +13049,22 @@ function Input(
           ...inputProps,
         }
       : inputProps;
+  const sanitizedValue = normalizeDomFieldValue(inputProps.value);
+  const sanitizedDefaultValue = normalizeDomFieldValue(inputProps.defaultValue);
+  const hasValue = hasFilledFieldValue(
+    sanitizedValue ?? liveValue ?? sanitizedDefaultValue,
+  );
+  const highlighted = Boolean(needsConfirmation) || hasValue;
 
   return (
     <div className="relative">
       <input
         {...normalizedInputProps}
+        value={sanitizedValue}
+        defaultValue={sanitizedDefaultValue}
         placeholder={undefined}
         onChange={(event) => {
-          setHasValue(hasFilledFieldValue(event.target.value));
+          setLiveValue(event.target.value);
           inputProps.onChange?.(event);
         }}
         className={cn(
@@ -12742,22 +13114,22 @@ function SelectField(
     typeof selectProps.name === "string" ? selectProps.name : undefined;
   const shouldShowAdminEditLink =
     showAdminEditLink && typeof fieldName === "string" && fieldName !== "";
-  const [currentValue, setCurrentValue] = useState(value ?? defaultValue ?? "");
-
-  useEffect(() => {
-    setCurrentValue(value ?? defaultValue ?? "");
-  }, [value, defaultValue]);
+  const sanitizedValue = normalizeDomFieldValue(value);
+  const sanitizedDefaultValue = normalizeDomFieldValue(defaultValue);
+  const [currentValue, setCurrentValue] = useState<string | null>(null);
+  const effectiveCurrentValue =
+    sanitizedValue ?? currentValue ?? sanitizedDefaultValue ?? "";
 
   const highlighted =
     Boolean(needsConfirmation) ||
-    hasFilledFieldValue(currentValue, { treatUnknownAsEmpty });
+    hasFilledFieldValue(effectiveCurrentValue, { treatUnknownAsEmpty });
 
   return (
     <div className="relative">
       <select
         {...selectProps}
-        value={value}
-        defaultValue={defaultValue}
+        value={sanitizedValue}
+        defaultValue={sanitizedDefaultValue ?? ""}
         onChange={(event) => {
           setCurrentValue(event.target.value);
           onChange?.(event);
@@ -12861,7 +13233,9 @@ function TriStateSelect(
   } = props;
   const shouldShowAdminEditLink =
     showAdminEditLink && typeof fieldName === "string" && fieldName !== "";
-  const normalizedDefault = normalizeTriStateValue(defaultValue);
+  const normalizedDefault = normalizeTriStateValue(
+    sanitizeScalarFieldValue(defaultValue),
+  );
   const [currentValue, setCurrentValue] = useState<"yes" | "no" | null>(
     normalizedDefault,
   );
@@ -12887,7 +13261,7 @@ function TriStateSelect(
       </div>
       <select
         {...selectProps}
-        defaultValue={normalizedDefault ?? undefined}
+        defaultValue={normalizedDefault ?? ""}
         onChange={(event) => {
           setCurrentValue(normalizeTriStateValue(event.target.value));
           selectProps.onChange?.(event);
@@ -12901,6 +13275,7 @@ function TriStateSelect(
           selectProps.className,
         )}
       >
+        <option value=""></option>
         <option value="yes">{formText.common.yes}</option>
         <option value="no">{formText.common.no}</option>
         <option value="unknown">{formText.common.unknown}</option>
