@@ -37,6 +37,87 @@ type ConfigurableBoatFieldBlockProps = {
 
 const NUMERIC_FIELD_TYPES = new Set(["number", "integer", "decimal", "float"]);
 
+function isPlaceholderFieldText(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+
+  return (
+    normalized === "" ||
+    [
+      "unknown",
+      "[object object]",
+      "object object",
+      "n/a",
+      "na",
+      "null",
+      "undefined",
+      "onbekend",
+      "unbekannt",
+      "inconnu",
+    ].includes(normalized)
+  );
+}
+
+function toObjectRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function sanitizeScalarFieldValue(value: unknown): string | number | boolean | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const normalized = sanitizeScalarFieldValue(item);
+      if (normalized !== null) {
+        return normalized;
+      }
+    }
+
+    return null;
+  }
+
+  if (typeof value === "object") {
+    const record = toObjectRecord(value);
+
+    for (const key of [
+      "value",
+      "normalized_value",
+      "answer",
+      "result",
+      "text",
+      "name",
+      "label",
+    ]) {
+      if (!(key in record)) {
+        continue;
+      }
+
+      const normalized = sanitizeScalarFieldValue(record[key]);
+      if (normalized !== null) {
+        return normalized;
+      }
+    }
+
+    return null;
+  }
+
+  const text = String(value).trim();
+  return isPlaceholderFieldText(text) ? null : text;
+}
+
 function hasFilledFieldValue(
   value: unknown,
   options?: { treatUnknownAsEmpty?: boolean },
@@ -46,20 +127,26 @@ function hasFilledFieldValue(
   if (value === null || value === undefined) return false;
   if (typeof value === "number") return Number.isFinite(value);
   if (typeof value === "boolean") return true;
+  if (typeof value === "object") return sanitizeScalarFieldValue(value) !== null;
 
   const normalized = String(value).trim();
   if (!normalized) return false;
-  if (treatUnknownAsEmpty && normalized.toLowerCase() === "unknown") {
+  if (
+    treatUnknownAsEmpty &&
+    (normalized.toLowerCase() === "unknown" ||
+      isPlaceholderFieldText(normalized))
+  ) {
     return false;
   }
 
-  return true;
+  return !isPlaceholderFieldText(normalized);
 }
 
-function normalizeTriStateValue(value: unknown): "yes" | "no" | "unknown" {
-  if (value === null || value === undefined) return "unknown";
+function normalizeTriStateValue(value: unknown): "yes" | "no" | "" {
+  const sanitized = sanitizeScalarFieldValue(value);
+  if (sanitized === null) return "";
 
-  const normalized = String(value).trim().toLowerCase();
+  const normalized = String(sanitized).trim().toLowerCase();
   if (normalized === "yes" || normalized === "true" || normalized === "1") {
     return "yes";
   }
@@ -67,7 +154,7 @@ function normalizeTriStateValue(value: unknown): "yes" | "no" | "unknown" {
     return "no";
   }
 
-  return "unknown";
+  return normalized === "unknown" ? "" : "";
 }
 
 function BlockLabel({
@@ -107,7 +194,8 @@ function TextInput({
 }: React.InputHTMLAttributes<HTMLInputElement> & {
   needsConfirmation?: boolean;
 }) {
-  const defaultHasValue = hasFilledFieldValue(props.defaultValue);
+  const sanitizedDefaultValue = sanitizeScalarFieldValue(props.defaultValue);
+  const defaultHasValue = hasFilledFieldValue(sanitizedDefaultValue);
   const [hasUserValue, setHasUserValue] = useState<boolean | null>(null);
   const highlighted =
     Boolean(needsConfirmation) || (hasUserValue ?? defaultHasValue);
@@ -117,6 +205,13 @@ function TextInput({
       <input
         {...props}
         type={type}
+        defaultValue={
+          typeof sanitizedDefaultValue === "boolean"
+            ? sanitizedDefaultValue
+              ? "true"
+              : "false"
+            : (sanitizedDefaultValue ?? undefined)
+        }
         onChange={(event) => {
           setHasUserValue(hasFilledFieldValue(event.target.value));
           props.onChange?.(event);
@@ -153,7 +248,7 @@ function TriStateField({
 }) {
   const normalizedDefault = normalizeTriStateValue(props.defaultValue);
   const [currentValue, setCurrentValue] = useState<
-    "yes" | "no" | "unknown" | null
+    "yes" | "no" | "" | null
   >(null);
   const effectiveValue = currentValue ?? normalizedDefault;
 
@@ -178,6 +273,7 @@ function TriStateField({
           props.className,
         )}
       >
+        <option value=""></option>
         <option value="yes">{yesLabel}</option>
         <option value="no">{noLabel}</option>
         <option value="unknown">{unknownLabel}</option>
@@ -202,7 +298,10 @@ function SelectInput({
   placeholder?: string;
 }) {
   const [currentValue, setCurrentValue] = useState<string | null>(null);
-  const effectiveValue = currentValue ?? String(props.defaultValue ?? "");
+  const sanitizedDefaultValue = sanitizeScalarFieldValue(props.defaultValue);
+  const effectiveValue =
+    currentValue ??
+    (sanitizedDefaultValue === null ? "" : String(sanitizedDefaultValue));
 
   const highlighted =
     Boolean(needsConfirmation) || hasFilledFieldValue(effectiveValue);
@@ -211,7 +310,7 @@ function SelectInput({
     <div className="relative">
       <select
         {...props}
-        defaultValue={props.defaultValue ?? ""}
+        defaultValue={effectiveValue}
         onChange={(event) => {
           setCurrentValue(event.target.value);
           props.onChange?.(event);

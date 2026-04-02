@@ -2,7 +2,7 @@
 // NauticSecure / Schepenkring CRM — Service Worker
 // ──────────────────────────────────────────────────────────
 
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const STATIC_CACHE = `nauticsecure-static-${CACHE_VERSION}`;
 const API_CACHE = `nauticsecure-api-${CACHE_VERSION}`;
 const IS_LOCALHOST =
@@ -12,7 +12,6 @@ const IS_LOCALHOST =
 
 // App shell files to precache on install
 const APP_SHELL = [
-    "/",
     "/manifest.json",
     "/schepenkring-logo.png",
     "/icon-192.png",
@@ -117,24 +116,6 @@ async function networkFirst(request) {
     }
 }
 
-// Cache-first for app shell (HTML pages)
-async function cacheFirst(request) {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-
-    try {
-        const response = await fetch(request);
-        if (response.ok) {
-            const cache = await caches.open(STATIC_CACHE);
-            cache.put(request, response.clone());
-        }
-        return response;
-    } catch {
-        // Return cached root page as fallback for navigation
-        return caches.match("/") || new Response("Offline", { status: 503 });
-    }
-}
-
 self.addEventListener("fetch", (event) => {
     if (IS_LOCALHOST) return;
 
@@ -163,9 +144,9 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    // 4. Navigation / HTML — cache-first (app shell)
+    // 4. Navigation / HTML — let the browser handle redirects directly.
+    // Safari can fail when a service worker serves redirected auth responses.
     if (event.request.mode === "navigate") {
-        event.respondWith(cacheFirst(event.request));
         return;
     }
 

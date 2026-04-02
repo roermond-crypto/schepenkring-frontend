@@ -432,7 +432,7 @@ export default function IntegrationsPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+              className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-6 flex items-center justify-between">
@@ -447,124 +447,143 @@ export default function IntegrationsPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Type */}
-                <div>
-                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    Integration Type *
-                  </label>
-                  <select
-                    value={form.integration_type}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        integration_type: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
-                  >
-                    <option value="">Select type…</option>
-                    {INTEGRATION_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Label */}
-                <div>
-                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    Label (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={form.label}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, label: e.target.value }))
-                    }
-                    placeholder="e.g. Telnyx for Location A"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
-                  />
-                </div>
-
-                {/* Username */}
-                <div>
-                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    value={form.username}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, username: e.target.value }))
-                    }
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
-                  />
-                </div>
-
-                {/* Password */}
-                <div>
-                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    Password{" "}
-                    {editId && (
-                      <span className="normal-case tracking-normal text-slate-400">
-                        (leave blank to keep current)
-                      </span>
-                    )}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={form.password}
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Type */}
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Integration Type *
+                    </label>
+                    <select
+                      value={form.integration_type}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, password: e.target.value }))
+                        setForm((f) => ({
+                          ...f,
+                          integration_type: e.target.value,
+                        }))
                       }
-                      placeholder={editId ? "●●●●●●●●" : ""}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
                     >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                      <option value="">Select type…</option>
+                      {INTEGRATION_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
 
-                {/* API Key */}
-                <div>
-                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    API Key{" "}
-                    {editId && (
-                      <span className="normal-case tracking-normal text-slate-400">
-                        (leave blank to keep current)
-                      </span>
-                    )}
-                  </label>
-                  <div className="relative">
+                  {/* Label */}
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Label (optional)
+                    </label>
                     <input
-                      type={showApiKey ? "text" : "password"}
-                      value={form.api_key}
+                      type="text"
+                      value={form.label}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, api_key: e.target.value }))
+                        setForm((f) => ({ ...f, label: e.target.value }))
                       }
-                      placeholder={editId ? "●●●●●●●●" : ""}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+                      placeholder="e.g. Telnyx for Location A"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
                   </div>
-                </div>
 
-                {/* Env + Status row */}
-                <div className="grid grid-cols-2 gap-4">
+                  {/* Username */}
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      value={form.username}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, username: e.target.value }))
+                      }
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+
+                  {/* Password */}
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Password{" "}
+                      {editId && (
+                        <span className="normal-case tracking-normal text-slate-400">
+                          (leave blank to keep current)
+                        </span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={form.password}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, password: e.target.value }))
+                        }
+                        placeholder={editId ? "●●●●●●●●" : ""}
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* API Key */}
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      API Key{" "}
+                      {editId && (
+                        <span className="normal-case tracking-normal text-slate-400">
+                          (leave blank to keep current)
+                        </span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showApiKey ? "text" : "password"}
+                        value={form.api_key}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, api_key: e.target.value }))
+                        }
+                        placeholder={editId ? "●●●●●●●●" : ""}
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Location ID */}
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Location ID{" "}
+                      <span className="normal-case tracking-normal text-slate-400">
+                        (leave empty for global)
+                      </span>
+                    </label>
+                    <input
+                      type="number"
+                      value={form.location_id}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, location_id: e.target.value }))
+                      }
+                      placeholder="Global"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+
+                  {/* Environment */}
                   <div>
                     <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                       Environment
@@ -583,6 +602,8 @@ export default function IntegrationsPage() {
                       <option value="test">Test</option>
                     </select>
                   </div>
+
+                  {/* Status */}
                   <div>
                     <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                       Status
@@ -603,27 +624,8 @@ export default function IntegrationsPage() {
                   </div>
                 </div>
 
-                {/* Location ID */}
-                <div>
-                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    Location ID{" "}
-                    <span className="normal-case tracking-normal text-slate-400">
-                      (leave empty for global)
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    value={form.location_id}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, location_id: e.target.value }))
-                    }
-                    placeholder="Global"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
-                  />
-                </div>
-
                 {/* Submit */}
-                <div className="flex justify-end gap-3 pt-2">
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <Button
                     type="button"
                     variant="outline"
