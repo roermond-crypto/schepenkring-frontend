@@ -47,6 +47,10 @@
     "verificationCode": "Verifizierungscode",
     "rememberTerminal": "Gerat merken",
     "forgotPassword": "Passwort vergessen?",
+    "forgotPasswordSubmit": "Reset-Link senden",
+    "forgotPasswordBackToLogin": "Zurück zur Anmeldung",
+    "forgotPasswordSuccess": "Wenn Ihre E-Mail-Adresse in unserem System vorhanden ist, erhalten Sie in Kürze einen Link zum Zurücksetzen Ihres Passworts.",
+    "forgotPasswordError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es später erneut.",
     "verifyEmail": "E-Mail verifizieren",
     "forgotPassword": "Passwort vergessen?",
     "registerCta": "Registrieren",
@@ -428,6 +432,7 @@
     "welcomeBack": "Willkommen zurück, {name}",
     "todayWeather": "Heute: 18° Sonnig in Eindhoven",
     "notificationSummary": "Sie haben {count} neue Benachrichtigung{count, plural, one {} other {en}}.",
+    "registrationSummary": "Sie haben {count} neue Registrierung{count, plural, one {} other {en}}, die auf Prüfung warten.",
     "activeBiddingItems": "Sie haben {count} aktive Gebote {count, plural, one {Artikel} other {Artikel}}.",
     "liveSync": "Live-Synchronisation",
     "refresh": "Aktualisieren",
@@ -454,6 +459,7 @@
     "sections": {
       "businessInsights": "Geschäftsinsight",
       "performanceSnapshot": "Leistungsübersicht",
+      "newRegistrations": "Neue Registrierungen",
       "marketPulse": "Marktpuls",
       "recentBiddingActivity": "Kürzliche Gebotsaktivität",
       "liveDiagnostics": "Live-Diagnose",
@@ -480,6 +486,7 @@
     },
     "labels": {
       "registry": "Registrierung",
+      "submittedForReview": "Zur Prüfung eingereicht",
       "unknown": "Unbekannt",
       "currentBid": "Aktueller Gebot"
     },
@@ -728,7 +735,8 @@
       "full": "Voll",
       "active": "Aktiv",
       "inactive": "Inaktiv",
-      "pending": "Ausstehend"
+      "pending": "Ausstehend",
+      "selectLocation": "Standort auswählen"
     },
     "permissions": {
       "pageAccessControl": "Seitenzugriff",

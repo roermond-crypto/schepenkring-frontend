@@ -47,6 +47,10 @@
     "verificationCode": "Verification code",
     "rememberTerminal": "Remember terminal",
     "forgotPassword": "Forgot password?",
+    "forgotPasswordSubmit": "Send reset link",
+    "forgotPasswordBackToLogin": "Back to login",
+    "forgotPasswordSuccess": "If your email address exists in our system, you will receive a password reset link shortly.",
+    "forgotPasswordError": "Something went wrong. Please try again later.",
     "verifyEmail": "Verify email",
     "forgotPassword": "Forgot password?",
     "registerCta": "Register",
@@ -428,6 +432,7 @@
     "welcomeBack": "Welcome back, {name}",
     "todayWeather": "Today: 18° Sunny in Eindhoven",
     "notificationSummary": "You got {count} new notification{count, plural, one {} other {s}}.",
+    "registrationSummary": "You have {count} new registration{count, plural, one {} other {s}} awaiting review.",
     "activeBiddingItems": "You have {count} active bidding {count, plural, one {item} other {items}}.",
     "liveSync": "Live sync",
     "refresh": "Refresh",
@@ -454,6 +459,7 @@
     "sections": {
       "businessInsights": "Business insights",
       "performanceSnapshot": "Performance Snapshot",
+      "newRegistrations": "New registrations",
       "marketPulse": "Market pulse",
       "recentBiddingActivity": "Recent Bidding Activity",
       "liveDiagnostics": "Live diagnostics",
@@ -461,6 +467,7 @@
     },
     "actions": {
       "viewBiddings": "View Biddings",
+      "reviewRegistrations": "Review registrations",
       "viewBoats": "View boats",
       "createFirstListing": "Sell Boat",
       "browseMarketplace": "Browse Listings"
@@ -480,6 +487,7 @@
     },
     "labels": {
       "registry": "Registry",
+      "submittedForReview": "Submitted for review",
       "unknown": "Unknown",
       "currentBid": "Current bid"
     },
@@ -728,7 +736,8 @@
       "full": "Full",
       "active": "Active",
       "inactive": "Inactive",
-      "pending": "Pending"
+      "pending": "Pending",
+      "selectLocation": "Select location"
     },
     "permissions": {
       "pageAccessControl": "Page Access",

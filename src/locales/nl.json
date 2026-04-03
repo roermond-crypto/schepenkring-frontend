@@ -47,6 +47,10 @@
     "verificationCode": "Verificatiecode",
     "rememberTerminal": "Onthoud dit apparaat",
     "forgotPassword": "Wachtwoord vergeten?",
+    "forgotPasswordSubmit": "Resetlink versturen",
+    "forgotPasswordBackToLogin": "Terug naar inloggen",
+    "forgotPasswordSuccess": "Als je e-mailadres in ons systeem bestaat, ontvang je binnenkort een link om je wachtwoord opnieuw in te stellen.",
+    "forgotPasswordError": "Er is iets misgegaan. Probeer het later opnieuw.",
     "verifyEmail": "E-mail verifiëren",
     "forgotPassword": "Wachtwoord vergeten?",
     "registerCta": "Registreren",
@@ -429,6 +433,7 @@
     "welcomeBack": "Welkom terug, {name}",
     "todayWeather": "Vandaag: 18° zonnig in Eindhoven",
     "notificationSummary": "Je hebt {count} nieuwe melding{count, plural, one {} other {en}}.",
+    "registrationSummary": "Je hebt {count} nieuwe registratie{count, plural, one {} other {s}} die wacht op controle.",
     "activeBiddingItems": "Je hebt {count} actief{count, plural, one {} other {e}} bieding{count, plural, one {} other {en}}.",
     "liveSync": "Live synchronisatie",
     "refresh": "Verversen",
@@ -455,6 +460,7 @@
     "sections": {
       "businessInsights": "Bedrijfsinzichten",
       "performanceSnapshot": "Prestatieoverzicht",
+      "newRegistrations": "Nieuwe registraties",
       "marketPulse": "Marktbeeld",
       "recentBiddingActivity": "Recente biedactiviteit",
       "liveDiagnostics": "Live diagnostiek",
@@ -462,6 +468,7 @@
     },
     "actions": {
       "viewBiddings": "Bekijk biedingen",
+      "reviewRegistrations": "Bekijk registraties",
       "viewBoats": "Bekijk boten",
       "createFirstListing": "Boot verkopen",
       "browseMarketplace": "Aanbod bekijken"
@@ -481,6 +488,7 @@
     },
     "labels": {
       "registry": "Register",
+      "submittedForReview": "Ingediend voor controle",
       "unknown": "Onbekend",
       "currentBid": "Huidig bod"
     },
@@ -729,7 +737,8 @@
       "full": "Volledig",
       "active": "Actief",
       "inactive": "Inactief",
-      "pending": "In afwachting"
+      "pending": "In afwachting",
+      "selectLocation": "Selecteer locatie"
     },
     "permissions": {
       "pageAccessControl": "Paginatoegang",

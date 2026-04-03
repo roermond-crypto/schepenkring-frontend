@@ -84,6 +84,12 @@ type UserRecord = {
   updated_at?: string;
 };
 
+type LocationOption = {
+  id: number;
+  name: string;
+  code?: string | null;
+};
+
 type StatusUi = "Active" | "Inactive" | "Pending";
 
 const initials = (name: string) =>
@@ -202,6 +208,8 @@ export default function RoleManagementPage() {
 
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [locations, setLocations] = useState<LocationOption[]>([]);
+  const [locationsLoading, setLocationsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<UserCategory>(
     isEmployeeView ? "Customer" : "Employee",
   );
@@ -219,6 +227,7 @@ export default function RoleManagementPage() {
     name: "",
     email: "",
     password: "",
+    location_id: "",
     role: "Employee" as UserCategory,
     access_level: "Limited" as "Limited" | "Full",
     status: "Active" as StatusUi,
@@ -270,6 +279,41 @@ export default function RoleManagementPage() {
   }, [fetchData]);
 
   useEffect(() => {
+    if (!canManageUsers) return;
+    let mounted = true;
+    const fetchLocations = async () => {
+      setLocationsLoading(true);
+      try {
+        const response = await api.get("/public/locations");
+        const list = Array.isArray(response.data?.data)
+          ? response.data.data
+          : Array.isArray(response.data)
+            ? response.data
+            : [];
+        if (!mounted) return;
+        setLocations(list);
+      } catch {
+        if (!mounted) return;
+        setLocations([]);
+      } finally {
+        if (mounted) setLocationsLoading(false);
+      }
+    };
+    void fetchLocations();
+    return () => {
+      mounted = false;
+    };
+  }, [canManageUsers]);
+
+  useEffect(() => {
+    if (!canManageUsers || locations.length === 0) return;
+    setNewUser((prev) => {
+      if (prev.location_id) return prev;
+      return { ...prev, location_id: String(locations[0].id) };
+    });
+  }, [canManageUsers, locations]);
+
+  useEffect(() => {
     const handler = () => setOpenActionId(null);
     if (openActionId !== null) {
       window.addEventListener("click", handler);
@@ -287,6 +331,7 @@ export default function RoleManagementPage() {
         email: newUser.email,
         password: newUser.password,
         status: mapUiToStatus(newUser.status),
+        location_id: newUser.location_id ? Number(newUser.location_id) : null,
       };
       const res = await api.post("/admin/users", payload);
       setUsers((prev) => [res.data?.data ?? res.data, ...prev]);
@@ -295,6 +340,7 @@ export default function RoleManagementPage() {
         name: "",
         email: "",
         password: "",
+        location_id: locations[0] ? String(locations[0].id) : "",
         role: "Employee",
         access_level: "Limited",
         status: "Active",
@@ -490,7 +536,12 @@ export default function RoleManagementPage() {
           {canManageUsers ? (
             <Button
               onClick={() => {
-                setNewUser((prev) => ({ ...prev, role: activeTab }));
+                setNewUser((prev) => ({
+                  ...prev,
+                  role: activeTab,
+                  location_id:
+                    prev.location_id || (locations[0] ? String(locations[0].id) : ""),
+                }));
                 setIsModalOpen(true);
               }}
               className="h-10 shrink-0 gap-2 rounded-lg bg-[#003566] px-5 text-xs font-bold tracking-wider text-white transition-colors hover:bg-[#002a52]"
@@ -909,7 +960,7 @@ export default function RoleManagementPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold text-slate-500">
                       {t("fields.assignment")}
@@ -928,6 +979,31 @@ export default function RoleManagementPage() {
                       <option value="Admin">{t("tabs.admin")}</option>
                       <option value="Customer">{t("tabs.customer")}</option>
                       <option value="Partner">{t("tabs.partner")}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                      {t("fields.location")}
+                    </label>
+                    <select
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
+                      value={newUser.location_id}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          location_id: e.target.value,
+                        })
+                      }
+                      required
+                      disabled={locationsLoading || locations.length === 0}
+                    >
+                      <option value="">{t("options.selectLocation")}</option>
+                      {locations.map((location) => (
+                        <option key={location.id} value={String(location.id)}>
+                          {location.name}
+                          {location.code ? ` (${location.code})` : ""}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>

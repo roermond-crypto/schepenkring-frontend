@@ -112,6 +112,7 @@ interface PublicLocation {
 interface ChatWidgetProps {
   harborId?: string;
   harborName?: string;
+  boatName?: string;
   boatId?: number;
   locationId?: number;
   accentColor?: string;
@@ -307,6 +308,28 @@ function rememberWidgetLocationId(locationId?: number | null) {
     "nauticsecure_widget_location_id",
     String(parsed),
   );
+}
+
+function buildBoatContextNote({
+  boatId,
+  boatName,
+  harborName,
+}: {
+  boatId: number;
+  boatName?: string;
+  harborName?: string;
+}) {
+  const parts = [`Boat context: this conversation is about boat #${boatId}.`];
+
+  if (boatName?.trim()) {
+    parts.push(`Boat name: ${boatName.trim()}.`);
+  }
+
+  if (harborName?.trim()) {
+    parts.push(`Location: ${harborName.trim()}.`);
+  }
+
+  return parts.join(" ");
 }
 
 function serializeWidgetMessages(messages: WidgetMessage[]): SharedChatMessage[] {
@@ -1146,6 +1169,7 @@ function SmartBoatWidgetBody({
   messages,
   colors,
   harborName,
+  boatName,
   boatId,
   locationId,
   conversationId,
@@ -1155,11 +1179,16 @@ function SmartBoatWidgetBody({
 }: {
   activeTab: "chat" | "tasks" | "booking";
   onTabChange: (tab: "chat" | "tasks" | "booking") => void;
-  onSend: (text: string) => void;
+  onSend: (
+    text: string,
+    attachment?: { name: string; type: string; url?: string },
+    contextText?: string,
+  ) => void;
   sending: boolean;
   messages: WidgetMessage[];
   colors: WidgetColors;
   harborName?: string;
+  boatName?: string;
   boatId: number;
   locationId?: number;
   conversationId?: string | null;
@@ -1187,6 +1216,15 @@ function SmartBoatWidgetBody({
     t("tasks.prompts.documents"),
     t("tasks.prompts.nextStep"),
   ];
+  const boatContextNote = useMemo(
+    () =>
+      buildBoatContextNote({
+        boatId,
+        boatName,
+        harborName,
+      }),
+    [boatId, boatName, harborName],
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[radial-gradient(circle_at_top,_rgba(219,234,254,0.72),_rgba(248,250,252,0.98)_42%,_#ffffff_100%)] text-slate-900">
@@ -1225,7 +1263,7 @@ function SmartBoatWidgetBody({
       {activeTab === "chat" ? (
         <ChatBody
           messages={messages}
-          onSend={onSend}
+          onSend={(text, attachment) => onSend(text, attachment, boatContextNote)}
           typing={sending}
           colors={colors}
           harborName={harborName}
@@ -1254,7 +1292,7 @@ function SmartBoatWidgetBody({
                   type="button"
                   onClick={() => {
                     onTabChange("chat");
-                    onSend(prompt);
+                    onSend(prompt, undefined, boatContextNote);
                   }}
                   disabled={sending}
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:opacity-50"
@@ -1283,6 +1321,7 @@ function SmartBoatWidgetBody({
 
 export function ChatWidget({
   harborName,
+  boatName,
   boatId,
   locationId,
   accentColor,
@@ -1310,6 +1349,7 @@ export function ChatWidget({
   const [sessionJwt, setSessionJwt] = useState<string | null>(null);
   const [resolvedLocationId, setResolvedLocationId] = useState<number | undefined>(undefined);
   const [resolvedHarborName, setResolvedHarborName] = useState<string | undefined>(undefined);
+  const [resolvedBoatName, setResolvedBoatName] = useState<string | undefined>(boatName);
   const [initBrandColor, setInitBrandColor] = useState<string | undefined>(undefined);
   const [enabledTabs, setEnabledTabs] = useState<string[]>(["chat", "tasks", "booking"]);
   const visitorIdRef = useRef<string>(getOrCreateSharedVisitorId());
@@ -1368,7 +1408,10 @@ export function ChatWidget({
           response.context?.location?.id ?? locationId ?? undefined,
         );
         setResolvedHarborName(
-          response.context?.location?.name ?? harborName ?? undefined,
+          harborName ?? response.context?.location?.name ?? undefined,
+        );
+        setResolvedBoatName(
+          boatName ?? response.context?.boat?.name ?? undefined,
         );
         setInitBrandColor(
           response.context?.location?.branding?.primary_color ?? undefined,
@@ -1403,7 +1446,7 @@ export function ChatWidget({
     return () => {
       cancelled = true;
     };
-  }, [boatId, widgetMode, locationId, harborName]);
+  }, [boatId, widgetMode, locationId, harborName, boatName]);
 
   useEffect(() => {
     if (!sharedChatLocationId) {
@@ -1558,10 +1601,15 @@ export function ChatWidget({
   const handleSendMessage = async (
     text: string,
     attachment?: { name: string; type: string; url?: string },
+    contextText?: string,
   ) => {
     // Add user message to UI immediately
     const messageText =
       text.trim() || (attachment ? `Attachment: ${attachment.name}` : "");
+    const apiMessageText =
+      contextText && messageText
+        ? `${messageText}\n\n${contextText}`
+        : messageText;
     const userMessage: WidgetMessage = {
       id: `u-${Date.now()}`,
       text: messageText,
@@ -1593,9 +1641,9 @@ export function ChatWidget({
               (typeof window !== "undefined"
                 ? window.location.href
                 : undefined),
-            message: messageText,
-            text: messageText,
-            body: messageText,
+            message: apiMessageText,
+            text: apiMessageText,
+            body: apiMessageText,
             client_message_id: clientMessageId,
             visitor_id: visitorIdRef.current,
             ...(attachment
@@ -1635,8 +1683,8 @@ export function ChatWidget({
           "POST",
           `/public/conversations/${conversationId}/ask`,
           {
-            body: messageText,
-            text: messageText,
+            body: apiMessageText,
+            text: apiMessageText,
             client_message_id: clientMessageId,
             visitor_id: visitorIdRef.current,
             ...(attachment
@@ -1802,6 +1850,7 @@ export function ChatWidget({
                   onSend={handleSendMessage}
                   colors={colors}
                   harborName={resolvedHarborName || harborName}
+                  boatName={resolvedBoatName}
                   sending={sending}
                   boatId={boatId}
                   locationId={resolvedLocationId ?? locationId}

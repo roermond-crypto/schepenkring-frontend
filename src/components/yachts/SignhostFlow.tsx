@@ -35,6 +35,7 @@ import {
   type SignRequest,
   type SignhostTransaction,
 } from "@/lib/api/signhost";
+import { getAdminUser, type MeUser } from "@/lib/api/account";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
 
 type ContractLanguage = "nl" | "en" | "de" | "fr";
@@ -141,11 +142,13 @@ type ContractDraft = {
   vatDeclaration: "yes" | "no";
   askingPrice: string;
   askingPriceWords: string;
+  storageFee: string;
   agreementDate: string;
   agreementCity: string;
 };
 
 type YachtContractData = {
+  user_id?: number | null;
   price?: string | number | null;
   year?: string | number | null;
   loa?: string | number | null;
@@ -204,6 +207,15 @@ type YachtContractData = {
   owner_address?: string | null;
   owner_postal_code?: string | null;
   owner_city?: string | null;
+};
+
+type ContractParty = {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
 };
 
 interface SignhostFlowProps {
@@ -406,6 +418,7 @@ const editorCopyByLanguage: Record<
     yesVatDeclaration: string;
     askingPrice: string;
     askingPriceWords: string;
+    storageFee: string;
     agreementDate: string;
     agreementCity: string;
     pageTitle: string;
@@ -469,6 +482,7 @@ const editorCopyByLanguage: Record<
     yesVatDeclaration: "Yes, VAT declaration",
     askingPrice: "Asking price",
     askingPriceWords: "Asking price in full words",
+    storageFee: "Storage fee per month",
     agreementDate: "Agreement date",
     agreementCity: "Agreement city",
     pageTitle: "Digital Signhost signing",
@@ -532,6 +546,7 @@ const editorCopyByLanguage: Record<
     yesVatDeclaration: "Ja, btw-verklaring",
     askingPrice: "Vraagprijs",
     askingPriceWords: "Vraagprijs voluit",
+    storageFee: "Stallingssom per maand",
     agreementDate: "Overeenkomstsdatum",
     agreementCity: "Plaats overeenkomst",
     pageTitle: "Digitale ondertekening via Signhost",
@@ -595,6 +610,7 @@ const editorCopyByLanguage: Record<
     yesVatDeclaration: "Ja, MwSt.-Erklärung",
     askingPrice: "Angebotspreis",
     askingPriceWords: "Angebotspreis ausgeschrieben",
+    storageFee: "Liegegebühr pro Monat",
     agreementDate: "Vertragsdatum",
     agreementCity: "Vertragsort",
     pageTitle: "Digitale Signhost-Unterzeichnung",
@@ -658,6 +674,7 @@ const editorCopyByLanguage: Record<
     yesVatDeclaration: "Oui, declaration TVA",
     askingPrice: "Prix demande",
     askingPriceWords: "Prix demande en toutes lettres",
+    storageFee: "Frais de stationnement par mois",
     agreementDate: "Date du contrat",
     agreementCity: "Ville du contrat",
     pageTitle: "Signature numerique Signhost",
@@ -867,6 +884,7 @@ function getAgreementCopy(language: ContractLanguage) {
 function getAgreementClauses(draft: ContractDraft) {
   const yesNoRegister = `${boolLabel(draft.language, draft.shipRegisterEntry)}${draft.shipRegisterPlace ? ` ${draft.language === "en" ? "in" : draft.language === "de" ? "in" : draft.language === "fr" ? "a" : "te"} ${draft.shipRegisterPlace}` : ""}`;
   const yesNoMortgage = `${boolLabel(draft.language, draft.hasMortgage)}${draft.mortgageInFavorOf ? `${draft.language === "en" ? ", in favor of " : draft.language === "de" ? ", zugunsten von " : draft.language === "fr" ? ", au profit de " : ", ten gunste van "}${draft.mortgageInFavorOf}` : ""}`;
+  const storageFee = draft.storageFee || "………";
 
   switch (draft.language) {
     case "nl":
@@ -876,7 +894,7 @@ function getAgreementClauses(draft: ContractDraft) {
         "3. dat aan de cliënt courtage in rekening wordt gebracht over de laatst schriftelijk vastgelegde verkoopprijs zodra overeenstemming over koop/verkoop is bereikt, ongeacht of die prijs in geld, natura of diensten wordt voldaan.",
         "4. dat de courtage bedraagt:<br />- 8% voor vaartuigen met een koop/verkoopprijs tot en met EUR 100.000 met een minimum van EUR 2.500<br />- 6% voor vaartuigen met een koop/verkoopprijs boven EUR 100.000 met een minimum van EUR 8.000<br />De verschuldigde courtage wordt verhoogd met de wettelijk verschuldigde btw.",
         "5. dat de bemiddelaar de opbrengst voor de cliënt ontvangt via derdengelden.",
-        "6. dat het vaartuig van de cliënt gedurende de looptijd van de overeenkomst wordt gestald in de verkoophaven van de bemiddelaar. De stallingssom bedraagt EUR ……… (inclusief btw) per maand of gedeelte daarvan en dient maandelijks vooruit door de cliënt te worden voldaan.<br />De bovenstaande liggelden:<br />- zijn verschuldigd bij beëindiging van de bemiddelingsovereenkomst door rechtsgeldige opzegging.<br />- zijn verschuldigd bij verwijdering van het object uit het verkoopgebied van de bemiddelaar zonder beëindiging van de opdracht.<br />- worden maandelijks berekend indien de boot niet binnen 6 maanden wordt verkocht.<br />Bij verkoop via de jachtmakelaar worden over de eerste 6 maanden geen liggelden berekend.",
+        `6. dat het vaartuig van de cliënt gedurende de looptijd van de overeenkomst wordt gestald in de verkoophaven van de bemiddelaar. De stallingssom bedraagt EUR ${storageFee} (inclusief btw) per maand of gedeelte daarvan en dient maandelijks vooruit door de cliënt te worden voldaan.<br />De bovenstaande liggelden:<br />- zijn verschuldigd bij beëindiging van de bemiddelingsovereenkomst door rechtsgeldige opzegging.<br />- zijn verschuldigd bij verwijdering van het object uit het verkoopgebied van de bemiddelaar zonder beëindiging van de opdracht.<br />- worden maandelijks berekend indien de boot niet binnen 6 maanden wordt verkocht.<br />Bij verkoop via de jachtmakelaar worden over de eerste 6 maanden geen liggelden berekend.`,
         "7. dat de cliënt de bemiddelaar machtigt om proef te varen wanneer hij niet aanwezig is (en zonder zijn voorafgaande toestemming).",
         "8. dat het vaartuig voor rekening en risico van de cliënt blijft, ook tijdens een proefvaart, totdat de eigendomsoverdracht aan de koper is voltooid en de cliënt tot dat moment voor passende verzekering zorgt.",
         "9. dat de cliënt verantwoordelijk is voor de juistheid van zijn beschrijving en de door hem verstrekte gegevens met betrekking tot het vaartuig en dat hij de bemiddelaar vrijwaart voor aanspraken van derden.",
@@ -890,7 +908,7 @@ function getAgreementClauses(draft: ContractDraft) {
         "3. dass vom Kunden eine Maklerprovision auf den zuletzt schriftlich festgelegten Verkaufspreis geschuldet wird, sobald Einigkeit über Kauf/Verkauf erzielt wurde, unabhängig davon, ob dieser Preis in Geld, in Natur oder in Leistungen erfüllt wird.",
         "4. dass die Maklerprovision beträgt:<br />- 8% für Wasserfahrzeuge mit einem Kauf-/Verkaufspreis bis EUR 100.000 mit einem Minimum von EUR 2.500<br />- 6% für Wasserfahrzeuge mit einem Kauf-/Verkaufspreis über EUR 100.000 mit einem Minimum von EUR 8.000<br />Die geschuldete Provision erhöht sich um die gesetzlich geschuldete Mehrwertsteuer.",
         "5. dass der Vermittler den Erlös für den Kunden über ein Treuhandkonto entgegennimmt.",
-        "6. dass das Wasserfahrzeug des Kunden für die Dauer des Vertrags im Verkaufshafen des Vermittlers liegt. Die Liegegebühr beträgt EUR ……… (inklusive Mehrwertsteuer) pro Monat oder Teil eines Monats und ist vom Kunden monatlich im Voraus zu zahlen.<br />Die oben genannten Liegegebühren:<br />- sind bei Beendigung des Maklervertrags durch wirksame Kündigung fällig.<br />- sind fällig bei Entfernung des Objekts aus dem Verkaufsbereich des Maklers ohne Beendigung des Auftrags.<br />- werden monatlich berechnet, wenn das Boot nicht innerhalb von 6 Monaten verkauft wird.<br />Bei Verkauf über den Yachtmakler werden in den ersten 6 Monaten keine Liegegebühren berechnet.",
+        `6. dass das Wasserfahrzeug des Kunden für die Dauer des Vertrags im Verkaufshafen des Vermittlers liegt. Die Liegegebühr beträgt EUR ${storageFee} (inklusive Mehrwertsteuer) pro Monat oder Teil eines Monats und ist vom Kunden monatlich im Voraus zu zahlen.<br />Die oben genannten Liegegebühren:<br />- sind bei Beendigung des Maklervertrags durch wirksame Kündigung fällig.<br />- sind fällig bei Entfernung des Objekts aus dem Verkaufsbereich des Maklers ohne Beendigung des Auftrags.<br />- werden monatlich berechnet, wenn das Boot nicht innerhalb von 6 Monaten verkauft wird.<br />Bei Verkauf über den Yachtmakler werden in den ersten 6 Monaten keine Liegegebühren berechnet.`,
         "7. dass der Kunde den Vermittler ermächtigt, eine Probefahrt vorzunehmen, wenn er nicht anwesend ist (und ohne seine vorherige Zustimmung).",
         "8. dass das Wasserfahrzeug auf Rechnung und Gefahr des Kunden bleibt, auch während einer Probefahrt, bis das Eigentum auf den Käufer übertragen ist und der Kunde bis dahin eine angemessene Versicherung unterhält.",
         "9. dass der Kunde für die Richtigkeit seiner Beschreibung und der von ihm bereitgestellten Daten zum Wasserfahrzeug verantwortlich ist und den Vermittler von Ansprüchen Dritter freistellt.",
@@ -904,7 +922,7 @@ function getAgreementClauses(draft: ContractDraft) {
         "3. qu'une commission de courtage est due par le client sur le dernier prix de vente etabli par ecrit des qu'un accord sur l'achat/la vente est atteint, que ce prix soit regle en especes, en nature ou en services.",
         "4. que la commission de courtage est de :<br />- 8% pour les bateaux ayant un prix d'achat/vente jusqu'a EUR 100.000 avec un minimum de EUR 2.500<br />- 6% pour les bateaux ayant un prix d'achat/vente superieur a EUR 100.000 avec un minimum de EUR 8.000<br />La commission due est augmentee de la TVA legalement applicable.",
         "5. que l'intermediaire recevra les fonds pour le client par l'intermediaire d'un compte de tiers.",
-        "6. que le bateau du client sera stationne pendant la duree du contrat dans le port de vente de l'intermediaire. Les frais de stationnement sont de EUR ……… (TVA comprise) par mois ou partie de mois et doivent etre payes d'avance chaque mois par le client.<br />Les frais de stationnement ci-dessus :<br />- sont exigibles lors de la resiliation valable du contrat de courtage.<br />- sont exigibles lors du retrait de l'objet de la zone de vente du courtier sans resiliation de la mission.<br />- sont factures mensuellement si le bateau n'est pas vendu dans les 6 mois.<br />En cas de vente par le courtier en yachts, aucun frais d'emplacement n'est facture pendant les 6 premiers mois.",
+        `6. que le bateau du client sera stationne pendant la duree du contrat dans le port de vente de l'intermediaire. Les frais de stationnement sont de EUR ${storageFee} (TVA comprise) par mois ou partie de mois et doivent etre payes d'avance chaque mois par le client.<br />Les frais de stationnement ci-dessus :<br />- sont exigibles lors de la resiliation valable du contrat de courtage.<br />- sont exigibles lors du retrait de l'objet de la zone de vente du courtier sans resiliation de la mission.<br />- sont factures mensuellement si le bateau n'est pas vendu dans les 6 mois.<br />En cas de vente par le courtier en yachts, aucun frais d'emplacement n'est facture pendant les 6 premiers mois.`,
         "7. que le client autorise l'intermediaire a effectuer un essai en navigation lorsqu'il n'est pas present (et sans son autorisation prealable).",
         "8. que le bateau reste aux frais et risques du client, meme pendant l'essai, jusqu'au transfert de propriete a l'acheteur et que le client souscrit une assurance adequate jusqu'a ce moment.",
         "9. que le client est responsable de l'exactitude de sa description et des donnees fournies concernant le bateau et qu'il garantit l'intermediaire contre toute reclamation de tiers.",
@@ -918,7 +936,7 @@ function getAgreementClauses(draft: ContractDraft) {
         "3. that a broker's commission is payable by the client for the last sales price established in writing as soon as the consensus ad idem has been reached about the purchase/sale, regardless of the fact whether this sales price is settled in cash, in kind or in services.",
         "4. that the broker's commission is:<br />- 8% for vessels with a purchase/sales price up to EUR 100,000 with a minimum of EUR 2,500<br />- 6% for vessels with a purchase/sales price above EUR 100,000 with a minimum of EUR 8,000<br />The payable broker's commission is increased by the legally payable VAT.",
         "5. that the intermediary will receive proceeds for the client by means of Third party funds.",
-        "6. that the vessel of the client will be stored for the term of the agreement in the sales harbor of the intermediary. The storage sum is EUR ……… (including VAT) per month or part of the month, this sum has to be paid in advance by the client every month.<br />The above mooring fees:<br />- are payable upon termination of the brokerage agreement by valid notice.<br />- are payable upon removal of the object from the broker's sales area without termination of the commission.<br />- are charged monthly if the boat is not sold within 6 months.<br />In case of sale through the yacht broker, no berth fees will be charged for the first 6 months.",
+        `6. that the vessel of the client will be stored for the term of the agreement in the sales harbor of the intermediary. The storage sum is EUR ${storageFee} (including VAT) per month or part of the month, this sum has to be paid in advance by the client every month.<br />The above mooring fees:<br />- are payable upon termination of the brokerage agreement by valid notice.<br />- are payable upon removal of the object from the broker's sales area without termination of the commission.<br />- are charged monthly if the boat is not sold within 6 months.<br />In case of sale through the yacht broker, no berth fees will be charged for the first 6 months.`,
         "7. that the client authorizes the intermediary to make a trial run when he is not present (and without his prior permission).",
         "8. that the vessel remains at the account and risk of the client, even during the trial run, until the time that the transfer of property to the buyer is completed and the client takes up adequate insurance until the transfer of the property.",
         "9. that the client is responsible for the correctness of his description and the data provided by him with regard to the vessel and that he/she indemnifies the intermediary from claims by third parties.",
@@ -979,6 +997,51 @@ function formatAgreementDate(language: ContractLanguage, value: string) {
     month: "long",
     year: "numeric",
   }).format(date);
+}
+
+function getPartyFromYachtData(
+  yachtData: YachtContractData | null | undefined,
+): ContractParty | null {
+  return (
+    yachtData?.user ??
+    yachtData?.owner ??
+    yachtData?.client ??
+    yachtData?.contact ??
+    (yachtData?.customer_name ||
+    yachtData?.customer_email ||
+    yachtData?.customer_phone ||
+    yachtData?.owner_name ||
+    yachtData?.owner_email ||
+    yachtData?.owner_phone ||
+    yachtData?.owner_address ||
+    yachtData?.owner_postal_code ||
+    yachtData?.owner_city
+      ? {
+          name: yachtData?.customer_name || yachtData?.owner_name || "",
+          email: yachtData?.customer_email || yachtData?.owner_email || "",
+          phone:
+            yachtData?.customer_phone ||
+            yachtData?.owner_phone ||
+            yachtData?.phone ||
+            "",
+          address: yachtData?.owner_address || "",
+          postal_code: yachtData?.owner_postal_code || "",
+          city: yachtData?.owner_city || "",
+        }
+      : null)
+  );
+}
+
+function mapAdminUserToContractParty(user: MeUser | null): ContractParty | null {
+  if (!user) return null;
+  return {
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    address: [user.address_line1, user.address_line2].filter(Boolean).join(", "),
+    postal_code: user.postal_code,
+    city: user.city,
+  };
 }
 
 function getSpecificationRows(draft: ContractDraft) {
@@ -1154,12 +1217,7 @@ function buildContractDraft(
   language: ContractLanguage,
 ): ContractDraft {
   const locationDefaults = resolveLocationDefaults(location);
-  const party =
-    yachtData?.user ??
-    yachtData?.owner ??
-    yachtData?.client ??
-    yachtData?.contact ??
-    null;
+  const party = getPartyFromYachtData(yachtData);
   const askingPrice =
     yachtData?.price != null && yachtData?.price !== ""
       ? String(yachtData.price)
@@ -1224,6 +1282,7 @@ function buildContractDraft(
     vatDeclaration: "no",
     askingPrice,
     askingPriceWords: "",
+    storageFee: "",
     agreementDate: new Date().toISOString().slice(0, 10),
     agreementCity: locationDefaults.agreementCity || "",
   };
@@ -1341,6 +1400,8 @@ export function SignhostFlow({
   const storageKey = `contract_draft_${yachtId ?? "draft"}`;
 
   const [signRequest, setSignRequest] = useState<SignRequest | null>(null);
+  const [linkedClient, setLinkedClient] = useState<MeUser | null>(null);
+  const [linkedClientLoading, setLinkedClientLoading] = useState(false);
   const [draft, setDraft] = useState<ContractDraft>(() =>
     buildContractDraft(
       yachtName,
@@ -1396,6 +1457,34 @@ export function SignhostFlow({
   }, [localeContractLanguage]);
 
   useEffect(() => {
+    if (!canManageContract || !yachtData?.user_id) {
+      setLinkedClient(null);
+      return;
+    }
+
+    let active = true;
+    setLinkedClientLoading(true);
+
+    void getAdminUser(yachtData.user_id)
+      .then((response) => {
+        if (!active) return;
+        setLinkedClient(response.data ?? null);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLinkedClient(null);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLinkedClientLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canManageContract, yachtData?.user_id]);
+
+  useEffect(() => {
     const trimmedName = user.name?.trim() || "";
     const trimmedEmail = user.email?.trim() || "";
     const trimmedPhone = user.phone?.trim() || "";
@@ -1419,6 +1508,29 @@ export function SignhostFlow({
       return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
     });
   }, [user.email, user.name, user.phone, user.role]);
+
+  useEffect(() => {
+    const linkedParty = mapAdminUserToContractParty(linkedClient);
+    if (!linkedParty) return;
+
+    setDraft((prev) => {
+      const updates: Partial<ContractDraft> = {};
+
+      if (!prev.clientName && linkedParty.name) updates.clientName = linkedParty.name;
+      if (!prev.clientEmail && linkedParty.email)
+        updates.clientEmail = linkedParty.email;
+      if (!prev.clientPhone && linkedParty.phone)
+        updates.clientPhone = linkedParty.phone;
+      if (!prev.clientAddress && linkedParty.address)
+        updates.clientAddress = linkedParty.address;
+      if (!prev.clientPostalCode && linkedParty.postal_code)
+        updates.clientPostalCode = linkedParty.postal_code;
+      if (!prev.clientCity && linkedParty.city)
+        updates.clientCity = linkedParty.city;
+
+      return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
+    });
+  }, [linkedClient]);
 
   useEffect(() => {
     try {
@@ -1475,6 +1587,61 @@ export function SignhostFlow({
   const previewCopy = copyByLanguage[draft.language];
   const agreementCopy = getAgreementCopy(draft.language);
   const editorCopy = editorCopyByLanguage[draft.language];
+  const linkedOwnerCopy = {
+    nl: {
+      title: "Gekoppelde klant / booteigenaar",
+      subtitle:
+        "Deze gegevens worden gebruikt voor de bemiddelingsovereenkomst en Signhost.",
+      linkedUser: "Gekoppelde gebruiker",
+      missing:
+        "Er zijn nog geen klantgegevens gekoppeld aan dit vaartuig. Koppel of maak eerst een klant aan, anders blijft de overeenkomst leeg.",
+      loading: "Klantgegevens laden...",
+    },
+    en: {
+      title: "Linked client / boat owner",
+      subtitle:
+        "These details are used for the brokerage agreement and Signhost.",
+      linkedUser: "Linked user",
+      missing:
+        "No client details are linked to this vessel yet. Link or create a client first, otherwise the agreement will stay blank.",
+      loading: "Loading client details...",
+    },
+    de: {
+      title: "Verknüpfter Kunde / Bootseigner",
+      subtitle:
+        "Diese Angaben werden für den Maklervertrag und Signhost verwendet.",
+      linkedUser: "Verknüpfter Benutzer",
+      missing:
+        "Für dieses Boot sind noch keine Kundendaten verknüpft. Verknüpfen oder erstellen Sie zuerst einen Kunden, sonst bleibt der Vertrag leer.",
+      loading: "Kundendaten werden geladen...",
+    },
+    fr: {
+      title: "Client / proprietaire du bateau lie",
+      subtitle:
+        "Ces donnees sont utilisees pour le contrat de courtage et Signhost.",
+      linkedUser: "Utilisateur lie",
+      missing:
+        "Aucune donnee client n'est encore liee a ce bateau. Liez ou creez d'abord un client, sinon le contrat restera vide.",
+      loading: "Chargement des donnees client...",
+    },
+  }[draft.language];
+  const linkedParty = mapAdminUserToContractParty(linkedClient);
+  const yachtParty = getPartyFromYachtData(yachtData);
+  const ownerSnapshot = {
+    name: draft.clientName || linkedParty?.name || yachtParty?.name || "",
+    email: draft.clientEmail || linkedParty?.email || yachtParty?.email || "",
+    phone: draft.clientPhone || linkedParty?.phone || yachtParty?.phone || "",
+    address:
+      draft.clientAddress || linkedParty?.address || yachtParty?.address || "",
+    postalCode:
+      draft.clientPostalCode ||
+      linkedParty?.postal_code ||
+      yachtParty?.postal_code ||
+      "",
+    city: draft.clientCity || linkedParty?.city || yachtParty?.city || "",
+  };
+  const ownerSnapshotMissing =
+    !ownerSnapshot.name && !ownerSnapshot.email && !ownerSnapshot.phone;
   const selectedTemplate =
     contractTemplateOptions.find(
       (option) => option.value === contractTemplateKey,
@@ -1879,6 +2046,73 @@ export function SignhostFlow({
           <p className="mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
             {editorCopy.pageSubtitle}
           </p>
+        </div>
+
+        <div className="mb-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                {linkedOwnerCopy.title}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {linkedOwnerCopy.subtitle}
+              </p>
+            </div>
+            {yachtData?.user_id ? (
+              <div className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600">
+                {linkedOwnerCopy.linkedUser}: #{yachtData.user_id}
+              </div>
+            ) : null}
+          </div>
+
+          {linkedClientLoading ? (
+            <p className="mt-4 text-sm text-slate-500">
+              {linkedOwnerCopy.loading}
+            </p>
+          ) : ownerSnapshotMissing ? (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {linkedOwnerCopy.missing}
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {agreementCopy.nameLabel}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {fieldValue(ownerSnapshot.name)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {agreementCopy.emailLabel}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900 break-all">
+                  {fieldValue(ownerSnapshot.email)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {agreementCopy.phoneLabel}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {fieldValue(ownerSnapshot.phone)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {agreementCopy.addressLabel}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {fieldValue(
+                    [ownerSnapshot.address, ownerSnapshot.postalCode, ownerSnapshot.city]
+                      .filter(Boolean)
+                      .join(", "),
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -2654,6 +2888,16 @@ export function SignhostFlow({
                       handleFieldChange("askingPriceWords", event.target.value)
                     }
                     placeholder={editorCopy.askingPriceWords}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{editorCopy.storageFee}</FieldLabel>
+                  <Input
+                    value={draft.storageFee}
+                    onChange={(event) =>
+                      handleFieldChange("storageFee", event.target.value)
+                    }
+                    placeholder={editorCopy.storageFee}
                   />
                 </div>
                 <div>

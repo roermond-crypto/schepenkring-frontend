@@ -17,15 +17,22 @@ const VERIFY_COPY = {
   en: {
     title: "Verify email",
     description: "Enter the verification code sent to",
+    intro: "Enter your email address to receive a verification code.",
     fallbackEmail: "your email",
     emailPlaceholder: "Email",
     codePlaceholder: "Verification code",
+    sendEmailRequired: "Email is required to send a verification code.",
+    emailRequiredOnly: "Email is required.",
+    codeRequired: "Verification code is required.",
     emailRequired: "Email and verification code are required.",
     verified: "Email verified successfully.",
     verifyFailed: "Verification failed.",
+    alreadyVerified: "This email address is already verified. Please log in.",
     resendEmailRequired: "Email is required to resend code.",
+    sent: "Verification code sent to your email.",
     resendSuccess: "A new verification code has been sent.",
     resendFailed: "Could not resend code.",
+    sending: "Sending code...",
     verifying: "Verifying...",
     verifyButton: "Verify email",
     resending: "Resending...",
@@ -34,15 +41,22 @@ const VERIFY_COPY = {
   nl: {
     title: "E-mail verifiëren",
     description: "Voer de verificatiecode in die is verzonden naar",
+    intro: "Voer je e-mailadres in om een verificatiecode te ontvangen.",
     fallbackEmail: "je e-mail",
     emailPlaceholder: "E-mail",
     codePlaceholder: "Verificatiecode",
+    sendEmailRequired: "E-mail is verplicht om een verificatiecode te sturen.",
+    emailRequiredOnly: "E-mail is verplicht.",
+    codeRequired: "Verificatiecode is verplicht.",
     emailRequired: "E-mail en verificatiecode zijn verplicht.",
     verified: "E-mail succesvol geverifieerd.",
     verifyFailed: "Verificatie mislukt.",
+    alreadyVerified: "Dit e-mailadres is al geverifieerd. Log in om verder te gaan.",
     resendEmailRequired: "E-mail is verplicht om de code opnieuw te sturen.",
+    sent: "Verificatiecode verzonden naar je e-mail.",
     resendSuccess: "Er is een nieuwe verificatiecode verzonden.",
     resendFailed: "Code opnieuw verzenden is mislukt.",
+    sending: "Code versturen...",
     verifying: "Verifiëren...",
     verifyButton: "E-mail verifiëren",
     resending: "Opnieuw verzenden...",
@@ -51,16 +65,23 @@ const VERIFY_COPY = {
   de: {
     title: "E-Mail verifizieren",
     description: "Geben Sie den Verifizierungscode ein, der gesendet wurde an",
+    intro: "Geben Sie Ihre E-Mail-Adresse ein, um einen Verifizierungscode zu erhalten.",
     fallbackEmail: "Ihre E-Mail",
     emailPlaceholder: "E-Mail",
     codePlaceholder: "Verifizierungscode",
+    sendEmailRequired: "Eine E-Mail-Adresse ist erforderlich, um einen Verifizierungscode zu senden.",
+    emailRequiredOnly: "E-Mail ist erforderlich.",
+    codeRequired: "Verifizierungscode ist erforderlich.",
     emailRequired: "E-Mail und Verifizierungscode sind erforderlich.",
     verified: "E-Mail erfolgreich verifiziert.",
     verifyFailed: "Verifizierung fehlgeschlagen.",
+    alreadyVerified: "Diese E-Mail-Adresse ist bereits verifiziert. Bitte melden Sie sich an.",
     resendEmailRequired:
       "Eine E-Mail-Adresse ist erforderlich, um den Code erneut zu senden.",
+    sent: "Verifizierungscode wurde an Ihre E-Mail gesendet.",
     resendSuccess: "Ein neuer Verifizierungscode wurde gesendet.",
     resendFailed: "Der Code konnte nicht erneut gesendet werden.",
+    sending: "Code wird gesendet...",
     verifying: "Wird verifiziert...",
     verifyButton: "E-Mail verifizieren",
     resending: "Wird erneut gesendet...",
@@ -69,16 +90,23 @@ const VERIFY_COPY = {
   fr: {
     title: "Vérifier l'e-mail",
     description: "Saisissez le code de vérification envoyé à",
+    intro: "Saisissez votre adresse e-mail pour recevoir un code de vérification.",
     fallbackEmail: "votre e-mail",
     emailPlaceholder: "E-mail",
     codePlaceholder: "Code de vérification",
+    sendEmailRequired: "L'e-mail est requis pour envoyer un code de vérification.",
+    emailRequiredOnly: "L'e-mail est requis.",
+    codeRequired: "Le code de vérification est requis.",
     emailRequired: "L'e-mail et le code de vérification sont requis.",
     verified: "E-mail vérifié avec succès.",
     verifyFailed: "La vérification a échoué.",
+    alreadyVerified: "Cette adresse e-mail est déjà vérifiée. Veuillez vous connecter.",
     resendEmailRequired:
       "L'e-mail est requis pour renvoyer le code.",
+    sent: "Le code de vérification a été envoyé à votre e-mail.",
     resendSuccess: "Un nouveau code de vérification a été envoyé.",
     resendFailed: "Impossible de renvoyer le code.",
+    sending: "Envoi du code...",
     verifying: "Vérification...",
     verifyButton: "Vérifier l'e-mail",
     resending: "Renvoi...",
@@ -121,11 +149,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
     setSuccess("");
 
     if (!normalizedEmail) {
-      setError(
-        isResend
-          ? "Email is required to resend code."
-          : "Email is required to send a verification code.",
-      );
+      setError(isResend ? copy.resendEmailRequired : copy.sendEmailRequired);
       return;
     }
 
@@ -144,7 +168,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
       if (response.verified) {
         setCodeRequested(false);
         setSuccess(
-          response.message ?? "This email address is already verified. Please log in.",
+          response.message ?? copy.alreadyVerified,
         );
         setTimeout(() => {
           router.push(`/${locale}/auth?mode=login`);
@@ -156,12 +180,10 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
       setCodeRequested(true);
       setSuccess(
         response.message ??
-          (isResend
-            ? "A new verification code has been sent."
-            : "Verification code sent to your email."),
+          (isResend ? copy.resendSuccess : copy.sent),
       );
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Could not resend code.";
+      const message = err instanceof Error ? err.message : copy.resendFailed;
       setError(message);
     } finally {
       if (isResend) {
@@ -188,7 +210,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
     }
 
     if (!code.trim()) {
-      setError("Verification code is required.");
+      setError(copy.codeRequired);
       return;
     }
 
