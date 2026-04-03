@@ -96,6 +96,9 @@
       "openMenu": "Open menu",
       "toggleTheme": "Toggle theme",
       "userFallback": "User",
+      "accountSettings": "Open account settings",
+      "avatarFallback": "Avatar",
+      "initialsFallback": "U",
       "logout": "Logout",
       "installApp": "Install app",
       "installIosInstructions": "To install this app, open the Share menu in Safari and choose \"Add to Home Screen\".",
@@ -132,7 +135,12 @@
       "locations": "Locations",
       "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Salesfunnel",
-      "socialAutomation": "Social Automation"
+      "socialAutomation": "Social Automation",
+      "faq": "FAQ",
+      "integrations": "Integrations",
+      "roleAdmin": "Admin",
+      "roleClient": "Client",
+      "roleEmployee": "Sales"
     },
     "notifications": {
       "label": "Notifications",
@@ -150,6 +158,108 @@
       "minutesAgo": "m ago",
       "hoursAgo": "h ago",
       "daysAgo": "d ago"
+    }
+  },
+  "DashboardYachts": {
+    "header": {
+      "title": "Fleet Management",
+      "subtitle": "Vessel Registry & Management"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "newVessel": "New Vessel",
+      "registerFirst": "Register First Vessel",
+      "editManifest": "Edit Manifest",
+      "viewDetails": "View Details",
+      "deleteVessel": "Delete Vessel",
+      "manageVessel": "Manage Vessel",
+      "backToTop": "Back to Top",
+      "fieldSettings": "Field Settings",
+      "boatAudit": "Boat Audit",
+      "edit": "Edit",
+      "view": "View",
+      "delete": "Delete"
+    },
+    "stats": {
+      "total": "Total",
+      "forSale": "For Sale",
+      "forBid": "For Bid",
+      "sold": "Sold",
+      "draft": "Draft",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "filters": {
+      "searchPlaceholder": "Search vessels..."
+    },
+    "sort": {
+      "nameAsc": "Name A-Z",
+      "nameDesc": "Name Z-A",
+      "priceDesc": "Price High-Low",
+      "priceAsc": "Price Low-High",
+      "yearDesc": "Year Newest",
+      "yearAsc": "Year Oldest",
+      "createdDesc": "Newest",
+      "updatedDesc": "Recently Updated"
+    },
+    "status": {
+      "all": "All",
+      "forSale": "For Sale",
+      "forBid": "For Bid",
+      "sold": "Sold",
+      "draft": "Draft",
+      "active": "Active",
+      "inactive": "Inactive",
+      "maintenance": "Maintenance"
+    },
+    "loading": "Loading fleet...",
+    "empty": {
+      "title": "No vessels found",
+      "adjustFilters": "Try adjusting your filters",
+      "noVessels": "Register your first vessel to get started"
+    },
+    "sections": {
+      "dimensions": "Dimensions",
+      "details": "Details"
+    },
+    "table": {
+      "vessel": "Vessel",
+      "price": "Price",
+      "specifications": "Specs",
+      "status": "Status",
+      "year": "Year",
+      "actions": "Actions"
+    },
+    "fallbacks": {
+      "price": "Price on request",
+      "length": "Length unknown",
+      "unnamedVessel": "Unnamed Vessel"
+    },
+    "toasts": {
+      "loadFailed": "Failed to load fleet",
+      "deleted": "Vessel deleted"
+    },
+    "errors": {
+      "permissionDenied": "Permission denied",
+      "deleteFailed": "Failed to delete vessel",
+      "statusUpdateFailed": "Failed to update status"
+    },
+    "deleteConfirmTitle": "Delete Vessel",
+    "deleteConfirmDescription": "Are you sure you want to delete {name}? This action cannot be undone.",
+    "deleteConfirmAction": "Delete",
+    "cancel": "Cancel",
+    "view": {
+      "grid": "Grid View",
+      "list": "List View"
+    },
+    "pagination": {
+      "perPage": "{count} / page",
+      "showingRange": "Showing {from} to {to} of {total} vessels",
+      "firstPage": "First page",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "lastPage": "Last page",
+      "pageOf": "Page {current} of {total}"
     }
   },
   "DashboardAdminCopilot": {
@@ -359,8 +469,8 @@
       "viewBiddings": "View Biddings",
       "reviewRegistrations": "Review registrations",
       "viewBoats": "View boats",
-      "createFirstListing": "Create First Listing",
-      "browseMarketplace": "Browse Marketplace"
+      "createFirstListing": "Sell Boat",
+      "browseMarketplace": "Browse Listings"
     },
     "schedule": {
       "live": "Live schedule",
@@ -399,9 +509,8 @@
       "brokerReviewHeadingOther": "You have {count} boats under review with the broker",
       "brokerReviewSubtitle": "Your listing has been submitted and is waiting for broker approval before it enters the sales flow.",
       "onboardingTitle": "Welcome to the marketplace",
-      "onboardingHeading": "You have not placed any bids yet",
-      "onboardingSubtitle": "Start by creating your first boat listing or browse the <marketplace>marketplace</marketplace> to begin bidding.",
-      "noNewRegistrations": "No new vessel registrations are waiting for review right now.",
+      "onboardingHeading": "You have not taken any actions yet",
+      "onboardingSubtitle": "Start by selling your boat or browse the <marketplace>listings</marketplace> on the marketplace.",
       "noSystemLogs": "No recent system logs yet."
     },
     "defaults": {

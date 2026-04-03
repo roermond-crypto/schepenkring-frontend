@@ -27,6 +27,7 @@ type AskResponse = {
     language_preferred?: string;
     last_message_at?: string | null;
   };
+  message?: BackendChatMessage;
   user_message?: BackendChatMessage;
   ai_message?: BackendChatMessage;
   language?: string;
@@ -388,10 +389,9 @@ export function ClientChatPage() {
     setSending(true);
 
     try {
-      const response = await api.post<AskResponse & BackendChatMessage>(
-        `/chat/conversations/${conversationId}/messages`,
+      const response = await api.post<AskResponse>(
+        `/public/conversations/${conversationId}/ask`,
         {
-          text: trimmed,
           body: trimmed,
           client_message_id: `dashboard-msg-${Date.now()}`,
           visitor_id: visitorIdRef.current,
@@ -403,8 +403,10 @@ export function ClientChatPage() {
       }
 
       const nextMessages = [
-        response.data?.user_message
-          ? mapBackendMessage(response.data.user_message)
+        response.data?.message || response.data?.user_message
+          ? mapBackendMessage(
+              response.data.message ?? response.data.user_message!,
+            )
           : {
               id: tempUserId,
               sender: "user" as const,

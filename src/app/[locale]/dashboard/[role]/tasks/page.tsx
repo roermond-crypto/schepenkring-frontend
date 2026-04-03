@@ -187,10 +187,16 @@ function getCurrentLocationId() {
       location_id?: number | string;
       locationId?: number | string;
       location?: { id?: number | string };
+      client_location_id?: number | string;
+      client_location?: { id?: number | string };
     };
 
     const locationValue =
-      userData.location_id ?? userData.locationId ?? userData.location?.id;
+      userData.location_id ??
+      userData.locationId ??
+      userData.location?.id ??
+      userData.client_location_id ??
+      userData.client_location?.id;
     if (
       locationValue === null ||
       locationValue === undefined ||
@@ -206,7 +212,7 @@ function getCurrentLocationId() {
   }
 }
 
-function canCurrentUserAccessBoard() {
+function canCurrentUserManageBoard() {
   if (typeof window === "undefined") return false;
   const userDataRaw = localStorage.getItem("user_data");
   if (!userDataRaw) return false;
@@ -224,6 +230,25 @@ function canCurrentUserAccessBoard() {
       Boolean(userData.location_id ?? userData.location?.id);
 
     return Boolean(userData.can_access_board) && hasLocation;
+  } catch {
+    return false;
+  }
+}
+
+function canCurrentClientViewBoard() {
+  if (typeof window === "undefined") return false;
+  const userDataRaw = localStorage.getItem("user_data");
+  if (!userDataRaw) return false;
+
+  try {
+    const userData = JSON.parse(userDataRaw) as {
+      client_location_id?: number | string | null;
+      client_location?: { id?: number | string | null } | null;
+    };
+
+    return Boolean(
+      userData.client_location_id ?? userData.client_location?.id,
+    );
   } catch {
     return false;
   }
@@ -1532,7 +1557,10 @@ export default function AdminTaskBoardPage() {
   const canManageTaskWorkspace =
     role === "admin" ||
     role === "location" ||
-    (role === "employee" && canCurrentUserAccessBoard());
+    (role === "employee" && canCurrentUserManageBoard());
+  const canViewTaskBoard =
+    canManageTaskWorkspace ||
+    (role === "client" && canCurrentClientViewBoard());
   const canConfigureAutomation = canManageTaskWorkspace;
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -1586,7 +1614,7 @@ export default function AdminTaskBoardPage() {
         ...getHeaders(),
         params: locationId ? { location_id: locationId } : undefined,
       });
-      const boardsRes = canManageTaskWorkspace
+      const boardsRes = canViewTaskBoard
         ? await axios.get(`${API_BASE}/boards`, {
             ...getHeaders(),
             params: locationId ? { location_id: locationId } : undefined,
@@ -2199,7 +2227,7 @@ export default function AdminTaskBoardPage() {
                 >
                   <List size={16} className="mr-2" /> {t("views.list")}
                 </Button>
-                {canManageTaskWorkspace && (
+                {canViewTaskBoard && (
                   <Button
                     variant={viewMode === "board" ? "default" : "outline"}
                     onClick={() => setViewMode("board")}
@@ -2448,6 +2476,7 @@ export default function AdminTaskBoardPage() {
                   setIsModalOpen(true);
                 }}
                 onDeleteTask={handleDeleteTask}
+                canManageBoard={canManageTaskWorkspace}
               />
             </div>
           ) : viewMode === "list" ? (

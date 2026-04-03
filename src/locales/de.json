@@ -96,6 +96,9 @@
       "openMenu": "Menü öffnen",
       "toggleTheme": "Design wechseln",
       "userFallback": "Benutzer",
+      "accountSettings": "Kontoeinstellungen offnen",
+      "avatarFallback": "Avatar",
+      "initialsFallback": "B",
       "logout": "Abmelden",
       "installApp": "App installieren",
       "installIosInstructions": "Öffnen Sie zum Installieren dieser App das Teilen-Menü in Safari und wählen Sie \"Zum Home-Bildschirm\".",
@@ -132,7 +135,12 @@
       "locations": "Standorte",
       "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Salesfunnel",
-      "socialAutomation": "Social-Automatisierung"
+      "socialAutomation": "Social-Automatisierung",
+      "faq": "FAQ",
+      "integrations": "Integrationen",
+      "roleAdmin": "Admin",
+      "roleClient": "Kunde",
+      "roleEmployee": "Vertrieb"
     },
     "notifications": {
       "label": "Benachrichtigungen",
@@ -150,6 +158,108 @@
       "minutesAgo": " Min.",
       "hoursAgo": " Std.",
       "daysAgo": " T."
+    }
+  },
+  "DashboardYachts": {
+    "header": {
+      "title": "Flottenmanagement",
+      "subtitle": "Schiffsregister & Verwaltung"
+    },
+    "actions": {
+      "refresh": "Aktualisieren",
+      "newVessel": "Neues Schiff",
+      "registerFirst": "Erstes Schiff registrieren",
+      "editManifest": "Manifest bearbeiten",
+      "viewDetails": "Details ansehen",
+      "deleteVessel": "Schiff loschen",
+      "manageVessel": "Schiff verwalten",
+      "backToTop": "Nach oben",
+      "fieldSettings": "Feldeinstellungen",
+      "boatAudit": "Boot-Audit",
+      "edit": "Bearbeiten",
+      "view": "Ansehen",
+      "delete": "Loschen"
+    },
+    "stats": {
+      "total": "Gesamt",
+      "forSale": "Zum Verkauf",
+      "forBid": "Zur Gebotsabgabe",
+      "sold": "Verkauft",
+      "draft": "Entwurf",
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "filters": {
+      "searchPlaceholder": "Schiffe suchen..."
+    },
+    "sort": {
+      "nameAsc": "Name A-Z",
+      "nameDesc": "Name Z-A",
+      "priceDesc": "Preis hoch-niedrig",
+      "priceAsc": "Preis niedrig-hoch",
+      "yearDesc": "Baujahr neueste",
+      "yearAsc": "Baujahr alteste",
+      "createdDesc": "Neueste",
+      "updatedDesc": "Zuletzt aktualisiert"
+    },
+    "status": {
+      "all": "Alle",
+      "forSale": "Zum Verkauf",
+      "forBid": "Zur Gebotsabgabe",
+      "sold": "Verkauft",
+      "draft": "Entwurf",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "maintenance": "Wartung"
+    },
+    "loading": "Flotte wird geladen...",
+    "empty": {
+      "title": "Keine Schiffe gefunden",
+      "adjustFilters": "Versuchen Sie, Ihre Filter anzupassen",
+      "noVessels": "Registrieren Sie Ihr erstes Schiff, um zu beginnen"
+    },
+    "sections": {
+      "dimensions": "Abmessungen",
+      "details": "Details"
+    },
+    "table": {
+      "vessel": "Schiff",
+      "price": "Preis",
+      "specifications": "Spezifikationen",
+      "status": "Status",
+      "year": "Jahr",
+      "actions": "Aktionen"
+    },
+    "fallbacks": {
+      "price": "Preis auf Anfrage",
+      "length": "Lange unbekannt",
+      "unnamedVessel": "Unbenanntes Schiff"
+    },
+    "toasts": {
+      "loadFailed": "Flotte konnte nicht geladen werden",
+      "deleted": "Schiff geloscht"
+    },
+    "errors": {
+      "permissionDenied": "Zugriff verweigert",
+      "deleteFailed": "Schiff konnte nicht geloscht werden",
+      "statusUpdateFailed": "Status konnte nicht aktualisiert werden"
+    },
+    "deleteConfirmTitle": "Schiff loschen",
+    "deleteConfirmDescription": "Mochten Sie {name} wirklich loschen? Diese Aktion kann nicht ruckgangig gemacht werden.",
+    "deleteConfirmAction": "Loschen",
+    "cancel": "Abbrechen",
+    "view": {
+      "grid": "Rasteransicht",
+      "list": "Listenansicht"
+    },
+    "pagination": {
+      "perPage": "{count} / Seite",
+      "showingRange": "{from} bis {to} von {total} Schiffen",
+      "firstPage": "Erste Seite",
+      "previousPage": "Vorherige Seite",
+      "nextPage": "Nachste Seite",
+      "lastPage": "Letzte Seite",
+      "pageOf": "Seite {current} von {total}"
     }
   },
   "DashboardAdminCopilot": {
@@ -358,9 +468,8 @@
     "actions": {
       "viewBiddings": "Gebote anzeigen",
       "viewBoats": "Boote ansehen",
-      "reviewRegistrations": "Registrierungen prüfen",
-      "createFirstListing": "Erstes Inserat erstellen",
-      "browseMarketplace": "Marktplatz durchsuchen"
+      "createFirstListing": "Boot verkaufen",
+      "browseMarketplace": "Angebot ansehen"
     },
     "schedule": {
       "live": "Live-Zeitplan",
@@ -399,9 +508,8 @@
       "brokerReviewHeadingOther": "Sie haben {count} Boote zur Prüfung beim Makler",
       "brokerReviewSubtitle": "Ihr Inserat wurde eingereicht und wartet auf die Freigabe des Maklers, bevor es in den Verkaufsablauf gelangt.",
       "onboardingTitle": "Willkommen auf dem Marktplatz",
-      "onboardingHeading": "Sie haben noch keine Gebote abgegeben",
-      "onboardingSubtitle": "Beginnen Sie mit Ihrem ersten Bootsinserat oder durchsuchen Sie den <marketplace>Marktplatz</marketplace>, um Gebote abzugeben.",
-      "noNewRegistrations": "Derzeit warten keine neuen Bootsregistrierungen auf Prüfung.",
+      "onboardingHeading": "Sie haben noch keine Aktionen durchgefuhrt",
+      "onboardingSubtitle": "Beginnen Sie damit, Ihr Boot zu verkaufen, oder sehen Sie sich das <marketplace>Angebot</marketplace> auf dem Marktplatz an.",
       "noSystemLogs": "Noch keine kürzlichen Systemprotokolle."
     },
     "defaults": {

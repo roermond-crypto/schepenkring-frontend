@@ -160,7 +160,10 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
         setLoading(true);
       }
 
-      const response = await resendVerification({ email: normalizedEmail });
+      const response = await resendVerification({
+        email: normalizedEmail,
+        locale,
+      });
 
       if (response.verified) {
         setCodeRequested(false);
@@ -197,7 +200,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
     setSuccess("");
 
     if (!normalizedEmail) {
-      setError(copy.emailRequiredOnly);
+      setError(copy.emailRequired);
       return;
     }
 
@@ -244,7 +247,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
       <p className="mt-2 text-sm text-muted-foreground">
         {codeRequested
           ? `${copy.description} ${normalizedEmail || copy.fallbackEmail}.`
-          : copy.intro}
+          : `${copy.description} ${copy.fallbackEmail}.`}
       </p>
 
       <form className="mt-5 space-y-4" onSubmit={onVerify}>
@@ -300,7 +303,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
           {loading
             ? codeRequested
               ? copy.verifying
-              : copy.sending
+              : copy.resending
             : copy.verifyButton}
         </button>
       </form>
