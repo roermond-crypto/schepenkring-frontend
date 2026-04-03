@@ -4,12 +4,12 @@ import { redirect } from "next/navigation";
 
 type VerifyEmailPageProps = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; code?: string }>;
 };
 
 export default async function VerifyEmailPage({ params, searchParams }: VerifyEmailPageProps) {
   const { locale } = await params;
-  const { email } = await searchParams;
+  const { email, code } = await searchParams;
 
   if (!isSupportedLocale(locale)) {
     redirect(`/${DEFAULT_LOCALE}/auth/verify-email`);
@@ -20,7 +20,7 @@ export default async function VerifyEmailPage({ params, searchParams }: VerifyEm
   return (
     <main className="min-h-screen bg-gray-50 p-4 dark:bg-slate-950">
       <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center">
-        <VerifyEmailForm locale={currentLocale} email={email ?? ""} />
+        <VerifyEmailForm locale={currentLocale} email={email ?? ""} code={code ?? ""} />
       </div>
     </main>
   );

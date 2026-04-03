@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { resendVerification, verifyEmail } from "@/lib/api/auth";
 import { setClientSession } from "@/lib/auth/client-session";
@@ -11,6 +11,7 @@ const PENDING_VERIFICATION_EMAIL_KEY = "pending_verification_email";
 type VerifyEmailFormProps = {
   locale: AppLocale;
   email: string;
+  code?: string;
 };
 
 const VERIFY_COPY = {
@@ -114,21 +115,29 @@ const VERIFY_COPY = {
   },
 } as const;
 
-export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
+export function VerifyEmailForm({ locale, email, code: initialCode = "" }: VerifyEmailFormProps) {
   const router = useRouter();
   const [emailValue, setEmailValue] = useState(email.trim());
-  const [code, setCode] = useState("");
-  const [codeRequested, setCodeRequested] = useState(false);
+  const [code, setCode] = useState(initialCode.trim());
+  const [codeRequested, setCodeRequested] = useState(Boolean(initialCode.trim()));
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const autoVerifyTriggeredRef = useRef(false);
   const copy = VERIFY_COPY[locale] ?? VERIFY_COPY.en;
 
   const normalizedEmail = emailValue.trim();
 
   useEffect(() => {
     const normalizedInitialEmail = email.trim();
+    const normalizedInitialCode = initialCode.trim();
+
+    if (normalizedInitialCode) {
+      setCode(normalizedInitialCode);
+      setCodeRequested(true);
+    }
+
     if (normalizedInitialEmail) {
       setEmailValue(normalizedInitialEmail);
       sessionStorage.setItem(
@@ -142,7 +151,7 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
     if (storedEmail) {
       setEmailValue(storedEmail);
     }
-  }, [email]);
+  }, [email, initialCode]);
 
   async function sendVerificationCode(isResend = false) {
     setError("");
@@ -240,6 +249,45 @@ export function VerifyEmailForm({ locale, email }: VerifyEmailFormProps) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (autoVerifyTriggeredRef.current) return;
+    if (!normalizedEmail || !code.trim()) return;
+
+    autoVerifyTriggeredRef.current = true;
+    void (async () => {
+      try {
+        setLoading(true);
+        setError("");
+        setSuccess("");
+
+        const response = await verifyEmail({
+          email: normalizedEmail,
+          code: code.trim(),
+        });
+
+        setSuccess(copy.verified);
+        sessionStorage.removeItem(PENDING_VERIFICATION_EMAIL_KEY);
+
+        if (response.user && response.token) {
+          setClientSession(response.token, response.user);
+        }
+
+        if (response.user) {
+          router.push(`/${locale}/dashboard/${response.user.role}`);
+        } else {
+          router.push(`/${locale}/auth?mode=login`);
+        }
+        router.refresh();
+      } catch (err) {
+        autoVerifyTriggeredRef.current = false;
+        const message = err instanceof Error ? err.message : copy.verifyFailed;
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [code, copy.verified, copy.verifyFailed, locale, normalizedEmail, router]);
 
   return (
     <div className="w-full max-w-md rounded-xl border border-border bg-white p-6 shadow-sm dark:bg-slate-900">

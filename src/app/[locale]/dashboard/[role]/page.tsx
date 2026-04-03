@@ -187,6 +187,29 @@ function Sparkline({ points }: { points: number[] }) {
   );
 }
 
+function renderMarketplaceText(
+  value: string,
+  marketplace: (chunks: string) => ReactNode,
+): ReactNode {
+  const match = value.match(
+    /^(.*)<marketplace>(.*)<\/marketplace>(.*)$/s,
+  );
+
+  if (!match) {
+    return value;
+  }
+
+  const [, before, highlighted, after] = match;
+
+  return (
+    <>
+      {before}
+      {marketplace(highlighted)}
+      {after}
+    </>
+  );
+}
+
 export default function AdminDashboardHome() {
   const t = useTranslations("DashboardAdminOverview");
   const params = useParams<{ role?: string }>();
@@ -501,10 +524,6 @@ export default function AdminDashboardHome() {
     !loading &&
     !data.hasBoatListings &&
     !data.hasPlacedBids;
-  const onboardingSubtitleTemplate = t("empty.onboardingSubtitle");
-  const onboardingSubtitleParts = onboardingSubtitleTemplate.match(
-    /^(.*)<marketplace>(.*)<\/marketplace>(.*)$/,
-  );
 
   const stats = [
     {
@@ -1039,21 +1058,18 @@ export default function AdminDashboardHome() {
                 {t("empty.onboardingHeading")}
               </p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {onboardingSubtitleParts ? (
-                  <>
-                    {onboardingSubtitleParts[1]}
+                {renderMarketplaceText(
+                  t("empty.onboardingSubtitle"),
+                  (chunks) => (
                     <a
                       href={marketplaceUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 transition hover:text-[#1E3A8A] dark:text-slate-400 dark:decoration-slate-600 dark:hover:text-sky-300"
                     >
-                      {onboardingSubtitleParts[2]}
+                      {chunks}
                     </a>
-                    {onboardingSubtitleParts[3]}
-                  </>
-                ) : (
-                  onboardingSubtitleTemplate
+                  ),
                 )}
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
