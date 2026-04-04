@@ -169,6 +169,8 @@
       "refresh": "Aktualisieren",
       "newVessel": "Neues Schiff",
       "registerFirst": "Erstes Schiff registrieren",
+      "openContract": "Vertrag offnen",
+      "signContract": "Vertrag unterschreiben",
       "editManifest": "Manifest bearbeiten",
       "viewDetails": "Details ansehen",
       "deleteVessel": "Schiff loschen",
@@ -221,6 +223,14 @@
     "sections": {
       "dimensions": "Abmessungen",
       "details": "Details"
+    },
+    "contract": {
+      "label": "Vertragsunterzeichnung",
+      "pendingReview": "Wartet auf Broker-Prufung",
+      "waitingInvite": "Wartet auf Signhost-Einladung",
+      "signing": "Bereit zum Unterschreiben",
+      "signed": "Unterzeichnet",
+      "failed": "Benotigt Aufmerksamkeit"
     },
     "table": {
       "vessel": "Schiff",
@@ -469,7 +479,9 @@
       "viewBiddings": "Gebote anzeigen",
       "viewBoats": "Boote ansehen",
       "createFirstListing": "Boot verkaufen",
-      "browseMarketplace": "Angebot ansehen"
+      "browseMarketplace": "Angebot ansehen",
+      "openContract": "Vertrag offnen",
+      "reviewContract": "Vertrag ansehen"
     },
     "schedule": {
       "live": "Live-Zeitplan",
@@ -511,6 +523,20 @@
       "onboardingHeading": "Sie haben noch keine Aktionen durchgefuhrt",
       "onboardingSubtitle": "Beginnen Sie damit, Ihr Boot zu verkaufen, oder sehen Sie sich das <marketplace>Angebot</marketplace> auf dem Marktplatz an.",
       "noSystemLogs": "Noch keine kürzlichen Systemprotokolle."
+    },
+    "contract": {
+      "readyTitle": "Vertrag bereit zur Unterschrift",
+      "readyHeading": "{boatName} wartet auf Ihre Unterschrift",
+      "readySubtitle": "Ihr Broker hat die Signhost-Anfrage gesendet. Offnen Sie den Vertrag und unterschreiben Sie ihn, um fortzufahren.",
+      "waitingTitle": "Vertrag wird vorbereitet",
+      "waitingHeading": "{boatName} ist freigegeben und wartet auf die Signhost-Einladung",
+      "waitingSubtitle": "Der Broker hat Ihr Boot freigegeben. Die Einladung zur Unterzeichnung erscheint hier, sobald sie versendet wurde.",
+      "signedTitle": "Vertrag unterzeichnet",
+      "signedHeading": "{boatName} wurde unterzeichnet",
+      "signedSubtitle": "Der Maklervertrag ist abgeschlossen. Offnen Sie die Bootsseite, wenn Sie den finalen Status prufen mochten.",
+      "failedTitle": "Vertrag benotigt Aufmerksamkeit",
+      "failedHeading": "{boatName} benotigt eine neue Unterzeichnungsaktion",
+      "failedSubtitle": "Der letzte Signhost-Versuch ist abgelaufen, fehlgeschlagen oder abgelehnt worden. Offnen Sie die Bootsseite, um fortzufahren."
     },
     "defaults": {
       "userName": "Martijn"

@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  type ReactNode,
 } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -30,6 +31,13 @@ import { formatDistanceToNow } from "date-fns";
 import { Link } from "@/i18n/navigation";
 import { normalizeRole } from "@/lib/auth/roles";
 import { AUTH_SESSION_COOKIE } from "@/lib/auth/client-session";
+import {
+  compareLatestSignhost,
+  latestSignhostFromTransaction,
+  normalizeLatestSignhost,
+  type LatestSignhostSummary,
+} from "@/lib/signhost/latest-signhost";
+import { signhostApi } from "@/lib/api/signhost";
 
 type DashboardData = {
   activeBidsCount: number;
@@ -43,6 +51,7 @@ type DashboardData = {
   hasBoatListings: boolean;
   hasPlacedBids: boolean;
   brokerReviewCount: number;
+  clientSignhostTask: DashboardYachtWithStatus | null;
   recentBids: DashboardYachtWithStatus[];
   recentRegistrations: any[];
   auditLogs: DashboardAuditItem[];
@@ -74,6 +83,7 @@ type DashboardTask = {
 
 type DashboardYacht = {
   id: number | string;
+  boat_name?: string | null;
   name?: string | null;
   status?: string | null;
   price?: string | number | null;
@@ -81,11 +91,13 @@ type DashboardYacht = {
   created_at?: string | null;
   current_bid?: string | number | null;
   vessel_id?: string | number | null;
+  latest_signhost?: LatestSignhostSummary | null;
   [key: string]: unknown;
 };
 
 type DashboardYachtWithStatus = DashboardYacht & {
   normalizedStatus: string;
+  latest_signhost: LatestSignhostSummary;
 };
 
 function toNumericValue(value: unknown) {
@@ -210,6 +222,29 @@ function renderMarketplaceText(
   );
 }
 
+function getDashboardYachtName(yacht: DashboardYacht | null): string {
+  if (!yacht) {
+    return "your boat";
+  }
+
+  const fromBoatName = String(yacht.boat_name ?? "").trim();
+  if (fromBoatName) {
+    return fromBoatName;
+  }
+
+  const fromName = String(yacht.name ?? "").trim();
+  if (fromName) {
+    return fromName;
+  }
+
+  const fromRegistry = String(yacht.vessel_id ?? "").trim();
+  if (fromRegistry) {
+    return fromRegistry;
+  }
+
+  return "your boat";
+}
+
 export default function AdminDashboardHome() {
   const t = useTranslations("DashboardAdminOverview");
   const params = useParams<{ role?: string }>();
@@ -236,6 +271,7 @@ export default function AdminDashboardHome() {
     hasBoatListings: false,
     hasPlacedBids: false,
     brokerReviewCount: 0,
+    clientSignhostTask: null,
     recentBids: [],
     recentRegistrations: [],
     auditLogs: [],
@@ -326,12 +362,51 @@ export default function AdminDashboardHome() {
         return statusMap[normalized] || normalized;
       };
 
-      const yachtsWithNormalizedStatus: DashboardYachtWithStatus[] = yachts.map(
+      const yachtsWithLiveSignhost: DashboardYacht[] =
+        role === "client" && yachts.length > 0
+          ? await Promise.all(
+              yachts.map(async (yacht) => {
+                const yachtId = Number(yacht?.id);
+                if (!Number.isFinite(yachtId) || yachtId <= 0) {
+                  return yacht;
+                }
+
+                try {
+                  const liveStatus = await signhostApi.getYachtStatus(yachtId);
+                  if (!liveStatus.transaction) {
+                    return yacht;
+                  }
+
+                  return {
+                    ...yacht,
+                    latest_signhost: latestSignhostFromTransaction(
+                      liveStatus.transaction,
+                    ),
+                  };
+                } catch {
+                  return yacht;
+                }
+              }),
+            )
+          : yachts;
+
+      const yachtsWithNormalizedStatus: DashboardYachtWithStatus[] = yachtsWithLiveSignhost.map(
         (yacht) => ({
           ...yacht,
           normalizedStatus: normalizeYachtStatus(yacht?.status),
+          latest_signhost: normalizeLatestSignhost(yacht?.latest_signhost),
         }),
       );
+
+      const clientSignhostTask =
+        role === "client"
+          ? [...yachtsWithNormalizedStatus].sort((left, right) =>
+              compareLatestSignhost(
+                left.latest_signhost,
+                right.latest_signhost,
+              ),
+            )[0] ?? null
+          : null;
 
       const activeBids = yachtsWithNormalizedStatus.filter(
         (yacht) => yacht.normalizedStatus === "for bid",
@@ -435,6 +510,7 @@ export default function AdminDashboardHome() {
           hasBoatListings: yachtsWithNormalizedStatus.length > 0,
           hasPlacedBids: Array.isArray(bidsRaw) && bidsRaw.length > 0,
           brokerReviewCount,
+          clientSignhostTask,
           recentBids,
           recentRegistrations,
           auditLogs: auditLogs.slice(0, 5),
@@ -455,7 +531,7 @@ export default function AdminDashboardHome() {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [role]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -513,12 +589,23 @@ export default function AdminDashboardHome() {
   const showClientBrokerReview =
     role === "client" &&
     !loading &&
+    data.clientSignhostTask?.latest_signhost.status !== "signing" &&
+    data.clientSignhostTask?.latest_signhost.status !== "failed" &&
+    data.clientSignhostTask?.latest_signhost.status !== "waiting_invite" &&
+    data.clientSignhostTask?.latest_signhost.status !== "signed" &&
     data.brokerReviewCount > 0 &&
     data.recentBids.length === 0 &&
     !data.hasPlacedBids;
+  const showClientSignhostCard =
+    role === "client" &&
+    !loading &&
+    data.clientSignhostTask !== null &&
+    data.clientSignhostTask.latest_signhost.status !== "pending_review";
   const showRecentBiddingPanel =
     role !== "client" ||
-    (!showClientBrokerReview && (data.hasBoatListings || data.hasPlacedBids));
+    (!showClientBrokerReview &&
+      !showClientSignhostCard &&
+      (data.hasBoatListings || data.hasPlacedBids));
   const showClientOnboarding =
     role === "client" &&
     !loading &&
@@ -572,6 +659,48 @@ export default function AdminDashboardHome() {
       isCurrency: true,
     },
   ];
+
+  const clientTaskYachtName = getDashboardYachtName(data.clientSignhostTask);
+  const clientTaskPath = data.clientSignhostTask
+    ? `${dashboardBase}/yachts/${data.clientSignhostTask.id}?step=6`
+    : `${dashboardBase}/yachts`;
+  const clientTaskSignUrl =
+    data.clientSignhostTask?.latest_signhost.client_sign_url ?? null;
+  const clientTaskStatus = data.clientSignhostTask?.latest_signhost.status;
+  const clientTaskContent =
+    clientTaskStatus === "signing"
+      ? {
+          title: t("contract.readyTitle"),
+          heading: t("contract.readyHeading", { boatName: clientTaskYachtName }),
+          subtitle: t("contract.readySubtitle"),
+          cta: t("actions.openContract"),
+        }
+      : clientTaskStatus === "failed"
+        ? {
+            title: t("contract.failedTitle"),
+            heading: t("contract.failedHeading", {
+              boatName: clientTaskYachtName,
+            }),
+            subtitle: t("contract.failedSubtitle"),
+            cta: t("actions.openContract"),
+          }
+        : clientTaskStatus === "signed"
+          ? {
+              title: t("contract.signedTitle"),
+              heading: t("contract.signedHeading", {
+                boatName: clientTaskYachtName,
+              }),
+              subtitle: t("contract.signedSubtitle"),
+              cta: t("actions.viewBoats"),
+            }
+          : {
+              title: t("contract.waitingTitle"),
+              heading: t("contract.waitingHeading", {
+                boatName: clientTaskYachtName,
+              }),
+              subtitle: t("contract.waitingSubtitle"),
+              cta: t("actions.reviewContract"),
+            };
 
   const performanceSnapshot = [
     { label: t("snapshot.boatsInIntake"), value: data.fleetIntake, suffix: "" },
@@ -1035,6 +1164,68 @@ export default function AdminDashboardHome() {
                 {t("actions.viewBoats")}
                 <ArrowRight size={14} />
               </Link>
+            </div>
+          </div>
+        )}
+
+        {showClientSignhostCard && data.clientSignhostTask && (
+          <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
+            <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("sections.marketPulse")}
+                </p>
+                <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                  {clientTaskContent.title}
+                </h2>
+              </div>
+              <Link
+                href={clientTaskPath}
+                className="inline-flex items-center gap-1 rounded-lg border border-[#BED0EE] bg-[#EFF4FF] px-3 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-[#dfe9ff] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                {t("actions.viewBoats")}
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+
+            <div className="rounded-2xl border border-dashed border-[#C6D6F2] bg-gradient-to-b from-[#F8FBFF] to-white p-10 text-center dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#0B1F3A]/10">
+                <Sailboat className="text-[#1E3A8A]" size={26} />
+              </div>
+              <p className="text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
+                {clientTaskContent.heading}
+              </p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {clientTaskContent.subtitle}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                {clientTaskSignUrl ? (
+                  <a
+                    href={clientTaskSignUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
+                  >
+                    {clientTaskContent.cta}
+                    <ArrowRight size={14} />
+                  </a>
+                ) : (
+                  <Link
+                    href={clientTaskPath}
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
+                  >
+                    {clientTaskContent.cta}
+                    <ArrowRight size={14} />
+                  </Link>
+                )}
+                <Link
+                  href={`${dashboardBase}/yachts`}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#C6D6F2] bg-white px-4 py-2 text-sm font-semibold text-[#0B1F3A] transition hover:border-[#1E3A8A] hover:text-[#1E3A8A] dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400 dark:hover:text-sky-300"
+                >
+                  {t("actions.viewBoats")}
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
             </div>
           </div>
         )}
