@@ -115,6 +115,7 @@ export async function verifyStepUp(payload: {
 export async function signup(payload: {
   name: string;
   email: string;
+  locale?: string;
   phone?: string;
   location_id?: number;
   website?: string;
@@ -124,6 +125,7 @@ export async function signup(payload: {
   const body = {
     name: payload.name,
     email: payload.email,
+    locale: payload.locale,
     phone: payload.phone,
     location_id: payload.location_id,
     website: payload.website ?? "",

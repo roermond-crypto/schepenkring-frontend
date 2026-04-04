@@ -170,6 +170,8 @@
       "refresh": "Vernieuwen",
       "newVessel": "Nieuw vaartuig",
       "registerFirst": "Eerste vaartuig registreren",
+      "openContract": "Contract openen",
+      "signContract": "Contract ondertekenen",
       "editManifest": "Manifest bewerken",
       "viewDetails": "Details bekijken",
       "deleteVessel": "Vaartuig verwijderen",
@@ -222,6 +224,14 @@
     "sections": {
       "dimensions": "Afmetingen",
       "details": "Details"
+    },
+    "contract": {
+      "label": "Contractondertekening",
+      "pendingReview": "Wacht op brokercontrole",
+      "waitingInvite": "Wacht op Signhost-uitnodiging",
+      "signing": "Klaar om te ondertekenen",
+      "signed": "Ondertekend",
+      "failed": "Vraagt aandacht"
     },
     "table": {
       "vessel": "Vaartuig",
@@ -471,7 +481,9 @@
       "reviewRegistrations": "Bekijk registraties",
       "viewBoats": "Bekijk boten",
       "createFirstListing": "Boot verkopen",
-      "browseMarketplace": "Aanbod bekijken"
+      "browseMarketplace": "Aanbod bekijken",
+      "openContract": "Contract openen",
+      "reviewContract": "Contract bekijken"
     },
     "schedule": {
       "live": "Live planning",
@@ -513,6 +525,20 @@
       "onboardingHeading": "Je hebt nog geen acties ondernomen",
       "onboardingSubtitle": "Begin met het verkopen van je boot of bekijk het <marketplace>aanbod</marketplace> op de marketplace.",
       "noSystemLogs": "Nog geen recente systeemlogs."
+    },
+    "contract": {
+      "readyTitle": "Contract klaar om te ondertekenen",
+      "readyHeading": "{boatName} wacht op jouw handtekening",
+      "readySubtitle": "Je broker heeft het Signhost-verzoek verzonden. Open het contract en onderteken het om verder te gaan.",
+      "waitingTitle": "Contract wordt voorbereid",
+      "waitingHeading": "{boatName} is goedgekeurd en wacht op de Signhost-uitnodiging",
+      "waitingSubtitle": "De broker heeft je boot goedgekeurd. De uitnodiging om te ondertekenen verschijnt hier zodra die is verzonden.",
+      "signedTitle": "Contract ondertekend",
+      "signedHeading": "{boatName} is ondertekend",
+      "signedSubtitle": "Het bemiddelingscontract is afgerond. Open de vaartuigpagina als je de eindstatus wilt bekijken.",
+      "failedTitle": "Contract vraagt aandacht",
+      "failedHeading": "{boatName} heeft een nieuwe ondertekenactie nodig",
+      "failedSubtitle": "De laatste Signhost-poging is verlopen, mislukt of geweigerd. Open de vaartuigpagina om verder te gaan."
     },
     "defaults": {
       "userName": "Martijn"

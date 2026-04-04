@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as {
       name?: string;
       email?: string;
+      locale?: string;
       phone?: string;
       location_id?: number;
       website?: string;
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
     const backendResponse = await backendApi.post<BackendSignupResponse>("/auth/register", {
       name,
       email,
+      locale: body.locale ?? undefined,
       phone: body.phone ?? undefined,
       location_id: body.location_id ?? undefined,
       website: body.website ?? "",

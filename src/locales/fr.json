@@ -169,6 +169,8 @@
       "refresh": "Actualiser",
       "newVessel": "Nouveau navire",
       "registerFirst": "Enregistrer le premier navire",
+      "openContract": "Ouvrir le contrat",
+      "signContract": "Signer le contrat",
       "editManifest": "Modifier la fiche",
       "viewDetails": "Voir les details",
       "deleteVessel": "Supprimer le navire",
@@ -221,6 +223,14 @@
     "sections": {
       "dimensions": "Dimensions",
       "details": "Details"
+    },
+    "contract": {
+      "label": "Signature du contrat",
+      "pendingReview": "En attente de revision du courtier",
+      "waitingInvite": "En attente de l'invitation Signhost",
+      "signing": "Pret a signer",
+      "signed": "Signe",
+      "failed": "Demande de l'attention"
     },
     "table": {
       "vessel": "Navire",
@@ -470,7 +480,9 @@
       "reviewRegistrations": "Examiner les inscriptions",
       "viewBoats": "Voir les bateaux",
       "createFirstListing": "Vendre un bateau",
-      "browseMarketplace": "Voir les offres"
+      "browseMarketplace": "Voir les offres",
+      "openContract": "Ouvrir le contrat",
+      "reviewContract": "Voir le contrat"
     },
     "schedule": {
       "live": "Horaire en direct",
@@ -512,6 +524,20 @@
       "onboardingHeading": "Vous n'avez encore effectue aucune action",
       "onboardingSubtitle": "Commencez par vendre votre bateau ou consultez les <marketplace>offres</marketplace> sur la marketplace.",
       "noSystemLogs": "Aucun journal système récent pour le moment."
+    },
+    "contract": {
+      "readyTitle": "Contrat pret a signer",
+      "readyHeading": "{boatName} attend votre signature",
+      "readySubtitle": "Votre courtier a envoye la demande Signhost. Ouvrez le contrat et signez-le pour continuer.",
+      "waitingTitle": "Le contrat est en preparation",
+      "waitingHeading": "{boatName} est approuve et attend l'invitation Signhost",
+      "waitingSubtitle": "Le courtier a approuve votre bateau. L'invitation a signer apparaitra ici des qu'elle sera envoyee.",
+      "signedTitle": "Contrat signe",
+      "signedHeading": "{boatName} a ete signe",
+      "signedSubtitle": "Le contrat de courtage est termine. Ouvrez la page du navire si vous souhaitez verifier le statut final.",
+      "failedTitle": "Le contrat demande de l'attention",
+      "failedHeading": "{boatName} necessite une nouvelle action de signature",
+      "failedSubtitle": "La derniere tentative Signhost a expire, a echoue ou a ete refusee. Ouvrez la page du navire pour continuer."
     },
     "defaults": {
       "userName": "Martijn"

@@ -169,6 +169,8 @@
       "refresh": "Refresh",
       "newVessel": "New Vessel",
       "registerFirst": "Register First Vessel",
+      "openContract": "Open Contract",
+      "signContract": "Sign Contract",
       "editManifest": "Edit Manifest",
       "viewDetails": "View Details",
       "deleteVessel": "Delete Vessel",
@@ -221,6 +223,14 @@
     "sections": {
       "dimensions": "Dimensions",
       "details": "Details"
+    },
+    "contract": {
+      "label": "Contract Signing",
+      "pendingReview": "Pending broker review",
+      "waitingInvite": "Waiting for Signhost invite",
+      "signing": "Ready to sign",
+      "signed": "Signed",
+      "failed": "Needs attention"
     },
     "table": {
       "vessel": "Vessel",
@@ -470,7 +480,9 @@
       "reviewRegistrations": "Review registrations",
       "viewBoats": "View boats",
       "createFirstListing": "Sell Boat",
-      "browseMarketplace": "Browse Listings"
+      "browseMarketplace": "Browse Listings",
+      "openContract": "Open contract",
+      "reviewContract": "Review contract"
     },
     "schedule": {
       "live": "Live schedule",
@@ -512,6 +524,20 @@
       "onboardingHeading": "You have not taken any actions yet",
       "onboardingSubtitle": "Start by selling your boat or browse the <marketplace>listings</marketplace> on the marketplace.",
       "noSystemLogs": "No recent system logs yet."
+    },
+    "contract": {
+      "readyTitle": "Contract ready to sign",
+      "readyHeading": "{boatName} is waiting for your signature",
+      "readySubtitle": "Your broker sent the Signhost request. Open the contract and sign it to continue.",
+      "waitingTitle": "Contract is being prepared",
+      "waitingHeading": "{boatName} is approved and waiting for the Signhost invitation",
+      "waitingSubtitle": "The broker has approved your boat. The signing invitation will appear here as soon as it is sent.",
+      "signedTitle": "Contract signed",
+      "signedHeading": "{boatName} has been signed",
+      "signedSubtitle": "The brokerage contract is complete. Open the vessel page if you want to review the final status.",
+      "failedTitle": "Contract needs attention",
+      "failedHeading": "{boatName} needs a new signing action",
+      "failedSubtitle": "The last Signhost attempt expired, failed, or was declined. Open the vessel page to continue."
     },
     "defaults": {
       "userName": "Martijn"

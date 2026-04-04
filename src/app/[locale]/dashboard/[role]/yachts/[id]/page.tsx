@@ -111,6 +111,11 @@ import { CatalogAutocomplete } from "@/components/ui/CatalogAutocomplete";
 import { BoatCreationAssistant } from "@/components/yachts/BoatCreationAssistant";
 import { SignhostFlow } from "@/components/yachts/SignhostFlow";
 import { signhostApi } from "@/lib/api/signhost";
+import {
+  latestSignhostFromTransaction,
+  normalizeClientContractStatus,
+  normalizeLatestSignhost,
+} from "@/lib/signhost/latest-signhost";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
 import { useImagePipeline, PipelineImage } from "@/hooks/useImagePipeline";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -675,6 +680,16 @@ const YACHT_FORM_TEXT = {
       clientReviewContractSent: "Signhost invite sent",
       clientReviewContractSigned: "Contract signed",
       clientReviewContractFailed: "Signing needs attention",
+      clientReviewContractWaitingDescription:
+        "Your broker approved this vessel. The Signhost invitation will appear here as soon as it is sent.",
+      clientReviewContractSentDescription:
+        "Your broker sent the Signhost request. Open the contract to review and sign it.",
+      clientReviewContractSignedDescription:
+        "The Signhost contract has been signed successfully.",
+      clientReviewContractFailedDescription:
+        "The latest Signhost request expired, failed, or was declined. Open the contract page to continue.",
+      clientReviewOpenContract: "Open contract",
+      clientReviewSignNow: "Sign now",
       internalReviewTitle: "Broker review actions",
       internalReviewDescription:
         "Review this client vessel here. Keeping it as draft means it stays under review. Approving it moves the vessel into the live sales flow and lets you continue with Signhost.",
@@ -1148,6 +1163,16 @@ const YACHT_FORM_TEXT = {
       clientReviewContractSent: "Signhost-uitnodiging verzonden",
       clientReviewContractSigned: "Contract ondertekend",
       clientReviewContractFailed: "Ondertekening vraagt aandacht",
+      clientReviewContractWaitingDescription:
+        "Je broker heeft dit vaartuig goedgekeurd. De Signhost-uitnodiging verschijnt hier zodra die is verzonden.",
+      clientReviewContractSentDescription:
+        "Je broker heeft het Signhost-verzoek verzonden. Open het contract om het te bekijken en te ondertekenen.",
+      clientReviewContractSignedDescription:
+        "Het Signhost-contract is succesvol ondertekend.",
+      clientReviewContractFailedDescription:
+        "Het laatste Signhost-verzoek is verlopen, mislukt of geweigerd. Open de contractpagina om verder te gaan.",
+      clientReviewOpenContract: "Contract openen",
+      clientReviewSignNow: "Nu ondertekenen",
       internalReviewTitle: "Broker review-acties",
       internalReviewDescription:
         "Beoordeel dit klantvaartuig hier. Als het concept blijft, blijft het in review. Bij goedkeuring gaat het vaartuig door naar de verkoopflow en kun je verder met Signhost.",
@@ -1620,6 +1645,16 @@ const YACHT_FORM_TEXT = {
       clientReviewContractSent: "Signhost-Einladung gesendet",
       clientReviewContractSigned: "Vertrag unterzeichnet",
       clientReviewContractFailed: "Unterzeichnung erfordert Aufmerksamkeit",
+      clientReviewContractWaitingDescription:
+        "Ihr Broker hat dieses Boot freigegeben. Die Signhost-Einladung erscheint hier, sobald sie versendet wurde.",
+      clientReviewContractSentDescription:
+        "Ihr Broker hat die Signhost-Anfrage gesendet. Offnen Sie den Vertrag, um ihn zu prufen und zu unterschreiben.",
+      clientReviewContractSignedDescription:
+        "Der Signhost-Vertrag wurde erfolgreich unterzeichnet.",
+      clientReviewContractFailedDescription:
+        "Die letzte Signhost-Anfrage ist abgelaufen, fehlgeschlagen oder abgelehnt worden. Offnen Sie die Vertragsseite, um fortzufahren.",
+      clientReviewOpenContract: "Vertrag offnen",
+      clientReviewSignNow: "Jetzt unterschreiben",
       internalReviewTitle: "Broker-Prufaktionen",
       internalReviewDescription:
         "Prufen Sie dieses Kundenboot hier. Solange es im Entwurf bleibt, bleibt es in der Prufung. Mit der Freigabe geht das Boot in den Verkaufsablauf uber und Sie konnen mit Signhost fortfahren.",
@@ -2087,6 +2122,16 @@ const YACHT_FORM_TEXT = {
       clientReviewContractSent: "Invitation Signhost envoyee",
       clientReviewContractSigned: "Contrat signe",
       clientReviewContractFailed: "La signature demande de l'attention",
+      clientReviewContractWaitingDescription:
+        "Votre courtier a approuve ce bateau. L'invitation Signhost apparaitra ici des qu'elle sera envoyee.",
+      clientReviewContractSentDescription:
+        "Votre courtier a envoye la demande Signhost. Ouvrez le contrat pour le consulter et le signer.",
+      clientReviewContractSignedDescription:
+        "Le contrat Signhost a ete signe avec succes.",
+      clientReviewContractFailedDescription:
+        "La derniere demande Signhost a expire, a echoue ou a ete refusee. Ouvrez la page du contrat pour continuer.",
+      clientReviewOpenContract: "Ouvrir le contrat",
+      clientReviewSignNow: "Signer maintenant",
       internalReviewTitle: "Actions de revision du courtier",
       internalReviewDescription:
         "Revisez ici ce bateau client. Le conserver en brouillon signifie qu'il reste en revision. L'approuver le fait passer au flux commercial et vous permet de continuer avec Signhost.",
@@ -3075,6 +3120,9 @@ export default function YachtEditorPage() {
   const [clientSignhostStatus, setClientSignhostStatus] = useState<
     string | null
   >(null);
+  const [clientSignhostUrl, setClientSignhostUrl] = useState<string | null>(
+    null,
+  );
   const [clientSignhostLoading, setClientSignhostLoading] = useState(false);
   const [reviewActionLoading, setReviewActionLoading] = useState<
     "draft" | "approved" | null
@@ -3141,14 +3189,48 @@ export default function YachtEditorPage() {
     const loadClientSignhostStatus = async () => {
       setClientSignhostLoading(true);
       try {
-        const response = await signhostApi.getYachtStatus(
-          Number(activeYachtId),
-        );
+        const [statusResult, yachtResult] = await Promise.allSettled([
+          signhostApi.getYachtStatus(Number(activeYachtId)),
+          api.get(`/yachts/${activeYachtId}`),
+        ]);
         if (!active) return;
-        setClientSignhostStatus(response.transaction?.status ?? null);
-      } catch {
-        if (!active) return;
-        setClientSignhostStatus(null);
+
+        if (yachtResult.status === "fulfilled") {
+          const yacht = yachtResult.value.data;
+          setSelectedYacht((previous) => ({
+            ...(previous && typeof previous === "object" ? previous : {}),
+            ...yacht,
+            ref_harbor_id:
+              yacht?.ref_harbor_id ??
+              yacht?.location_id ??
+              previous?.ref_harbor_id ??
+              null,
+            status:
+              normalizeStatusForForm(yacht?.status) ??
+              yacht?.status ??
+              previous?.status,
+          }));
+        }
+
+        if (
+          statusResult.status === "fulfilled" &&
+          statusResult.value.transaction
+        ) {
+          const liveSummary = latestSignhostFromTransaction(
+            statusResult.value.transaction,
+          );
+          setClientSignhostStatus(liveSummary.status);
+          setClientSignhostUrl(liveSummary.client_sign_url);
+        } else if (yachtResult.status === "fulfilled") {
+          const yachtSummary = normalizeLatestSignhost(
+            yachtResult.value.data?.latest_signhost,
+          );
+          setClientSignhostStatus(yachtSummary.status);
+          setClientSignhostUrl(yachtSummary.client_sign_url);
+        } else {
+          setClientSignhostStatus(null);
+          setClientSignhostUrl(null);
+        }
       } finally {
         if (active) {
           setClientSignhostLoading(false);
@@ -3317,23 +3399,43 @@ export default function YachtEditorPage() {
     "sold",
     "published",
   ].includes(normalizedClientBoatStatus);
-  const normalizedClientContractStatus = String(
-    clientSignhostStatus || "",
-  ).toLowerCase();
+  const initialClientSignhost = normalizeLatestSignhost(
+    selectedYacht?.latest_signhost,
+  );
+  const normalizedClientContractStatus = normalizeClientContractStatus(
+    clientSignhostStatus || initialClientSignhost.status,
+  );
+  const effectiveClientSignhostUrl =
+    clientSignhostUrl || initialClientSignhost.client_sign_url;
   const clientContractStatusKey =
     normalizedClientContractStatus === "signed"
       ? "clientReviewContractSigned"
-      : ["pending", "signing", "sent"].includes(normalizedClientContractStatus)
+      : normalizedClientContractStatus === "signing"
         ? "clientReviewContractSent"
-        : ["cancelled", "rejected", "failed"].includes(
-              normalizedClientContractStatus,
-            )
+        : normalizedClientContractStatus === "failed"
           ? "clientReviewContractFailed"
           : "clientReviewContractWaiting";
+  const clientContractDescriptionKey =
+    normalizedClientContractStatus === "signed"
+      ? "clientReviewContractSignedDescription"
+      : normalizedClientContractStatus === "signing"
+        ? "clientReviewContractSentDescription"
+        : normalizedClientContractStatus === "failed"
+          ? "clientReviewContractFailedDescription"
+          : normalizedClientContractStatus === "waiting_invite"
+            ? "clientReviewContractWaitingDescription"
+            : "clientReviewStatusDescription";
   const internalReviewApproved = clientBoatApproved;
   const internalReviewStatusKey = internalReviewApproved
     ? "internalReviewApproved"
     : "internalReviewPending";
+  const handleOpenClientSignhost = useCallback(() => {
+    if (!effectiveClientSignhostUrl) {
+      return;
+    }
+
+    window.open(effectiveClientSignhostUrl, "_blank", "noopener,noreferrer");
+  }, [effectiveClientSignhostUrl]);
   const displayTotalImageCount =
     persistedPipelineImages.length + pendingUploadPreviews.length;
   const shouldShowImageUploadDropzone =
@@ -12570,8 +12672,18 @@ export default function YachtEditorPage() {
                     </p>
                     <p className="mt-3 text-sm leading-6">
                       {labelText(
-                        "clientReviewStepDescription",
-                        "Your vessel has been submitted for broker review. A broker will contact you and send the Signhost contract when everything is ready.",
+                        normalizedClientContractStatus === "pending_review"
+                          ? "clientReviewStepDescription"
+                          : clientContractDescriptionKey,
+                        normalizedClientContractStatus === "pending_review"
+                          ? "Your vessel has been submitted for broker review. A broker will contact you and send the Signhost contract when everything is ready."
+                          : normalizedClientContractStatus === "signing"
+                            ? "Your broker sent the Signhost request. Open the contract to review and sign it."
+                            : normalizedClientContractStatus === "signed"
+                              ? "The Signhost contract has been signed successfully."
+                              : normalizedClientContractStatus === "failed"
+                                ? "The latest Signhost request needs attention. Open the contract page to continue."
+                                : "Your broker approved this vessel. The Signhost invitation will appear here as soon as it is sent.",
                       )}
                     </p>
                     <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -12613,6 +12725,35 @@ export default function YachtEditorPage() {
                         </div>
                       </div>
                     </div>
+                    {effectiveClientSignhostUrl ? (
+                      <div className="mt-5 flex flex-wrap gap-3">
+                        <Button
+                          type="button"
+                          className="rounded-2xl bg-[#003566] text-white hover:bg-blue-800"
+                          onClick={handleOpenClientSignhost}
+                        >
+                          {labelText(
+                            normalizedClientContractStatus === "signing"
+                              ? "clientReviewSignNow"
+                              : "clientReviewOpenContract",
+                            normalizedClientContractStatus === "signing"
+                              ? "Sign now"
+                              : "Open contract",
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="rounded-2xl border-blue-300 text-blue-800 hover:bg-blue-100"
+                          onClick={() => handleStepChange(6)}
+                        >
+                          {labelText(
+                            "clientReviewOpenContract",
+                            "Open contract",
+                          )}
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                 ) : (
                   <div className="mb-8 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-5 text-sm text-blue-900">
@@ -12722,14 +12863,31 @@ export default function YachtEditorPage() {
                 <h3 className="text-[12px] font-black text-[#003566] uppercase tracking-[0.3em] flex items-center gap-3 border-b-2 border-[#003566] pb-4 mb-6">
                   <FileText size={18} />{" "}
                   {isClientRole
-                    ? labelText("stepBrokerReview", "Broker Review")
+                    ? labelText(
+                        normalizedClientContractStatus === "pending_review"
+                          ? "stepBrokerReview"
+                          : "stepContract",
+                        normalizedClientContractStatus === "pending_review"
+                          ? "Broker Review"
+                          : "Contract",
+                      )
                     : labelText("stepContract", "Contract")}
                 </h3>
                 <p className="text-sm text-slate-600 mb-6">
                   {isClientRole
                     ? labelText(
-                        "clientReviewStepDescription",
-                        "Your vessel has been submitted for broker review. A broker will contact you and send the Signhost contract when everything is ready.",
+                        normalizedClientContractStatus === "pending_review"
+                          ? "clientReviewStepDescription"
+                          : clientContractDescriptionKey,
+                        normalizedClientContractStatus === "pending_review"
+                          ? "Your vessel has been submitted for broker review. A broker will contact you and send the Signhost contract when everything is ready."
+                          : normalizedClientContractStatus === "signing"
+                            ? "Your broker sent the Signhost request. Open the contract to review and sign it."
+                            : normalizedClientContractStatus === "signed"
+                              ? "The Signhost contract has been signed successfully."
+                              : normalizedClientContractStatus === "failed"
+                                ? "The latest Signhost request needs attention. Open the contract page to continue."
+                                : "Your broker approved this vessel. The Signhost invitation will appear here as soon as it is sent.",
                       )
                     : labelText(
                         "contractStepDescription",
@@ -12741,16 +12899,44 @@ export default function YachtEditorPage() {
                   <div className="rounded-xl border border-blue-200 bg-blue-50 px-5 py-5 text-sm text-blue-900">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-700">
                       {labelText(
-                        "clientReviewStatusTitle",
-                        "Submitted for Review",
+                        normalizedClientContractStatus === "signing"
+                          ? "clientReviewContractStatusLabel"
+                          : "clientReviewStatusTitle",
+                        normalizedClientContractStatus === "signing"
+                          ? "Contract signing"
+                          : "Submitted for Review",
                       )}
                     </p>
-                    <p className="mt-3">
-                      {labelText(
-                        "clientReviewStatusDescription",
-                        "This vessel has been submitted for review. A broker will contact you and send the Signhost contract by email once everything is ready.",
-                      )}
-                    </p>
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <div className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-100/80 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-blue-800">
+                        <span
+                          aria-hidden
+                          className="h-1.5 w-1.5 rounded-full bg-blue-700"
+                        />
+                        {labelText(
+                          clientContractStatusKey,
+                          normalizedClientContractStatus === "pending_review"
+                            ? "Pending broker review"
+                            : "Waiting for Signhost invite",
+                        )}
+                      </div>
+                      {effectiveClientSignhostUrl ? (
+                        <Button
+                          type="button"
+                          className="rounded-2xl bg-[#003566] text-white hover:bg-blue-800"
+                          onClick={handleOpenClientSignhost}
+                        >
+                          {labelText(
+                            normalizedClientContractStatus === "signing"
+                              ? "clientReviewSignNow"
+                              : "clientReviewOpenContract",
+                            normalizedClientContractStatus === "signing"
+                              ? "Sign now"
+                              : "Open contract",
+                          )}
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
                 ) : activeYachtId ? (
                   <SignhostFlow

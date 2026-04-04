@@ -311,6 +311,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     const response = await signup({
       name: formData.name,
       email: formData.email,
+      locale,
       phone: formData.phone || undefined,
       location_id: formData.location_id
         ? Number(formData.location_id)
