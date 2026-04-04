@@ -3197,7 +3197,7 @@ export default function YachtEditorPage() {
 
         if (yachtResult.status === "fulfilled") {
           const yacht = yachtResult.value.data;
-          setSelectedYacht((previous) => ({
+          setSelectedYacht((previous: Record<string, unknown> | null) => ({
             ...(previous && typeof previous === "object" ? previous : {}),
             ...yacht,
             ref_harbor_id:

@@ -204,7 +204,7 @@ function renderMarketplaceText(
   marketplace: (chunks: string) => ReactNode,
 ): ReactNode {
   const match = value.match(
-    /^(.*)<marketplace>(.*)<\/marketplace>(.*)$/s,
+    /^([\s\S]*)<marketplace>([\s\S]*)<\/marketplace>([\s\S]*)$/,
   );
 
   if (!match) {
