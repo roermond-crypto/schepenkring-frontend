@@ -47,6 +47,7 @@ import {
   type SignhostTransaction,
 } from "@/lib/api/signhost";
 import {
+  createScopedClientUser,
   getScopedClientUser,
   listScopedClientUsers,
   type MeUser,
@@ -247,6 +248,17 @@ type ContractPartyFormState = {
   passportNumber: string;
   partnerName: string;
   married: boolean;
+};
+
+type ClientCreationFormState = {
+  name: string;
+  email: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2: string;
+  postalCode: string;
+  city: string;
+  country: string;
 };
 
 interface SignhostFlowProps {
@@ -1406,6 +1418,21 @@ function buildContractPartyFormFromRecord(
   };
 }
 
+function buildClientCreationForm(
+  draft: ContractDraft,
+): ClientCreationFormState {
+  return {
+    name: draft.clientName || "",
+    email: draft.clientEmail || "",
+    phone: draft.clientPhone || "",
+    addressLine1: draft.clientAddress || "",
+    addressLine2: "",
+    postalCode: draft.clientPostalCode || "",
+    city: draft.clientCity || "",
+    country: "",
+  };
+}
+
 function buildContractPartyPayload(
   role: ContractPartyRoleType,
   form: ContractPartyFormState,
@@ -1561,6 +1588,7 @@ export function SignhostFlow({
   const params = useParams<{ role?: string }>();
   const role = params?.role?.toLowerCase();
   const canManageContract = role !== "client";
+  const canCreateClientInline = role === "admin" && Boolean(locationId);
   const selectedLocation = useMemo(
     () => locationOptions.find((option) => option.id === locationId) || null,
     [locationId, locationOptions],
@@ -1577,6 +1605,18 @@ export function SignhostFlow({
   const [availableClientsLoading, setAvailableClientsLoading] = useState(false);
   const [selectedClientIdToLink, setSelectedClientIdToLink] = useState("");
   const [isLinkingClient, setIsLinkingClient] = useState(false);
+  const [createClientDialogOpen, setCreateClientDialogOpen] = useState(false);
+  const [createClientForm, setCreateClientForm] = useState<ClientCreationFormState>(
+    buildClientCreationForm(
+      buildContractDraft(
+        yachtName,
+        yachtData,
+        selectedLocation,
+        localeContractLanguage,
+      ),
+    ),
+  );
+  const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [draft, setDraft] = useState<ContractDraft>(() =>
     buildContractDraft(
       yachtName,
@@ -1947,6 +1987,47 @@ export function SignhostFlow({
     setDraft((prev) => ({ ...prev, [key]: value }));
   };
 
+  const openCreateClientDialog = () => {
+    setCreateClientForm(buildClientCreationForm(draft));
+    setCreateClientDialogOpen(true);
+  };
+
+  const applyLinkedClientToBuyerDraft = (client: MeUser) => {
+    const linkedOwner = mapAdminUserToContractParty(client);
+    if (!linkedOwner) {
+      return;
+    }
+
+    setDraft((prev) =>
+      prev.buyerContactId
+        ? prev
+        : {
+            ...prev,
+            clientName: linkedOwner.name || "",
+            clientEmail: linkedOwner.email || "",
+            clientPhone: linkedOwner.phone || "",
+            clientAddress: linkedOwner.address || "",
+            clientPostalCode: linkedOwner.postal_code || "",
+            clientCity: linkedOwner.city || "",
+          },
+    );
+  };
+
+  const linkClientToYacht = async (client: MeUser) => {
+    if (!yachtId) {
+      throw new Error("Save the yacht before linking a client.");
+    }
+
+    await api.patch(`/yachts/${yachtId}`, {
+      user_id: client.id,
+    });
+
+    setLinkedClientUserId(client.id);
+    setSelectedClientIdToLink("");
+    setLinkedClient(client);
+    applyLinkedClientToBuyerDraft(client);
+  };
+
   const handleLinkClient = async () => {
     if (!yachtId || !selectedClientIdToLink) {
       toast.error("Select a client first.");
@@ -1960,32 +2041,15 @@ export function SignhostFlow({
     setIsLinkingClient(true);
 
     try {
-      await api.patch(`/yachts/${yachtId}`, {
-        user_id: clientId,
-      });
-
-      setLinkedClientUserId(clientId);
-      setSelectedClientIdToLink("");
-
       if (selectedClient) {
-        setLinkedClient(selectedClient);
-
-        const linkedOwner = mapAdminUserToContractParty(selectedClient);
-        if (linkedOwner) {
-          setDraft((prev) =>
-            prev.buyerContactId
-              ? prev
-              : {
-                  ...prev,
-                  clientName: linkedOwner.name || "",
-                  clientEmail: linkedOwner.email || "",
-                  clientPhone: linkedOwner.phone || "",
-                  clientAddress: linkedOwner.address || "",
-                  clientPostalCode: linkedOwner.postal_code || "",
-                  clientCity: linkedOwner.city || "",
-                },
-          );
-        }
+        await linkClientToYacht(selectedClient);
+      } else {
+        await api.patch(`/yachts/${yachtId}`, {
+          user_id: clientId,
+        });
+        setLinkedClientUserId(clientId);
+        setSelectedClientIdToLink("");
+        setLinkedClient(null);
       }
 
       toast.success("Client linked to this yacht.");
@@ -2004,6 +2068,66 @@ export function SignhostFlow({
       toast.error(message);
     } finally {
       setIsLinkingClient(false);
+    }
+  };
+
+  const handleCreateClient = async () => {
+    if (!locationId) {
+      toast.error("Select a yacht location before creating a client.");
+      return;
+    }
+
+    const trimmedName = createClientForm.name.trim();
+    const trimmedEmail = createClientForm.email.trim();
+
+    if (!trimmedName || !trimmedEmail) {
+      toast.error("Name and e-mail are required.");
+      return;
+    }
+
+    setIsCreatingClient(true);
+
+    try {
+      const { user: createdClient, temporaryPassword } =
+        await createScopedClientUser({
+          dashboardRole: role,
+          locationId,
+          name: trimmedName,
+          email: trimmedEmail,
+          phone: createClientForm.phone.trim() || null,
+          addressLine1: createClientForm.addressLine1.trim() || null,
+          addressLine2: createClientForm.addressLine2.trim() || null,
+          city: createClientForm.city.trim() || null,
+          postalCode: createClientForm.postalCode.trim() || null,
+          country: createClientForm.country.trim() || null,
+        });
+
+      setAvailableClients((prev) => {
+        const next = [createdClient, ...prev.filter((client) => client.id !== createdClient.id)];
+        return next;
+      });
+      await linkClientToYacht(createdClient);
+      setCreateClientDialogOpen(false);
+      toast.success("Client created and linked to this yacht.");
+      toast(`Temporary password: ${temporaryPassword}`, {
+        icon: "🔐",
+        duration: 8000,
+      });
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response!
+              .data!.message!
+          : error instanceof Error
+            ? error.message
+            : "Failed to create client.";
+      toast.error(message);
+    } finally {
+      setIsCreatingClient(false);
     }
   };
 
@@ -2601,6 +2725,17 @@ export function SignhostFlow({
                   </option>
                 ))}
               </select>
+              {canCreateClientInline ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={openCreateClientDialog}
+                  className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Client
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 onClick={handleLinkClient}
@@ -2622,6 +2757,14 @@ export function SignhostFlow({
               This linked client becomes the yacht owner used for brokerage
               agreement defaults and owner visibility.
             </p>
+            {!availableClientsLoading && availableClients.length === 0 ? (
+              <p className="mt-2 text-xs text-amber-700">
+                No clients found for this location yet.
+                {canCreateClientInline
+                  ? " Create one here and it will be linked immediately."
+                  : " Ask an admin to create a client first."}
+              </p>
+            ) : null}
           </div>
 
           {linkedClientLoading ? (
@@ -3930,6 +4073,163 @@ export function SignhostFlow({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
               {contactDialogMode === "create" ? "Create contact" : "Save contact"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={createClientDialogOpen}
+        onOpenChange={setCreateClientDialogOpen}
+      >
+        <DialogContent className="sm:max-w-xl dark:border-slate-700 dark:bg-slate-950">
+          <DialogHeader>
+            <DialogTitle>Create client owner</DialogTitle>
+            <DialogDescription>
+              Add a new client for this location and link them to the yacht in
+              one step.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3 py-2">
+            <div>
+              <FieldLabel>{editorCopy.name}</FieldLabel>
+              <Input
+                value={createClientForm.name}
+                onChange={(event) =>
+                  setCreateClientForm((prev) => ({
+                    ...prev,
+                    name: event.target.value,
+                  }))
+                }
+                placeholder={editorCopy.name}
+              />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <FieldLabel>{editorCopy.email}</FieldLabel>
+                <Input
+                  value={createClientForm.email}
+                  onChange={(event) =>
+                    setCreateClientForm((prev) => ({
+                      ...prev,
+                      email: event.target.value,
+                    }))
+                  }
+                  placeholder={editorCopy.email}
+                />
+              </div>
+              <div>
+                <FieldLabel>{editorCopy.phone}</FieldLabel>
+                <Input
+                  value={createClientForm.phone}
+                  onChange={(event) =>
+                    setCreateClientForm((prev) => ({
+                      ...prev,
+                      phone: event.target.value,
+                    }))
+                  }
+                  placeholder={editorCopy.phone}
+                />
+              </div>
+            </div>
+
+            <div>
+              <FieldLabel>{editorCopy.address}</FieldLabel>
+              <Input
+                value={createClientForm.addressLine1}
+                onChange={(event) =>
+                  setCreateClientForm((prev) => ({
+                    ...prev,
+                    addressLine1: event.target.value,
+                  }))
+                }
+                placeholder={editorCopy.address}
+              />
+            </div>
+
+            <div>
+              <FieldLabel>Address line 2</FieldLabel>
+              <Input
+                value={createClientForm.addressLine2}
+                onChange={(event) =>
+                  setCreateClientForm((prev) => ({
+                    ...prev,
+                    addressLine2: event.target.value,
+                  }))
+                }
+                placeholder="Apartment, suite, dock, unit"
+              />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <FieldLabel>{editorCopy.postalCode}</FieldLabel>
+                <Input
+                  value={createClientForm.postalCode}
+                  onChange={(event) =>
+                    setCreateClientForm((prev) => ({
+                      ...prev,
+                      postalCode: event.target.value,
+                    }))
+                  }
+                  placeholder={editorCopy.postalCode}
+                />
+              </div>
+              <div>
+                <FieldLabel>{editorCopy.city}</FieldLabel>
+                <Input
+                  value={createClientForm.city}
+                  onChange={(event) =>
+                    setCreateClientForm((prev) => ({
+                      ...prev,
+                      city: event.target.value,
+                    }))
+                  }
+                  placeholder={editorCopy.city}
+                />
+              </div>
+            </div>
+
+            <div>
+              <FieldLabel>Country</FieldLabel>
+              <Input
+                value={createClientForm.country}
+                onChange={(event) =>
+                  setCreateClientForm((prev) => ({
+                    ...prev,
+                    country: event.target.value,
+                  }))
+                }
+                placeholder="Country"
+              />
+            </div>
+
+            <p className="text-xs text-slate-500">
+              The client will be created in this location and linked to the
+              yacht immediately after save.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              onClick={() => setCreateClientDialogOpen(false)}
+              className="rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCreateClient}
+              disabled={isCreatingClient || !canCreateClientInline}
+              className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
+            >
+              {isCreatingClient ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Create and Link Client
             </Button>
           </DialogFooter>
         </DialogContent>

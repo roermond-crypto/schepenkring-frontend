@@ -948,7 +948,7 @@ const YACHT_FORM_TEXT = {
       editManifestUnlocked:
         "ℹ️ Edit Manifest mode - Step 2 is unlocked with existing boat details.",
       stepTwoUnlockHint:
-        "Step 2 opens after image approval. AI extraction continues in background and fills fields when ready.",
+        "Step 2 opens after image approval. AI extraction starts when you click Approve All.",
       stillProcessingCount: "{count} still processing...",
       approveAllImages: "Approve All",
       aiTimedOutStepTwo:
@@ -3368,13 +3368,6 @@ export default function YachtEditorPage() {
     currentPipelineExtractionSignature !== null &&
     lastSuccessfulExtractionSignatureRef.current !==
       currentPipelineExtractionSignature;
-  const shouldAutoRunAiExtraction =
-    isNewMode &&
-    isOnline &&
-    !isExtracting &&
-    !hasInFlightImageUploads &&
-    currentPipelineExtractionSignature !== null &&
-    shouldRefreshAiExtraction;
   const approvedMarketingImageIds = useMemo(
     () =>
       persistedPipelineImages
@@ -3471,7 +3464,6 @@ export default function YachtEditorPage() {
   // Gemini Extraction State (Step 1)
   const [boatHint, setBoatHint] = useState("");
   const [geminiExtracted, setGeminiExtracted] = useState(false);
-  const autoExtractionSignatureRef = useRef<string | null>(null);
   const handleAiExtractRef = useRef<
     ((
       options?: {
@@ -6967,33 +6959,6 @@ export default function YachtEditorPage() {
     }
   }, [currentPipelineExtractionSignature, hasCompletedAiExtraction]);
 
-  useEffect(() => {
-    if (!shouldAutoRunAiExtraction || !currentPipelineExtractionSignature) {
-      return;
-    }
-
-    if (
-      autoExtractionSignatureRef.current === currentPipelineExtractionSignature
-    ) {
-      return;
-    }
-
-    autoExtractionSignatureRef.current = currentPipelineExtractionSignature;
-
-    const timer = window.setTimeout(() => {
-      void handleAiExtractRef.current?.({
-        background: true,
-        navigateToStep2: false,
-        speedMode: "balanced",
-      });
-    }, 1200);
-
-    return () => window.clearTimeout(timer);
-  }, [
-    currentPipelineExtractionSignature,
-    shouldAutoRunAiExtraction,
-  ]);
-
   const handleRegenerateDescription = useCallback(
     async (options?: {
       silent?: boolean;
@@ -9145,7 +9110,7 @@ export default function YachtEditorPage() {
                               )
                             : labelText(
                                 "uploadApproveImagesFirstAi",
-                                "AI starts after upload and fills Step 2 in the background. Approve images to unlock Step 2.",
+                                "Upload and review images first. AI starts only after you click Approve All.",
                               )}
                         </p>
 
@@ -9562,7 +9527,7 @@ export default function YachtEditorPage() {
                     <p className="mt-1 text-xs text-amber-600">
                       {labelText(
                         "stepTwoUnlockHint",
-                        "Step 2 opens after image approval. AI extraction continues in background and fills fields when ready.",
+                        "Step 2 opens after image approval. AI extraction starts when you click Approve All.",
                       )}
                       {pipeline.stats.processing > 0 &&
                         ` ${labelText(

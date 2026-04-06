@@ -55,10 +55,33 @@ export type MeUser = {
   updated_at: string;
 };
 
+export type CreateScopedClientUserPayload = {
+  dashboardRole: string | undefined;
+  locationId: number;
+  name: string;
+  email: string;
+  phone?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+};
+
 function idempotencyKey() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `idemp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function generateTemporaryPassword() {
+  const seed =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().replace(/-/g, "")
+      : `${Date.now()}${Math.random().toString(36).slice(2, 12)}`;
+
+  return `Ns!${seed.slice(0, 12)}9a`;
 }
 
 export async function getMe() {
@@ -112,6 +135,41 @@ export async function listScopedClientUsers(params: {
   });
 
   return data.data ?? [];
+}
+
+export async function createScopedClientUser(
+  payload: CreateScopedClientUserPayload,
+) {
+  if (payload.dashboardRole === "employee") {
+    throw new Error("Client creation from this step is only available to admins.");
+  }
+
+  const temporaryPassword = generateTemporaryPassword();
+
+  const requestPayload = {
+    type: "CLIENT" as const,
+    name: payload.name,
+    email: payload.email,
+    phone: payload.phone ?? null,
+    password: temporaryPassword,
+    status: "ACTIVE" as const,
+    location_id: payload.locationId,
+    address_line1: payload.addressLine1 ?? null,
+    address_line2: payload.addressLine2 ?? null,
+    city: payload.city ?? null,
+    state: payload.state ?? null,
+    postal_code: payload.postalCode ?? null,
+    country: payload.country ?? null,
+  };
+
+  const { data } = await api.post<{ data: MeUser }>("/admin/users", requestPayload, {
+    headers: { "Idempotency-Key": idempotencyKey() },
+  });
+
+  return {
+    user: data.data,
+    temporaryPassword,
+  };
 }
 
 export async function updateAdminUser(
