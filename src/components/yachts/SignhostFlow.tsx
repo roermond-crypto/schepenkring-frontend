@@ -14,11 +14,14 @@ import {
   Globe2,
   Loader2,
   PencilLine,
+  Plus,
   RefreshCw,
   Send,
+  Trash2,
   XCircle,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,11 +34,24 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
+  createContractParty,
+  deleteContractParty,
+  listContractParties,
+  updateContractParty,
+  type ContractParty as ContractPartyRecord,
+  type ContractPartyRoleType,
+} from "@/lib/api/contract-parties";
+import {
   signhostApi,
   type SignRequest,
   type SignhostTransaction,
 } from "@/lib/api/signhost";
-import { getAdminUser, type MeUser } from "@/lib/api/account";
+import {
+  createScopedClientUser,
+  getScopedClientUser,
+  listScopedClientUsers,
+  type MeUser,
+} from "@/lib/api/account";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
 
 type ContractLanguage = "nl" | "en" | "de" | "fr";
@@ -110,6 +126,9 @@ type LocationOption = {
 
 type ContractDraft = {
   language: ContractLanguage;
+  sellerContactId: number | null;
+  buyerContactId: number | null;
+  sellerContactName: string;
   companyName: string;
   companyAddress: string;
   companyPostalCode: string;
@@ -209,13 +228,37 @@ type YachtContractData = {
   owner_city?: string | null;
 };
 
-type ContractParty = {
+type ContractSnapshot = {
   name?: string | null;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
   postal_code?: string | null;
   city?: string | null;
+};
+
+type ContractPartyFormState = {
+  name: string;
+  companyName: string;
+  address: string;
+  postalCode: string;
+  city: string;
+  phone: string;
+  email: string;
+  passportNumber: string;
+  partnerName: string;
+  married: boolean;
+};
+
+type ClientCreationFormState = {
+  name: string;
+  email: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2: string;
+  postalCode: string;
+  city: string;
+  country: string;
 };
 
 interface SignhostFlowProps {
@@ -1001,7 +1044,7 @@ function formatAgreementDate(language: ContractLanguage, value: string) {
 
 function getPartyFromYachtData(
   yachtData: YachtContractData | null | undefined,
-): ContractParty | null {
+): ContractSnapshot | null {
   return (
     yachtData?.user ??
     yachtData?.owner ??
@@ -1032,7 +1075,7 @@ function getPartyFromYachtData(
   );
 }
 
-function mapAdminUserToContractParty(user: MeUser | null): ContractParty | null {
+function mapAdminUserToContractParty(user: MeUser | null): ContractSnapshot | null {
   if (!user) return null;
   return {
     name: user.name,
@@ -1232,6 +1275,9 @@ function buildContractDraft(
 
   return {
     language,
+    sellerContactId: null,
+    buyerContactId: null,
+    sellerContactName: "",
     companyName: locationDefaults.companyName || "",
     companyAddress: locationDefaults.companyAddress || "",
     companyPostalCode: locationDefaults.companyPostalCode || "",
@@ -1290,6 +1336,155 @@ function buildContractDraft(
 
 function fieldValue(value?: string) {
   return value?.trim() || "—";
+}
+
+function getContractPartyLabel(
+  party: ContractPartyRecord,
+  role: ContractPartyRoleType,
+  fallbackPrefix: string,
+) {
+  const name = party.name?.trim() || "";
+  const companyName = party.company_name?.trim() || "";
+  const email = party.email?.trim() || "";
+
+  if (role === "seller") {
+    if (
+      name &&
+      companyName &&
+      name.toLowerCase() !== companyName.toLowerCase()
+    ) {
+      return `${name} (${companyName})`;
+    }
+
+    if (name) return name;
+    if (companyName) return companyName;
+  }
+
+  return (
+    name ||
+    companyName ||
+    email ||
+    `${fallbackPrefix} #${party.id}`
+  );
+}
+
+function buildContractPartyFormFromDraft(
+  role: ContractPartyRoleType,
+  draft: ContractDraft,
+): ContractPartyFormState {
+  if (role === "seller") {
+    return {
+      name: draft.sellerContactName,
+      companyName: draft.companyName,
+      address: draft.companyAddress,
+      postalCode: draft.companyPostalCode,
+      city: draft.companyCity,
+      phone: draft.companyPhone,
+      email: draft.companyEmail,
+      passportNumber: "",
+      partnerName: "",
+      married: false,
+    };
+  }
+
+  return {
+    name: draft.clientName,
+    companyName: "",
+    address: draft.clientAddress,
+    postalCode: draft.clientPostalCode,
+    city: draft.clientCity,
+    phone: draft.clientPhone,
+    email: draft.clientEmail,
+    passportNumber: draft.passportNumber,
+    partnerName: draft.spouseName,
+    married: draft.married === "yes",
+  };
+}
+
+function buildContractPartyFormFromRecord(
+  party: ContractPartyRecord,
+): ContractPartyFormState {
+  return {
+    name: party.name || "",
+    companyName: party.company_name || "",
+    address: party.address || "",
+    postalCode: party.postal_code || "",
+    city: party.city || "",
+    phone: party.phone || "",
+    email: party.email || "",
+    passportNumber: party.passport_number || "",
+    partnerName: party.partner_name || "",
+    married: Boolean(party.married),
+  };
+}
+
+function buildClientCreationForm(
+  draft: ContractDraft,
+): ClientCreationFormState {
+  return {
+    name: draft.clientName || "",
+    email: draft.clientEmail || "",
+    phone: draft.clientPhone || "",
+    addressLine1: draft.clientAddress || "",
+    addressLine2: "",
+    postalCode: draft.clientPostalCode || "",
+    city: draft.clientCity || "",
+    country: "",
+  };
+}
+
+function buildContractPartyPayload(
+  role: ContractPartyRoleType,
+  form: ContractPartyFormState,
+  locationId: number | null,
+) {
+  return {
+    role_type: role,
+    name: form.name.trim(),
+    company_name:
+      role === "seller" ? form.companyName.trim() || null : null,
+    address: form.address.trim() || null,
+    postal_code: form.postalCode.trim() || null,
+    city: form.city.trim() || null,
+    phone: form.phone.trim() || null,
+    email: form.email.trim() || null,
+    passport_number:
+      role === "buyer" ? form.passportNumber.trim() || null : null,
+    partner_name: role === "buyer" ? form.partnerName.trim() || null : null,
+    married: role === "buyer" ? form.married : false,
+    location_id: role === "seller" ? locationId : null,
+  };
+}
+
+function applyContractPartyToDraft(
+  role: ContractPartyRoleType,
+  party: ContractPartyRecord,
+): Partial<ContractDraft> {
+  if (role === "seller") {
+    return {
+      sellerContactId: party.id,
+      sellerContactName: party.name || "",
+      companyName: party.company_name || party.name || "",
+      companyAddress: party.address || "",
+      companyPostalCode: party.postal_code || "",
+      companyCity: party.city || "",
+      companyPhone: party.phone || "",
+      companyEmail: party.email || "",
+    };
+  }
+
+  return {
+    buyerContactId: party.id,
+    clientName: party.name || "",
+    clientAddress: party.address || "",
+    clientPostalCode: party.postal_code || "",
+    clientCity: party.city || "",
+    clientPhone: party.phone || "",
+    clientEmail: party.email || "",
+    passportNumber: party.passport_number || "",
+    spouseName: party.partner_name || "",
+    married: party.married ? "yes" : "no",
+  };
 }
 
 function SectionHeader({
@@ -1393,6 +1588,7 @@ export function SignhostFlow({
   const params = useParams<{ role?: string }>();
   const role = params?.role?.toLowerCase();
   const canManageContract = role !== "client";
+  const canCreateClientInline = role === "admin" && Boolean(locationId);
   const selectedLocation = useMemo(
     () => locationOptions.find((option) => option.id === locationId) || null,
     [locationId, locationOptions],
@@ -1400,8 +1596,27 @@ export function SignhostFlow({
   const storageKey = `contract_draft_${yachtId ?? "draft"}`;
 
   const [signRequest, setSignRequest] = useState<SignRequest | null>(null);
+  const [linkedClientUserId, setLinkedClientUserId] = useState<number | null>(
+    yachtData?.user_id ?? null,
+  );
   const [linkedClient, setLinkedClient] = useState<MeUser | null>(null);
   const [linkedClientLoading, setLinkedClientLoading] = useState(false);
+  const [availableClients, setAvailableClients] = useState<MeUser[]>([]);
+  const [availableClientsLoading, setAvailableClientsLoading] = useState(false);
+  const [selectedClientIdToLink, setSelectedClientIdToLink] = useState("");
+  const [isLinkingClient, setIsLinkingClient] = useState(false);
+  const [createClientDialogOpen, setCreateClientDialogOpen] = useState(false);
+  const [createClientForm, setCreateClientForm] = useState<ClientCreationFormState>(
+    buildClientCreationForm(
+      buildContractDraft(
+        yachtName,
+        yachtData,
+        selectedLocation,
+        localeContractLanguage,
+      ),
+    ),
+  );
+  const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [draft, setDraft] = useState<ContractDraft>(() =>
     buildContractDraft(
       yachtName,
@@ -1415,6 +1630,21 @@ export function SignhostFlow({
   const [isGenerating, setIsGenerating] = useState(false);
   const [contractTemplateKey, setContractTemplateKey] =
     useState<ContractTemplateKey>("sale_agreement");
+  const [sellerContacts, setSellerContacts] = useState<ContractPartyRecord[]>([]);
+  const [buyerContacts, setBuyerContacts] = useState<ContractPartyRecord[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [contactDialogMode, setContactDialogMode] = useState<"create" | "edit">(
+    "create",
+  );
+  const [contactDialogRole, setContactDialogRole] =
+    useState<ContractPartyRoleType>("seller");
+  const [contactDialogId, setContactDialogId] = useState<number | null>(null);
+  const [contactForm, setContactForm] = useState<ContractPartyFormState>(
+    buildContractPartyFormFromDraft("seller", draft),
+  );
+  const [contactSaving, setContactSaving] = useState(false);
+  const [contactDeletingId, setContactDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     const nextDraft = buildContractDraft(
@@ -1457,7 +1687,11 @@ export function SignhostFlow({
   }, [localeContractLanguage]);
 
   useEffect(() => {
-    if (!canManageContract || !yachtData?.user_id) {
+    setLinkedClientUserId(yachtData?.user_id ?? null);
+  }, [yachtData?.user_id, yachtId]);
+
+  useEffect(() => {
+    if (!canManageContract || !linkedClientUserId) {
       setLinkedClient(null);
       return;
     }
@@ -1465,7 +1699,7 @@ export function SignhostFlow({
     let active = true;
     setLinkedClientLoading(true);
 
-    void getAdminUser(yachtData.user_id)
+    void getScopedClientUser(role, linkedClientUserId)
       .then((response) => {
         if (!active) return;
         setLinkedClient(response.data ?? null);
@@ -1482,7 +1716,38 @@ export function SignhostFlow({
     return () => {
       active = false;
     };
-  }, [canManageContract, yachtData?.user_id]);
+  }, [canManageContract, linkedClientUserId, role]);
+
+  useEffect(() => {
+    if (!canManageContract) {
+      setAvailableClients([]);
+      return;
+    }
+
+    let active = true;
+    setAvailableClientsLoading(true);
+
+    void listScopedClientUsers({
+      dashboardRole: role,
+      locationId: locationId ?? null,
+    })
+      .then((clients) => {
+        if (!active) return;
+        setAvailableClients(clients);
+      })
+      .catch(() => {
+        if (!active) return;
+        setAvailableClients([]);
+      })
+      .finally(() => {
+        if (!active) return;
+        setAvailableClientsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canManageContract, locationId, role]);
 
   useEffect(() => {
     const trimmedName = user.name?.trim() || "";
@@ -1539,6 +1804,62 @@ export function SignhostFlow({
       // Ignore persistence errors.
     }
   }, [draft, storageKey]);
+
+  useEffect(() => {
+    if (!canManageContract) {
+      setSellerContacts([]);
+      setBuyerContacts([]);
+      return;
+    }
+
+    let active = true;
+    setContactsLoading(true);
+
+    void Promise.all([
+      listContractParties({
+        role_type: "seller",
+        location_id: locationId ?? undefined,
+      }),
+      listContractParties({
+        role_type: "buyer",
+      }),
+    ])
+      .then(([sellers, buyers]) => {
+        if (!active) return;
+        setSellerContacts(sellers);
+        setBuyerContacts(buyers);
+      })
+      .catch(() => {
+        if (!active) return;
+        setSellerContacts([]);
+        setBuyerContacts([]);
+      })
+      .finally(() => {
+        if (!active) return;
+        setContactsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canManageContract, locationId]);
+
+  const refreshContractParties = async () => {
+    const [sellers, buyers] = await Promise.all([
+      listContractParties({
+        role_type: "seller",
+        location_id: locationId ?? undefined,
+      }),
+      listContractParties({
+        role_type: "buyer",
+      }),
+    ]);
+
+    setSellerContacts(sellers);
+    setBuyerContacts(buyers);
+
+    return { sellers, buyers };
+  };
 
   useEffect(() => {
     if (!yachtId) return;
@@ -1657,13 +1978,328 @@ export function SignhostFlow({
             ? editorCopy.declarationsSection
             : editorSection === "closing"
               ? previewCopy.closingLabel
-              : null;
+            : null;
 
   const handleFieldChange = <K extends keyof ContractDraft>(
     key: K,
     value: ContractDraft[K],
   ) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const openCreateClientDialog = () => {
+    setCreateClientForm(buildClientCreationForm(draft));
+    setCreateClientDialogOpen(true);
+  };
+
+  const applyLinkedClientToBuyerDraft = (client: MeUser) => {
+    const linkedOwner = mapAdminUserToContractParty(client);
+    if (!linkedOwner) {
+      return;
+    }
+
+    setDraft((prev) =>
+      prev.buyerContactId
+        ? prev
+        : {
+            ...prev,
+            clientName: linkedOwner.name || "",
+            clientEmail: linkedOwner.email || "",
+            clientPhone: linkedOwner.phone || "",
+            clientAddress: linkedOwner.address || "",
+            clientPostalCode: linkedOwner.postal_code || "",
+            clientCity: linkedOwner.city || "",
+          },
+    );
+  };
+
+  const linkClientToYacht = async (client: MeUser) => {
+    if (!yachtId) {
+      throw new Error("Save the yacht before linking a client.");
+    }
+
+    await api.patch(`/yachts/${yachtId}`, {
+      user_id: client.id,
+    });
+
+    setLinkedClientUserId(client.id);
+    setSelectedClientIdToLink("");
+    setLinkedClient(client);
+    applyLinkedClientToBuyerDraft(client);
+  };
+
+  const handleLinkClient = async () => {
+    if (!yachtId || !selectedClientIdToLink) {
+      toast.error("Select a client first.");
+      return;
+    }
+
+    const clientId = Number(selectedClientIdToLink);
+    const selectedClient =
+      availableClients.find((client) => client.id === clientId) ?? null;
+
+    setIsLinkingClient(true);
+
+    try {
+      if (selectedClient) {
+        await linkClientToYacht(selectedClient);
+      } else {
+        await api.patch(`/yachts/${yachtId}`, {
+          user_id: clientId,
+        });
+        setLinkedClientUserId(clientId);
+        setSelectedClientIdToLink("");
+        setLinkedClient(null);
+      }
+
+      toast.success("Client linked to this yacht.");
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response!
+              .data!.message!
+          : error instanceof Error
+            ? error.message
+            : "Failed to link client to yacht.";
+      toast.error(message);
+    } finally {
+      setIsLinkingClient(false);
+    }
+  };
+
+  const handleCreateClient = async () => {
+    if (!locationId) {
+      toast.error("Select a yacht location before creating a client.");
+      return;
+    }
+
+    const trimmedName = createClientForm.name.trim();
+    const trimmedEmail = createClientForm.email.trim();
+
+    if (!trimmedName || !trimmedEmail) {
+      toast.error("Name and e-mail are required.");
+      return;
+    }
+
+    setIsCreatingClient(true);
+
+    try {
+      const { user: createdClient, temporaryPassword } =
+        await createScopedClientUser({
+          dashboardRole: role,
+          locationId,
+          name: trimmedName,
+          email: trimmedEmail,
+          phone: createClientForm.phone.trim() || null,
+          addressLine1: createClientForm.addressLine1.trim() || null,
+          addressLine2: createClientForm.addressLine2.trim() || null,
+          city: createClientForm.city.trim() || null,
+          postalCode: createClientForm.postalCode.trim() || null,
+          country: createClientForm.country.trim() || null,
+        });
+
+      setAvailableClients((prev) => {
+        const next = [createdClient, ...prev.filter((client) => client.id !== createdClient.id)];
+        return next;
+      });
+      await linkClientToYacht(createdClient);
+      setCreateClientDialogOpen(false);
+      toast.success("Client created and linked to this yacht.");
+      toast(`Temporary password: ${temporaryPassword}`, {
+        icon: "🔐",
+        duration: 8000,
+      });
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response!
+              .data!.message!
+          : error instanceof Error
+            ? error.message
+            : "Failed to create client.";
+      toast.error(message);
+    } finally {
+      setIsCreatingClient(false);
+    }
+  };
+
+  const handleContactSelect = (
+    roleType: ContractPartyRoleType,
+    nextId: number | null,
+  ) => {
+    if (nextId == null) {
+      setDraft((prev) =>
+        roleType === "seller"
+          ? { ...prev, sellerContactId: null }
+          : { ...prev, buyerContactId: null },
+      );
+      return;
+    }
+
+    const source = roleType === "seller" ? sellerContacts : buyerContacts;
+    const party = source.find((item) => item.id === nextId);
+    if (!party) return;
+
+    setDraft((prev) => ({
+      ...prev,
+      ...applyContractPartyToDraft(roleType, party),
+    }));
+  };
+
+  const openCreateContactDialog = (roleType: ContractPartyRoleType) => {
+    setContactDialogMode("create");
+    setContactDialogRole(roleType);
+    setContactDialogId(null);
+    setContactForm(buildContractPartyFormFromDraft(roleType, draft));
+    setContactDialogOpen(true);
+  };
+
+  const openEditContactDialog = (
+    roleType: ContractPartyRoleType,
+    party?: ContractPartyRecord | null,
+  ) => {
+    const source = roleType === "seller" ? sellerContacts : buyerContacts;
+    const fallbackId =
+      roleType === "seller" ? draft.sellerContactId : draft.buyerContactId;
+    const target = party ?? source.find((item) => item.id === fallbackId) ?? null;
+
+    if (!target) {
+      toast.error(`Select a saved ${roleType} contact first.`);
+      return;
+    }
+
+    setContactDialogMode("edit");
+    setContactDialogRole(roleType);
+    setContactDialogId(target.id);
+    setContactForm(buildContractPartyFormFromRecord(target));
+    setContactDialogOpen(true);
+  };
+
+  const handleContactFormChange = <K extends keyof ContractPartyFormState>(
+    key: K,
+    value: ContractPartyFormState[K],
+  ) => {
+    setContactForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveContact = async () => {
+    const roleType = contactDialogRole;
+    const payload = buildContractPartyPayload(roleType, contactForm, locationId);
+
+    if (!payload.name) {
+      toast.error("Name is required.");
+      return;
+    }
+
+    setContactSaving(true);
+
+    try {
+      const savedParty =
+        contactDialogMode === "create"
+          ? await createContractParty(payload)
+          : contactDialogId
+            ? await updateContractParty(contactDialogId, payload)
+            : null;
+
+      if (!savedParty) {
+        throw new Error("Contact could not be saved.");
+      }
+
+      await refreshContractParties();
+
+      const selectedId =
+        roleType === "seller" ? draft.sellerContactId : draft.buyerContactId;
+      const shouldApplyToDraft =
+        contactDialogMode === "create" || selectedId === savedParty.id;
+
+      if (shouldApplyToDraft) {
+        setDraft((prev) => ({
+          ...prev,
+          ...applyContractPartyToDraft(roleType, savedParty),
+        }));
+      }
+
+      setContactDialogOpen(false);
+      toast.success(
+        `${roleType === "seller" ? "Seller" : "Buyer"} contact ${contactDialogMode === "create" ? "created" : "updated"}.`,
+      );
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response!
+              .data!.message!
+          : error instanceof Error
+            ? error.message
+            : "Failed to save contact.";
+      toast.error(message);
+    } finally {
+      setContactSaving(false);
+    }
+  };
+
+  const handleDeleteContact = async (
+    roleType: ContractPartyRoleType,
+    party: ContractPartyRecord,
+  ) => {
+    const label = getContractPartyLabel(
+      party,
+      roleType,
+      roleType === "seller" ? "Seller" : "Buyer",
+    );
+
+    if (!window.confirm(`Delete ${label}?`)) {
+      return;
+    }
+
+    setContactDeletingId(party.id);
+
+    try {
+      await deleteContractParty(party.id);
+      await refreshContractParties();
+
+      setDraft((prev) => {
+        if (roleType === "seller" && prev.sellerContactId === party.id) {
+          return { ...prev, sellerContactId: null };
+        }
+
+        if (roleType === "buyer" && prev.buyerContactId === party.id) {
+          return { ...prev, buyerContactId: null };
+        }
+
+        return prev;
+      });
+
+      toast.success(
+        `${roleType === "seller" ? "Seller" : "Buyer"} contact deleted.`,
+      );
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response!
+              .data!.message!
+          : error instanceof Error
+            ? error.message
+            : "Failed to delete contact.";
+      toast.error(message);
+    } finally {
+      setContactDeletingId(null);
+    }
   };
 
   const resolvedRecipients = [
@@ -1937,6 +2573,9 @@ export function SignhostFlow({
         metadata: {
           boat_name: draft.vesselName || yachtName,
           contract_language: draft.language,
+          seller_contact_id: draft.sellerContactId,
+          buyer_contact_id: draft.buyerContactId,
+          seller_contact_name: draft.sellerContactName,
           agreement_document_language: resolveAgreementPdfLanguage(
             draft.language,
           ),
@@ -2058,10 +2697,73 @@ export function SignhostFlow({
                 {linkedOwnerCopy.subtitle}
               </p>
             </div>
-            {yachtData?.user_id ? (
+            {linkedClientUserId ? (
               <div className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600">
-                {linkedOwnerCopy.linkedUser}: #{yachtData.user_id}
+                {linkedOwnerCopy.linkedUser}: #{linkedClientUserId}
               </div>
+            ) : null}
+          </div>
+
+          <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+              Link client owner
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <select
+                value={selectedClientIdToLink}
+                onChange={(event) => setSelectedClientIdToLink(event.target.value)}
+                className="h-10 min-w-[260px] flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              >
+                <option value="">
+                  {availableClientsLoading
+                    ? "Loading clients..."
+                    : "Select linked client"}
+                </option>
+                {availableClients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {[client.name, client.email].filter(Boolean).join(" • ")}
+                  </option>
+                ))}
+              </select>
+              {canCreateClientInline ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={openCreateClientDialog}
+                  className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Client
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                onClick={handleLinkClient}
+                disabled={
+                  isLinkingClient ||
+                  availableClientsLoading ||
+                  !selectedClientIdToLink ||
+                  !yachtId
+                }
+                className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
+              >
+                {isLinkingClient ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Link Client
+              </Button>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">
+              This linked client becomes the yacht owner used for brokerage
+              agreement defaults and owner visibility.
+            </p>
+            {!availableClientsLoading && availableClients.length === 0 ? (
+              <p className="mt-2 text-xs text-amber-700">
+                No clients found for this location yet.
+                {canCreateClientInline
+                  ? " Create one here and it will be linked immediately."
+                  : " Ask an admin to create a client first."}
+              </p>
             ) : null}
           </div>
 
@@ -2491,6 +3193,140 @@ export function SignhostFlow({
                   {editorCopy.sellerSection}
                 </p>
                 <div className="mt-4 grid gap-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/60">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        value={draft.sellerContactId?.toString() ?? ""}
+                        onChange={(event) =>
+                          handleContactSelect(
+                            "seller",
+                            event.target.value ? Number(event.target.value) : null,
+                          )
+                        }
+                        className="h-10 min-w-[220px] flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="">Manual seller draft</option>
+                        {sellerContacts.map((party) => (
+                          <option key={party.id} value={party.id}>
+                            {getContractPartyLabel(party, "seller", "Seller")}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => openCreateContactDialog("seller")}
+                        className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+                      >
+                        <Plus size={14} />
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEditContactDialog("seller")}
+                        className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+                        disabled={!draft.sellerContactId}
+                      >
+                        <PencilLine size={14} />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const selectedSeller = sellerContacts.find(
+                            (party) => party.id === draft.sellerContactId,
+                          );
+                          if (!selectedSeller) {
+                            toast.error("Select a saved seller contact first.");
+                            return;
+                          }
+                          void handleDeleteContact("seller", selectedSeller);
+                        }}
+                        className="inline-flex h-10 items-center gap-2 rounded-md border border-rose-200 bg-white px-3 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-900 dark:bg-slate-950 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                        disabled={!draft.sellerContactId}
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
+                    {contactsLoading ? (
+                      <p className="mt-3 text-sm text-slate-500">
+                        Loading seller contacts...
+                      </p>
+                    ) : sellerContacts.length === 0 ? (
+                      <p className="mt-3 text-sm text-slate-500">
+                        No saved seller contacts yet.
+                      </p>
+                    ) : (
+                      <div className="mt-3 space-y-2">
+                        {sellerContacts.map((party) => {
+                          const selected = draft.sellerContactId === party.id;
+
+                          return (
+                            <div
+                              key={party.id}
+                              className={cn(
+                                "flex items-center justify-between gap-3 rounded-lg border px-3 py-2",
+                                selected
+                                  ? "border-[#003566] bg-[#003566]/5"
+                                  : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950",
+                              )}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => handleContactSelect("seller", party.id)}
+                                className="min-w-0 flex-1 text-left"
+                              >
+                                <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                  {getContractPartyLabel(party, "seller", "Seller")}
+                                </p>
+                                <p className="truncate text-xs text-slate-500">
+                                  {[party.email, party.phone]
+                                    .filter(Boolean)
+                                    .join(" • ") || "Saved seller contact"}
+                                </p>
+                              </button>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditContactDialog("seller", party)}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-[#003566] dark:border-slate-700 dark:hover:bg-slate-800"
+                                  aria-label={`Edit ${getContractPartyLabel(party, "seller", "Seller")}`}
+                                >
+                                  <PencilLine size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteContact("seller", party)}
+                                  disabled={contactDeletingId === party.id}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                                  aria-label={`Delete ${getContractPartyLabel(party, "seller", "Seller")}`}
+                                >
+                                  {contactDeletingId === party.id ? (
+                                    <Loader2 size={14} className="animate-spin" />
+                                  ) : (
+                                    <Trash2 size={14} />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <FieldLabel>Contact name</FieldLabel>
+                    <Input
+                      value={draft.sellerContactName}
+                      onChange={(event) =>
+                        handleFieldChange(
+                          "sellerContactName",
+                          event.target.value,
+                        )
+                      }
+                      placeholder="Contact name"
+                    />
+                  </div>
                   <div>
                     <FieldLabel>{editorCopy.company}</FieldLabel>
                     <Input
@@ -2566,6 +3402,127 @@ export function SignhostFlow({
                   {editorCopy.buyerSection}
                 </p>
                 <div className="mt-4 grid gap-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/60">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        value={draft.buyerContactId?.toString() ?? ""}
+                        onChange={(event) =>
+                          handleContactSelect(
+                            "buyer",
+                            event.target.value ? Number(event.target.value) : null,
+                          )
+                        }
+                        className="h-10 min-w-[220px] flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      >
+                        <option value="">Manual buyer draft</option>
+                        {buyerContacts.map((party) => (
+                          <option key={party.id} value={party.id}>
+                            {getContractPartyLabel(party, "buyer", "Buyer")}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => openCreateContactDialog("buyer")}
+                        className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+                      >
+                        <Plus size={14} />
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEditContactDialog("buyer")}
+                        className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+                        disabled={!draft.buyerContactId}
+                      >
+                        <PencilLine size={14} />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const selectedBuyer = buyerContacts.find(
+                            (party) => party.id === draft.buyerContactId,
+                          );
+                          if (!selectedBuyer) {
+                            toast.error("Select a saved buyer contact first.");
+                            return;
+                          }
+                          void handleDeleteContact("buyer", selectedBuyer);
+                        }}
+                        className="inline-flex h-10 items-center gap-2 rounded-md border border-rose-200 bg-white px-3 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-900 dark:bg-slate-950 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                        disabled={!draft.buyerContactId}
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
+                    {contactsLoading ? (
+                      <p className="mt-3 text-sm text-slate-500">
+                        Loading buyer contacts...
+                      </p>
+                    ) : buyerContacts.length === 0 ? (
+                      <p className="mt-3 text-sm text-slate-500">
+                        No saved buyer contacts yet.
+                      </p>
+                    ) : (
+                      <div className="mt-3 space-y-2">
+                        {buyerContacts.map((party) => {
+                          const selected = draft.buyerContactId === party.id;
+
+                          return (
+                            <div
+                              key={party.id}
+                              className={cn(
+                                "flex items-center justify-between gap-3 rounded-lg border px-3 py-2",
+                                selected
+                                  ? "border-[#003566] bg-[#003566]/5"
+                                  : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950",
+                              )}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => handleContactSelect("buyer", party.id)}
+                                className="min-w-0 flex-1 text-left"
+                              >
+                                <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                  {getContractPartyLabel(party, "buyer", "Buyer")}
+                                </p>
+                                <p className="truncate text-xs text-slate-500">
+                                  {[party.email, party.phone]
+                                    .filter(Boolean)
+                                    .join(" • ") || "Saved buyer contact"}
+                                </p>
+                              </button>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditContactDialog("buyer", party)}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-[#003566] dark:border-slate-700 dark:hover:bg-slate-800"
+                                  aria-label={`Edit ${getContractPartyLabel(party, "buyer", "Buyer")}`}
+                                >
+                                  <PencilLine size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteContact("buyer", party)}
+                                  disabled={contactDeletingId === party.id}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                                  aria-label={`Delete ${getContractPartyLabel(party, "buyer", "Buyer")}`}
+                                >
+                                  {contactDeletingId === party.id ? (
+                                    <Loader2 size={14} className="animate-spin" />
+                                  ) : (
+                                    <Trash2 size={14} />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <FieldLabel>{editorCopy.name}</FieldLabel>
                     <Input
@@ -2939,6 +3896,340 @@ export function SignhostFlow({
               className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d]"
             >
               {editorCopy.saveDetails}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
+        <DialogContent className="sm:max-w-xl dark:border-slate-700 dark:bg-slate-950">
+          <DialogHeader>
+            <DialogTitle>
+              {contactDialogMode === "create" ? "Add" : "Edit"}{" "}
+              {contactDialogRole === "seller" ? "seller" : "buyer"} contact
+            </DialogTitle>
+            <DialogDescription>
+              Saved contacts can auto-fill this contract section and still be
+              manually adjusted afterwards.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3 py-2">
+            <div>
+              <FieldLabel>
+                {contactDialogRole === "seller"
+                  ? "Contact name"
+                  : editorCopy.name}
+              </FieldLabel>
+              <Input
+                value={contactForm.name}
+                onChange={(event) =>
+                  handleContactFormChange("name", event.target.value)
+                }
+                placeholder={
+                  contactDialogRole === "seller"
+                    ? "Contact name"
+                    : editorCopy.name
+                }
+              />
+            </div>
+
+            {contactDialogRole === "seller" ? (
+              <div>
+                <FieldLabel>{editorCopy.company}</FieldLabel>
+                <Input
+                  value={contactForm.companyName}
+                  onChange={(event) =>
+                    handleContactFormChange("companyName", event.target.value)
+                  }
+                  placeholder={editorCopy.company}
+                />
+              </div>
+            ) : null}
+
+            <div>
+              <FieldLabel>{editorCopy.address}</FieldLabel>
+              <Input
+                value={contactForm.address}
+                onChange={(event) =>
+                  handleContactFormChange("address", event.target.value)
+                }
+                placeholder={editorCopy.address}
+              />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <FieldLabel>{editorCopy.postalCode}</FieldLabel>
+                <Input
+                  value={contactForm.postalCode}
+                  onChange={(event) =>
+                    handleContactFormChange("postalCode", event.target.value)
+                  }
+                  placeholder={editorCopy.postalCode}
+                />
+              </div>
+              <div>
+                <FieldLabel>{editorCopy.city}</FieldLabel>
+                <Input
+                  value={contactForm.city}
+                  onChange={(event) =>
+                    handleContactFormChange("city", event.target.value)
+                  }
+                  placeholder={editorCopy.city}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <FieldLabel>{editorCopy.phone}</FieldLabel>
+                <Input
+                  value={contactForm.phone}
+                  onChange={(event) =>
+                    handleContactFormChange("phone", event.target.value)
+                  }
+                  placeholder={editorCopy.phone}
+                />
+              </div>
+              <div>
+                <FieldLabel>{editorCopy.email}</FieldLabel>
+                <Input
+                  value={contactForm.email}
+                  onChange={(event) =>
+                    handleContactFormChange("email", event.target.value)
+                  }
+                  placeholder={editorCopy.email}
+                />
+              </div>
+            </div>
+
+            {contactDialogRole === "buyer" ? (
+              <>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <FieldLabel>{editorCopy.passportNumber}</FieldLabel>
+                    <Input
+                      value={contactForm.passportNumber}
+                      onChange={(event) =>
+                        handleContactFormChange(
+                          "passportNumber",
+                          event.target.value,
+                        )
+                      }
+                      placeholder={editorCopy.passportNumber}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>{editorCopy.partnerName}</FieldLabel>
+                    <Input
+                      value={contactForm.partnerName}
+                      onChange={(event) =>
+                        handleContactFormChange(
+                          "partnerName",
+                          event.target.value,
+                        )
+                      }
+                      placeholder={editorCopy.partnerName}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <FieldLabel>{agreementCopy.marriedLabel}</FieldLabel>
+                  <select
+                    value={contactForm.married ? "yes" : "no"}
+                    onChange={(event) =>
+                      handleContactFormChange(
+                        "married",
+                        event.target.value === "yes",
+                      )
+                    }
+                    className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <option value="no">{editorCopy.notMarried}</option>
+                    <option value="yes">{editorCopy.married}</option>
+                  </select>
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              onClick={() => setContactDialogOpen(false)}
+              className="rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveContact}
+              disabled={contactSaving}
+              className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
+            >
+              {contactSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {contactDialogMode === "create" ? "Create contact" : "Save contact"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={createClientDialogOpen}
+        onOpenChange={setCreateClientDialogOpen}
+      >
+        <DialogContent className="sm:max-w-xl dark:border-slate-700 dark:bg-slate-950">
+          <DialogHeader>
+            <DialogTitle>Create client owner</DialogTitle>
+            <DialogDescription>
+              Add a new client for this location and link them to the yacht in
+              one step.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3 py-2">
+            <div>
+              <FieldLabel>{editorCopy.name}</FieldLabel>
+              <Input
+                value={createClientForm.name}
+                onChange={(event) =>
+                  setCreateClientForm((prev) => ({
+                    ...prev,
+                    name: event.target.value,
+                  }))
+                }
+                placeholder={editorCopy.name}
+              />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <FieldLabel>{editorCopy.email}</FieldLabel>
+                <Input
+                  value={createClientForm.email}
+                  onChange={(event) =>
+                    setCreateClientForm((prev) => ({
+                      ...prev,
+                      email: event.target.value,
+                    }))
+                  }
+                  placeholder={editorCopy.email}
+                />
+              </div>
+              <div>
+                <FieldLabel>{editorCopy.phone}</FieldLabel>
+                <Input
+                  value={createClientForm.phone}
+                  onChange={(event) =>
+                    setCreateClientForm((prev) => ({
+                      ...prev,
+                      phone: event.target.value,
+                    }))
+                  }
+                  placeholder={editorCopy.phone}
+                />
+              </div>
+            </div>
+
+            <div>
+              <FieldLabel>{editorCopy.address}</FieldLabel>
+              <Input
+                value={createClientForm.addressLine1}
+                onChange={(event) =>
+                  setCreateClientForm((prev) => ({
+                    ...prev,
+                    addressLine1: event.target.value,
+                  }))
+                }
+                placeholder={editorCopy.address}
+              />
+            </div>
+
+            <div>
+              <FieldLabel>Address line 2</FieldLabel>
+              <Input
+                value={createClientForm.addressLine2}
+                onChange={(event) =>
+                  setCreateClientForm((prev) => ({
+                    ...prev,
+                    addressLine2: event.target.value,
+                  }))
+                }
+                placeholder="Apartment, suite, dock, unit"
+              />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <FieldLabel>{editorCopy.postalCode}</FieldLabel>
+                <Input
+                  value={createClientForm.postalCode}
+                  onChange={(event) =>
+                    setCreateClientForm((prev) => ({
+                      ...prev,
+                      postalCode: event.target.value,
+                    }))
+                  }
+                  placeholder={editorCopy.postalCode}
+                />
+              </div>
+              <div>
+                <FieldLabel>{editorCopy.city}</FieldLabel>
+                <Input
+                  value={createClientForm.city}
+                  onChange={(event) =>
+                    setCreateClientForm((prev) => ({
+                      ...prev,
+                      city: event.target.value,
+                    }))
+                  }
+                  placeholder={editorCopy.city}
+                />
+              </div>
+            </div>
+
+            <div>
+              <FieldLabel>Country</FieldLabel>
+              <Input
+                value={createClientForm.country}
+                onChange={(event) =>
+                  setCreateClientForm((prev) => ({
+                    ...prev,
+                    country: event.target.value,
+                  }))
+                }
+                placeholder="Country"
+              />
+            </div>
+
+            <p className="text-xs text-slate-500">
+              The client will be created in this location and linked to the
+              yacht immediately after save.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              onClick={() => setCreateClientDialogOpen(false)}
+              className="rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCreateClient}
+              disabled={isCreatingClient || !canCreateClientInline}
+              className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
+            >
+              {isCreatingClient ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Create and Link Client
             </Button>
           </DialogFooter>
         </DialogContent>
