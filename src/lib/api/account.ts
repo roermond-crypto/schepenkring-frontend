@@ -71,6 +71,49 @@ export async function getAdminUser(userId: number | string) {
   return data;
 }
 
+export async function getScopedClientUser(
+  dashboardRole: string | undefined,
+  userId: number | string,
+) {
+  const endpoint =
+    dashboardRole === "employee"
+      ? `/employee/clients/${userId}`
+      : `/admin/users/${userId}`;
+  const { data } = await api.get<{ data: MeUser }>(endpoint);
+  return data;
+}
+
+export async function listScopedClientUsers(params: {
+  dashboardRole: string | undefined;
+  locationId?: number | null;
+  search?: string;
+  perPage?: number;
+}) {
+  const { dashboardRole, locationId, search, perPage = 100 } = params;
+
+  const endpoint =
+    dashboardRole === "employee" ? "/employee/clients" : "/admin/users";
+
+  const query =
+    dashboardRole === "employee"
+      ? {
+          per_page: perPage,
+          search,
+        }
+      : {
+          type: "CLIENT",
+          location_id: locationId ?? undefined,
+          per_page: perPage,
+          search,
+        };
+
+  const { data } = await api.get<{ data: MeUser[] }>(endpoint, {
+    params: query,
+  });
+
+  return data.data ?? [];
+}
+
 export async function updateAdminUser(
   userId: number | string,
   payload: {

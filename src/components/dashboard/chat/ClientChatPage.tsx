@@ -164,9 +164,12 @@ export function ClientChatPage() {
   const { user } = useClientSession();
   const endRef = useRef<HTMLDivElement | null>(null);
   const visitorIdRef = useRef<string>(getOrCreateSharedVisitorId());
+  const bootstrapKeyRef = useRef<string | null>(null);
+  const loadedHistoryConversationRef = useRef<string | null>(null);
 
   const locationId = user.client_location_id ?? user.location_id ?? null;
   const locationLabel = user.location?.name ?? (locationId ? `#${locationId}` : null);
+  const startFailedMessage = t("errors.startFailed");
 
   const interfaceCopy = useMemo(() => {
     if (locale === "nl") {
@@ -211,6 +214,19 @@ export function ClientChatPage() {
   const [sending, setSending] = useState(false);
   const [introDismissed, setIntroDismissed] = useState(false);
   const introDismissKey = locationId ? `nauticsecure_dashboard_chat_intro_${locationId}` : null;
+  const bootstrapKey = useMemo(() => {
+    if (!locationId) {
+      return null;
+    }
+
+    return [
+      locationId,
+      locale,
+      user.email ?? "",
+      user.name ?? "",
+      user.phone ?? "",
+    ].join("::");
+  }, [locale, locationId, user.email, user.name, user.phone]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -289,6 +305,48 @@ export function ClientChatPage() {
   }, []);
 
   useEffect(() => {
+    if (!conversationId) {
+      loadedHistoryConversationRef.current = null;
+      if (!locationId) {
+        setInitializing(false);
+      }
+      return;
+    }
+
+    if (loadedHistoryConversationRef.current === conversationId) {
+      setInitializing(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncConversationHistory = async () => {
+      setInitializing(true);
+
+      try {
+        await loadConversationHistory(conversationId);
+        if (!cancelled) {
+          loadedHistoryConversationRef.current = conversationId;
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load client chat conversation history:", error);
+        }
+      } finally {
+        if (!cancelled) {
+          setInitializing(false);
+        }
+      }
+    };
+
+    void syncConversationHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, loadConversationHistory, locationId]);
+
+  useEffect(() => {
     if (!introDismissKey || typeof window === "undefined") return;
     try {
       setIntroDismissed(window.localStorage.getItem(introDismissKey) === "1");
@@ -312,12 +370,32 @@ export function ClientChatPage() {
 
   useEffect(() => {
     const setupConversation = async () => {
-      if (!locationId) {
+      if (!locationId || !bootstrapKey) {
         setInitializing(false);
         return;
       }
 
+      const cached = readSharedChatState(locationId);
+      if (cached?.conversationId) {
+        if (conversationId !== cached.conversationId) {
+          setConversationId(cached.conversationId);
+        }
+        setInitializing(false);
+        return;
+      }
+
+      if (conversationId) {
+        setInitializing(false);
+        return;
+      }
+
+      if (bootstrapKeyRef.current === bootstrapKey) {
+        return;
+      }
+
+      bootstrapKeyRef.current = bootstrapKey;
       setInitializing(true);
+      let didSucceed = false;
 
       try {
         const response = await api.post<ClientConversationResponse>("/chat/conversations", {
@@ -340,22 +418,26 @@ export function ClientChatPage() {
 
         if (response.data?.id) {
           setConversationId(response.data.id);
-          await loadConversationHistory(response.data.id);
+          didSucceed = true;
         }
       } catch (error) {
         console.error("Failed to initialize client chat conversation:", error);
-        toast.error(t("errors.startFailed"));
+        toast.error(startFailedMessage);
       } finally {
         setInitializing(false);
+        if (!didSucceed && bootstrapKeyRef.current === bootstrapKey) {
+          bootstrapKeyRef.current = null;
+        }
       }
     };
 
     void setupConversation();
   }, [
-    loadConversationHistory,
+    bootstrapKey,
+    conversationId,
     locale,
     locationId,
-    t,
+    startFailedMessage,
     user.email,
     user.name,
     user.phone,

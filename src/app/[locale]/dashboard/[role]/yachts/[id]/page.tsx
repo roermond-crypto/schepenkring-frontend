@@ -3368,6 +3368,13 @@ export default function YachtEditorPage() {
     currentPipelineExtractionSignature !== null &&
     lastSuccessfulExtractionSignatureRef.current !==
       currentPipelineExtractionSignature;
+  const shouldAutoRunAiExtraction =
+    isNewMode &&
+    isOnline &&
+    !isExtracting &&
+    !hasInFlightImageUploads &&
+    currentPipelineExtractionSignature !== null &&
+    shouldRefreshAiExtraction;
   const approvedMarketingImageIds = useMemo(
     () =>
       persistedPipelineImages
@@ -6961,11 +6968,7 @@ export default function YachtEditorPage() {
   }, [currentPipelineExtractionSignature, hasCompletedAiExtraction]);
 
   useEffect(() => {
-    if (!isOnline || isExtracting || hasInFlightImageUploads) {
-      return;
-    }
-
-    if (!currentPipelineExtractionSignature || !shouldRefreshAiExtraction) {
+    if (!shouldAutoRunAiExtraction || !currentPipelineExtractionSignature) {
       return;
     }
 
@@ -6987,12 +6990,8 @@ export default function YachtEditorPage() {
 
     return () => window.clearTimeout(timer);
   }, [
-    autoExtractionSignatureRef,
-    hasInFlightImageUploads,
-    isExtracting,
-    isOnline,
     currentPipelineExtractionSignature,
-    shouldRefreshAiExtraction,
+    shouldAutoRunAiExtraction,
   ]);
 
   const handleRegenerateDescription = useCallback(
@@ -7790,7 +7789,7 @@ export default function YachtEditorPage() {
             const isPast = isActive || isCompleted;
             const isLocked =
               (!canProceedFromStep1 && step.id > 1) ||
-              (isExtracting && step.id > 1) ||
+              (isNewMode && isExtracting && step.id > 1) ||
               (isNewMode && step.id === 6 && !createdYachtId);
             return (
               <div key={step.id} className="flex items-center">
@@ -7961,7 +7960,7 @@ export default function YachtEditorPage() {
                       'Brand/Model/Year + short notes (e.g. "Beneteau Oceanis 38, 2016, diesel, 3 cabins, VAT paid, CE docs available")',
                     )}
                     className="w-full h-24 bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none resize-none transition-all"
-                    disabled={isExtracting}
+                    disabled={isNewMode && isExtracting}
                   />
                   <p className="text-xs text-slate-400 flex items-center gap-1">
                     <Sparkles size={10} />{" "}
@@ -9082,128 +9081,6 @@ export default function YachtEditorPage() {
                   </div>
                 </div>
 
-                {/* ── Approval Gate ── */}
-                {pipeline.stats.total > 0 && (
-                  <div
-                    className={cn(
-                      "rounded-xl p-5 border",
-                      imagesApproved
-                        ? "bg-emerald-50 border-emerald-200"
-                        : "bg-amber-50 border-amber-200",
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p
-                          className={cn(
-                            "text-sm font-bold",
-                            imagesApproved
-                              ? "text-emerald-700"
-                              : "text-amber-700",
-                          )}
-                        >
-                          {isNewMode
-                            ? imagesApproved
-                              ? canProceedFromStep1
-                                ? labelText(
-                                    "imagesApprovedUnlocked",
-                                    "✅ Images approved - Step 2 is unlocked!",
-                                  )
-                                : labelText(
-                                    "imagesApprovedExtractionRunning",
-                                    "🤖 Images approved. AI extraction is still running...",
-                                  )
-                              : labelText(
-                                  "approvedMinimumImages",
-                                  "⏳ {approved} of {minimum} minimum images approved",
-                                )
-                                  .replace(
-                                    "{approved}",
-                                    String(pipeline.stats.approved),
-                                  )
-                                  .replace(
-                                    "{minimum}",
-                                    String(pipeline.stats.min_required),
-                                  )
-                            : labelText(
-                                "editManifestUnlocked",
-                                "ℹ️ Edit Manifest mode - Step 2 is unlocked with existing boat details.",
-                              )}
-                        </p>
-                        {isNewMode && !imagesApproved && (
-                          <p className="text-xs text-amber-600 mt-1">
-                            {labelText(
-                              "stepTwoUnlockHint",
-                              "Step 2 opens after image approval. AI extraction continues in background and fills fields when ready.",
-                            )}
-                            {pipeline.stats.processing > 0 &&
-                              ` ${labelText(
-                                "stillProcessingCount",
-                                "{count} still processing...",
-                              ).replace(
-                                "{count}",
-                                String(pipeline.stats.processing),
-                              )}`}
-                          </p>
-                        )}
-                      </div>
-                      {pipeline.stats.ready > 0 && (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const result = await pipeline.approveAll();
-                            if (result.step2_unlocked) {
-                              if (isNewMode) {
-                                if (
-                                  hasCompletedAiExtraction &&
-                                  !shouldRefreshAiExtraction
-                                ) {
-                                  setActiveStep(2);
-                                } else {
-                                  const extractionOk = await handleAiExtract({
-                                    background: false,
-                                    navigateToStep2: true,
-                                    speedMode: "balanced",
-                                  });
-                                  if (!extractionOk) {
-                                    toast(
-                                      labelText(
-                                        "aiTimedOutStepTwo",
-                                        "AI extraction timed out. Step 2 is unlocked; you can continue manually and retry AI later.",
-                                      ),
-                                      { icon: "⚠️" },
-                                    );
-                                    setActiveStep(2);
-                                  }
-                                }
-                              } else {
-                                toast.success(
-                                  labelText(
-                                    "imagesApprovedManualAi",
-                                    "Images approved. You can manually run AI autofill if needed.",
-                                  ),
-                                );
-                              }
-                            } else {
-                              toast.success(
-                                labelText(
-                                  "imagesApprovedShort",
-                                  "Images approved.",
-                                ),
-                              );
-                            }
-                          }}
-                          disabled={isExtracting}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-md"
-                        >
-                          <CheckCircle size={16} />{" "}
-                          {labelText("approveAllImages", "Approve All")}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 {/* ── Extract with AI Area (Auto-triggered) ── */}
                 {(pipeline.stats.total > 0 ||
                   imagesApproved ||
@@ -9232,7 +9109,7 @@ export default function YachtEditorPage() {
                         <button
                           type="button"
                           onClick={() => setActiveStep(2)}
-                          disabled={isExtracting}
+                          disabled={isNewMode && isExtracting}
                           className="w-full py-4 px-8 rounded-xl text-base font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white"
                         >
                           {labelText(
@@ -9630,6 +9507,120 @@ export default function YachtEditorPage() {
                       </div>
                     ))}
                   </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Approval Gate ── */}
+          {activeStep === 1 && pipeline.stats.total > 0 && (
+            <div
+              className={cn(
+                "mt-6 rounded-xl border p-5",
+                imagesApproved
+                  ? "border-emerald-200 bg-emerald-50"
+                  : "border-amber-200 bg-amber-50",
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p
+                    className={cn(
+                      "text-sm font-bold",
+                      imagesApproved ? "text-emerald-700" : "text-amber-700",
+                    )}
+                  >
+                    {isNewMode
+                      ? imagesApproved
+                        ? canProceedFromStep1
+                          ? labelText(
+                              "imagesApprovedUnlocked",
+                              "✅ Images approved - Step 2 is unlocked!",
+                            )
+                          : labelText(
+                              "imagesApprovedExtractionRunning",
+                              "🤖 Images approved. AI extraction is still running...",
+                            )
+                        : labelText(
+                            "approvedMinimumImages",
+                            "⏳ {approved} of {minimum} minimum images approved",
+                          )
+                            .replace(
+                              "{approved}",
+                              String(pipeline.stats.approved),
+                            )
+                            .replace(
+                              "{minimum}",
+                              String(pipeline.stats.min_required),
+                            )
+                      : labelText(
+                          "editManifestUnlocked",
+                          "ℹ️ Edit Manifest mode - Step 2 is unlocked with existing boat details.",
+                        )}
+                  </p>
+                  {isNewMode && !imagesApproved && (
+                    <p className="mt-1 text-xs text-amber-600">
+                      {labelText(
+                        "stepTwoUnlockHint",
+                        "Step 2 opens after image approval. AI extraction continues in background and fills fields when ready.",
+                      )}
+                      {pipeline.stats.processing > 0 &&
+                        ` ${labelText(
+                          "stillProcessingCount",
+                          "{count} still processing...",
+                        ).replace("{count}", String(pipeline.stats.processing))}`}
+                    </p>
+                  )}
+                </div>
+                {pipeline.stats.ready > 0 && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const result = await pipeline.approveAll();
+                      if (result.step2_unlocked) {
+                        if (isNewMode) {
+                          if (
+                            hasCompletedAiExtraction &&
+                            !shouldRefreshAiExtraction
+                          ) {
+                            setActiveStep(2);
+                          } else {
+                            const extractionOk = await handleAiExtract({
+                              background: false,
+                              navigateToStep2: true,
+                              speedMode: "balanced",
+                            });
+                            if (!extractionOk) {
+                              toast(
+                                labelText(
+                                  "aiTimedOutStepTwo",
+                                  "AI extraction timed out. Step 2 is unlocked; you can continue manually and retry AI later.",
+                                ),
+                                { icon: "⚠️" },
+                              );
+                              setActiveStep(2);
+                            }
+                          }
+                        } else {
+                          toast.success(
+                            labelText(
+                              "imagesApprovedManualAi",
+                              "Images approved. You can manually run AI autofill if needed.",
+                            ),
+                          );
+                        }
+                      } else {
+                        toast.success(
+                          labelText("imagesApprovedShort", "Images approved."),
+                        );
+                      }
+                    }}
+                    disabled={isNewMode && isExtracting}
+                    className="flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-emerald-700"
+                  >
+                    <CheckCircle size={16} />{" "}
+                    {labelText("approveAllImages", "Approve All")}
+                  </button>
                 )}
               </div>
             </div>
