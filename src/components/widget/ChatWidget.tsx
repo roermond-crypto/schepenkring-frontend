@@ -23,9 +23,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
+import { CLIENT_SESSION_UPDATED_EVENT } from "@/lib/auth/client-session";
 import { AuctionWidgetBody } from "@/components/widget/AuctionWidgetBody";
 import {
   clearSharedChatState,
+  detectSharedChatScope,
   getOrCreateSharedVisitorId,
   getSharedChatStorageKey,
   readSharedChatState,
@@ -1352,7 +1354,8 @@ export function ChatWidget({
   const [resolvedBoatName, setResolvedBoatName] = useState<string | undefined>(boatName);
   const [initBrandColor, setInitBrandColor] = useState<string | undefined>(undefined);
   const [enabledTabs, setEnabledTabs] = useState<string[]>(["chat", "tasks", "booking"]);
-  const visitorIdRef = useRef<string>(getOrCreateSharedVisitorId());
+  const [sharedChatScope, setSharedChatScope] = useState<string>(detectSharedChatScope());
+  const visitorIdRef = useRef<string>(getOrCreateSharedVisitorId(sharedChatScope));
   const publicLocationLookupRef = useRef<Promise<number | undefined> | null>(null);
   const restoredSharedChatKeyRef = useRef<string | null>(null);
   const buildInitialMessages = useCallback(
@@ -1369,6 +1372,28 @@ export function ChatWidget({
   const [messages, setMessages] = useState<WidgetMessage[]>(() => buildInitialMessages());
   const sharedChatLocationId =
     locationId ?? detectRuntimeLocationId() ?? publicDefaultLocationId;
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncScope = () => {
+      setSharedChatScope(detectSharedChatScope());
+    };
+
+    window.addEventListener(CLIENT_SESSION_UPDATED_EVENT, syncScope);
+    window.addEventListener("storage", syncScope);
+
+    return () => {
+      window.removeEventListener(CLIENT_SESSION_UPDATED_EVENT, syncScope);
+      window.removeEventListener("storage", syncScope);
+    };
+  }, []);
+
+  useEffect(() => {
+    visitorIdRef.current = getOrCreateSharedVisitorId(sharedChatScope);
+  }, [sharedChatScope]);
 
   useEffect(() => {
     if (isEmbedded && typeof window !== "undefined") {
@@ -1453,13 +1478,13 @@ export function ChatWidget({
       return;
     }
 
-    const storageKey = getSharedChatStorageKey(sharedChatLocationId);
+    const storageKey = getSharedChatStorageKey(sharedChatLocationId, sharedChatScope);
     if (restoredSharedChatKeyRef.current === storageKey) {
       return;
     }
 
     restoredSharedChatKeyRef.current = storageKey;
-    const cachedState = readSharedChatState(sharedChatLocationId);
+    const cachedState = readSharedChatState(sharedChatLocationId, sharedChatScope);
 
     if (!cachedState) {
       setConversationId(null);
@@ -1473,32 +1498,32 @@ export function ChatWidget({
         ? deserializeWidgetMessages(cachedState.messages)
         : buildInitialMessages(),
     );
-  }, [buildInitialMessages, sharedChatLocationId]);
+  }, [buildInitialMessages, sharedChatLocationId, sharedChatScope]);
 
   useEffect(() => {
     if (!sharedChatLocationId) {
       return;
     }
 
-    writeSharedChatState(sharedChatLocationId, {
+    writeSharedChatState(sharedChatLocationId, sharedChatScope, {
       conversationId,
       messages: serializeWidgetMessages(messages),
       updatedAt: new Date().toISOString(),
     });
-  }, [conversationId, messages, sharedChatLocationId]);
+  }, [conversationId, messages, sharedChatLocationId, sharedChatScope]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !sharedChatLocationId) {
       return;
     }
 
-    const storageKey = getSharedChatStorageKey(sharedChatLocationId);
+    const storageKey = getSharedChatStorageKey(sharedChatLocationId, sharedChatScope);
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== storageKey) {
         return;
       }
 
-      const cachedState = readSharedChatState(sharedChatLocationId);
+      const cachedState = readSharedChatState(sharedChatLocationId, sharedChatScope);
       if (!cachedState) {
         setConversationId(null);
         setMessages(buildInitialMessages());
@@ -1515,7 +1540,7 @@ export function ChatWidget({
 
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, [buildInitialMessages, sharedChatLocationId]);
+  }, [buildInitialMessages, sharedChatLocationId, sharedChatScope]);
 
   const ensurePublicDefaultLocationId = useCallback(async (): Promise<number | undefined> => {
     const existingLocationId =
@@ -1595,7 +1620,7 @@ export function ChatWidget({
     setSending(false);
     setConversationId(null);
     setMessages(buildInitialMessages());
-    clearSharedChatState(sharedChatLocationId);
+    clearSharedChatState(sharedChatLocationId, sharedChatScope);
   };
 
   const handleSendMessage = async (

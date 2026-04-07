@@ -1332,7 +1332,7 @@
     }
   },
   "WidgetChat": {
-    "brand": "NauticSecure",
+    "brand": "Schepenkring",
     "initialMessage": "Hallo! Hoe kunnen we je vandaag helpen? Vraag ons naar boten, havens of ondersteuning.",
     "welcome": {
       "kicker": "Live conciërge",
