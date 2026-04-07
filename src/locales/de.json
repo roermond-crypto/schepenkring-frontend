@@ -1330,7 +1330,7 @@
     }
   },
   "WidgetChat": {
-    "brand": "NauticSecure",
+    "brand": "Schepenkring",
     "initialMessage": "Hallo! Wie können wir Ihnen heute helfen? Fragen Sie uns zu Booten, Häfen oder Support.",
     "welcome": {
       "kicker": "Live-Concierge",

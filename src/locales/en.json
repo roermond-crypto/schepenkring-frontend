@@ -1331,7 +1331,7 @@
     }
   },
   "WidgetChat": {
-    "brand": "NauticSecure",
+    "brand": "Schepenkring",
     "initialMessage": "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
     "welcome": {
       "kicker": "Live concierge",

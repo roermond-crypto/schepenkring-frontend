@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import { api } from "@/lib/api";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
 import {
+  buildSharedChatScope,
   getOrCreateSharedVisitorId,
   getSharedChatStorageKey,
   readSharedChatState,
@@ -163,7 +164,16 @@ export function ClientChatPage() {
   const t = useTranslations("DashboardClientChat");
   const { user } = useClientSession();
   const endRef = useRef<HTMLDivElement | null>(null);
-  const visitorIdRef = useRef<string>(getOrCreateSharedVisitorId());
+  const sharedChatScope = useMemo(
+    () =>
+      buildSharedChatScope({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      }),
+    [user.email, user.id, user.role],
+  );
+  const visitorIdRef = useRef<string>(getOrCreateSharedVisitorId(sharedChatScope));
   const bootstrapKeyRef = useRef<string | null>(null);
   const loadedHistoryConversationRef = useRef<string | null>(null);
 
@@ -229,16 +239,24 @@ export function ClientChatPage() {
   }, [locale, locationId, user.email, user.name, user.phone]);
 
   useEffect(() => {
+    visitorIdRef.current = getOrCreateSharedVisitorId(sharedChatScope);
+  }, [sharedChatScope]);
+
+  useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sending]);
 
   useEffect(() => {
     if (!locationId) {
+      setConversationId(null);
+      setMessages([]);
       return;
     }
 
-    const cached = readSharedChatState(locationId);
+    const cached = readSharedChatState(locationId, sharedChatScope);
     if (!cached) {
+      setConversationId(null);
+      setMessages([]);
       return;
     }
 
@@ -249,33 +267,35 @@ export function ClientChatPage() {
     if (cached.messages.length > 0) {
       setMessages(cached.messages.map(mapSharedMessage));
     }
-  }, [locationId]);
+  }, [locationId, sharedChatScope]);
 
   useEffect(() => {
     if (!locationId) {
       return;
     }
 
-    writeSharedChatState(locationId, {
+    writeSharedChatState(locationId, sharedChatScope, {
       conversationId,
       messages: messages.map(serializeClientMessage),
       updatedAt: new Date().toISOString(),
     });
-  }, [conversationId, locationId, messages]);
+  }, [conversationId, locationId, messages, sharedChatScope]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !locationId) {
       return;
     }
 
-    const storageKey = getSharedChatStorageKey(locationId);
+    const storageKey = getSharedChatStorageKey(locationId, sharedChatScope);
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== storageKey) {
         return;
       }
 
-      const cached = readSharedChatState(locationId);
+      const cached = readSharedChatState(locationId, sharedChatScope);
       if (!cached) {
+        setConversationId(null);
+        setMessages([]);
         return;
       }
 
@@ -285,7 +305,7 @@ export function ClientChatPage() {
 
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, [locationId]);
+  }, [locationId, sharedChatScope]);
 
   const loadConversationHistory = useCallback(async (nextConversationId: string) => {
     const response = await api.get<PublicConversationStateResponse>(
@@ -375,7 +395,7 @@ export function ClientChatPage() {
         return;
       }
 
-      const cached = readSharedChatState(locationId);
+      const cached = readSharedChatState(locationId, sharedChatScope);
       if (cached?.conversationId) {
         if (conversationId !== cached.conversationId) {
           setConversationId(cached.conversationId);
@@ -438,6 +458,7 @@ export function ClientChatPage() {
     locale,
     locationId,
     startFailedMessage,
+    sharedChatScope,
     user.email,
     user.name,
     user.phone,

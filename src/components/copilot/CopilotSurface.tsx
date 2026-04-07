@@ -419,7 +419,7 @@ export function CopilotSurface({
                 <Bot size={18} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">NauticSecure Copilot</p>
+                <p className="text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">Schepenkring Copilot</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">{copy.subtitle}</p>
               </div>
             </div>
