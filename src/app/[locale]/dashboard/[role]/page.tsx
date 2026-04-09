@@ -3,6 +3,7 @@
 import {
   startTransition,
   useEffect,
+  useRef,
   useState,
   useCallback,
   type ReactNode,
@@ -24,6 +25,14 @@ import {
   AlertTriangle,
   CircleCheck,
   Sparkles,
+  Anchor,
+  Gauge,
+  HelpCircle,
+  Brain,
+  Share2,
+  ShieldAlert,
+  TriangleAlert,
+  Plug,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -53,7 +62,7 @@ type DashboardData = {
   brokerReviewCount: number;
   clientSignhostTask: DashboardYachtWithStatus | null;
   recentBids: DashboardYachtWithStatus[];
-  recentRegistrations: any[];
+  recentRegistrations: DashboardYacht[];
   auditLogs: DashboardAuditItem[];
   trends: {
     activeBids: { change: number; sparkline: number[] };
@@ -122,11 +131,16 @@ function CountUpNumber({
   duration?: number;
 }) {
   const [displayValue, setDisplayValue] = useState(0);
+  const displayValueRef = useRef(displayValue);
+
+  useEffect(() => {
+    displayValueRef.current = displayValue;
+  }, [displayValue]);
 
   useEffect(() => {
     let frame = 0;
     const totalFrames = Math.max(1, Math.round(duration / 16));
-    const startValue = displayValue;
+    const startValue = displayValueRef.current;
     const delta = value - startValue;
 
     const timer = setInterval(() => {
@@ -138,7 +152,7 @@ function CountUpNumber({
     }, 16);
 
     return () => clearInterval(timer);
-  }, [value]);
+  }, [duration, value]);
 
   return <>{displayValue.toLocaleString("de-DE")}</>;
 }
@@ -253,7 +267,9 @@ export default function AdminDashboardHome() {
   const marketplaceUrl = "https://www.schepenkring.nl/aanbod-boten/";
   const isAdminRole = role === "admin";
   const showAdminSalesInsights = role !== "client";
-  const showAuditPanel = role !== "client";
+  const showAuditPanel = role === "employee";
+  const showAdminQuickAccess = isAdminRole;
+  const showRightSidePanel = showAuditPanel || showAdminQuickAccess;
   const defaultUserName = t("defaults.userName");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -411,8 +427,8 @@ export default function AdminDashboardHome() {
       const activeBids = yachtsWithNormalizedStatus.filter(
         (yacht) => yacht.normalizedStatus === "for bid",
       ).length;
-      const pendingRegistrations = yachts.filter((y: any) => {
-        const normalizedStatus = String(y?.status || "").toLowerCase();
+      const pendingRegistrations = yachts.filter((yacht) => {
+        const normalizedStatus = String(yacht?.status || "").toLowerCase();
         return (
           normalizedStatus === "draft" ||
           normalizedStatus === "pending" ||
@@ -490,7 +506,7 @@ export default function AdminDashboardHome() {
       const recentRegistrations = pendingRegistrations
         .slice()
         .sort(
-          (a: any, b: any) =>
+          (a, b) =>
             new Date(b.updated_at || b.created_at || 0).getTime() -
             new Date(a.updated_at || a.created_at || 0).getTime(),
         )
@@ -716,6 +732,89 @@ export default function AdminDashboardHome() {
       suffix: "",
       isCurrency: true,
       target: Math.max(1, data.totalSalesNumber || 1),
+    },
+  ];
+
+  const adminShortcuts = [
+    {
+      key: "locations",
+      title: t("shortcuts.locations.title"),
+      description: t("shortcuts.locations.description"),
+      href: `${dashboardBase}/locations`,
+      icon: Anchor,
+      iconTone: "text-[#0F766E]",
+      iconShell:
+        "border-[#BFE9DD] bg-gradient-to-br from-[#ECFDF5] to-[#F0FDFA]",
+    },
+    {
+      key: "salesfunnel",
+      title: t("shortcuts.salesfunnel.title"),
+      description: t("shortcuts.salesfunnel.description"),
+      href: `${dashboardBase}/performance`,
+      icon: Gauge,
+      iconTone: "text-[#1D4ED8]",
+      iconShell:
+        "border-[#C8D9FF] bg-gradient-to-br from-[#EEF4FF] to-[#F8FAFF]",
+    },
+    {
+      key: "faq",
+      title: t("shortcuts.faq.title"),
+      description: t("shortcuts.faq.description"),
+      href: `${dashboardBase}/faq`,
+      icon: HelpCircle,
+      iconTone: "text-[#7C3AED]",
+      iconShell:
+        "border-[#DDD1FF] bg-gradient-to-br from-[#F5F3FF] to-[#FAF5FF]",
+    },
+    {
+      key: "knowledgeBrain",
+      title: t("shortcuts.knowledgeBrain.title"),
+      description: t("shortcuts.knowledgeBrain.description"),
+      href: `${dashboardBase}/knowledge-brain`,
+      icon: Brain,
+      iconTone: "text-[#4F46E5]",
+      iconShell:
+        "border-[#D7D7FF] bg-gradient-to-br from-[#EEF2FF] to-[#F8FAFC]",
+    },
+    {
+      key: "socialAutomation",
+      title: t("shortcuts.socialAutomation.title"),
+      description: t("shortcuts.socialAutomation.description"),
+      href: `${dashboardBase}/social`,
+      icon: Share2,
+      iconTone: "text-[#0F766E]",
+      iconShell:
+        "border-[#BFE9DD] bg-gradient-to-br from-[#ECFEF8] to-[#F0FDFA]",
+    },
+    {
+      key: "audit",
+      title: t("shortcuts.audit.title"),
+      description: t("shortcuts.audit.description"),
+      href: `${dashboardBase}/audit`,
+      icon: ShieldAlert,
+      iconTone: "text-[#059669]",
+      iconShell:
+        "border-[#C7EEDB] bg-gradient-to-br from-[#ECFDF5] to-[#F8FAFC]",
+    },
+    {
+      key: "errors",
+      title: t("shortcuts.errors.title"),
+      description: t("shortcuts.errors.description"),
+      href: `${dashboardBase}/errors`,
+      icon: TriangleAlert,
+      iconTone: "text-[#DC2626]",
+      iconShell:
+        "border-[#FFD2D2] bg-gradient-to-br from-[#FFF1F2] to-[#FFF7ED]",
+    },
+    {
+      key: "integrations",
+      title: t("shortcuts.integrations.title"),
+      description: t("shortcuts.integrations.description"),
+      href: `${dashboardBase}/integrations`,
+      icon: Plug,
+      iconTone: "text-[#C2410C]",
+      iconShell:
+        "border-[#F7D0B5] bg-gradient-to-br from-[#FFF7ED] to-[#FFFBF5]",
     },
   ];
 
@@ -985,7 +1084,7 @@ export default function AdminDashboardHome() {
             </div>
           ) : data.recentRegistrations.length > 0 ? (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {data.recentRegistrations.map((yacht: any) => (
+              {data.recentRegistrations.map((yacht) => (
                 <Link
                   key={yacht.id}
                   href={`${dashboardBase}/yachts/${yacht.id}?step=5`}
@@ -1026,14 +1125,14 @@ export default function AdminDashboardHome() {
       <div
         className={cn(
           "grid grid-cols-1 gap-6",
-          showAuditPanel ? "xl:grid-cols-3" : "xl:grid-cols-1",
+          showRightSidePanel ? "xl:grid-cols-3" : "xl:grid-cols-1",
         )}
       >
         {showRecentBiddingPanel && (
           <div
             className={cn(
               "rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900",
-              showAuditPanel && "xl:col-span-2",
+              showRightSidePanel && "xl:col-span-2",
             )}
           >
             <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
@@ -1281,6 +1380,64 @@ export default function AdminDashboardHome() {
                   <ArrowRight size={14} />
                 </a>
               </div>
+            </div>
+          </div>
+        )}
+
+        {showAdminQuickAccess && (
+          <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
+            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("sections.adminShortcuts")}
+                </p>
+                <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                  {t("sections.quickAccess")}
+                </h2>
+              </div>
+              <Activity
+                size={17}
+                className="text-[#1E3A8A] dark:text-sky-300"
+              />
+            </div>
+
+            <div className="space-y-3">
+              {adminShortcuts.map((shortcut) => {
+                const ShortcutIcon = shortcut.icon;
+
+                return (
+                  <Link
+                    key={shortcut.key}
+                    href={shortcut.href}
+                    className="group flex items-start gap-4 rounded-[26px] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-50/70 p-5 transition hover:border-[#BBD0F2] hover:shadow-[0_12px_24px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:hover:border-slate-600"
+                  >
+                    <div
+                      className={cn(
+                        "flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] border shadow-[0_10px_24px_rgba(15,23,42,0.08)]",
+                        shortcut.iconShell,
+                      )}
+                    >
+                      <ShortcutIcon
+                        className={cn("h-6 w-6", shortcut.iconTone)}
+                      />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xl font-bold leading-tight text-[#0B1F3A] sm:text-2xl dark:text-slate-100">
+                            {shortcut.title}
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                            {shortcut.description}
+                          </p>
+                        </div>
+                        <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-[#1E3A8A] dark:group-hover:text-sky-300" />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}

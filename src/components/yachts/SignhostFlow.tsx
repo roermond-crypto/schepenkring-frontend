@@ -3,11 +3,13 @@
 import Image from "next/image";
 import { jsPDF } from "jspdf";
 import { Fragment } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import {
   AlertCircle,
+  Copy,
+  ExternalLink,
   FileCheck,
   FilePenLine,
   FileText,
@@ -106,6 +108,48 @@ function mapTransactionToSignRequest(
   };
 }
 
+function extractSignhostLinks(signRequest: SignRequest | null) {
+  if (!signRequest) return [] as Array<{ role: string | null; url: string }>;
+
+  const links: Array<{ role: string | null; url: string }> = [];
+  const metadataLinks = signRequest.metadata?.sign_urls;
+
+  if (Array.isArray(metadataLinks)) {
+    metadataLinks.forEach((item) => {
+      if (
+        item &&
+        typeof item === "object" &&
+        "url" in item &&
+        typeof (item as { url?: unknown }).url === "string"
+      ) {
+        links.push({
+          role:
+            "role" in item && typeof (item as { role?: unknown }).role === "string"
+              ? (item as { role?: string }).role ?? null
+              : null,
+          url: (item as { url: string }).url,
+        });
+      }
+    });
+  }
+
+  if (typeof signRequest.sign_url === "string" && signRequest.sign_url.trim()) {
+    links.push({
+      role: null,
+      url: signRequest.sign_url,
+    });
+  }
+
+  const deduped = new Map<string, { role: string | null; url: string }>();
+  links.forEach((link) => {
+    if (!deduped.has(link.url)) {
+      deduped.set(link.url, link);
+    }
+  });
+
+  return Array.from(deduped.values());
+}
+
 function resolveContractLanguage(locale: string): ContractLanguage {
   if (
     locale === "nl" ||
@@ -124,10 +168,43 @@ type LocationOption = {
   code?: string | null;
 };
 
+type GoogleAddressComponent = {
+  long_name: string;
+  short_name: string;
+  types: string[];
+};
+
+type GooglePlaceResult = {
+  address_components?: GoogleAddressComponent[];
+};
+
+type GooglePlacesAutocomplete = {
+  addListener: (eventName: string, handler: () => void) => void;
+  getPlace: () => GooglePlaceResult;
+};
+
+type GoogleWindow = Window & {
+  google?: {
+    maps?: {
+      places?: {
+        Autocomplete: new (
+          input: HTMLInputElement,
+          options: {
+            fields: string[];
+            types: string[];
+          },
+        ) => GooglePlacesAutocomplete;
+      };
+    };
+  };
+};
+
 type ContractDraft = {
   language: ContractLanguage;
   sellerContactId: number | null;
   buyerContactId: number | null;
+  sellerUserId: number | null;
+  buyerUserId: number | null;
   sellerContactName: string;
   companyName: string;
   companyAddress: string;
@@ -483,6 +560,13 @@ const editorCopyByLanguage: Record<
     escrowBuyerDetails: string;
     sendEscrowToSignhost: string;
     sendToSignhost: string;
+    useExistingUserHint: string;
+    selectedUser: string;
+    noMatchingUsers: string;
+    createSellerUser: string;
+    createBuyerUser: string;
+    createBuyerUserAndLink: string;
+    saveYachtFirstToLinkBuyer: string;
   }
 > = {
   en: {
@@ -548,6 +632,13 @@ const editorCopyByLanguage: Record<
     escrowBuyerDetails: "Buyer details",
     sendEscrowToSignhost: "Send escrow to Signhost",
     sendToSignhost: "Send to Signhost",
+    useExistingUserHint: "Type a name or e-mail to reuse an existing user for this contract side.",
+    selectedUser: "Connected user",
+    noMatchingUsers: "No matching users found for this location.",
+    createSellerUser: "Create seller user",
+    createBuyerUser: "Create buyer user",
+    createBuyerUserAndLink: "Create buyer user and link yacht",
+    saveYachtFirstToLinkBuyer: "Save the yacht first to link the buyer user.",
   },
   nl: {
     dialogTitle: "Contractsjabloon bewerken",
@@ -612,6 +703,13 @@ const editorCopyByLanguage: Record<
     escrowBuyerDetails: "Kopersgegevens",
     sendEscrowToSignhost: "Escrow naar Signhost sturen",
     sendToSignhost: "Naar Signhost sturen",
+    useExistingUserHint: "Typ een naam of e-mail om een bestaande gebruiker voor deze contractkant te hergebruiken.",
+    selectedUser: "Gekoppelde gebruiker",
+    noMatchingUsers: "Geen overeenkomende gebruikers gevonden voor deze locatie.",
+    createSellerUser: "Verkopergebruiker maken",
+    createBuyerUser: "Kopergebruiker maken",
+    createBuyerUserAndLink: "Kopergebruiker maken en vaartuig koppelen",
+    saveYachtFirstToLinkBuyer: "Sla eerst het vaartuig op om de koper te koppelen.",
   },
   de: {
     dialogTitle: "Vertragsvorlage bearbeiten",
@@ -676,6 +774,13 @@ const editorCopyByLanguage: Record<
     escrowBuyerDetails: "Käuferdaten",
     sendEscrowToSignhost: "Escrow an Signhost senden",
     sendToSignhost: "An Signhost senden",
+    useExistingUserHint: "Geben Sie einen Namen oder eine E-Mail ein, um einen bestehenden Benutzer fuer diese Vertragsseite zu verwenden.",
+    selectedUser: "Verknuepfter Benutzer",
+    noMatchingUsers: "Keine passenden Benutzer fuer diesen Standort gefunden.",
+    createSellerUser: "Verkaeufer-Benutzer erstellen",
+    createBuyerUser: "Kaeufer-Benutzer erstellen",
+    createBuyerUserAndLink: "Kaeufer-Benutzer erstellen und Boot verknuepfen",
+    saveYachtFirstToLinkBuyer: "Speichern Sie zuerst das Boot, um den Kaeufer zu verknuepfen.",
   },
   fr: {
     dialogTitle: "Modifier le modele de contrat",
@@ -740,6 +845,13 @@ const editorCopyByLanguage: Record<
     escrowBuyerDetails: "Coordonnees de l'acheteur",
     sendEscrowToSignhost: "Envoyer l'escrow a Signhost",
     sendToSignhost: "Envoyer a Signhost",
+    useExistingUserHint: "Saisissez un nom ou un e-mail pour reutiliser un utilisateur existant sur ce cote du contrat.",
+    selectedUser: "Utilisateur connecte",
+    noMatchingUsers: "Aucun utilisateur correspondant pour cet emplacement.",
+    createSellerUser: "Creer l utilisateur vendeur",
+    createBuyerUser: "Creer l utilisateur acheteur",
+    createBuyerUserAndLink: "Creer l acheteur et lier le bateau",
+    saveYachtFirstToLinkBuyer: "Enregistrez d abord le bateau pour lier l acheteur.",
   },
 };
 
@@ -1087,6 +1199,69 @@ function mapAdminUserToContractParty(user: MeUser | null): ContractSnapshot | nu
   };
 }
 
+function getUserAddressLine(user: MeUser) {
+  return [user.address_line1, user.address_line2].filter(Boolean).join(", ");
+}
+
+function buildDraftPatchFromUser(
+  role: "seller" | "buyer",
+  user: MeUser,
+): Partial<ContractDraft> {
+  const addressLine = getUserAddressLine(user);
+
+  if (role === "seller") {
+    return {
+      sellerUserId: user.id,
+      sellerContactName: user.name || "",
+      companyName: user.name || "",
+      companyAddress: addressLine,
+      companyPostalCode: user.postal_code || "",
+      companyCity: user.city || "",
+      companyPhone: user.phone || "",
+      companyEmail: user.email || "",
+    };
+  }
+
+  return {
+    buyerUserId: user.id,
+    clientName: user.name || "",
+    clientAddress: addressLine,
+    clientPostalCode: user.postal_code || "",
+    clientCity: user.city || "",
+    clientPhone: user.phone || "",
+    clientEmail: user.email || "",
+  };
+}
+
+function extractGoogleAddressFields(place: GooglePlaceResult | null | undefined) {
+  let addressLine1 = "";
+  let city = "";
+  let postalCode = "";
+
+  place?.address_components?.forEach((component) => {
+    const types = component.types;
+
+    if (types.includes("street_number")) {
+      addressLine1 = `${component.long_name} ${addressLine1}`;
+    }
+    if (types.includes("route")) {
+      addressLine1 += component.short_name;
+    }
+    if (types.includes("locality")) {
+      city = component.long_name;
+    }
+    if (types.includes("postal_code")) {
+      postalCode = component.long_name;
+    }
+  });
+
+  return {
+    addressLine1: addressLine1.trim(),
+    city,
+    postalCode,
+  };
+}
+
 function getSpecificationRows(draft: ContractDraft) {
   const registerValue = boolLabel(draft.language, draft.shipRegisterEntry);
   const mortgageValue = boolLabel(draft.language, draft.hasMortgage);
@@ -1277,6 +1452,8 @@ function buildContractDraft(
     language,
     sellerContactId: null,
     buyerContactId: null,
+    sellerUserId: null,
+    buyerUserId: yachtData?.user_id ?? null,
     sellerContactName: "",
     companyName: locationDefaults.companyName || "",
     companyAddress: locationDefaults.companyAddress || "",
@@ -1589,6 +1766,8 @@ export function SignhostFlow({
   const role = params?.role?.toLowerCase();
   const canManageContract = role !== "client";
   const canCreateClientInline = role === "admin" && Boolean(locationId);
+  const sellerAddressInputRef = useRef<HTMLInputElement>(null);
+  const buyerAddressInputRef = useRef<HTMLInputElement>(null);
   const selectedLocation = useMemo(
     () => locationOptions.find((option) => option.id === locationId) || null,
     [locationId, locationOptions],
@@ -1645,6 +1824,15 @@ export function SignhostFlow({
   );
   const [contactSaving, setContactSaving] = useState(false);
   const [contactDeletingId, setContactDeletingId] = useState<number | null>(null);
+  const [activeUserLookup, setActiveUserLookup] = useState<
+    "seller" | "buyer" | null
+  >(null);
+  const [creatingContractUserRole, setCreatingContractUserRole] = useState<
+    "seller" | "buyer" | null
+  >(null);
+  const [selectingContractUserRole, setSelectingContractUserRole] = useState<
+    "seller" | "buyer" | null
+  >(null);
 
   useEffect(() => {
     const nextDraft = buildContractDraft(
@@ -1750,6 +1938,152 @@ export function SignhostFlow({
   }, [canManageContract, locationId, role]);
 
   useEffect(() => {
+    if (!editorOpen) return;
+    if (typeof window === "undefined") return;
+
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+    if (!apiKey || !sellerAddressInputRef.current) return;
+
+    let cancelled = false;
+
+    const setupAutocomplete = () => {
+      const googleRef = (window as GoogleWindow).google;
+      if (!googleRef?.maps?.places?.Autocomplete || !sellerAddressInputRef.current) {
+        return;
+      }
+
+      const autocomplete = new googleRef.maps.places.Autocomplete(
+        sellerAddressInputRef.current,
+        {
+          fields: ["address_components", "formatted_address"],
+          types: ["address"],
+        },
+      );
+
+      autocomplete.addListener("place_changed", () => {
+        const nextAddress = extractGoogleAddressFields(autocomplete.getPlace());
+
+        setDraft((prev) => ({
+          ...prev,
+          companyAddress:
+            nextAddress.addressLine1 ||
+            sellerAddressInputRef.current?.value ||
+            prev.companyAddress,
+          companyPostalCode: nextAddress.postalCode || prev.companyPostalCode,
+          companyCity: nextAddress.city || prev.companyCity,
+        }));
+      });
+    };
+
+    const existingGoogle = (window as GoogleWindow).google;
+    if (existingGoogle?.maps?.places?.Autocomplete) {
+      setupAutocomplete();
+      return;
+    }
+
+    const scriptId = "google-places-script";
+    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+
+    const handleLoad = () => {
+      if (!cancelled) setupAutocomplete();
+    };
+
+    if (script) {
+      script.addEventListener("load", handleLoad);
+      return () => {
+        cancelled = true;
+        script?.removeEventListener("load", handleLoad);
+      };
+    }
+
+    script = document.createElement("script");
+    script.id = scriptId;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.addEventListener("load", handleLoad);
+    document.head.appendChild(script);
+
+    return () => {
+      cancelled = true;
+      script?.removeEventListener("load", handleLoad);
+    };
+  }, [editorOpen]);
+
+  useEffect(() => {
+    if (!editorOpen) return;
+    if (typeof window === "undefined") return;
+
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+    if (!apiKey || !buyerAddressInputRef.current) return;
+
+    let cancelled = false;
+
+    const setupAutocomplete = () => {
+      const googleRef = (window as GoogleWindow).google;
+      if (!googleRef?.maps?.places?.Autocomplete || !buyerAddressInputRef.current) {
+        return;
+      }
+
+      const autocomplete = new googleRef.maps.places.Autocomplete(
+        buyerAddressInputRef.current,
+        {
+          fields: ["address_components", "formatted_address"],
+          types: ["address"],
+        },
+      );
+
+      autocomplete.addListener("place_changed", () => {
+        const nextAddress = extractGoogleAddressFields(autocomplete.getPlace());
+
+        setDraft((prev) => ({
+          ...prev,
+          clientAddress:
+            nextAddress.addressLine1 ||
+            buyerAddressInputRef.current?.value ||
+            prev.clientAddress,
+          clientPostalCode: nextAddress.postalCode || prev.clientPostalCode,
+          clientCity: nextAddress.city || prev.clientCity,
+        }));
+      });
+    };
+
+    const existingGoogle = (window as GoogleWindow).google;
+    if (existingGoogle?.maps?.places?.Autocomplete) {
+      setupAutocomplete();
+      return;
+    }
+
+    const scriptId = "google-places-script";
+    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+
+    const handleLoad = () => {
+      if (!cancelled) setupAutocomplete();
+    };
+
+    if (script) {
+      script.addEventListener("load", handleLoad);
+      return () => {
+        cancelled = true;
+        script?.removeEventListener("load", handleLoad);
+      };
+    }
+
+    script = document.createElement("script");
+    script.id = scriptId;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.addEventListener("load", handleLoad);
+    document.head.appendChild(script);
+
+    return () => {
+      cancelled = true;
+      script?.removeEventListener("load", handleLoad);
+    };
+  }, [editorOpen]);
+
+  useEffect(() => {
     const trimmedName = user.name?.trim() || "";
     const trimmedEmail = user.email?.trim() || "";
     const trimmedPhone = user.phone?.trim() || "";
@@ -1781,6 +2115,7 @@ export function SignhostFlow({
     setDraft((prev) => {
       const updates: Partial<ContractDraft> = {};
 
+      if (!prev.buyerUserId && linkedClient?.id) updates.buyerUserId = linkedClient.id;
       if (!prev.clientName && linkedParty.name) updates.clientName = linkedParty.name;
       if (!prev.clientEmail && linkedParty.email)
         updates.clientEmail = linkedParty.email;
@@ -1963,6 +2298,40 @@ export function SignhostFlow({
   };
   const ownerSnapshotMissing =
     !ownerSnapshot.name && !ownerSnapshot.email && !ownerSnapshot.phone;
+  const sellerSelectedUser =
+    availableClients.find((client) => client.id === draft.sellerUserId) ?? null;
+  const buyerSelectedUser =
+    availableClients.find((client) => client.id === draft.buyerUserId) ?? null;
+  const sellerUserMatches = useMemo(() => {
+    const query = draft.sellerContactName.trim().toLowerCase();
+    if (!query) return [];
+
+    return availableClients
+      .filter((client) => {
+        const haystack = [client.name, client.email, client.phone]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(query);
+      })
+      .slice(0, 6);
+  }, [availableClients, draft.sellerContactName]);
+  const buyerUserMatches = useMemo(() => {
+    const query = draft.clientName.trim().toLowerCase();
+    if (!query) return [];
+
+    return availableClients
+      .filter((client) => {
+        const haystack = [client.name, client.email, client.phone]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(query);
+      })
+      .slice(0, 6);
+  }, [availableClients, draft.clientName]);
   const selectedTemplate =
     contractTemplateOptions.find(
       (option) => option.value === contractTemplateKey,
@@ -2003,6 +2372,7 @@ export function SignhostFlow({
         ? prev
         : {
             ...prev,
+            buyerUserId: client.id,
             clientName: linkedOwner.name || "",
             clientEmail: linkedOwner.email || "",
             clientPhone: linkedOwner.phone || "",
@@ -2131,6 +2501,129 @@ export function SignhostFlow({
     }
   };
 
+  const handleContractUserSelect = async (
+    roleType: "seller" | "buyer",
+    selectedUser: MeUser,
+  ) => {
+    setSelectingContractUserRole(roleType);
+
+    try {
+      setDraft((prev) => {
+        const nextPatch = buildDraftPatchFromUser(roleType, selectedUser);
+
+        if (roleType === "seller" && prev.companyName.trim()) {
+          nextPatch.companyName = prev.companyName;
+        }
+
+        return {
+          ...prev,
+          ...nextPatch,
+        };
+      });
+
+      setActiveUserLookup(null);
+
+      if (roleType === "buyer") {
+        if (yachtId) {
+          await linkClientToYacht(selectedUser);
+          toast.success("Buyer user linked to this yacht.");
+        } else {
+          toast(editorCopy.saveYachtFirstToLinkBuyer);
+        }
+      } else {
+        toast.success("Seller user connected to this contract.");
+      }
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response!
+              .data!.message!
+          : error instanceof Error
+            ? error.message
+            : "Failed to connect user.";
+      toast.error(message);
+    } finally {
+      setSelectingContractUserRole(null);
+    }
+  };
+
+  const handleCreateContractUser = async (roleType: "seller" | "buyer") => {
+    if (!locationId) {
+      toast.error("Select a yacht location before creating a user.");
+      return;
+    }
+
+    const baseValues =
+      roleType === "seller"
+        ? {
+            name: draft.sellerContactName.trim(),
+            email: draft.companyEmail.trim(),
+            phone: draft.companyPhone.trim(),
+            address: draft.companyAddress.trim(),
+            postalCode: draft.companyPostalCode.trim(),
+            city: draft.companyCity.trim(),
+          }
+        : {
+            name: draft.clientName.trim(),
+            email: draft.clientEmail.trim(),
+            phone: draft.clientPhone.trim(),
+            address: draft.clientAddress.trim(),
+            postalCode: draft.clientPostalCode.trim(),
+            city: draft.clientCity.trim(),
+          };
+
+    if (!baseValues.name || !baseValues.email) {
+      toast.error("Name and e-mail are required.");
+      return;
+    }
+
+    setCreatingContractUserRole(roleType);
+
+    try {
+      const { user: createdUser, temporaryPassword } =
+        await createScopedClientUser({
+          dashboardRole: role,
+          locationId,
+          name: baseValues.name,
+          email: baseValues.email,
+          phone: baseValues.phone || null,
+          addressLine1: baseValues.address || null,
+          city: baseValues.city || null,
+          postalCode: baseValues.postalCode || null,
+          country: null,
+        });
+
+      setAvailableClients((prev) => [
+        createdUser,
+        ...prev.filter((client) => client.id !== createdUser.id),
+      ]);
+
+      await handleContractUserSelect(roleType, createdUser);
+      toast(`Temporary password: ${temporaryPassword}`, {
+        duration: 8000,
+      });
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
+          ? (error as { response?: { data?: { message?: string } } }).response!
+              .data!.message!
+          : error instanceof Error
+            ? error.message
+            : "Failed to create user.";
+      toast.error(message);
+    } finally {
+      setCreatingContractUserRole(null);
+    }
+  };
+
   const handleContactSelect = (
     roleType: ContractPartyRoleType,
     nextId: number | null,
@@ -2138,8 +2631,8 @@ export function SignhostFlow({
     if (nextId == null) {
       setDraft((prev) =>
         roleType === "seller"
-          ? { ...prev, sellerContactId: null }
-          : { ...prev, buyerContactId: null },
+          ? { ...prev, sellerContactId: null, sellerUserId: null }
+          : { ...prev, buyerContactId: null, buyerUserId: null },
       );
       return;
     }
@@ -2150,6 +2643,9 @@ export function SignhostFlow({
 
     setDraft((prev) => ({
       ...prev,
+      ...(roleType === "seller"
+        ? { sellerUserId: null }
+        : { buyerUserId: null }),
       ...applyContractPartyToDraft(roleType, party),
     }));
   };
@@ -2575,6 +3071,8 @@ export function SignhostFlow({
           contract_language: draft.language,
           seller_contact_id: draft.sellerContactId,
           buyer_contact_id: draft.buyerContactId,
+          seller_user_id: draft.sellerUserId,
+          buyer_user_id: draft.buyerUserId ?? linkedClientUserId,
           seller_contact_name: draft.sellerContactName,
           agreement_document_language: resolveAgreementPdfLanguage(
             draft.language,
@@ -2666,6 +3164,32 @@ export function SignhostFlow({
         };
     }
   }, [editorCopy, signRequest?.status]);
+  const signhostLinks = useMemo(
+    () => extractSignhostLinks(signRequest),
+    [signRequest],
+  );
+
+  const handleOpenSignhostLink = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleCopySignhostLink = async (url: string) => {
+    try {
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard &&
+        typeof navigator.clipboard.writeText === "function"
+      ) {
+        await navigator.clipboard.writeText(url);
+        toast.success("Signhost link copied.");
+        return;
+      }
+
+      window.prompt("Copy this Signhost link", url);
+    } catch {
+      window.prompt("Copy this Signhost link", url);
+    }
+  };
 
   if (!canManageContract) {
     return null;
@@ -2863,6 +3387,29 @@ export function SignhostFlow({
             <PencilLine className="mr-2 h-4 w-4" />
             {editorCopy.editContract}
           </Button>
+          {signhostLinks.map((link, index) => (
+            <Fragment key={`${link.url}-${index}`}>
+              <Button
+                type="button"
+                onClick={() => handleOpenSignhostLink(link.url)}
+                className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                {editorCopy.openDeeplink}
+                {link.role ? ` (${link.role})` : ""}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleCopySignhostLink(link.url)}
+                className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+                title={link.url}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Signhost link
+                {link.role ? ` (${link.role})` : ""}
+              </Button>
+            </Fragment>
+          ))}
           <Button
             type="button"
             onClick={handleDownloadGeneratedPdf}
@@ -3315,17 +3862,98 @@ export function SignhostFlow({
                     )}
                   </div>
                   <div>
-                    <FieldLabel>Contact name</FieldLabel>
-                    <Input
-                      value={draft.sellerContactName}
-                      onChange={(event) =>
-                        handleFieldChange(
-                          "sellerContactName",
-                          event.target.value,
-                        )
+                    <div className="flex items-center justify-between gap-3">
+                      <FieldLabel>Contact name</FieldLabel>
+                      {sellerSelectedUser ? (
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                          {editorCopy.selectedUser} #{sellerSelectedUser.id}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="relative">
+                      <Input
+                        value={draft.sellerContactName}
+                        onFocus={() => setActiveUserLookup("seller")}
+                        onBlur={() => {
+                          window.setTimeout(() => {
+                            setActiveUserLookup((current) =>
+                              current === "seller" ? null : current,
+                            );
+                          }, 120);
+                        }}
+                        onChange={(event) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            sellerUserId: null,
+                            sellerContactName: event.target.value,
+                          }))
+                        }
+                        placeholder="Contact name"
+                      />
+                      {activeUserLookup === "seller" &&
+                      draft.sellerContactName.trim().length > 0 ? (
+                        <div className="absolute z-30 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-950">
+                          {availableClientsLoading ? (
+                            <p className="px-2 py-2 text-xs text-slate-500">
+                              Loading users...
+                            </p>
+                          ) : sellerUserMatches.length > 0 ? (
+                            sellerUserMatches.map((matchedUser) => (
+                              <button
+                                key={matchedUser.id}
+                                type="button"
+                                onMouseDown={(event) => {
+                                  event.preventDefault();
+                                  void handleContractUserSelect(
+                                    "seller",
+                                    matchedUser,
+                                  );
+                                }}
+                                className="flex w-full items-start justify-between gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-slate-50 dark:hover:bg-slate-900"
+                              >
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {matchedUser.name}
+                                  </p>
+                                  <p className="truncate text-xs text-slate-500">
+                                    {[matchedUser.email, matchedUser.phone]
+                                      .filter(Boolean)
+                                      .join(" • ")}
+                                  </p>
+                                </div>
+                                {selectingContractUserRole === "seller" ? (
+                                  <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-slate-400" />
+                                ) : null}
+                              </button>
+                            ))
+                          ) : (
+                            <p className="px-2 py-2 text-xs text-slate-500">
+                              {editorCopy.noMatchingUsers}
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {editorCopy.useExistingUserHint}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void handleCreateContractUser("seller")}
+                      disabled={
+                        creatingContractUserRole !== null ||
+                        !canCreateClientInline ||
+                        !locationId
                       }
-                      placeholder="Contact name"
-                    />
+                      className="mt-2 inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+                    >
+                      {creatingContractUserRole === "seller" ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Plus size={14} />
+                      )}
+                      {editorCopy.createSellerUser}
+                    </button>
                   </div>
                   <div>
                     <FieldLabel>{editorCopy.company}</FieldLabel>
@@ -3340,6 +3968,7 @@ export function SignhostFlow({
                   <div>
                     <FieldLabel>{editorCopy.address}</FieldLabel>
                     <Input
+                      ref={sellerAddressInputRef}
                       value={draft.companyAddress}
                       onChange={(event) =>
                         handleFieldChange("companyAddress", event.target.value)
@@ -3524,18 +4153,105 @@ export function SignhostFlow({
                     )}
                   </div>
                   <div>
-                    <FieldLabel>{editorCopy.name}</FieldLabel>
-                    <Input
-                      value={draft.clientName}
-                      onChange={(event) =>
-                        handleFieldChange("clientName", event.target.value)
+                    <div className="flex items-center justify-between gap-3">
+                      <FieldLabel>{editorCopy.name}</FieldLabel>
+                      {buyerSelectedUser ? (
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                          {editorCopy.selectedUser} #{buyerSelectedUser.id}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="relative">
+                      <Input
+                        value={draft.clientName}
+                        onFocus={() => setActiveUserLookup("buyer")}
+                        onBlur={() => {
+                          window.setTimeout(() => {
+                            setActiveUserLookup((current) =>
+                              current === "buyer" ? null : current,
+                            );
+                          }, 120);
+                        }}
+                        onChange={(event) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            buyerUserId: null,
+                            clientName: event.target.value,
+                          }))
+                        }
+                        placeholder={editorCopy.name}
+                      />
+                      {activeUserLookup === "buyer" &&
+                      draft.clientName.trim().length > 0 ? (
+                        <div className="absolute z-30 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-950">
+                          {availableClientsLoading ? (
+                            <p className="px-2 py-2 text-xs text-slate-500">
+                              Loading users...
+                            </p>
+                          ) : buyerUserMatches.length > 0 ? (
+                            buyerUserMatches.map((matchedUser) => (
+                              <button
+                                key={matchedUser.id}
+                                type="button"
+                                onMouseDown={(event) => {
+                                  event.preventDefault();
+                                  void handleContractUserSelect(
+                                    "buyer",
+                                    matchedUser,
+                                  );
+                                }}
+                                className="flex w-full items-start justify-between gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-slate-50 dark:hover:bg-slate-900"
+                              >
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {matchedUser.name}
+                                  </p>
+                                  <p className="truncate text-xs text-slate-500">
+                                    {[matchedUser.email, matchedUser.phone]
+                                      .filter(Boolean)
+                                      .join(" • ")}
+                                  </p>
+                                </div>
+                                {selectingContractUserRole === "buyer" ? (
+                                  <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-slate-400" />
+                                ) : null}
+                              </button>
+                            ))
+                          ) : (
+                            <p className="px-2 py-2 text-xs text-slate-500">
+                              {editorCopy.noMatchingUsers}
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {editorCopy.useExistingUserHint}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void handleCreateContractUser("buyer")}
+                      disabled={
+                        creatingContractUserRole !== null ||
+                        !canCreateClientInline ||
+                        !locationId
                       }
-                      placeholder={editorCopy.name}
-                    />
+                      className="mt-2 inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+                    >
+                      {creatingContractUserRole === "buyer" ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Plus size={14} />
+                      )}
+                      {yachtId
+                        ? editorCopy.createBuyerUserAndLink
+                        : editorCopy.createBuyerUser}
+                    </button>
                   </div>
                   <div>
                     <FieldLabel>{editorCopy.address}</FieldLabel>
                     <Input
+                      ref={buyerAddressInputRef}
                       value={draft.clientAddress}
                       onChange={(event) =>
                         handleFieldChange("clientAddress", event.target.value)

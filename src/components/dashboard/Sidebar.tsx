@@ -4,24 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Anchor,
   BarChart3,
   CalendarDays,
   ClipboardList,
-  Gauge,
   ChevronLeft,
   ChevronRight,
-  ShieldAlert,
-  TriangleAlert,
   MessageSquare,
   Ship,
   Settings,
-  Share2,
   Users,
   WifiOff,
-  HelpCircle,
-  Brain,
-  Plug,
   Wifi,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -104,45 +96,9 @@ export function Sidebar({
         icon: CalendarDays,
       });
       items.push({
-        title: t.locations,
-        href: `${root}/locations`,
-        icon: Anchor,
-      });
-      items.push({
-        title: t.harborPerformance,
-        href: `${root}/performance`,
-        icon: Gauge,
-      });
-      items.push({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,
-      });
-      items.push({
-        title: t.faq,
-        href: `${root}/faq`,
-        icon: HelpCircle,
-      });
-      items.push({
-        title: t.knowledgeBrain,
-        href: `${root}/knowledge-brain`,
-        icon: Brain,
-      });
-      items.push({
-        title: t.socialAutomation,
-        href: `${root}/social`,
-        icon: Share2,
-      });
-      items.push({ title: t.audit, href: `${root}/audit`, icon: ShieldAlert });
-      items.push({
-        title: t.errors,
-        href: `${root}/errors`,
-        icon: TriangleAlert,
-      });
-      items.push({
-        title: t.integrations,
-        href: `${root}/integrations`,
-        icon: Plug,
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
