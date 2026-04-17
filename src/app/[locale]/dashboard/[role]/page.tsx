@@ -100,6 +100,7 @@ type DashboardYacht = {
   created_at?: string | null;
   current_bid?: string | number | null;
   vessel_id?: string | number | null;
+  ref_code?: string | number | null;
   latest_signhost?: LatestSignhostSummary | null;
   [key: string]: unknown;
 };
@@ -1098,7 +1099,7 @@ export default function AdminDashboardHome() {
                   </p>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                     {t("labels.registry")}:{" "}
-                    {yacht.vessel_id || yacht.ref_code || t("labels.unknown")}
+                    {(yacht.vessel_id || yacht.ref_code || t("labels.unknown")) as ReactNode}
                   </p>
                   <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                     <span>{yacht.status || t("labels.unknown")}</span>
