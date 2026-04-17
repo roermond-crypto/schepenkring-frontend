@@ -472,6 +472,8 @@
       "newRegistrations": "New registrations",
       "marketPulse": "Market pulse",
       "recentBiddingActivity": "Recent Bidding Activity",
+      "adminShortcuts": "Admin shortcuts",
+      "quickAccess": "Quick access",
       "liveDiagnostics": "Live diagnostics",
       "systemAudit": "System Audit"
     },
@@ -483,6 +485,40 @@
       "browseMarketplace": "Browse Listings",
       "openContract": "Open contract",
       "reviewContract": "Review contract"
+    },
+    "shortcuts": {
+      "locations": {
+        "title": "Locations",
+        "description": "Manage locations, widgets, and connected harbors in one place."
+      },
+      "salesfunnel": {
+        "title": "Salesfunnel",
+        "description": "Review sales performance, pipeline signals, and funnel insights."
+      },
+      "faq": {
+        "title": "FAQ",
+        "description": "Update FAQs and public chat knowledge directly from the dashboard."
+      },
+      "knowledgeBrain": {
+        "title": "Knowledge Brain",
+        "description": "Manage AI knowledge, suggestions, and learning signals for your team."
+      },
+      "socialAutomation": {
+        "title": "Social Automation",
+        "description": "Control AI videos, WhatsApp delivery, and social publishing flows."
+      },
+      "audit": {
+        "title": "Audit",
+        "description": "Review system activity, security events, and diagnostic traces."
+      },
+      "errors": {
+        "title": "Errors",
+        "description": "Inspect failed jobs, requests, and runtime issues in one place."
+      },
+      "integrations": {
+        "title": "Integrations",
+        "description": "Manage connected tools, feeds, and admin-side platform links."
+      }
     },
     "schedule": {
       "live": "Live schedule",

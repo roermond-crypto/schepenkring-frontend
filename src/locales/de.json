@@ -472,16 +472,53 @@
       "newRegistrations": "Neue Registrierungen",
       "marketPulse": "Marktpuls",
       "recentBiddingActivity": "Kürzliche Gebotsaktivität",
+      "adminShortcuts": "Admin-Verknüpfungen",
+      "quickAccess": "Schnellzugriff",
       "liveDiagnostics": "Live-Diagnose",
       "systemAudit": "System-Audit"
     },
     "actions": {
       "viewBiddings": "Gebote anzeigen",
+      "reviewRegistrations": "Registrierungen prüfen",
       "viewBoats": "Boote ansehen",
       "createFirstListing": "Boot verkaufen",
       "browseMarketplace": "Angebot ansehen",
       "openContract": "Vertrag offnen",
       "reviewContract": "Vertrag ansehen"
+    },
+    "shortcuts": {
+      "locations": {
+        "title": "Standorte",
+        "description": "Verwalten Sie Standorte, Widgets und verbundene Häfen an einem Ort."
+      },
+      "salesfunnel": {
+        "title": "Salesfunnel",
+        "description": "Prüfen Sie Verkaufsleistung, Pipeline-Signale und Funnel-Einblicke."
+      },
+      "faq": {
+        "title": "FAQ",
+        "description": "Aktualisieren Sie FAQs und öffentliches Chat-Wissen direkt im Dashboard."
+      },
+      "knowledgeBrain": {
+        "title": "Knowledge Brain",
+        "description": "Verwalten Sie KI-Wissen, Vorschläge und Lernsignale für Ihr Team."
+      },
+      "socialAutomation": {
+        "title": "Social Automation",
+        "description": "Steuern Sie KI-Videos, WhatsApp-Zustellung und Social-Workflows."
+      },
+      "audit": {
+        "title": "Audit",
+        "description": "Prüfen Sie Systemaktivität, Sicherheitsereignisse und Diagnose-Logs."
+      },
+      "errors": {
+        "title": "Fehler",
+        "description": "Untersuchen Sie fehlgeschlagene Jobs, Requests und Laufzeitprobleme zentral."
+      },
+      "integrations": {
+        "title": "Integrationen",
+        "description": "Verwalten Sie verbundene Tools, Feeds und Admin-Plattformanbindungen."
+      }
     },
     "schedule": {
       "live": "Live-Zeitplan",

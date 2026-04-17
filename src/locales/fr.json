@@ -472,6 +472,8 @@
       "newRegistrations": "Nouvelles inscriptions",
       "marketPulse": "Pouls du marché",
       "recentBiddingActivity": "Activité d'enchères récente",
+      "adminShortcuts": "Raccourcis admin",
+      "quickAccess": "Accès rapide",
       "liveDiagnostics": "Diagnostics en direct",
       "systemAudit": "Audit du système"
     },
@@ -483,6 +485,40 @@
       "browseMarketplace": "Voir les offres",
       "openContract": "Ouvrir le contrat",
       "reviewContract": "Voir le contrat"
+    },
+    "shortcuts": {
+      "locations": {
+        "title": "Emplacements",
+        "description": "Gérez les emplacements, widgets et ports connectés depuis un seul endroit."
+      },
+      "salesfunnel": {
+        "title": "Salesfunnel",
+        "description": "Consultez les performances commerciales, signaux pipeline et insights funnel."
+      },
+      "faq": {
+        "title": "FAQ",
+        "description": "Mettez à jour les FAQ et la connaissance du chat public depuis le dashboard."
+      },
+      "knowledgeBrain": {
+        "title": "Knowledge Brain",
+        "description": "Gérez la connaissance IA, les suggestions et les signaux d'apprentissage."
+      },
+      "socialAutomation": {
+        "title": "Automatisation sociale",
+        "description": "Pilotez les vidéos IA, la livraison WhatsApp et les flux sociaux."
+      },
+      "audit": {
+        "title": "Audit",
+        "description": "Consultez l'activité système, les événements de sécurité et les traces de diagnostic."
+      },
+      "errors": {
+        "title": "Erreurs",
+        "description": "Inspectez les jobs échoués, requêtes et problèmes d'exécution au même endroit."
+      },
+      "integrations": {
+        "title": "Intégrations",
+        "description": "Gérez les outils connectés, flux et connexions plateforme côté admin."
+      }
     },
     "schedule": {
       "live": "Horaire en direct",

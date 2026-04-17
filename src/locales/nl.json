@@ -473,6 +473,8 @@
       "newRegistrations": "Nieuwe registraties",
       "marketPulse": "Marktbeeld",
       "recentBiddingActivity": "Recente biedactiviteit",
+      "adminShortcuts": "Beheersnelkoppelingen",
+      "quickAccess": "Snelle toegang",
       "liveDiagnostics": "Live diagnostiek",
       "systemAudit": "Systeemaudit"
     },
@@ -484,6 +486,40 @@
       "browseMarketplace": "Aanbod bekijken",
       "openContract": "Contract openen",
       "reviewContract": "Contract bekijken"
+    },
+    "shortcuts": {
+      "locations": {
+        "title": "Locaties",
+        "description": "Beheer locaties, widgets en gekoppelde havens vanuit een plek."
+      },
+      "salesfunnel": {
+        "title": "Salesfunnel",
+        "description": "Bekijk verkoopprestaties, pipeline-signalen en funnelinzichten."
+      },
+      "faq": {
+        "title": "FAQ",
+        "description": "Werk FAQ's en publieke chatkennis direct vanuit het dashboard bij."
+      },
+      "knowledgeBrain": {
+        "title": "Knowledge Brain",
+        "description": "Beheer AI-kennis, suggesties en leersignalen voor je team."
+      },
+      "socialAutomation": {
+        "title": "Sociale automatisering",
+        "description": "Stuur AI-video's, WhatsApp-aflevering en sociale workflows aan."
+      },
+      "audit": {
+        "title": "Audit",
+        "description": "Bekijk systeemactiviteit, beveiligingsgebeurtenissen en diagnostische logs."
+      },
+      "errors": {
+        "title": "Fouten",
+        "description": "Onderzoek mislukte jobs, verzoeken en runtime-problemen op een plek."
+      },
+      "integrations": {
+        "title": "Integraties",
+        "description": "Beheer gekoppelde tools, feeds en admin-koppelingen zonder omweg."
+      }
     },
     "schedule": {
       "live": "Live planning",

@@ -3060,6 +3060,7 @@ export default function YachtEditorPage() {
 
   // Wizard State
   const [activeStep, setActiveStep] = useState<number>(1);
+  const showStepOneVideoSection = false;
   const activeVisibleStepIndex = Math.max(
     0,
     visibleWizardSteps.findIndex((step) => step.id === activeStep),
@@ -9141,7 +9142,7 @@ export default function YachtEditorPage() {
           )}
 
           {/* ── VIDEO SECTION (After Image Pipeline but inside Step 1) ── */}
-          {activeStep === 1 && role === "admin" && (
+          {showStepOneVideoSection && activeStep === 1 && role === "admin" && (
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mt-8 mb-4">
               <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
                 <div>
