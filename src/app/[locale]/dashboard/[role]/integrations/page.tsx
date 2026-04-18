@@ -14,6 +14,7 @@ import {
   XCircle,
   Shield,
   Server,
+  Send,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, Toaster } from "react-hot-toast";
@@ -83,9 +84,12 @@ export default function IntegrationsPage() {
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [sendingAccess, setSendingAccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Integration | null>(null);
+  const [accessTarget, setAccessTarget] = useState<Integration | null>(null);
+  const [accessEmail, setAccessEmail] = useState("nauticsecure@gmail.com");
 
   const fetchIntegrations = useCallback(async () => {
     setLoading(true);
@@ -182,6 +186,37 @@ export default function IntegrationsPage() {
     }
   };
 
+  const openAccessDelivery = (item: Integration) => {
+    setAccessTarget(item);
+    setAccessEmail("nauticsecure@gmail.com");
+  };
+
+  const handleSendAccessDetails = async () => {
+    if (!accessTarget) return;
+    if (!accessEmail.trim()) {
+      toast.error("Recipient email is required");
+      return;
+    }
+
+    setSendingAccess(true);
+    try {
+      const { data } = await api.post(
+        `/admin/integrations/${accessTarget.id}/send-access-details`,
+        { email: accessEmail.trim() },
+      );
+      toast.success(data?.message || "Access details sent");
+      setAccessTarget(null);
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.response?.data?.errors?.email?.[0] ||
+          "Failed to send access details",
+      );
+    } finally {
+      setSendingAccess(false);
+    }
+  };
+
   return (
     <div className="min-h-screen max-w-[1400px] p-4 sm:p-6 lg:p-8">
       <Toaster position="top-right" />
@@ -257,8 +292,8 @@ export default function IntegrationsPage() {
 
       {/* ── Table ──────────────────────────────── */}
       <div className="overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="hidden grid-cols-[1fr_1fr_100px_100px_100px_80px] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 md:grid dark:border-slate-700 dark:bg-slate-800/70">
-          {["Type / Label", "Credentials", "Env", "Status", "Location", "Actions"].map(
+        <div className="hidden grid-cols-[1fr_1fr_100px_100px_100px_100px_80px] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 md:grid dark:border-slate-700 dark:bg-slate-800/70">
+          {["Type / Label", "Credentials", "Env", "Status", "Location", "Access", "Actions"].map(
             (h) => (
               <p
                 key={h}
@@ -304,7 +339,7 @@ export default function IntegrationsPage() {
                 className="group"
               >
                 {/* Desktop row */}
-                <div className="hidden grid-cols-[1fr_1fr_100px_100px_100px_80px] items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/80 md:grid dark:hover:bg-slate-800/40">
+                <div className="hidden grid-cols-[1fr_1fr_100px_100px_100px_100px_80px] items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/80 md:grid dark:hover:bg-slate-800/40">
                   {/* Type/Label */}
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-[#003566] dark:text-slate-100">
@@ -362,6 +397,16 @@ export default function IntegrationsPage() {
                     {item.location_id ? `#${item.location_id}` : "Global"}
                   </span>
 
+                  {/* Access */}
+                  <button
+                    onClick={() => openAccessDelivery(item)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    title="Send access details"
+                  >
+                    <Send size={13} />
+                    Send
+                  </button>
+
                   {/* Actions */}
                   <div className="flex items-center justify-end gap-1">
                     <button
@@ -411,6 +456,13 @@ export default function IntegrationsPage() {
                     {item.has_password ? "●●●●" : "—"} · Key:{" "}
                     {item.has_api_key ? "●●●●" : "—"}
                   </p>
+                  <button
+                    onClick={() => openAccessDelivery(item)}
+                    className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700"
+                  >
+                    <Send size={12} />
+                    Send access details
+                  </button>
                 </div>
               </motion.div>
             ))}
@@ -651,6 +703,87 @@ export default function IntegrationsPage() {
 
       {/* ── Delete Confirmation ──────────────────────────────── */}
       <AnimatePresence>
+        {accessTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => setAccessTarget(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-[#003566] dark:text-slate-100">
+                  Send Access Details
+                </h2>
+                <button
+                  onClick={() => setAccessTarget(null)}
+                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <p className="mb-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Stored credentials stay hidden in the dashboard. They will be sent directly from the server to an authorized email address.
+              </p>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60">
+                <p className="font-semibold text-slate-800 dark:text-slate-100">
+                  {accessTarget.integration_type}
+                  {accessTarget.label ? ` (${accessTarget.label})` : ""}
+                </p>
+                <p className="mt-1">
+                  Environment: {accessTarget.environment} · Status: {accessTarget.status}
+                </p>
+                <p className="mt-1">
+                  Username: {accessTarget.username || "—"} · Password: {accessTarget.has_password ? "Stored" : "—"} · API Key: {accessTarget.has_api_key ? "Stored" : "—"}
+                </p>
+              </div>
+
+              <div className="mt-5">
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Authorized recipient email
+                </label>
+                <input
+                  type="email"
+                  value={accessEmail}
+                  onChange={(e) => setAccessEmail(e.target.value)}
+                  placeholder="nauticsecure@gmail.com"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
+                />
+                <p className="mt-2 text-xs text-slate-400">
+                  Only allowlisted email addresses can receive access details.
+                </p>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAccessTarget(null)}
+                  className="rounded-lg px-5 text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSendAccessDetails}
+                  disabled={sendingAccess}
+                  className="gap-2 rounded-lg bg-emerald-600 px-5 text-xs font-bold text-white hover:bg-emerald-700"
+                >
+                  {sendingAccess && <Loader2 size={14} className="animate-spin" />}
+                  Send Details
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
         {deleteTarget && (
           <motion.div
             initial={{ opacity: 0 }}

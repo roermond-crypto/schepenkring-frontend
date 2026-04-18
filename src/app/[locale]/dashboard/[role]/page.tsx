@@ -33,6 +33,7 @@ import {
   ShieldAlert,
   TriangleAlert,
   Plug,
+  Library,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -766,6 +767,16 @@ export default function AdminDashboardHome() {
       iconTone: "text-[#7C3AED]",
       iconShell:
         "border-[#DDD1FF] bg-gradient-to-br from-[#F5F3FF] to-[#FAF5FF]",
+    },
+    {
+      key: "knowledgeLibrary",
+      title: t("shortcuts.knowledgeLibrary.title"),
+      description: t("shortcuts.knowledgeLibrary.description"),
+      href: `${dashboardBase}/knowledgebase/articles`,
+      icon: Library,
+      iconTone: "text-[#059669]",
+      iconShell:
+        "border-[#C7EEDB] bg-gradient-to-br from-[#ECFDF5] to-[#F8FAFC]",
     },
     {
       key: "knowledgeBrain",

@@ -15,6 +15,9 @@ import {
   Users,
   WifiOff,
   Wifi,
+  Brain,
+  Sparkles,
+  Library,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -100,12 +103,37 @@ export function Sidebar({
         href: `${root}/chat`,
         icon: MessageSquare,
       });
+      items.push({
+        title: t.copilot,
+        href: `${root}/copilot`,
+        icon: Sparkles,
+      });
+      items.push({
+        title: t.knowledgebase,
+        href: `${root}/knowledgebase/articles`,
+        icon: Library,
+      });
+      items.push({
+        title: t.knowledgeBrain,
+        href: `${root}/knowledge-brain`,
+        icon: Brain,
+      });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
       items.push({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,
+      });
+      items.push({
+        title: t.knowledgebase,
+        href: `${root}/knowledgebase/articles`,
+        icon: Library,
+      });
+      items.push({
+        title: t.knowledgeBrain,
+        href: `${root}/knowledge-brain`,
+        icon: Brain,
       });
     } else if (role === "client") {
       items.push({

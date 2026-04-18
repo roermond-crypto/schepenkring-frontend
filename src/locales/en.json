@@ -134,6 +134,7 @@
       "bookings": "Bookings",
       "locations": "Locations",
       "knowledgeBrain": "Knowledge Brain",
+      "knowledgebase": "Knowledge Library",
       "harborPerformance": "Salesfunnel",
       "socialAutomation": "Social Automation",
       "faq": "FAQ",
@@ -498,6 +499,10 @@
       "faq": {
         "title": "FAQ",
         "description": "Update FAQs and public chat knowledge directly from the dashboard."
+      },
+      "knowledgeLibrary": {
+        "title": "Knowledge Library",
+        "description": "Create and manage brand or model articles to power AI description generation."
       },
       "knowledgeBrain": {
         "title": "Knowledge Brain",
