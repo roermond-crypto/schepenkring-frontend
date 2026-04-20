@@ -18,10 +18,16 @@ import {
   Brain,
   Sparkles,
   Library,
+  CheckCircle2,
+  CreditCard,
+  Search,
+  ArrowRight,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 import type { UserRole } from "@/lib/auth/roles";
+import { getProfileSetupStatus } from "@/lib/api/profile-setup";
 
 type SidebarProps = {
   locale: AppLocale;
@@ -30,6 +36,7 @@ type SidebarProps = {
   onLogout: () => void;
   onNavigate?: () => void;
   onCollapse?: (collapsed: boolean) => void;
+  className?: string;
 };
 
 type MenuItem = {
@@ -42,13 +49,16 @@ export function Sidebar({
   locale,
   role,
   variant = "sidebar",
+  onLogout,
   onNavigate,
   onCollapse,
+  className,
 }: SidebarProps) {
   const pathname = usePathname();
   const isDrawer = variant === "drawer";
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [isOnboarded, setIsOnboarded] = useState<boolean | null>(null);
 
   const dictionary = getDictionary(locale);
   const t = dictionary.dashboard.sidebar;
@@ -63,6 +73,16 @@ export function Sidebar({
       window.removeEventListener("offline", syncStatus);
     };
   }, []);
+
+  useEffect(() => {
+    if (role === "buyer" || role === "seller") {
+      getProfileSetupStatus()
+        .then((status) => setIsOnboarded(status.complete))
+        .catch(() => setIsOnboarded(true));
+    } else {
+      setIsOnboarded(true);
+    }
+  }, [role]);
 
   useEffect(() => {
     if (!isDrawer) {
@@ -135,7 +155,7 @@ export function Sidebar({
         href: `${root}/knowledge-brain`,
         icon: Brain,
       });
-    } else if (role === "client") {
+    } else if (role === "client" || role === "buyer" || role === "seller") {
       items.push({
         title: t.interaction,
         href: `${root}/chat`,
@@ -147,8 +167,12 @@ export function Sidebar({
 
     items.push({ title: t.settings, href: `${root}/account`, icon: Settings });
 
+    if (isOnboarded === false) {
+      return items.filter(item => item.href === root);
+    }
+
     return items;
-  }, [role, root, t]);
+  }, [role, root, t, isOnboarded]);
 
   const navContent = (
     <>
@@ -160,7 +184,17 @@ export function Sidebar({
       >
         {(!isCollapsed || isDrawer) && (
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-            {`${role === "employee" ? t.roleEmployee : role === "client" ? t.roleClient : t.roleAdmin} ${t.terminalSuffix}`}
+            {`${
+              role === "employee"
+                ? t.roleEmployee
+                : role === "client"
+                  ? t.roleClient
+                  : role === "buyer"
+                    ? t.roleBuyer
+                    : role === "seller"
+                      ? t.roleSeller
+                      : t.roleAdmin
+            } ${t.terminalSuffix}`}
           </p>
         )}
         {isOnline ? (
@@ -211,7 +245,7 @@ export function Sidebar({
         })}
       </nav>
 
-      {/* <div className="border-t border-[#1A355F] p-3">
+      <div className="border-t border-[#1A355F] p-3">
         <button
           type="button"
           onClick={onLogout}
@@ -223,7 +257,7 @@ export function Sidebar({
           <LogOut className="h-4 w-4" />
           {(!isCollapsed || isDrawer) && <span>{t.logout}</span>}
         </button>
-      </div> */}
+      </div>
     </>
   );
 
@@ -240,6 +274,7 @@ export function Sidebar({
       className={cn(
         "fixed bottom-0 left-0 top-20 z-40 hidden overflow-hidden border-r border-[#1A355F] bg-gradient-to-b from-[#07162C] to-[#0B1F3A] shadow-[0_16px_28px_rgba(11,31,58,0.35)] transition-[width] duration-300 lg:block",
         isCollapsed ? "w-20" : "w-64",
+        className
       )}
     >
       <div className="relative flex h-full flex-col py-4">

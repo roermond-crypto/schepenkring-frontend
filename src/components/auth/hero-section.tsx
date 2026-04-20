@@ -14,7 +14,9 @@ import {
   Anchor, 
   ShoppingBag, 
   LineChart, 
-  FileText 
+  FileText,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 import {
@@ -77,44 +79,80 @@ type HeroSectionProps = {
     termsLabelBeforeLink: string;
     termsLinkLabel: string;
     termsLabelAfterLink: string;
+    secureAccess: string;
+    buyerSignup: string;
+    sellerSignup: string;
+    loginHeroTitle: string;
+    buyerHeroTitle: string;
+    sellerHeroTitle: string;
+    loginHeroSubtitle: string;
+    memberSupport: string;
+    offices: string;
+    buyer: string;
+    seller: string;
+    benefits: {
+      buyer: {
+        watchlist: { title: string; desc: string };
+        verified: { title: string; desc: string };
+        deals: { title: string; desc: string };
+      };
+      seller: {
+        onboarding: { title: string; desc: string };
+        preparation: { title: string; desc: string };
+        support: { title: string; desc: string };
+      };
+    };
   };
 };
 
-const BENEFITS = {
-  buyer: [
-    {
-      icon: ShoppingBag,
-      title: "Watchlist tracking",
-      desc: "Save yachts and return to them quickly."
-    },
-    {
-      icon: ShieldCheck,
-      title: "Verified journey",
-      desc: "Identity checkpoints for safer purchase."
-    },
-    {
-      icon: LineChart,
-      title: "Deal updates",
-      desc: "Live status on bids and documents."
-    }
-  ],
-  seller: [
-    {
-      icon: Anchor,
-      title: "Structured onboarding",
-      desc: "Complete profile before going live."
-    },
-    {
-      icon: FileText,
-      title: "Listing preparation",
-      desc: "Guided media and spec intake."
-    },
-    {
-      icon: Globe2,
-      title: "Expert support",
-      desc: "Broker assistance throughout the sale."
-    }
-  ]
+const getBenefits = (copy: HeroSectionProps['copy']) => {
+  const buyerBenefits = copy?.benefits?.buyer || {
+    watchlist: { title: "", desc: "" },
+    verified: { title: "", desc: "" },
+    deals: { title: "", desc: "" },
+  };
+  const sellerBenefits = copy?.benefits?.seller || {
+    onboarding: { title: "", desc: "" },
+    preparation: { title: "", desc: "" },
+    support: { title: "", desc: "" },
+  };
+
+  return {
+    buyer: [
+      {
+        icon: ShoppingBag,
+        title: buyerBenefits.watchlist?.title || "",
+        desc: buyerBenefits.watchlist?.desc || ""
+      },
+      {
+        icon: ShieldCheck,
+        title: buyerBenefits.verified?.title || "",
+        desc: buyerBenefits.verified?.desc || ""
+      },
+      {
+        icon: LineChart,
+        title: buyerBenefits.deals?.title || "",
+        desc: buyerBenefits.deals?.desc || ""
+      }
+    ],
+    seller: [
+      {
+        icon: Anchor,
+        title: sellerBenefits.onboarding?.title || "",
+        desc: sellerBenefits.onboarding?.desc || ""
+      },
+      {
+        icon: FileText,
+        title: sellerBenefits.preparation?.title || "",
+        desc: sellerBenefits.preparation?.desc || ""
+      },
+      {
+        icon: Globe2,
+        title: sellerBenefits.support?.title || "",
+        desc: sellerBenefits.support?.desc || ""
+      }
+    ]
+  };
 };
 
 export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
@@ -133,6 +171,8 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   const [locations, setLocations] = useState<PublicLocation[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -266,23 +306,23 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
               </div>
             </motion.div>
 
-            <AnimatePresence mode="wait">
-              <motion.div
+            <div className="mt-8">
+              <div 
                 key={mode === 'register' ? signupRole : 'login'}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.4 }}
+                className="transition-all duration-500"
               >
                 <div className="inline-flex rounded-full bg-sky-400/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-sky-400 border border-sky-400/20 mb-6">
-                  {mode === 'login' ? 'SECURE ACCESS' : `${signupRole} SIGNUP`}
+                  {mode === 'login' 
+                    ? (copy.secureAccess || "Secure Access") 
+                    : (signupRole === 'buyer' ? (copy.buyerSignup || "Buyer Signup") : (copy.sellerSignup || "Seller Signup"))
+                  }
                 </div>
                 <h1 className="text-4xl lg:text-5xl font-bold text-white leading-[1.15] mb-6 tracking-tight">
                   {mode === 'login' 
-                    ? "Welcome to your nautical workspace."
+                    ? copy.loginHeroTitle
                     : signupRole === 'buyer' 
-                      ? "Find and buy your next dream yacht." 
-                      : "The professional way to sell your vessel."
+                      ? copy.buyerHeroTitle
+                      : copy.sellerHeroTitle
                   }
                 </h1>
                 
@@ -290,12 +330,9 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                 
                 {mode === 'register' ? (
                   <div className="space-y-6">
-                    {BENEFITS[signupRole].map((benefit, idx) => (
-                      <motion.div 
-                        key={benefit.title}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 + idx * 0.1 }}
+                    {getBenefits(copy)[signupRole].map((benefit: any, idx: number) => (
+                      <div 
+                        key={idx}
                         className="flex items-start gap-5"
                       >
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sky-300 border border-white/5 shadow-inner">
@@ -305,16 +342,16 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                           <p className="text-base font-bold text-white">{benefit.title}</p>
                           <p className="text-sm text-white/50 leading-relaxed mt-0.5">{benefit.desc}</p>
                         </div>
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-lg text-white/60 leading-relaxed font-medium">
-                    Access the complete maritime brokerage suite. Manage listings, track leads, and close deals efficiently.
+                  <p className="text-xl text-white/60 leading-relaxed font-medium">
+                    {copy.loginHeroSubtitle}
                   </p>
                 )}
-              </motion.div>
-            </AnimatePresence>
+              </div>
+            </div>
           </div>
 
           <div className="relative z-10 pt-10 mt-12 border-t border-white/5 hidden lg:block">
@@ -325,8 +362,8 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                 </div>
               </div>
               <div>
-                <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] font-black leading-none">MEMBER SUPPORT</p>
-                <p className="text-sm text-white/70 font-semibold mt-1">Herten & Amsterdam offices</p>
+                <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] font-black leading-none">{copy.memberSupport}</p>
+                <p className="text-sm text-white/70 font-semibold mt-1">{copy.offices}</p>
               </div>
             </div>
           </div>
@@ -379,7 +416,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                     className={`flex items-center justify-center gap-2 py-3 text-sm font-black rounded-xl transition-all duration-300 ${signupRole === 'buyer' ? 'bg-white shadow-md text-[#0B1F3A] dark:bg-slate-700 dark:text-white transform scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     <ShoppingBag size={16} />
-                    Buyer
+                    {copy.buyer}
                   </button>
                   <button
                     type="button"
@@ -387,7 +424,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                     className={`flex items-center justify-center gap-2 py-3 text-sm font-black rounded-xl transition-all duration-300 ${signupRole === 'seller' ? 'bg-white shadow-md text-[#0B1F3A] dark:bg-slate-700 dark:text-white transform scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     <Anchor size={16} />
-                    Seller
+                    {copy.seller}
                   </button>
                 </div>
               )}
@@ -446,23 +483,29 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
 
                 <InputGroup
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   icon={ShieldCheck}
                   placeholder={copy.password}
                   value={formData.password}
                   onChange={onInputChange}
                   required
+                  showToggle
+                  onToggle={() => setShowPassword(!showPassword)}
+                  isToggled={showPassword}
                 />
 
                 {mode !== "login" && (
                   <InputGroup
                     name="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     icon={ShieldCheck}
                     placeholder={copy.confirmPassword}
                     value={formData.confirmPassword}
                     onChange={onInputChange}
                     required
+                    showToggle
+                    onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+                    isToggled={showConfirmPassword}
                   />
                 )}
               </div>
@@ -542,7 +585,18 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   );
 }
 
-function InputGroup({ name, type = "text", icon: Icon, placeholder, value, onChange, required }: any) {
+function InputGroup({ 
+  name, 
+  type = "text", 
+  icon: Icon, 
+  placeholder, 
+  value, 
+  onChange, 
+  required,
+  showToggle,
+  onToggle,
+  isToggled 
+}: any) {
   return (
     <div className="relative group">
       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0B1F3A] transition-colors pointer-events-none">
@@ -555,8 +609,17 @@ function InputGroup({ name, type = "text", icon: Icon, placeholder, value, onCha
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 text-sm font-bold placeholder:text-slate-400 focus:ring-4 focus:ring-sky-500/10 focus:border-[#0B1F3A] outline-none transition-all dark:bg-slate-800/50 dark:border-slate-700 dark:text-white shadow-sm"
+        className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-12 text-sm font-bold placeholder:text-slate-400 focus:ring-4 focus:ring-sky-500/10 focus:border-[#0B1F3A] outline-none transition-all dark:bg-slate-800/50 dark:border-slate-700 dark:text-white shadow-sm"
       />
+      {showToggle && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#0B1F3A] transition-colors"
+        >
+          {isToggled ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
     </div>
   );
 }

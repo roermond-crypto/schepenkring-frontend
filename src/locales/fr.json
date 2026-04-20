@@ -52,7 +52,6 @@
     "forgotPasswordSuccess": "Si votre adresse e-mail existe dans notre système, vous recevrez bientôt un lien pour réinitialiser votre mot de passe.",
     "forgotPasswordError": "Une erreur s'est produite. Veuillez réessayer plus tard.",
     "verifyEmail": "Vérifier l'e-mail",
-    "forgotPassword": "Mot de passe oublié ?",
     "registerCta": "S'enregistrer",
     "processing": "Traitement...",
     "validating": "Validation en cours...",
@@ -60,8 +59,49 @@
     "noAccountSignup": "Pas de compte ? S'inscrire comme acheteur / vendeur",
     "alreadyHaveAccount": "Vous avez déjà un compte ? Connexion",
     "clientSignup": "Inscription acheteur / vendeur",
+    "secureAccess": "Accès Sécurisé",
+    "buyerSignup": "Inscription Acheteur",
+    "sellerSignup": "Inscription Vendeur",
+    "loginHeroTitle": "Bienvenue dans votre espace nautique.",
+    "buyerHeroTitle": "Trouvez et achetez votre prochain yacht de rêve.",
+    "sellerHeroTitle": "La manière professionnelle de vendre votre navire.",
+    "loginHeroSubtitle": "Accédez à la suite complète de courtage maritime. Gérez les annonces, suivez les prospects et concluez des affaires efficacement.",
+    "memberSupport": "Support Membre",
+    "offices": "Bureaux de Herten & Amsterdam",
+    "buyer": "Acheteur",
+    "seller": "Vendeur",
+    "benefits": {
+      "buyer": {
+        "watchlist": {
+          "title": "Suivi de liste de surveillance",
+          "desc": "Enregistrez des yachts et revenez-y rapidement."
+        },
+        "verified": {
+          "title": "Parcours vérifié",
+          "desc": "Points de contrôle d'identité pour un achat plus sûr."
+        },
+        "deals": {
+          "title": "Mises à jour des offres",
+          "desc": "Statut en direct des enchères et des documents."
+        }
+      },
+      "seller": {
+        "onboarding": {
+          "title": "Onboarding structuré",
+          "desc": "Complétez votre profil avant de passer en ligne."
+        },
+        "preparation": {
+          "title": "Préparation de l'annonce",
+          "desc": "Prise en charge guidée des médias et des spécifications."
+        },
+        "support": {
+          "title": "Support expert",
+          "desc": "Assistance d'un courtier tout au long de la vente."
+        }
+      }
+    },
     "termsLabel": "J'accepte les conditions maritimes et la politique de confidentialité.",
-    "termsRequired": "Vous devez accepter les conditions avant de continuer.",
+    "termsRequired": "Vous devez accepter les conditions générales pour vous inscrire.",
     "selectLocation": "Sélectionner le siège",
     "noLocationYet": "Je n'ai pas encore d'emplacement",
     "confirmPasswordRequired": "La confirmation du mot de passe est requise.",
@@ -70,7 +110,6 @@
     "verificationCodeSent": "Code de vérification envoyé à votre e-mail.",
     "invalidLoginResponse": "Réponse de connexion invalide.",
     "authFailed": "Échec de l'authentification.",
-    "termsRequired": "Vous devez accepter les conditions générales pour vous inscrire.",
     "termsLabelBeforeLink": "J'accepte les",
     "termsLinkLabel": "conditions générales",
     "termsLabelAfterLink": ".",
@@ -140,7 +179,8 @@
       "integrations": "Integrations",
       "roleAdmin": "Admin",
       "roleClient": "Client",
-      "roleEmployee": "Vente"
+      "roleEmployee": "Vente",
+      "knowledgebase": "Base de connaissances"
     },
     "notifications": {
       "label": "Notifications",
@@ -786,13 +826,13 @@
     },
     "fields": {
       "fullName": "Nom complet",
-    "emailAddress": "Adresse e-mail",
-    "systemPassword": "Mot de passe système",
-    "assignment": "Affectation",
-    "location": "Emplacement",
-    "clearance": "Habilitation",
-    "accountStatus": "Statut du compte"
-  },
+      "emailAddress": "Adresse e-mail",
+      "systemPassword": "Mot de passe système",
+      "assignment": "Affectation",
+      "location": "Emplacement",
+      "clearance": "Habilitation",
+      "accountStatus": "Statut du compte"
+    },
     "options": {
       "limited": "Limité",
       "full": "Complet",
@@ -1559,5 +1599,186 @@
     "hidden": "Masqué",
     "previewHelp": "Le widget apparaîtra dans le coin inférieur droit de ce conteneur, comme sur votre site web.",
     "previewTitle": "Aperçu du widget de chat"
+  },
+  "SellerOnboardingPanel": {
+    "eyebrow": "Verkoper Onboarding",
+    "title": "Voltooi verkoper onboarding",
+    "description": "iDIN, iDEAL 0.01 en verkoper KYC antwoorden creëren een herbruikbare profielverificatie die 90 dagen geldig blijft. Boten kunnen in concept blijven terwijl de verificatie gaande is, maar publicatie blijft geblokkeerd totdat de backend de verkoperverificatie markeert als goedgekeurd.",
+    "steps": {
+      "profile": "Profiel",
+      "payment": "Betaling",
+      "contract": "Contract",
+      "verification": "Verificatie",
+      "kyc": "KYC",
+      "signing": "Ondertekening"
+    },
+    "flow": {
+      "stepCounter": "Stap {current} van {total}"
+    },
+    "summary": {
+      "currentStatus": "Huidige status: {value}",
+      "nextStep": "Volgende stap: {value}",
+      "canPublish": "Kan boot publiceren: {value}",
+      "validUntil": "Geldig tot: {value}",
+      "complete": "Voltooid",
+      "inProgress": "In behandeling",
+      "pending": "In afwachting",
+      "yes": "Ja",
+      "no": "Nee"
+    },
+    "blockersTitle": "Blokkerende compliance vlaggen",
+    "sellerTypes": {
+      "private": "Particulier",
+      "business": "Zakelijk"
+    },
+    "fields": {
+      "sellerType": "Verkopertype",
+      "fullName": "Volledige naam",
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "addressLine1": "Adresregel 1",
+      "addressLine2": "Adresregel 2",
+      "city": "Stad",
+      "state": "Provincie",
+      "postalCode": "Postcode",
+      "country": "Landcode",
+      "birthDate": "Geboortedatum",
+      "iban": "IBAN",
+      "companyName": "Bedrijfsnaam",
+      "kvkNumber": "KvK nummer"
+    },
+    "actions": {
+      "saveProfile": "Huidig profiel opslaan en doorgaan",
+      "saving": "Opslaan...",
+      "opening": "Openen...",
+      "submitting": "Versturen...",
+      "refresh": "Status vernieuwen"
+    },
+    "toasts": {
+      "load": "Kon verkoper onboarding niet laden.",
+      "questionsLoad": "Kon KYC vragen niet laden.",
+      "profileSaved": "Verkoper profiel opgeslagen.",
+      "profileSaveError": "Kon profiel niet opslaan.",
+      "noSignhostRedirect": "Geen Signhost redirect URL ontvangen.",
+      "signhostError": "Kon Signhost flow niet voortzetten.",
+      "noPaymentRedirect": "Geen Mollie checkout URL ontvangen.",
+      "paymentError": "Kon betaalflow niet starten.",
+      "contractGenerated": "Contract gegenereerd.",
+      "contractError": "Kon contract niet genereren.",
+      "kycSubmitted": "KYC antwoorden verstuurd.",
+      "kycError": "Kon KYC antwoorden niet versturen."
+    },
+    "loading": "Laden verkoper onboarding...",
+    "sections": {
+      "profile": {
+        "addressLabel": "Google Maps adres",
+        "addressPlaceholder": "Begin met het typen van je straat of stad"
+      },
+      "contract": {
+        "title": "Betaling ontvangen",
+        "description": "Je betaling is succesvol verwerkt. We kunnen nu je contract genereren.",
+        "generating": "Genereren...",
+        "action": "Contract genereren"
+      },
+      "verification": {
+        "title": "Identiteitsverificatie",
+        "description": "Klik op de knop hieronder om de verificatie via Signhost te starten (iDIN en iDEAL 0.01).",
+        "action": "Start verificatie in Signhost"
+      },
+      "kyc": {
+        "action": "Antwoorden versturen"
+      },
+      "signing": {
+        "title": "Contract ondertekenen",
+        "description": "Je verificatie is voltooid. Onderteken nu het contract om je onboarding af te ronden.",
+        "action": "Ondertekenen in Signhost"
+      }
+    }
+  },
+  "BuyerVerificationPanel": {
+    "eyebrow": "Koper Verificatie",
+    "title": "Voltooi koper verificatie",
+    "description": "iDIN, iDEAL 0.01 en koper KYC antwoorden worden opgeslagen op je profiel en kunnen worden hergebruikt voor toekomstige proefvaarten en deals totdat de geldigheidstermijn van 90 dagen verloopt.",
+    "steps": {
+      "profile": "Profiel",
+      "verification": "Verificatie",
+      "kyc": "KYC"
+    },
+    "flow": {
+      "stepCounter": "Stap {current} van {total}"
+    },
+    "statusValues": {
+      "created": "Aangemaakt",
+      "profileCompleted": "Profiel voltooid",
+      "signhostVerificationStarted": "Verificatie gestart",
+      "idinCompleted": "iDIN voltooid",
+      "idealCompleted": "iDEAL 0.01 voltooid",
+      "kycPending": "KYC in afwachting",
+      "kycCompleted": "KYC voltooid",
+      "manualReview": "Handmatige beoordeling",
+      "approved": "Goedgekeurd",
+      "rejected": "Afgewezen"
+    },
+    "providerStatusValues": {
+      "pending": "In afwachting",
+      "completed": "Voltooid",
+      "rejected": "Afgewezen",
+      "expired": "Verlopen",
+      "cancelled": "Geannuleerd"
+    },
+    "fields": {
+      "buyerType": "Koper type",
+      "fullName": "Volledige naam",
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "addressLine1": "Adresregel 1",
+      "addressLine2": "Adresregel 2",
+      "city": "Stad",
+      "state": "Provincie",
+      "postalCode": "Postcode",
+      "country": "Landcode",
+      "birthDate": "Geboortedatum",
+      "iban": "IBAN",
+      "companyName": "Bedrijfsnaam",
+      "kvkNumber": "KvK nummer"
+    },
+    "actions": {
+      "saveProfile": "Enregistrer le profil et continuer",
+      "saving": "Enregistrement...",
+      "opening": "Ouverture...",
+      "submitting": "Soumission...",
+      "refresh": "Actualiser le statut"
+    },
+    "blocks": {
+      "verificationWarning": "Veuillez compléter vos informations d'identification et de KYC pour débloquer l'accès complet à l'écosystème Schepenkring."
+    },
+    "sections": {
+      "profile": {
+        "addressLabel": "Adresse Google Maps",
+        "addressPlaceholder": "Commencez à taper pour rechercher votre adresse..."
+      },
+      "verification": {
+        "title": "Ga verder met identiteits- en bankverificatie",
+        "description": "Ga verder met de Signhost-flow voor koper identiteitsverificatie en de €0,01 bankverificatie.",
+        "reverification": "Je vorige koperverificatie is verlopen. Voltooi de Signhost-flow opnieuw om de volgende geldigheidsperiode van 90 dagen te verversen.",
+        "action": "Doorgaan in Signhost"
+      },
+      "kyc": {
+        "title": "Beantwoord de KYC-vragen voor kopers",
+        "description": "Rond de risico- en compliancevragen af zodat je herbruikbare koperverificatie ter goedkeuring kan worden ingediend.",
+        "action": "Koper KYC antwoorden versturen"
+      }
+    },
+    "toasts": {
+      "load": "Kon koper verificatie niet laden.",
+      "questionsLoad": "Kon koper KYC vragen niet laden.",
+      "profileSaved": "Koper profiel opgeslagen.",
+      "profileSaveError": "Kon koper profiel niet opslaan.",
+      "noSignhostRedirect": "Geen Signhost redirect URL ontvangen.",
+      "signhostError": "Kon Signhost flow niet voortzetten.",
+      "kycSubmitted": "Koper KYC antwoorden verstuurd.",
+      "kycError": "Kon koper KYC antwoorden niet versturen."
+    },
+    "loading": "Laden koper verificatie..."
   }
 }

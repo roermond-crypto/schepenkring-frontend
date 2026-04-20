@@ -52,7 +52,6 @@
     "forgotPasswordSuccess": "Wenn Ihre E-Mail-Adresse in unserem System vorhanden ist, erhalten Sie in Kürze einen Link zum Zurücksetzen Ihres Passworts.",
     "forgotPasswordError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es später erneut.",
     "verifyEmail": "E-Mail verifizieren",
-    "forgotPassword": "Passwort vergessen?",
     "registerCta": "Registrieren",
     "processing": "Wird verarbeitet...",
     "validating": "Wird gepruft...",
@@ -60,8 +59,49 @@
     "noAccountSignup": "Kein Konto? Als Kaeufer / Verkaeufer registrieren",
     "alreadyHaveAccount": "Bereits ein Konto? Anmelden",
     "clientSignup": "Kaeufer / Verkaeufer Registrierung",
+    "secureAccess": "Sicherer Zugang",
+    "buyerSignup": "Käufer Registrierung",
+    "sellerSignup": "Verkäufer Registrierung",
+    "loginHeroTitle": "Willkommen an Ihrem nautischen Arbeitsplatz.",
+    "buyerHeroTitle": "Finden und kaufen Sie Ihre nächste Traumjacht.",
+    "sellerHeroTitle": "Der professionelle Weg, Ihr Schiff zu verkaufen.",
+    "loginHeroSubtitle": "Zugriff auf die komplette maritime Makler-Suite. Verwalten Sie Angebote, verfolgen Sie Leads und schließen Sie Geschäfte effizient ab.",
+    "memberSupport": "Mitglieder-Support",
+    "offices": "Büros in Herten & Amsterdam",
+    "buyer": "Käufer",
+    "seller": "Verkäufer",
+    "benefits": {
+      "buyer": {
+        "watchlist": {
+          "title": "Watchlist-Tracking",
+          "desc": "Yachten speichern und schnell wiederfinden."
+        },
+        "verified": {
+          "title": "Verifizierte Reise",
+          "desc": "Identitätsprüfungen für einen sichereren Kauf."
+        },
+        "deals": {
+          "title": "Deal-Updates",
+          "desc": "Live-Status von Geboten und Dokumenten."
+        }
+      },
+      "seller": {
+        "onboarding": {
+          "title": "Strukturiertes Onboarding",
+          "desc": "Profil vervollständigen, bevor Sie live gehen."
+        },
+        "preparation": {
+          "title": "Inseratvorbereitung",
+          "desc": "Geführte Aufnahme von Medien und Spezifikationen."
+        },
+        "support": {
+          "title": "Experten-Unterstützung",
+          "desc": "Makler-Assistent während des gesamten Verkaufs."
+        }
+      }
+    },
     "termsLabel": "Ich stimme den maritimen Bedingungen und der Datenschutzrichtlinie zu.",
-    "termsRequired": "Sie muessen den Bedingungen zustimmen, bevor Sie fortfahren.",
+    "termsRequired": "Sie müssen den Geschäftsbedingungen zustimmen, um sich zu registrieren.",
     "selectLocation": "Hauptstandort auswaehlen",
     "noLocationYet": "Ich habe noch keinen Standort",
     "confirmPasswordRequired": "Passwortbestatigung ist erforderlich.",
@@ -70,7 +110,6 @@
     "verificationCodeSent": "Verifizierungscode wurde an Ihre E-Mail gesendet.",
     "invalidLoginResponse": "Ungultige Login-Antwort.",
     "authFailed": "Authentifizierung fehlgeschlagen.",
-    "termsRequired": "Sie müssen den Geschäftsbedingungen zustimmen, um sich zu registrieren.",
     "termsLabelBeforeLink": "Ich stimme den",
     "termsLinkLabel": "Geschäftsbedingungen",
     "termsLabelAfterLink": " zu.",
@@ -140,7 +179,8 @@
       "integrations": "Integrationen",
       "roleAdmin": "Admin",
       "roleClient": "Kunde",
-      "roleEmployee": "Vertrieb"
+      "roleEmployee": "Vertrieb",
+      "knowledgebase": "Knowledge Base"
     },
     "notifications": {
       "label": "Benachrichtigungen",
@@ -435,7 +475,7 @@
     }
   },
   "DashboardAdminOverview": {
-     "title": "Admin-Übersicht",
+    "title": "Admin-Übersicht",
     "title_admin": "Admin-Übersicht",
     "title_client": "Kundenübersicht",
     "title_employee": "Team-Übersicht",
@@ -786,13 +826,13 @@
     },
     "fields": {
       "fullName": "Vollstandiger Name",
-    "emailAddress": "E-Mail-Adresse",
-    "systemPassword": "Systempasswort",
-    "assignment": "Zuweisung",
-    "location": "Standort",
-    "clearance": "Berechtigung",
-    "accountStatus": "Kontostatus"
-  },
+      "emailAddress": "E-Mail-Adresse",
+      "systemPassword": "Systempasswort",
+      "assignment": "Zuweisung",
+      "location": "Standort",
+      "clearance": "Berechtigung",
+      "accountStatus": "Kontostatus"
+    },
     "options": {
       "limited": "Begrenzt",
       "full": "Voll",
@@ -1559,5 +1599,186 @@
     "hidden": "Versteckt",
     "previewHelp": "Das Widget erscheint in der unteren rechten Ecke dieses Containers, genau wie auf Ihrer Website.",
     "previewTitle": "Chat-Widget-Vorschau"
+  },
+  "SellerOnboardingPanel": {
+    "eyebrow": "Seller Onboarding",
+    "title": "Complete seller onboarding",
+    "description": "iDIN, iDEAL 0.01, and seller KYC answers create a reusable profile verification that stays valid for 90 days. Boats can stay in draft while verification is in progress, but publication remains blocked until the backend marks the seller verification as approved and still current.",
+    "steps": {
+      "profile": "Profile",
+      "payment": "Payment",
+      "contract": "Contract",
+      "verification": "Verification",
+      "kyc": "KYC",
+      "signing": "Signing"
+    },
+    "flow": {
+      "stepCounter": "Step {current} of {total}"
+    },
+    "summary": {
+      "currentStatus": "Current status: {value}",
+      "nextStep": "Next step: {value}",
+      "canPublish": "Can publish boat: {value}",
+      "validUntil": "Valid until: {value}",
+      "complete": "Complete",
+      "inProgress": "In progress",
+      "pending": "Pending",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "blockersTitle": "Blocking compliance flags",
+    "sellerTypes": {
+      "private": "Private",
+      "business": "Business"
+    },
+    "fields": {
+      "sellerType": "Seller type",
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "addressLine1": "Address line 1",
+      "addressLine2": "Address line 2",
+      "city": "City",
+      "state": "State / province",
+      "postalCode": "Postal code",
+      "country": "Country code",
+      "birthDate": "Birth date",
+      "iban": "IBAN",
+      "companyName": "Company name",
+      "kvkNumber": "KvK number"
+    },
+    "actions": {
+      "saveProfile": "Save profile and continue",
+      "saving": "Saving...",
+      "opening": "Opening...",
+      "submitting": "Submitting...",
+      "refresh": "Refresh status"
+    },
+    "toasts": {
+      "load": "Could not load seller onboarding.",
+      "questionsLoad": "Could not load KYC questions.",
+      "profileSaved": "Seller profile saved.",
+      "profileSaveError": "Could not save the profile.",
+      "noSignhostRedirect": "No Signhost redirect URL was returned.",
+      "signhostError": "Could not continue the Signhost flow.",
+      "noPaymentRedirect": "No Mollie checkout URL was returned.",
+      "paymentError": "Could not start the payment flow.",
+      "contractGenerated": "Contract generated.",
+      "contractError": "Could not generate the contract.",
+      "kycSubmitted": "KYC answers submitted.",
+      "kycError": "Could not submit KYC answers."
+    },
+    "loading": "Loading seller onboarding...",
+    "sections": {
+      "profile": {
+        "addressLabel": "Google Maps address",
+        "addressPlaceholder": "Start typing your street or city"
+      },
+      "contract": {
+        "title": "Payment received",
+        "description": "Your payment has been successfully processed. We can now generate your contract.",
+        "generating": "Generating...",
+        "action": "Generate contract"
+      },
+      "verification": {
+        "title": "Identity verification",
+        "description": "Click the button below to start verification via Signhost (iDIN and iDEAL 0.01).",
+        "action": "Start verification in Signhost"
+      },
+      "kyc": {
+        "action": "Submit answers"
+      },
+      "signing": {
+        "title": "Sign contract",
+        "description": "Your verification is complete. Now sign the contract to finalize your onboarding.",
+        "action": "Sign in Signhost"
+      }
+    }
+  },
+  "BuyerVerificationPanel": {
+    "eyebrow": "Buyer Verification",
+    "title": "Complete buyer verification",
+    "description": "iDIN, iDEAL 0.01, and buyer KYC answers are stored on your profile and can be reused for future test drives and deals until the 90-day validity window expires.",
+    "steps": {
+      "profile": "Profile",
+      "verification": "Verification",
+      "kyc": "KYC"
+    },
+    "flow": {
+      "stepCounter": "Step {current} of {total}"
+    },
+    "statusValues": {
+      "created": "Created",
+      "profileCompleted": "Profile completed",
+      "signhostVerificationStarted": "Verification started",
+      "idinCompleted": "iDIN completed",
+      "idealCompleted": "iDEAL 0.01 completed",
+      "kycPending": "KYC pending",
+      "kycCompleted": "KYC completed",
+      "manualReview": "Manual review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "providerStatusValues": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "fields": {
+      "buyerType": "Buyer type",
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "addressLine1": "Address line 1",
+      "addressLine2": "Address line 2",
+      "city": "City",
+      "state": "State / province",
+      "postalCode": "Postal code",
+      "country": "Country code",
+      "birthDate": "Birth date",
+      "iban": "IBAN",
+      "companyName": "Company name",
+      "kvkNumber": "KvK number"
+    },
+    "actions": {
+      "saveProfile": "Profil speichern und fortfahren",
+      "saving": "Speichern...",
+      "opening": "Öffnen...",
+      "submitting": "Senden...",
+      "refresh": "Status aktualisieren"
+    },
+    "blocks": {
+      "verificationWarning": "Bitte vervollständigen Sie Ihre Identifikations- und KYC-Daten, um vollen Zugriff auf das Schepenkring-Ökosystem freizuschalten."
+    },
+    "sections": {
+      "profile": {
+        "addressLabel": "Google Maps-Adresse",
+        "addressPlaceholder": "Tippen Sie, um Ihre Adresse zu suchen..."
+      },
+      "verification": {
+        "title": "Continue identity and bank verification",
+        "description": "Continue the hosted Signhost flow for buyer identity verification and the 0.01 EUR bank verification.",
+        "reverification": "Your previous buyer verification has expired. Complete the hosted Signhost flow again to refresh the next 90-day validity window.",
+        "action": "Continue in Signhost"
+      },
+      "kyc": {
+        "title": "Answer the buyer KYC questions",
+        "description": "Finish the risk and compliance questions so your reusable buyer verification can be submitted for approval.",
+        "action": "Submit buyer KYC answers"
+      }
+    },
+    "toasts": {
+      "load": "Could not load buyer verification.",
+      "questionsLoad": "Could not load buyer KYC questions.",
+      "profileSaved": "Buyer profile saved.",
+      "profileSaveError": "Could not save the buyer profile.",
+      "noSignhostRedirect": "No Signhost redirect URL was returned.",
+      "signhostError": "Could not continue the Signhost flow.",
+      "kycSubmitted": "Buyer KYC answers submitted.",
+      "kycError": "Could not submit buyer KYC answers."
+    },
+    "loading": "Loading buyer verification..."
   }
 }

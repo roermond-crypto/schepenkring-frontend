@@ -22,6 +22,9 @@ import {
   useClientSession,
 } from "@/components/session/ClientSessionProvider";
 
+import { Link } from "@/i18n/navigation";
+import { getProfileSetupStatus } from "@/lib/api/profile-setup";
+
 type DashboardShellProps = {
   locale: AppLocale;
   role: UserRole;
@@ -72,6 +75,9 @@ function DashboardShellInner({
     null,
   );
   const [stoppingImpersonation, setStoppingImpersonation] = useState(false);
+  // For buyer/seller: default to true (onboarding mode) until API confirms completion
+  const isBuyerOrSeller = role === "buyer" || role === "seller";
+  const [isOnboardingActive, setIsOnboardingActive] = useState(isBuyerOrSeller);
 
   useEffect(() => {
     const raw = localStorage.getItem("impersonation_session");
@@ -85,6 +91,29 @@ function DashboardShellInner({
       localStorage.removeItem("impersonation_session");
     }
   }, []);
+
+  useEffect(() => {
+    if (!isBuyerOrSeller) {
+      setIsOnboardingActive(false);
+      return;
+    }
+    
+    async function checkOnboarding() {
+      try {
+        const status = await getProfileSetupStatus();
+        if (!status.complete) {
+          setIsOnboardingActive(true);
+        } else {
+          setIsOnboardingActive(false);
+        }
+      } catch (error) {
+        // On error, keep onboarding active to be safe
+        setIsOnboardingActive(true);
+      }
+    }
+    
+    checkOnboarding();
+  }, [role, locale, isBuyerOrSeller]);
 
   async function handleLogout() {
     try {
@@ -131,68 +160,90 @@ function DashboardShellInner({
     >
       <NetworkStatusBar />
       <div className="min-h-screen bg-[#f5f8fc] dark:bg-slate-950">
-        <DashboardHeader
-          locale={locale}
-          role={role}
-          userName={user.name}
-          userEmail={user.email}
-          userAvatar={user.avatar}
-          onOpenMobileNav={() => setMobileOpen(true)}
-          onLogout={handleLogout}
-        />
-
-        <div className="flex w-full min-w-0 pt-20">
-          <Sidebar
-            locale={locale}
-            role={role}
-            variant="sidebar"
-            onLogout={handleLogout}
-            onCollapse={setIsSidebarCollapsed}
-          />
-
-          <div
-            className={cn(
-              "fixed inset-0 z-50 lg:hidden",
-              mobileOpen ? "pointer-events-auto" : "pointer-events-none",
-            )}
-            aria-hidden={!mobileOpen}
-          >
-            <button
-              type="button"
-              className={cn(
-                "absolute inset-0 bg-black/50 transition-opacity duration-300",
-                mobileOpen ? "opacity-100" : "opacity-0",
-              )}
-              onClick={() => setMobileOpen(false)}
-              aria-label="Close navigation"
+        {isOnboardingActive ? (
+          <div className="flex flex-col min-h-screen">
+             {/* Minimal Onboarding Header */}
+             <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-[70]">
+                <div className="bg-white rounded-xl px-4 py-2 border border-slate-100 shadow-sm">
+                   <img src="/schepenkring-logo.png" alt="Schepenkring" className="h-8 object-contain" />
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all text-sm"
+                >
+                  Logout
+                </button>
+             </header>
+             <main className="flex-1 p-4 sm:p-6 lg:p-12 max-w-7xl mx-auto w-full">
+                {children}
+             </main>
+          </div>
+        ) : (
+          <>
+            <DashboardHeader
+              locale={locale}
+              role={role}
+              userName={user.name}
+              userEmail={user.email}
+              userAvatar={user.avatar}
+              onOpenMobileNav={() => setMobileOpen(true)}
+              onLogout={handleLogout}
             />
-            <div
-              className={cn(
-                "absolute left-0 top-0 h-full transform transition-transform duration-300 ease-out",
-                mobileOpen ? "translate-x-0" : "-translate-x-full",
-              )}
-            >
+
+            <div className="flex w-full min-w-0 pt-20">
               <Sidebar
                 locale={locale}
                 role={role}
-                variant="drawer"
+                variant="sidebar"
                 onLogout={handleLogout}
-                onNavigate={() => setMobileOpen(false)}
+                onCollapse={setIsSidebarCollapsed}
               />
-            </div>
-          </div>
 
-          <main
-            className={cn(
-              "min-h-[calc(100vh-80px)] w-full min-w-0 flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8",
-              "ml-0 transition-[margin] duration-300",
-              !isSidebarCollapsed && "lg:ml-64",
-              isSidebarCollapsed && "lg:ml-20",
-            )}
-          >
-            {children}
-          </main>
-        </div>
+              <div
+                className={cn(
+                  "fixed inset-0 z-50 lg:hidden",
+                  mobileOpen ? "pointer-events-auto" : "pointer-events-none",
+                )}
+                aria-hidden={!mobileOpen}
+              >
+                <button
+                  type="button"
+                  className={cn(
+                    "absolute inset-0 bg-black/50 transition-opacity duration-300",
+                    mobileOpen ? "opacity-100" : "opacity-0",
+                  )}
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Close navigation"
+                />
+                <div
+                  className={cn(
+                    "absolute left-0 top-0 h-full transform transition-transform duration-300 ease-out",
+                    mobileOpen ? "translate-x-0" : "-translate-x-full",
+                  )}
+                >
+                  <Sidebar
+                    locale={locale}
+                    role={role}
+                    variant="drawer"
+                    onLogout={handleLogout}
+                    onNavigate={() => setMobileOpen(false)}
+                  />
+                </div>
+              </div>
+
+              <main
+                className={cn(
+                  "min-h-[calc(100vh-80px)] w-full min-w-0 flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8",
+                  "ml-0 transition-[margin] duration-300",
+                  !isSidebarCollapsed && "lg:ml-64",
+                  isSidebarCollapsed && "lg:ml-20",
+                )}
+              >
+                {children}
+              </main>
+            </div>
+          </>
+        )}
       </div>
     </LockscreenOverlay>
   );

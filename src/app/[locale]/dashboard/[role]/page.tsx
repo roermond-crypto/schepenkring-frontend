@@ -35,6 +35,9 @@ import {
   Plug,
   Library,
 } from "lucide-react";
+import { BuyerVerificationPanel } from "@/components/dashboard/BuyerVerificationPanel";
+import { SellerOnboardingPanel } from "@/components/dashboard/SellerOnboardingPanel";
+import { getProfileSetupStatus } from "@/lib/api/profile-setup";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -268,14 +271,20 @@ export default function AdminDashboardHome() {
   const dashboardBase = `/dashboard/${role}`;
   const marketplaceUrl = "https://www.schepenkring.nl/aanbod-boten/";
   const isAdminRole = role === "admin";
-  const showAdminSalesInsights = role !== "client";
-  const showAuditPanel = role === "employee";
+  const isEmployeeRole = role === "employee";
+  const isClientRole = role === "client";
+  const isBuyerRole = role === "buyer";
+  const isSellerRole = role === "seller";
+
+  const showAdminSalesInsights = isAdminRole || isEmployeeRole;
+  const showAuditPanel = isEmployeeRole;
   const showAdminQuickAccess = isAdminRole;
   const showRightSidePanel = showAuditPanel || showAdminQuickAccess;
   const defaultUserName = t("defaults.userName");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
   const [welcomeName, setWelcomeName] = useState(defaultUserName);
   const [data, setData] = useState<DashboardData>({
     activeBidsCount: 0,
@@ -315,6 +324,13 @@ export default function AdminDashboardHome() {
     if (showSkeleton) setLoading(true);
     setIsRefreshing(true);
     try {
+      if (isBuyerRole || isSellerRole) {
+        getProfileSetupStatus().then((status) => {
+          setOnboardingComplete(status.complete);
+        }).catch(() => null);
+      } else {
+        setOnboardingComplete(true);
+      }
       const [
         yachtsRes,
         tasksRes,
@@ -876,20 +892,23 @@ export default function AdminDashboardHome() {
 
   return (
     <div className="space-y-7 p-2 sm:p-4 lg:p-6">
-      <header className="relative overflow-hidden rounded-2xl border border-[#BFD0EA] bg-gradient-to-r from-[#F4F8FF] via-[#EFF6FF] to-[#E6F1FF] p-6 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:from-[#0f172a] dark:via-[#111827] dark:to-[#0b1220]">
-        <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#1E3A8A]/10 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-24 w-24 rounded-tl-full bg-white/60 dark:bg-slate-700/40" />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      {onboardingComplete && (
+      <header className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div>
             <p className="text-sm text-slate-500 dark:text-slate-300">
               {t("welcomeBack", { name: welcomeName })}
             </p>
             <h1 className="text-3xl font-black text-[#0B1F3A] sm:text-4xl dark:text-slate-100">
-              {role === "client"
-                ? t("title_client")
-                : role === "employee"
-                  ? t("title_employee")
-                  : t("title_admin")}
+              {isBuyerRole
+                ? "Buyer Dashboard"
+                : isSellerRole
+                  ? "Seller Dashboard"
+                  : isClientRole
+                    ? t("title_client")
+                    : isEmployeeRole
+                      ? t("title_employee")
+                      : t("title_admin")}
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#1E3A8A] dark:text-slate-300">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 font-semibold dark:bg-slate-800/90 dark:text-slate-100">
@@ -920,7 +939,7 @@ export default function AdminDashboardHome() {
             <button
               onClick={() => fetchDashboardData(false)}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#C7D8F5] bg-white px-3 py-2 text-xs font-semibold text-[#0B1F3A] transition hover:border-[#1E3A8A] hover:text-[#1E3A8A] disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-400 dark:hover:text-white"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#C7D8F5] bg-white px-3 py-2 text-xs font-semibold text-[#0B1F3A] transition hover:border-[#1E3A8A] hover:text-[#1E3A8A] disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-400 dark:hover:white"
             >
               <RefreshCcw
                 size={14}
@@ -931,6 +950,40 @@ export default function AdminDashboardHome() {
           </div>
         </div>
       </header>
+      )}
+
+      {isBuyerRole && !onboardingComplete && (
+        <BuyerVerificationPanel 
+          locale={params.locale as any} 
+          onComplete={() => setOnboardingComplete(true)} 
+        />
+      )}
+
+      {isSellerRole && !onboardingComplete && (
+        <SellerOnboardingPanel 
+          locale={params.locale as any} 
+          onComplete={() => setOnboardingComplete(true)} 
+        />
+      )}
+
+      {onboardingComplete && (
+        <>
+          {isBuyerRole && onboardingComplete && (
+             <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 mb-6">
+                <p className="text-emerald-800 font-semibold flex items-center gap-2">
+                   <CircleCheck size={18} />
+                   Onboarding complete. Welcome to your dashboard!
+                </p>
+             </div>
+          )}
+          {isSellerRole && onboardingComplete && (
+             <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 mb-6">
+                <p className="text-emerald-800 font-semibold flex items-center gap-2">
+                   <CircleCheck size={18} />
+                   Onboarding complete. Welcome to your dashboard!
+                </p>
+             </div>
+          )}
 
       {showAdminSalesInsights && (
         <>
@@ -1556,6 +1609,8 @@ export default function AdminDashboardHome() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }
