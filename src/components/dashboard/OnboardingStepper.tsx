@@ -26,7 +26,7 @@ export function OnboardingStepper({
             <div className="flex w-full items-center">
               {/* Connector Line - Left */}
               <div className={cn("h-[2px] flex-1 rounded-full", index === 0 ? "bg-transparent" : (step.complete || step.active) ? "bg-white/40" : "bg-white/10")} />
-              
+
               <button
                 type="button"
                 disabled={!step.clickable}
@@ -50,7 +50,7 @@ export function OnboardingStepper({
                   {step.complete ? <Check size={16} strokeWidth={4} /> : index + 1}
                 </div>
               </button>
-              
+
               {/* Connector Line - Right */}
               <div className={cn("h-[2px] flex-1 rounded-full", index === steps.length - 1 ? "bg-transparent" : step.complete ? "bg-white/40" : "bg-white/10")} />
             </div>
@@ -69,6 +69,7 @@ export function OnboardingStepper({
             </div>
           </div>
         ))}
+
       </div>
     </div>
   );
