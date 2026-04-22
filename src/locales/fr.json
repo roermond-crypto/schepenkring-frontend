@@ -4,26 +4,26 @@
     "login": "Connexion",
     "signup": "S'inscrire",
     "dashboard": "Tableau de bord",
-    "logout": "Se déconnecter",
-    "themeToggle": "Basculer le thème"
+    "logout": "Se dÃ©connecter",
+    "themeToggle": "Basculer le thÃ¨me"
   },
   "landing": {
     "nav": {
-      "features": "Fonctionnalités",
-      "roles": "Rôles",
+      "features": "FonctionnalitÃ©s",
+      "roles": "RÃ´les",
       "contact": "Contact"
     },
     "hero": {
-      "eyebrow": "Plateforme opérationnelle interne",
-      "title": "Centre de contrôle pour bateaux, prospects, clients et flux de travail IA.",
-      "description": "Exécutez Schepenkring à partir d'un espace de travail multilingue unique avec un accès basé sur les rôles et une architecture prête pour l'automatisation."
+      "eyebrow": "Plateforme opÃ©rationnelle interne",
+      "title": "Centre de contrÃ´le pour bateaux, prospects, clients et flux de travail IA.",
+      "description": "ExÃ©cutez Schepenkring Ã  partir d'un espace de travail multilingue unique avec un accÃ¨s basÃ© sur les rÃ´les et une architecture prÃªte pour l'automatisation."
     },
     "roles": {
-      "title": "Un tableau de bord, quatre rôles",
-      "description": "Client, employé, emplacement et Admin accèdent à la même interface du tableau de bord avec des autorisations propres au rôle.",
+      "title": "Un tableau de bord, quatre rÃ´les",
+      "description": "Client, employÃ©, emplacement et Admin accÃ¨dent Ã  la mÃªme interface du tableau de bord avec des autorisations propres au rÃ´le.",
       "items": {
         "client": "Client",
-        "employee": "Employé",
+        "employee": "EmployÃ©",
         "location": "Emplacement",
         "admin": "Administrateur"
       }
@@ -31,54 +31,54 @@
   },
   "auth": {
     "heroTitle": "Connexion CRM interne pour Schepenkring.",
-    "heroSubtitle": "Tableau de bord opérationnel pour bateaux, prospects et clients.",
+    "heroSubtitle": "Tableau de bord opÃ©rationnel pour bateaux, prospects et clients.",
     "welcomeBack": "Bon retour",
-    "createAccount": "Créer un compte",
-    "loginDescription": "Connectez-vous à votre compte du tableau de bord.",
-    "registerDescription": "Inscription client uniquement. Les autres rôles sont créés par l'administrateur.",
+    "createAccount": "CrÃ©er un compte",
+    "loginDescription": "Connectez-vous Ã  votre compte du tableau de bord.",
+    "registerDescription": "Inscription client uniquement. Les autres rÃ´les sont crÃ©Ã©s par l'administrateur.",
     "loginTitle": "Se connecter",
-    "loginError": "Identifiants invalides. Veuillez réessayer.",
+    "loginError": "Identifiants invalides. Veuillez rÃ©essayer.",
     "signupTitle": "Inscription client",
-    "signupError": "Impossible de créer le compte. Veuillez vérifier vos informations.",
+    "signupError": "Impossible de crÃ©er le compte. Veuillez vÃ©rifier vos informations.",
     "email": "E-mail",
-    "phone": "Téléphone",
+    "phone": "TÃ©lÃ©phone",
     "password": "Mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
-    "verificationCode": "Code de vérification",
+    "verificationCode": "Code de vÃ©rification",
     "rememberTerminal": "Se souvenir du terminal",
-    "forgotPassword": "Mot de passe oublié ?",
-    "forgotPasswordSubmit": "Envoyer le lien de réinitialisation",
-    "forgotPasswordBackToLogin": "Retour à la connexion",
-    "forgotPasswordSuccess": "Si votre adresse e-mail existe dans notre système, vous recevrez bientôt un lien pour réinitialiser votre mot de passe.",
-    "forgotPasswordError": "Une erreur s'est produite. Veuillez réessayer plus tard.",
-    "verifyEmail": "Vérifier l'e-mail",
-    "forgotPassword": "Mot de passe oublié ?",
+    "forgotPassword": "Mot de passe oubliÃ© ?",
+    "forgotPasswordSubmit": "Envoyer le lien de rÃ©initialisation",
+    "forgotPasswordBackToLogin": "Retour Ã  la connexion",
+    "forgotPasswordSuccess": "Si votre adresse e-mail existe dans notre systÃ¨me, vous recevrez bientÃ´t un lien pour rÃ©initialiser votre mot de passe.",
+    "forgotPasswordError": "Une erreur s'est produite. Veuillez rÃ©essayer plus tard.",
+    "verifyEmail": "VÃ©rifier l'e-mail",
+    "forgotPassword": "Mot de passe oubliÃ© ?",
     "registerCta": "S'enregistrer",
     "processing": "Traitement...",
     "validating": "Validation en cours...",
-    "verifyContinue": "Vérifier et continuer",
+    "verifyContinue": "VÃ©rifier et continuer",
     "noAccountSignup": "Pas de compte ? S'inscrire comme acheteur / vendeur",
-    "alreadyHaveAccount": "Vous avez déjà un compte ? Connexion",
+    "alreadyHaveAccount": "Vous avez dÃ©jÃ  un compte ? Connexion",
     "clientSignup": "Inscription acheteur / vendeur",
-    "termsLabel": "J'accepte les conditions maritimes et la politique de confidentialité.",
+    "termsLabel": "J'accepte les conditions maritimes et la politique de confidentialitÃ©.",
     "termsRequired": "Vous devez accepter les conditions avant de continuer.",
-    "selectLocation": "Sélectionner le siège",
+    "selectLocation": "SÃ©lectionner le siÃ¨ge",
     "noLocationYet": "Je n'ai pas encore d'emplacement",
     "confirmPasswordRequired": "La confirmation du mot de passe est requise.",
     "passwordsDontMatch": "Les mots de passe ne correspondent pas.",
-    "enterVerificationCode": "Saisissez votre code de vérification.",
-    "verificationCodeSent": "Code de vérification envoyé à votre e-mail.",
-    "invalidLoginResponse": "Réponse de connexion invalide.",
-    "authFailed": "Échec de l'authentification.",
-    "termsRequired": "Vous devez accepter les conditions générales pour vous inscrire.",
+    "enterVerificationCode": "Saisissez votre code de vÃ©rification.",
+    "verificationCodeSent": "Code de vÃ©rification envoyÃ© Ã  votre e-mail.",
+    "invalidLoginResponse": "RÃ©ponse de connexion invalide.",
+    "authFailed": "Ã‰chec de l'authentification.",
+    "termsRequired": "Vous devez accepter les conditions gÃ©nÃ©rales pour vous inscrire.",
     "termsLabelBeforeLink": "J'accepte les",
-    "termsLinkLabel": "conditions générales",
+    "termsLinkLabel": "conditions gÃ©nÃ©rales",
     "termsLabelAfterLink": ".",
     "name": "Nom complet",
     "newClient": "Nouveau client ?",
-    "hasAccount": "Vous avez déjà un compte ?",
+    "hasAccount": "Vous avez dÃ©jÃ  un compte ?",
     "signin": "Se connecter",
-    "signupNotice": "L'inscription n'est disponible que pour les acheteurs et vendeurs. Les utilisateurs Employee, Location et Admin sont créés par l'administrateur système.",
+    "signupNotice": "L'inscription n'est disponible que pour les acheteurs et vendeurs. Les utilisateurs Employee, Location et Admin sont crÃ©Ã©s par l'administrateur systÃ¨me.",
     "submitLogin": "Connexion",
     "submitSignup": "S'inscrire comme acheteur / vendeur"
   },
@@ -86,23 +86,23 @@
     "welcome": "Content de vous revoir",
     "metrics": {
       "leads": "Prospects",
-      "boats": "Bateaux importés",
-      "ai": "Tâches IA",
+      "boats": "Bateaux importÃ©s",
+      "ai": "TÃ¢ches IA",
       "threads": "Fils de discussion"
     },
     "header": {
       "brand": "Schepenkring",
       "title": "Tableau de bord CRM",
       "openMenu": "Ouvrir le menu",
-      "toggleTheme": "Basculer le thème",
+      "toggleTheme": "Basculer le thÃ¨me",
       "userFallback": "Utilisateur",
       "accountSettings": "Ouvrir les parametres du compte",
       "avatarFallback": "Avatar",
       "initialsFallback": "U",
-      "logout": "Se déconnecter",
+      "logout": "Se dÃ©connecter",
       "installApp": "Installer l'application",
-      "installIosInstructions": "Pour installer cette application, ouvrez le menu Partager dans Safari puis choisissez \"Sur l'écran d'accueil\".",
-      "installUnavailable": "Cette application ne peut pas encore être installée depuis ce navigateur.",
+      "installIosInstructions": "Pour installer cette application, ouvrez le menu Partager dans Safari puis choisissez \"Sur l'Ã©cran d'accueil\".",
+      "installUnavailable": "Cette application ne peut pas encore Ãªtre installÃ©e depuis ce navigateur.",
       "installPending": "L'invite d'installation n'est pas encore prete. Si vous testez sur localhost, rechargez une fois la page puis reessayez.",
       "installIosStepShare": "Touchez Partager",
       "installIosStepAddToHomeScreen": "Touchez Sur l'ecran d'accueil"
@@ -112,26 +112,26 @@
       "boats": "Bateaux",
       "clients": "Clients",
       "leads": "Prospects",
-      "overview": "Aperçu",
-      "overview_admin": "Aperçu administrateur",
-      "overview_client": "Aperçu client",
+      "overview": "AperÃ§u",
+      "overview_admin": "AperÃ§u administrateur",
+      "overview_client": "AperÃ§u client",
       "overview_employee": "Tableau de bord des ventes",
       "users": "Utilisateurs",
       "schedule": "Planning",
-      "tasks": "Tâches",
+      "tasks": "TÃ¢ches",
       "copilot": "Copilote",
       "harbor": "Port",
       "interaction": "Chat",
-      "settings": "Paramètres",
+      "settings": "ParamÃ¨tres",
       "terminalSuffix": "Terminal",
       "online": "En ligne",
       "offline": "Hors ligne",
-      "logout": "Se déconnecter",
-      "expand": "Développer la barre latérale",
-      "collapse": "Réduire la barre latérale",
+      "logout": "Se dÃ©connecter",
+      "expand": "DÃ©velopper la barre latÃ©rale",
+      "collapse": "RÃ©duire la barre latÃ©rale",
       "audit": "Audit",
       "errors": "Erreurs",
-      "bookings": "Réservations",
+      "bookings": "RÃ©servations",
       "locations": "Emplacements",
       "knowledgeBrain": "Knowledge Brain",
       "harborPerformance": "Entonnoir de vente",
@@ -149,12 +149,12 @@
       "loading": "Chargement...",
       "empty": "Pas encore de notifications",
       "markAllRead": "Tout marquer comme lu",
-      "defaultSender": "Système",
-      "defaultMessage": "Mise à jour de la notification",
-      "fallbackLead": "Un nouveau prospect a été assigné à votre file d'attente.",
-      "fallbackExport": "Exportation du bateau terminée avec succès.",
-      "fallbackProfile": "Les coordonnées du profil client ont été mises à jour.",
-      "justNow": "À l'instant",
+      "defaultSender": "SystÃ¨me",
+      "defaultMessage": "Mise Ã  jour de la notification",
+      "fallbackLead": "Un nouveau prospect a Ã©tÃ© assignÃ© Ã  votre file d'attente.",
+      "fallbackExport": "Exportation du bateau terminÃ©e avec succÃ¨s.",
+      "fallbackProfile": "Les coordonnÃ©es du profil client ont Ã©tÃ© mises Ã  jour.",
+      "justNow": "Ã€ l'instant",
       "minutesAgo": "il y a m",
       "hoursAgo": "il y a h",
       "daysAgo": "il y a d"
@@ -276,19 +276,19 @@
     "hero": {
       "kicker": "Copilote Admin",
       "title": "Console de workflow d'actions",
-      "description": "Gérez les actions de la liste blanche, générez des brouillons, validez les payloads et exécutez en toute sécurité avec confirmation.",
+      "description": "GÃ©rez les actions de la liste blanche, gÃ©nÃ©rez des brouillons, validez les payloads et exÃ©cutez en toute sÃ©curitÃ© avec confirmation.",
       "refreshCatalog": "Actualiser le catalogue",
       "refreshing": "Actualisation en cours...",
       "totalActions": "Total des actions",
-      "highRisk": "Risque élevé",
-      "generatedAt": "Généré le"
+      "highRisk": "Risque Ã©levÃ©",
+      "generatedAt": "GÃ©nÃ©rÃ© le"
     },
     "catalog": {
       "title": "Catalogue d'actions",
       "columns": {
         "action": "Action",
         "module": "Module",
-        "security": "Sécurité",
+        "security": "SÃ©curitÃ©",
         "confirm": "Confirmer"
       },
       "yes": "Oui",
@@ -296,69 +296,69 @@
     },
     "sections": {
       "draftIntent": "Brouillon d'intention",
-      "validateExecute": "Valider et exécuter",
-      "createAction": "Créer une action",
-      "createPhrase": "Créer une phrase"
+      "validateExecute": "Valider et exÃ©cuter",
+      "createAction": "CrÃ©er une action",
+      "createPhrase": "CrÃ©er une phrase"
     },
     "fields": {
       "actionId": "identifiant_action",
       "title": "titre",
       "module": "module",
-      "routeTemplate": "modèle_de_route",
+      "routeTemplate": "modÃ¨le_de_route",
       "risk": "risque",
       "copilotActionId": "id_action_copilote",
       "phrase": "phrase",
       "language": "langue",
-      "priority": "priorité",
+      "priority": "prioritÃ©",
       "payload": "payload",
       "confirm": "confirmer",
-      "enabled": "activé"
+      "enabled": "activÃ©"
     },
     "actions": {
       "draft": "Brouillon",
       "validate": "Valider",
       "validating": "Validation en cours...",
-      "execute": "Exécuter",
-      "creating": "Création en cours...",
-      "createAction": "Créer une action",
-      "createPhrase": "Créer une phrase"
+      "execute": "ExÃ©cuter",
+      "creating": "CrÃ©ation en cours...",
+      "createAction": "CrÃ©er une action",
+      "createPhrase": "CrÃ©er une phrase"
     },
     "toasts": {
-      "loadCatalogFailed": "Échec du chargement du catalogue d'actions",
-      "draftCreated": "Brouillon créé",
-      "draftFailed": "Échec de la création du brouillon d'action",
-      "invalidPayloadJson": "Le payload doit être un JSON valide.",
+      "loadCatalogFailed": "Ã‰chec du chargement du catalogue d'actions",
+      "draftCreated": "Brouillon crÃ©Ã©",
+      "draftFailed": "Ã‰chec de la crÃ©ation du brouillon d'action",
+      "invalidPayloadJson": "Le payload doit Ãªtre un JSON valide.",
       "actionIdRequired": "L'identifiant de l'action est requis.",
-      "validationCreated": "Jeton de validation créé",
-      "validationFailed": "Échec de la validation",
+      "validationCreated": "Jeton de validation crÃ©Ã©",
+      "validationFailed": "Ã‰chec de la validation",
       "validateFirst": "Validez d'abord pour obtenir un jeton de validation",
-      "executed": "Action exécutée",
-      "executeFailed": "Exécution échouée",
+      "executed": "Action exÃ©cutÃ©e",
+      "executeFailed": "ExÃ©cution Ã©chouÃ©e",
       "actionAndTitleRequired": "action_id et titre sont obligatoires",
-      "actionCreated": "Action créée",
-      "createActionFailed": "Échec de la création de l'action",
+      "actionCreated": "Action crÃ©Ã©e",
+      "createActionFailed": "Ã‰chec de la crÃ©ation de l'action",
       "phraseFieldsRequired": "copilot_action_id et phrase sont obligatoires",
-      "phraseCreated": "Phrase ajoutée",
-      "createPhraseFailed": "Échec de la création de la phrase"
+      "phraseCreated": "Phrase ajoutÃ©e",
+      "createPhraseFailed": "Ã‰chec de la crÃ©ation de la phrase"
     },
     "defaults": {
-      "prompt": "Générer le contrat pour l'affaire 123",
+      "prompt": "GÃ©nÃ©rer le contrat pour l'affaire 123",
       "payload": "{\"deal_id\":123}",
-      "newActionTitle": "Créer un bateau",
+      "newActionTitle": "CrÃ©er un bateau",
       "newActionModule": "bateaux",
       "newActionRoute": "/dashboard/admin/boats/create",
-      "phraseText": "créer un bateau"
+      "phraseText": "crÃ©er un bateau"
     }
   },
   "DashboardBookings": {
     "hero": {
-      "kicker": "Réservations",
-      "title": "Vue d'ensemble des réservations",
-      "description": "Suivez les visites de yachts, vérifiez l'activité par emplacement et ouvrez chaque réservation avec tout le contexte du client, du bateau et du planning."
+      "kicker": "RÃ©servations",
+      "title": "Vue d'ensemble des rÃ©servations",
+      "description": "Suivez les visites de yachts, vÃ©rifiez l'activitÃ© par emplacement et ouvrez chaque rÃ©servation avec tout le contexte du client, du bateau et du planning."
     },
     "stats": {
-      "total": "Total des réservations",
-      "confirmed": "Confirmées",
+      "total": "Total des rÃ©servations",
+      "confirmed": "ConfirmÃ©es",
       "pending": "En attente",
       "today": "Aujourd'hui"
     },
@@ -369,39 +369,39 @@
       "allStatuses": "Tous les statuts",
       "locationId": "ID d'emplacement",
       "locationPlaceholder": "Filtrer par ID d'emplacement",
-      "reset": "Réinitialiser",
+      "reset": "RÃ©initialiser",
       "apply": "Actualiser"
     },
-    "resultsSummary": "{total} réservations affichées",
+    "resultsSummary": "{total} rÃ©servations affichÃ©es",
     "activeFilters": {
       "search": "Recherche : {value}",
       "status": "Statut : {value}",
       "location": "Emplacement : {value}"
     },
     "table": {
-      "id": "Réservation",
+      "id": "RÃ©servation",
       "guest": "Client",
       "boat": "Bateau",
       "schedule": "Planning",
       "status": "Statut",
       "action": "Action",
       "view": "Voir",
-      "loading": "Chargement des réservations..."
+      "loading": "Chargement des rÃ©servations..."
     },
     "empty": {
-      "title": "Aucune réservation trouvée",
-      "description": "Essayez un autre statut, terme de recherche ou filtre d'emplacement pour trouver la réservation voulue."
+      "title": "Aucune rÃ©servation trouvÃ©e",
+      "description": "Essayez un autre statut, terme de recherche ou filtre d'emplacement pour trouver la rÃ©servation voulue."
     },
     "errorState": {
-      "title": "Les réservations n'ont pas pu être chargées",
-      "description": "La requête a échoué, mais la page reste stable. Réessayez lorsque l'API sera de nouveau disponible.",
-      "retry": "Réessayer"
+      "title": "Les rÃ©servations n'ont pas pu Ãªtre chargÃ©es",
+      "description": "La requÃªte a Ã©chouÃ©, mais la page reste stable. RÃ©essayez lorsque l'API sera de nouveau disponible.",
+      "retry": "RÃ©essayer"
     },
     "detail": {
-      "title": "Détails de la réservation",
-      "titleWithId": "Réservation #{id}",
-      "description": "Consultez les détails complets du rendez-vous pour cette visite de yacht.",
-      "loading": "Chargement des détails de la réservation...",
+      "title": "DÃ©tails de la rÃ©servation",
+      "titleWithId": "RÃ©servation #{id}",
+      "description": "Consultez les dÃ©tails complets du rendez-vous pour cette visite de yacht.",
+      "loading": "Chargement des dÃ©tails de la rÃ©servation...",
       "guest": "Client",
       "name": "Nom",
       "email": "E-mail",
@@ -409,7 +409,7 @@
       "appointment": "Rendez-vous",
       "date": "Date",
       "time": "Heure",
-      "duration": "Durée",
+      "duration": "DurÃ©e",
       "status": "Statut",
       "location": "Emplacement",
       "locationCode": "Code d'emplacement",
@@ -418,67 +418,67 @@
       "price": "Prix",
       "type": "Type",
       "notes": "Notes",
-      "noNotes": "Aucune note n'a été fournie pour cette réservation.",
-      "createdAt": "Créé le",
-      "updatedAt": "Mis à jour le"
+      "noNotes": "Aucune note n'a Ã©tÃ© fournie pour cette rÃ©servation.",
+      "createdAt": "CrÃ©Ã© le",
+      "updatedAt": "Mis Ã  jour le"
     },
     "errors": {
-      "load": "Impossible de charger les réservations.",
-      "detail": "Impossible de charger les détails de la réservation."
+      "load": "Impossible de charger les rÃ©servations.",
+      "detail": "Impossible de charger les dÃ©tails de la rÃ©servation."
     },
     "statuses": {
       "pending": "En attente",
-      "confirmed": "Confirmée",
-      "cancelled": "Annulée",
-      "completed": "Terminée",
-      "rescheduled": "Replanifiée"
+      "confirmed": "ConfirmÃ©e",
+      "cancelled": "AnnulÃ©e",
+      "completed": "TerminÃ©e",
+      "rescheduled": "ReplanifiÃ©e"
     }
   },
   "DashboardAdminOverview": {
-    "title": "Aperçu du tableau de bord",
-    "title_admin": "Aperçu Admin",
-    "title_client": "Aperçu Client",
+    "title": "AperÃ§u du tableau de bord",
+    "title_admin": "AperÃ§u Admin",
+    "title_client": "AperÃ§u Client",
     "title_employee": "Tableau de bord des ventes",
     "welcomeBack": "Bon retour, {name}",
-    "todayWeather": "Aujourd'hui : 18° Ensoleillé à Eindhoven",
+    "todayWeather": "Aujourd'hui : 18Â° EnsoleillÃ© Ã  Eindhoven",
     "notificationSummary": "Vous avez {count} nouvelle{count, plural, one {} other {s}} notification{count, plural, one {} other {s}}.",
     "registrationSummary": "Vous avez {count} nouvelle{count, plural, one {} other {s}} inscription{count, plural, one {} other {s}} en attente de revision.",
-    "activeBiddingItems": "Vous avez {count} enchères actives.",
+    "activeBiddingItems": "Vous avez {count} enchÃ¨res actives.",
     "liveSync": "Synchronisation en direct",
     "refresh": "Actualiser",
     "weeklyTrend": "Tendance hebdomadaire",
-    "viewDetails": "Voir les détails",
+    "viewDetails": "Voir les dÃ©tails",
     "trends": {
       "thisWeek": "cette semaine",
-      "fromYesterday": "à partir d'hier",
+      "fromYesterday": "Ã  partir d'hier",
       "thisMonth": "ce mois-ci"
     },
     "stats": {
-      "activeBids": "Enchères actives",
+      "activeBids": "EnchÃ¨res actives",
       "pendingManifest": "Manifeste en attente",
-      "fleetInIntake": "Flotte en entrée",
-      "completedSales": "Ventes terminées"
+      "fleetInIntake": "Flotte en entrÃ©e",
+      "completedSales": "Ventes terminÃ©es"
     },
     "snapshot": {
-      "boatsInIntake": "Bateaux en entrée",
-      "avgDaysToSale": "Jours moyens jusqu'à la vente",
+      "boatsInIntake": "Bateaux en entrÃ©e",
+      "avgDaysToSale": "Jours moyens jusqu'Ã  la vente",
       "daysSuffix": "jours",
       "conversion": "Conversion",
       "revenueThisMonth": "Chiffre d'affaires ce mois-ci"
     },
     "sections": {
-      "businessInsights": "Aperçus commerciaux",
-      "performanceSnapshot": "Aperçu des performances",
+      "businessInsights": "AperÃ§us commerciaux",
+      "performanceSnapshot": "AperÃ§u des performances",
       "newRegistrations": "Nouvelles inscriptions",
-      "marketPulse": "Pouls du marché",
-      "recentBiddingActivity": "Activité d'enchères récente",
+      "marketPulse": "Pouls du marchÃ©",
+      "recentBiddingActivity": "ActivitÃ© d'enchÃ¨res rÃ©cente",
       "adminShortcuts": "Raccourcis admin",
-      "quickAccess": "Accès rapide",
+      "quickAccess": "AccÃ¨s rapide",
       "liveDiagnostics": "Diagnostics en direct",
-      "systemAudit": "Audit du système"
+      "systemAudit": "Audit du systÃ¨me"
     },
     "actions": {
-      "viewBiddings": "Voir les enchères",
+      "viewBiddings": "Voir les enchÃ¨res",
       "reviewRegistrations": "Examiner les inscriptions",
       "viewBoats": "Voir les bateaux",
       "createFirstListing": "Vendre un bateau",
@@ -489,7 +489,7 @@
     "shortcuts": {
       "locations": {
         "title": "Emplacements",
-        "description": "Gérez les emplacements, widgets et ports connectés depuis un seul endroit."
+        "description": "GÃ©rez les emplacements, widgets et ports connectÃ©s depuis un seul endroit."
       },
       "salesfunnel": {
         "title": "Salesfunnel",
@@ -497,37 +497,37 @@
       },
       "faq": {
         "title": "FAQ",
-        "description": "Mettez à jour les FAQ et la connaissance du chat public depuis le dashboard."
+        "description": "Mettez Ã  jour les FAQ et la connaissance du chat public depuis le dashboard."
       },
       "knowledgeBrain": {
         "title": "Knowledge Brain",
-        "description": "Gérez la connaissance IA, les suggestions et les signaux d'apprentissage."
+        "description": "GÃ©rez la connaissance IA, les suggestions et les signaux d'apprentissage."
       },
       "socialAutomation": {
         "title": "Automatisation sociale",
-        "description": "Pilotez les vidéos IA, la livraison WhatsApp et les flux sociaux."
+        "description": "Pilotez les vidÃ©os IA, la livraison WhatsApp et les flux sociaux."
       },
       "audit": {
         "title": "Audit",
-        "description": "Consultez l'activité système, les événements de sécurité et les traces de diagnostic."
+        "description": "Consultez l'activitÃ© systÃ¨me, les Ã©vÃ©nements de sÃ©curitÃ© et les traces de diagnostic."
       },
       "errors": {
         "title": "Erreurs",
-        "description": "Inspectez les jobs échoués, requêtes et problèmes d'exécution au même endroit."
+        "description": "Inspectez les jobs Ã©chouÃ©s, requÃªtes et problÃ¨mes d'exÃ©cution au mÃªme endroit."
       },
       "integrations": {
-        "title": "Intégrations",
-        "description": "Gérez les outils connectés, flux et connexions plateforme côté admin."
+        "title": "IntÃ©grations",
+        "description": "GÃ©rez les outils connectÃ©s, flux et connexions plateforme cÃ´tÃ© admin."
       }
     },
     "schedule": {
       "live": "Horaire en direct",
-      "title": "Réservations et essais",
-      "prev": "Précédent",
+      "title": "RÃ©servations et essais",
+      "prev": "PrÃ©cÃ©dent",
       "next": "Suivant",
-      "upcoming": "Événements à venir",
-      "empty": "Aucun enregistrement de réservation ou d'essai routier provenant de l'API.",
-      "booking": "Réservation",
+      "upcoming": "Ã‰vÃ©nements Ã  venir",
+      "empty": "Aucun enregistrement de rÃ©servation ou d'essai routier provenant de l'API.",
+      "booking": "RÃ©servation",
       "testDrive": "Essai routier",
       "yacht": "Yacht",
       "locationUnavailable": "Emplacement indisponible",
@@ -537,29 +537,29 @@
       "registry": "Registre",
       "submittedForReview": "Soumis pour revision",
       "unknown": "Inconnu",
-      "currentBid": "Enchère actuelle"
+      "currentBid": "EnchÃ¨re actuelle"
     },
     "audit": {
       "ok": "OK",
       "warning": "Avertissement",
       "error": "Erreur",
-      "taskUpdate": "Mise à jour de la tâche",
-      "operatorAction": "Action de l'opérateur",
-      "autoSystemEvent": "Événement automatique du système",
-      "on": "activé",
+      "taskUpdate": "Mise Ã  jour de la tÃ¢che",
+      "operatorAction": "Action de l'opÃ©rateur",
+      "autoSystemEvent": "Ã‰vÃ©nement automatique du systÃ¨me",
+      "on": "activÃ©",
       "globalFleet": "Flotte mondiale"
     },
     "empty": {
-      "noRecentBiddingTitle": "Aucune activité d'enchères récente",
-      "noRecentBiddingSubtitle": "Démarrez un processus d'enchères pour voir les mises à jour en direct ici.",
-      "brokerReviewTitle": "Vérification du courtier",
-      "brokerReviewHeadingOne": "Vous avez {count} bateau en cours de vérification chez le courtier",
-      "brokerReviewHeadingOther": "Vous avez {count} bateaux en cours de vérification chez le courtier",
-      "brokerReviewSubtitle": "Votre annonce a été envoyée et attend l'approbation du courtier avant d'entrer dans le flux de vente.",
+      "noRecentBiddingTitle": "Aucune activitÃ© d'enchÃ¨res rÃ©cente",
+      "noRecentBiddingSubtitle": "DÃ©marrez un processus d'enchÃ¨res pour voir les mises Ã  jour en direct ici.",
+      "brokerReviewTitle": "VÃ©rification du courtier",
+      "brokerReviewHeadingOne": "Vous avez {count} bateau en cours de vÃ©rification chez le courtier",
+      "brokerReviewHeadingOther": "Vous avez {count} bateaux en cours de vÃ©rification chez le courtier",
+      "brokerReviewSubtitle": "Votre annonce a Ã©tÃ© envoyÃ©e et attend l'approbation du courtier avant d'entrer dans le flux de vente.",
       "onboardingTitle": "Bienvenue sur le marketplace",
       "onboardingHeading": "Vous n'avez encore effectue aucune action",
       "onboardingSubtitle": "Commencez par vendre votre bateau ou consultez les <marketplace>offres</marketplace> sur la marketplace.",
-      "noSystemLogs": "Aucun journal système récent pour le moment."
+      "noSystemLogs": "Aucun journal systÃ¨me rÃ©cent pour le moment."
     },
     "contract": {
       "readyTitle": "Contrat pret a signer",
@@ -581,8 +581,8 @@
   },
   "DashboardAdminAudit": {
     "header": {
-      "title": "Journal d'audit système",
-      "subtitle": "Suivez toutes les activités et les changements du système en temps réel"
+      "title": "Journal d'audit systÃ¨me",
+      "subtitle": "Suivez toutes les activitÃ©s et les changements du systÃ¨me en temps rÃ©el"
     },
     "actions": {
       "filters": "Filtres",
@@ -590,64 +590,64 @@
       "exportCsv": "Exporter CSV"
     },
     "stats": {
-      "totalEvents": "Événements totaux",
-      "eventTypes": "Types d'événements",
-      "entityTypes": "Types d'entités",
-      "recentActivity": "Activité récente"
+      "totalEvents": "Ã‰vÃ©nements totaux",
+      "eventTypes": "Types d'Ã©vÃ©nements",
+      "entityTypes": "Types d'entitÃ©s",
+      "recentActivity": "ActivitÃ© rÃ©cente"
     },
     "filters": {
-      "title": "Filtres avancés",
+      "title": "Filtres avancÃ©s",
       "searchLogs": "Rechercher dans les journaux",
       "searchPlaceholder": "Descriptions, utilisateurs, IPs...",
-      "fromDate": "Date de début",
+      "fromDate": "Date de dÃ©but",
       "toDate": "Date de fin",
-      "eventTypes": "Types d'événements",
-      "entityTypes": "Types d'entités",
+      "eventTypes": "Types d'Ã©vÃ©nements",
+      "entityTypes": "Types d'entitÃ©s",
       "clearAll": "Effacer tous les filtres ({count})"
     },
     "errors": {
-      "title": "Erreur lors du chargement des données",
-      "loadStats": "Échec du chargement des statistiques système",
-      "loadLogs": "Échec du chargement des journaux système"
+      "title": "Erreur lors du chargement des donnÃ©es",
+      "loadStats": "Ã‰chec du chargement des statistiques systÃ¨me",
+      "loadLogs": "Ã‰chec du chargement des journaux systÃ¨me"
     },
     "logs": {
-      "title": "Journaux d'activité",
-      "showing": "Affichage de {from} à {to} sur {total}",
-      "loading": "Chargement des journaux d'activité..."
+      "title": "Journaux d'activitÃ©",
+      "showing": "Affichage de {from} Ã  {to} sur {total}",
+      "loading": "Chargement des journaux d'activitÃ©..."
     },
     "details": {
       "userInformation": "Informations utilisateur",
-      "systemAction": "Action du système",
+      "systemAction": "Action du systÃ¨me",
       "name": "Nom",
       "email": "Courriel",
-      "role": "Rôle",
+      "role": "RÃ´le",
       "action": "Action",
-      "systemAutomatedAction": "Action automatisée du système",
-      "technicalDetails": "Détails techniques",
-      "entityDetails": "Détails de l'entité",
+      "systemAutomatedAction": "Action automatisÃ©e du systÃ¨me",
+      "technicalDetails": "DÃ©tails techniques",
+      "entityDetails": "DÃ©tails de l'entitÃ©",
       "timestamp": "Horodatage",
       "ipAddress": "Adresse IP",
-      "changesMade": "Modifications apportées"
+      "changesMade": "Modifications apportÃ©es"
     },
-    "systemUser": "Système",
+    "systemUser": "SystÃ¨me",
     "empty": {
-      "title": "Aucun journal d'activité trouvé",
-      "filtered": "Aucun journal d'activité ne correspond à vos filtres actuels. Essayez d'ajuster vos critères de recherche.",
-      "default": "Aucun journal d'activité disponible pour le moment. Commencez par créer des tâches, mettre à jour des yachts ou demander aux utilisateurs de se connecter."
+      "title": "Aucun journal d'activitÃ© trouvÃ©",
+      "filtered": "Aucun journal d'activitÃ© ne correspond Ã  vos filtres actuels. Essayez d'ajuster vos critÃ¨res de recherche.",
+      "default": "Aucun journal d'activitÃ© disponible pour le moment. Commencez par crÃ©er des tÃ¢ches, mettre Ã  jour des yachts ou demander aux utilisateurs de se connecter."
     },
     "pagination": {
-      "resultsSummary": "Affichage de {from} à {to} sur {total} résultats",
-      "firstPage": "Première page",
-      "previousPage": "Page précédente",
+      "resultsSummary": "Affichage de {from} Ã  {to} sur {total} rÃ©sultats",
+      "firstPage": "PremiÃ¨re page",
+      "previousPage": "Page prÃ©cÃ©dente",
       "nextPage": "Page suivante",
-      "lastPage": "Dernière page"
+      "lastPage": "DerniÃ¨re page"
     }
   },
   "DashboardAdminHarborPerformance": {
     "hero": {
       "kicker": "Analyse des ventes",
       "title": "Entonnoir de vente",
-      "description": "Suivez les performances de l'entonnoir à l'échelle de la plateforme grâce à des informations basées sur la localisation."
+      "description": "Suivez les performances de l'entonnoir Ã  l'Ã©chelle de la plateforme grÃ¢ce Ã  des informations basÃ©es sur la localisation."
     },
     "actions": {
       "refresh": "Actualiser"
@@ -682,8 +682,8 @@
       "sources": {
         "googleOrganic": "Google organique",
         "googleAds": "Google Ads",
-        "facebookPaid": "Facebook Publicité",
-        "instagramPaid": "Instagram Publicité",
+        "facebookPaid": "Facebook PublicitÃ©",
+        "instagramPaid": "Instagram PublicitÃ©",
         "direct": "Direct"
       }
     },
@@ -702,20 +702,20 @@
     },
     "states": {
       "error": "Impossible de charger les performances de l'entonnoir de vente.",
-      "empty": "Aucune donnée de l'entonnoir de vente disponible pour les filtres actuels."
+      "empty": "Aucune donnÃ©e de l'entonnoir de vente disponible pour les filtres actuels."
     },
     "panels": {
       "reach": {
-        "title": "Portée",
+        "title": "PortÃ©e",
         "description": "GA4 reste la source pour les utilisateurs, les sessions et les tendances d'interaction sur les campagnes Harbor."
       },
       "funnel": {
         "title": "Entonnoir",
-        "description": "Les métriques de l'entonnoir combinent les impressions et les clics des widgets avec les soumissions sur la plateforme et les transactions conclues."
+        "description": "Les mÃ©triques de l'entonnoir combinent les impressions et les clics des widgets avec les soumissions sur la plateforme et les transactions conclues."
       },
       "revenue": {
-        "title": "Vérité des revenus",
-        "description": "Le classement des commissions utilise l'attribution des revenus de votre base de données, pas GA4, afin de garantir la précision des comparaisons de paiements aux partenaires."
+        "title": "VÃ©ritÃ© des revenus",
+        "description": "Le classement des commissions utilise l'attribution des revenus de votre base de donnÃ©es, pas GA4, afin de garantir la prÃ©cision des comparaisons de paiements aux partenaires."
       }
     }
   },
@@ -723,14 +723,14 @@
     "header": {
       "kicker": "Gestion des sites",
       "title": "Ports et sites",
-      "subtitle": "Créez et gérez les sites utilisés pour l’inscription, le périmètre d’accès et les opérations."
+      "subtitle": "CrÃ©ez et gÃ©rez les sites utilisÃ©s pour lâ€™inscription, le pÃ©rimÃ¨tre dâ€™accÃ¨s et les opÃ©rations."
     },
     "filters": {
       "search": "Rechercher par nom de site ou code",
       "allStatus": "Tous les statuts"
     },
     "form": {
-      "createTitle": "Créer un nouveau site",
+      "createTitle": "CrÃ©er un nouveau site",
       "editTitle": "Modifier le site",
       "name": "Nom du site",
       "code": "Code (ex. AMS)"
@@ -739,9 +739,9 @@
       "name": "Nom",
       "code": "Code",
       "status": "Statut",
-      "updated": "Mis à jour",
+      "updated": "Mis Ã  jour",
       "actions": "Actions",
-      "empty": "Aucun site trouvé."
+      "empty": "Aucun site trouvÃ©."
     },
     "status": {
       "active": "Actif",
@@ -749,8 +749,8 @@
     },
     "actions": {
       "refresh": "Actualiser",
-      "create": "Créer un site",
-      "update": "Mettre à jour le site",
+      "create": "CrÃ©er un site",
+      "update": "Mettre Ã  jour le site",
       "edit": "Modifier",
       "delete": "Supprimer",
       "cancel": "Annuler",
@@ -758,28 +758,28 @@
     },
     "confirm": {
       "deleteTitle": "Supprimer le site",
-      "deleteBody": "Voulez-vous vraiment supprimer « {name} » ?"
+      "deleteBody": "Voulez-vous vraiment supprimer Â« {name} Â» ?"
     },
     "toasts": {
       "loadFailed": "Impossible de charger les sites.",
-      "created": "Site créé.",
-      "createFailed": "Impossible de créer le site.",
-      "updated": "Site mis à jour.",
-      "updateFailed": "Impossible de mettre à jour le site.",
-      "deleted": "Site supprimé.",
+      "created": "Site crÃ©Ã©.",
+      "createFailed": "Impossible de crÃ©er le site.",
+      "updated": "Site mis Ã  jour.",
+      "updateFailed": "Impossible de mettre Ã  jour le site.",
+      "deleted": "Site supprimÃ©.",
       "deleteFailed": "Impossible de supprimer le site.",
-      "deleteConflict": "Le site ne peut pas être supprimé car des enregistrements liés existent encore."
+      "deleteConflict": "Le site ne peut pas Ãªtre supprimÃ© car des enregistrements liÃ©s existent encore."
     }
   },
   "DashboardAdminUsers": {
     "header": {
       "title": "Administration des utilisateurs",
-      "subtitle": "Gestion des identités et des accès",
-      "searchPlaceholder": "Rechercher par nom ou e‑mail...",
+      "subtitle": "Gestion des identitÃ©s et des accÃ¨s",
+      "searchPlaceholder": "Rechercher par nom ou eâ€‘mail...",
       "provisionNew": "Provisionner"
     },
     "tabs": {
-      "employee": "Employé",
+      "employee": "EmployÃ©",
       "admin": "Administrateur",
       "partner": "Partenaire",
       "customer": "Client"
@@ -787,29 +787,29 @@
     "fields": {
       "fullName": "Nom complet",
     "emailAddress": "Adresse e-mail",
-    "systemPassword": "Mot de passe système",
+    "systemPassword": "Mot de passe systÃ¨me",
     "assignment": "Affectation",
     "location": "Emplacement",
     "clearance": "Habilitation",
     "accountStatus": "Statut du compte"
   },
     "options": {
-      "limited": "Limité",
+      "limited": "LimitÃ©",
       "full": "Complet",
       "active": "Actif",
       "inactive": "Inactif",
       "pending": "En attente",
-      "selectLocation": "Sélectionner un emplacement"
+      "selectLocation": "SÃ©lectionner un emplacement"
     },
     "permissions": {
-      "pageAccessControl": "Accès aux pages",
-      "default": "Par défaut",
+      "pageAccessControl": "AccÃ¨s aux pages",
+      "default": "Par dÃ©faut",
       "allow": "Autoriser",
       "deny": "Refuser",
-      "resetAll": "Réinitialiser tout"
+      "resetAll": "RÃ©initialiser tout"
     },
     "actions": {
-      "assumeIdentity": "Assumer l'identité",
+      "assumeIdentity": "Assumer l'identitÃ©",
       "terminate": "Terminer",
       "finalizeEnrollment": "Finaliser l'inscription",
       "refresh": "Actualiser"
@@ -824,48 +824,48 @@
     },
     "modal": {
       "title": "Provisionner le compte",
-      "subtitle": "Créer un nouveau compte utilisateur"
+      "subtitle": "CrÃ©er un nouveau compte utilisateur"
     },
     "confirm": {
       "terminate": "Terminer ce compte ?"
     },
     "empty": {
-      "title": "Aucun utilisateur trouvé",
-      "description": "Aucun compte {role} n'a encore été ajouté."
+      "title": "Aucun utilisateur trouvÃ©",
+      "description": "Aucun compte {role} n'a encore Ã©tÃ© ajoutÃ©."
     },
     "toasts": {
-      "syncFailed": "Échec de la synchronisation des utilisateurs",
-      "enrolling": "Création du compte...",
-      "enrolled": "Compte créé",
-      "enrollmentFailed": "Échec de la création du compte",
+      "syncFailed": "Ã‰chec de la synchronisation des utilisateurs",
+      "enrolling": "CrÃ©ation du compte...",
+      "enrolled": "Compte crÃ©Ã©",
+      "enrollmentFailed": "Ã‰chec de la crÃ©ation du compte",
       "terminating": "Suppression du compte...",
-      "terminated": "Compte supprimé",
-      "terminationFailed": "Échec de la suppression du compte",
-      "assimilating": "Démarrage de l’usurpation d’identité...",
-      "identityAssumed": "Désormais, vous usurpez l’identité de {name}",
-      "impersonationFailed": "Échec de l’usurpation de l’utilisateur",
-      "permissionUpdated": "Permission mise à jour",
-      "permissionUpdateFailed": "Échec de la mise à jour des permissions",
-      "permissionsReset": "Permissions réinitialisées",
-      "permissionsResetFailed": "Échec de la réinitialisation des permissions"
+      "terminated": "Compte supprimÃ©",
+      "terminationFailed": "Ã‰chec de la suppression du compte",
+      "assimilating": "DÃ©marrage de lâ€™usurpation dâ€™identitÃ©...",
+      "identityAssumed": "DÃ©sormais, vous usurpez lâ€™identitÃ© de {name}",
+      "impersonationFailed": "Ã‰chec de lâ€™usurpation de lâ€™utilisateur",
+      "permissionUpdated": "Permission mise Ã  jour",
+      "permissionUpdateFailed": "Ã‰chec de la mise Ã  jour des permissions",
+      "permissionsReset": "Permissions rÃ©initialisÃ©es",
+      "permissionsResetFailed": "Ã‰chec de la rÃ©initialisation des permissions"
     }
   },
   "DashboardAccount": {
     "header": {
-      "title": "Contrôle du compte",
-      "subtitle": "Paramètres d’identité, de profil et de sécurité"
+      "title": "ContrÃ´le du compte",
+      "subtitle": "ParamÃ¨tres dâ€™identitÃ©, de profil et de sÃ©curitÃ©"
     },
     "tabs": {
       "profile": "Profil",
       "personal": "Personnel",
       "address": "Adresse",
-      "security": "Sécurité",
+      "security": "SÃ©curitÃ©",
       "password": "Mot de passe"
     },
     "fields": {
       "fullName": "Nom complet",
       "emailAddress": "Adresse e-mail",
-      "phoneNumber": "Numéro de téléphone",
+      "phoneNumber": "NumÃ©ro de tÃ©lÃ©phone",
       "dateOfBirth": "Date de naissance",
       "locale": "Langue",
       "location": "Emplacement",
@@ -874,12 +874,12 @@
       "addressLine1": "Adresse ligne 1",
       "addressLine2": "Adresse ligne 2",
       "city": "Ville",
-      "state": "État",
+      "state": "Ã‰tat",
       "postalCode": "Code postal",
       "country": "Pays",
-      "firstName": "Prénom",
+      "firstName": "PrÃ©nom",
       "lastName": "Nom",
-      "twoFactor": "Authentification à deux facteurs",
+      "twoFactor": "Authentification Ã  deux facteurs",
       "otpSecret": "Secret OTP",
       "otpCode": "Code OTP",
       "currentPassword": "Mot de passe actuel",
@@ -889,144 +889,144 @@
     "labels": {
       "yes": "Oui",
       "no": "Non",
-      "confirmed": "Confirmé:",
+      "confirmed": "ConfirmÃ©:",
       "twoFactorStatus": "Statut 2FA:",
-      "verified": "Confirmé",
-      "pendingVerification": "Pas encore confirmé",
-      "notConfigured": "Non configuré",
+      "verified": "ConfirmÃ©",
+      "pendingVerification": "Pas encore confirmÃ©",
+      "notConfigured": "Non configurÃ©",
       "user": "Utilisateur",
       "noLocationAssigned": "Aucun emplacement assigne",
       "assignmentStatus": "Statut d'affectation",
       "boardAccessEnabled": "L'acces au tableau est active pour cet employe.",
       "boardAccessDisabled": "L'acces au tableau depend d'une affectation d'emplacement valide.",
       "profilePicture": "Photo de profil",
-      "uploadHelp": "Téléversez un nouvel avatar (max. 5 Mo, WEBP/JPG/PNG)."
+      "uploadHelp": "TÃ©lÃ©versez un nouvel avatar (max. 5 Mo, WEBP/JPG/PNG)."
     },
     "languages": {
       "en": "English",
       "nl": "Nederlands",
       "de": "Deutsch",
-      "fr": "Français"
+      "fr": "FranÃ§ais"
     },
     "actions": {
       "syncProfile": "Synchroniser le profil",
       "saving": "Sauvegarde en cours...",
-      "uploadImage": "Téléverser une image",
-      "uploading": "Téléversement..."
+      "uploadImage": "TÃ©lÃ©verser une image",
+      "uploading": "TÃ©lÃ©versement..."
     },
     "toasts": {
-      "loadFailed": "Échec du chargement du profil du compte.",
-      "updateFailed": "Échec de la mise à jour du compte.",
-      "saved": "Compte mis à jour avec succès.",
+      "loadFailed": "Ã‰chec du chargement du profil du compte.",
+      "updateFailed": "Ã‰chec de la mise Ã  jour du compte.",
+      "saved": "Compte mis Ã  jour avec succÃ¨s.",
       "passwordMismatch": "La confirmation du mot de passe ne correspond pas."
     }
   },
   "DashboardAdminSocial": {
     "title": "Automatisation sociale",
-    "subtitle": "Pipeline vidéo & distribution",
-    "description": "Gérez les vidéos de bateaux générées, programmez du contenu par lots et surveillez les performances de publication sur les éditeurs sociaux connectés.",
+    "subtitle": "Pipeline vidÃ©o & distribution",
+    "description": "GÃ©rez les vidÃ©os de bateaux gÃ©nÃ©rÃ©es, programmez du contenu par lots et surveillez les performances de publication sur les Ã©diteurs sociaux connectÃ©s.",
     "actions": {
       "refresh": "Actualiser",
-      "schedule": "Programmer les éléments sélectionnés",
-      "open": "Ouvrir la vidéo",
-      "regenerate": "Régénérer",
+      "schedule": "Programmer les Ã©lÃ©ments sÃ©lectionnÃ©s",
+      "open": "Ouvrir la vidÃ©o",
+      "regenerate": "RÃ©gÃ©nÃ©rer",
       "reschedule": "Reprogrammer",
-      "retry": "Réessayer",
+      "retry": "RÃ©essayer",
       "cancel": "Annuler",
       "saveReschedule": "Gagner du temps"
     },
     "stats": {
-      "videos": "Vidéos",
-      "scheduled": "Planifiés",
-      "published": "Publiés",
+      "videos": "VidÃ©os",
+      "scheduled": "PlanifiÃ©s",
+      "published": "PubliÃ©s",
       "impressions": "Impressions"
     },
     "scheduler": {
       "label": "Planificateur",
       "title": "Planificateur sur 30 jours",
-      "description": "Choisissez la cadence de publication, sélectionnez les éditeurs et mettez en file d'attente les vidéos sélectionnées pour une publication automatique.",
-      "startDate": "Date de début",
+      "description": "Choisissez la cadence de publication, sÃ©lectionnez les Ã©diteurs et mettez en file d'attente les vidÃ©os sÃ©lectionnÃ©es pour une publication automatique.",
+      "startDate": "Date de dÃ©but",
       "time": "Heure de publication",
-      "publishers": "Éditeurs",
-      "skipWeekends": "Ignorer les dates du week-end lors de la création du planning.",
-      "selectedVideos": "Vidéos sélectionnées",
-      "useAllReady": "Utiliser tout ce qui est prêt",
-      "videosChosen": "vidéos sélectionnées",
-      "readyAvailable": "prêtes à être programmées"
+      "publishers": "Ã‰diteurs",
+      "skipWeekends": "Ignorer les dates du week-end lors de la crÃ©ation du planning.",
+      "selectedVideos": "VidÃ©os sÃ©lectionnÃ©es",
+      "useAllReady": "Utiliser tout ce qui est prÃªt",
+      "videosChosen": "vidÃ©os sÃ©lectionnÃ©es",
+      "readyAvailable": "prÃªtes Ã  Ãªtre programmÃ©es"
     },
     "library": {
-      "label": "Bibliothèque",
-      "videos": "Vidéos",
-      "posts": "Publications"
+      "label": "Planification en direct",
+      "videos": "VidÃ©os",
+      "posts": "Reservations et essais"
     },
     "videoCard": {
-      "video": "Vidéo",
+      "video": "VidÃ©o",
       "boat": "Bateau",
-      "duration": "Durée",
-      "template": "Modèle",
-      "created": "Créé"
+      "duration": "DurÃ©e",
+      "template": "ModÃ¨le",
+      "created": "CrÃ©Ã©"
     },
     "postCard": {
       "post": "Publication",
-      "video": "Vidéo",
-      "publishers": "Éditeurs",
-      "scheduled": "Planifiés",
-      "published": "Publiés",
+      "video": "VidÃ©o",
+      "publishers": "Ã‰diteurs",
+      "scheduled": "PlanifiÃ©s",
+      "published": "PubliÃ©s",
       "impressions": "Impressions",
       "clicks": "Clics"
     },
     "empty": {
-      "videos": "Aucune vidéo rendue n'est encore disponible.",
-      "posts": "Aucune publication planifiée ou publiée n'a encore été créée."
+      "videos": "Aucune vidÃ©o rendue n'est encore disponible.",
+      "posts": "Aucune publication planifiÃ©e ou publiÃ©e n'a encore Ã©tÃ© crÃ©Ã©e."
     },
     "errors": {
-      "loadFailed": "Impossible de charger les données d'automatisation sociale.",
-      "selectVideos": "Sélectionnez au moins une vidéo avant de programmer.",
-      "scheduleFailed": "Impossible de créer le calendrier de publication.",
-      "regenerateFailed": "Impossible de mettre en file d'attente la régénération de la vidéo.",
-      "retryFailed": "Impossible de réessayer cette publication.",
+      "loadFailed": "Impossible de charger les donnÃ©es d'automatisation sociale.",
+      "selectVideos": "SÃ©lectionnez au moins une vidÃ©o avant de programmer.",
+      "scheduleFailed": "Impossible de crÃ©er le calendrier de publication.",
+      "regenerateFailed": "Impossible de mettre en file d'attente la rÃ©gÃ©nÃ©ration de la vidÃ©o.",
+      "retryFailed": "Impossible de rÃ©essayer cette publication.",
       "invalidReschedule": "Choisissez une date et une heure valides.",
       "rescheduleFailed": "Impossible de reprogrammer cette publication."
     },
     "toasts": {
-      "scheduleCreated": "Calendrier de publication créé.",
-      "videoQueued": "Régénération vidéo en file d'attente.",
+      "scheduleCreated": "Calendrier de publication crÃ©Ã©.",
+      "videoQueued": "RÃ©gÃ©nÃ©ration vidÃ©o en file d'attente.",
       "retryQueued": "Nouvelle tentative en file d'attente.",
-      "rescheduled": "Publication reprogrammée."
+      "rescheduled": "Publication reprogrammÃ©e."
     }
   },
   "DashboardAdminTasks": {
-    "title": "Supervision des tâches.",
+    "title": "Supervision des tÃ¢ches.",
     "subtitle": "Gestion de la flotte et Commandement.",
-    "loading": "Chargement des tâches...",
+    "loading": "Chargement des tÃ¢ches...",
     "errors": {
       "noToken": "Aucun jeton."
     },
     "toasts": {
       "authRequired": "Authentification requise.",
-      "loadFailed": "Échec du chargement des données.",
-      "taskUpdated": "Tâche mise à jour.",
-      "taskCreated": "Tâche créée.",
-      "saveFailed": "Échec de l'enregistrement de la tâche.",
-      "taskDeleted": "Tâche supprimée.",
-      "deleteFailed": "Échec de la suppression de la tâche.",
-      "statusUpdated": "Statut mis à jour.",
-      "statusFailed": "Échec de la mise à jour du statut.",
-      "assignmentAccepted": "Affectation acceptée.",
-      "acceptFailed": "Échec de l'acceptation.",
-      "assignmentRejected": "Affectation rejetée.",
-      "rejectFailed": "Échec du rejet.",
-      "commentAdded": "Commentaire ajouté.",
-      "commentFailed": "Échec de l'ajout du commentaire.",
-      "fileUploaded": "Fichier téléversé.",
-      "uploadFailed": "Échec du téléversement.",
-      "fileDeleted": "Fichier supprimé."
+      "loadFailed": "Ã‰chec du chargement des donnÃ©es.",
+      "taskUpdated": "TÃ¢che mise Ã  jour.",
+      "taskCreated": "TÃ¢che crÃ©Ã©e.",
+      "saveFailed": "Ã‰chec de l'enregistrement de la tÃ¢che.",
+      "taskDeleted": "TÃ¢che supprimÃ©e.",
+      "deleteFailed": "Ã‰chec de la suppression de la tÃ¢che.",
+      "statusUpdated": "Statut mis Ã  jour.",
+      "statusFailed": "Ã‰chec de la mise Ã  jour du statut.",
+      "assignmentAccepted": "Affectation acceptÃ©e.",
+      "acceptFailed": "Ã‰chec de l'acceptation.",
+      "assignmentRejected": "Affectation rejetÃ©e.",
+      "rejectFailed": "Ã‰chec du rejet.",
+      "commentAdded": "Commentaire ajoutÃ©.",
+      "commentFailed": "Ã‰chec de l'ajout du commentaire.",
+      "fileUploaded": "Fichier tÃ©lÃ©versÃ©.",
+      "uploadFailed": "Ã‰chec du tÃ©lÃ©versement.",
+      "fileDeleted": "Fichier supprimÃ©."
     },
     "confirm": {
-      "deleteTask": "Supprimer cette tâche ?"
+      "deleteTask": "Supprimer cette tÃ¢che ?"
     },
     "prompts": {
-      "deleteAttachment": "Supprimer cette pièce jointe ?"
+      "deleteAttachment": "Supprimer cette piÃ¨ce jointe ?"
     },
     "calendar": {
       "sun": "Dim",
@@ -1040,33 +1040,33 @@
       "more": "plus"
     },
     "modal": {
-      "newTask": "Nouvelle tâche.",
+      "newTask": "Nouvelle tÃ¢che.",
       "edit": "Modifier.",
-      "taskType": "Type de tâche.",
-      "assignedTask": "Tâche assignée.",
-      "personalTask": "Tâche personnelle.",
-      "taskTitle": "Titre de la tâche *",
+      "taskType": "Type de tÃ¢che.",
+      "assignedTask": "TÃ¢che assignÃ©e.",
+      "personalTask": "TÃ¢che personnelle.",
+      "taskTitle": "Titre de la tÃ¢che *",
       "description": "Description",
-      "priority": "Priorité",
-      "dueDate": "Date d'échéance.",
-      "assignTo": "Attribuer à",
-      "assignToEmployee": "Attribuer à l'employé (même port)",
+      "priority": "PrioritÃ©",
+      "dueDate": "Date d'Ã©chÃ©ance.",
+      "assignTo": "Attribuer Ã ",
+      "assignToEmployee": "Attribuer Ã  l'employÃ© (mÃªme port)",
       "status": "Statut",
-      "personalAutoAssign": "Les tâches personnelles vous seront automatiquement attribuées.",
-      "attachments": "Pièces jointes.",
-      "activityLog": "Journal d'activité"
+      "personalAutoAssign": "Les tÃ¢ches personnelles vous seront automatiquement attribuÃ©es.",
+      "attachments": "PiÃ¨ces jointes.",
+      "activityLog": "Journal d'activitÃ©"
     },
     "validation": {
       "titleRequired": "Le titre est requis",
       "descriptionRequired": "La description est requise",
-      "dueDateRequired": "La date d'échéance est requise",
-      "assignEmployee": "Veuillez l'assigner à un employé"
+      "dueDateRequired": "La date d'Ã©chÃ©ance est requise",
+      "assignEmployee": "Veuillez l'assigner Ã  un employÃ©"
     },
     "placeholders": {
-      "taskTitle": "Saisissez le titre de la tâche...",
-      "description": "Ajoutez plus de détails ou une liste de contrôle...",
-      "selectUser": "Sélectionner un utilisateur",
-      "searchTasks": "RECHERCHER DES TÂCHES...",
+      "taskTitle": "Saisissez le titre de la tÃ¢che...",
+      "description": "Ajoutez plus de dÃ©tails ou une liste de contrÃ´le...",
+      "selectUser": "SÃ©lectionner un utilisateur",
+      "searchTasks": "RECHERCHER DES TÃ‚CHES...",
       "addComment": "Tapez un commentaire..."
     },
     "views": {
@@ -1075,18 +1075,18 @@
       "calendar": "Calendrier"
     },
     "stats": {
-      "activeTasks": "Tâches actives",
-      "priority": "Priorité",
-      "completedAssets": "Éléments terminés",
-      "monthlyEfficiency": "Efficacité mensuelle",
-      "todayEfficiency": "Efficacité d'aujourd'hui"
+      "activeTasks": "TÃ¢ches actives",
+      "priority": "PrioritÃ©",
+      "completedAssets": "Ã‰lÃ©ments terminÃ©s",
+      "monthlyEfficiency": "EfficacitÃ© mensuelle",
+      "todayEfficiency": "EfficacitÃ© d'aujourd'hui"
     },
     "filters": {
       "status": "Statut",
-      "priority": "Priorité",
+      "priority": "PrioritÃ©",
       "type": "Type",
       "allStatus": "Tous les statuts",
-      "allPriorities": "Toutes les priorités",
+      "allPriorities": "Toutes les prioritÃ©s",
       "allTypes": "Tous les types"
     },
     "priority": {
@@ -1097,46 +1097,46 @@
       "critical": "Critique"
     },
     "status": {
-      "todo": "À faire",
+      "todo": "Ã€ faire",
       "inProgress": "En cours",
-      "done": "Terminé",
+      "done": "TerminÃ©",
       "pending": "En attente"
     },
     "type": {
-      "assigned": "Assigné",
+      "assigned": "AssignÃ©",
       "personal": "Personnel"
     },
     "actions": {
-      "newTask": "Nouvelle tâche",
-      "hideDone": "Masquer les tâches terminées",
-      "showDone": "Afficher les tâches terminées",
+      "newTask": "Nouvelle tÃ¢che",
+      "hideDone": "Masquer les tÃ¢ches terminÃ©es",
+      "showDone": "Afficher les tÃ¢ches terminÃ©es",
       "close": "Fermer",
       "cancel": "Annuler",
-      "createTask": "Créer une tâche",
-      "updateTask": "Mettre à jour la tâche",
+      "createTask": "CrÃ©er une tÃ¢che",
+      "updateTask": "Mettre Ã  jour la tÃ¢che",
       "accept": "Accepter",
       "reject": "Rejeter",
-      "markDone": "Marquer comme terminé",
-      "done": "Terminé",
+      "markDone": "Marquer comme terminÃ©",
+      "done": "TerminÃ©",
       "reopen": "Rouvrir",
       "addFile": "Ajouter un fichier",
       "post": "Publier"
     },
     "board": {
-      "dropHere": "Déposez les tâches ici"
+      "dropHere": "DÃ©posez les tÃ¢ches ici"
     },
     "empty": {
-      "noTasks": "Aucune tâche trouvée",
+      "noTasks": "Aucune tÃ¢che trouvÃ©e",
       "changeFilters": "Essayez de changer vos filtres",
-      "createFirst": "Créez votre première tâche"
+      "createFirst": "CrÃ©ez votre premiÃ¨re tÃ¢che"
     },
     "labels": {
-      "task": "Tâche",
+      "task": "TÃ¢che",
       "noDate": "Aucune date",
-      "createdBy": "Créé par",
-      "na": "—",
+      "createdBy": "CrÃ©Ã© par",
+      "na": "â€”",
       "me": "Moi",
-      "due": "Échéance",
+      "due": "Ã‰chÃ©ance",
       "overdue": "EN RETARD"
     }
   },
@@ -1144,12 +1144,12 @@
     "pinPlaceholder": "Code PIN",
     "welcomeBack": "Bon retour",
     "incorrectPin": "PIN incorrect",
-    "unlock": "Déverrouiller",
-    "logout": "Se déconnecter",
+    "unlock": "DÃ©verrouiller",
+    "logout": "Se dÃ©connecter",
     "fallbackUser": "Utilisateur",
     "profileAlt": "Profil",
     "lockNow": "Verrouiller maintenant",
-    "screenLocked": "Écran verrouillé"
+    "screenLocked": "Ã‰cran verrouillÃ©"
   },
   "DashboardChat": {
     "mobile": {
@@ -1158,7 +1158,7 @@
     },
     "empty": {
       "title": "Bienvenue dans le chat",
-      "description": "Sélectionnez une conversation dans le panneau de gauche pour commencer à discuter. Vous verrez les messages et les détails du contact ici."
+      "description": "SÃ©lectionnez une conversation dans le panneau de gauche pour commencer Ã  discuter. Vous verrez les messages et les dÃ©tails du contact ici."
     },
     "list": {
       "title": "Messages",
@@ -1166,13 +1166,13 @@
       "searchPlaceholder": "Rechercher des conversations...",
       "emptyTitle": "Aucune conversation",
       "emptySearch": "Essayez une autre recherche",
-      "emptyDefault": "Tout est à jour !",
+      "emptyDefault": "Tout est Ã  jour !",
       "widgetSource": "widget",
       "tabs": {
         "all": "Tous",
         "open": "Ouvrir",
         "pending": "En attente",
-        "solved": "Résolu"
+        "solved": "RÃ©solu"
       },
       "time": {
         "now": "maintenant",
@@ -1184,9 +1184,9 @@
     "legacyList": {
       "unreadCount": "{count} message(s) non lu(s)",
       "newChat": "Nouveau chat",
-      "emptyTitle": "Aucune conversation trouvée",
+      "emptyTitle": "Aucune conversation trouvÃ©e",
       "emptySearch": "Essayez d'ajuster votre recherche",
-      "emptyDefault": "Commencez une nouvelle conversation pour démarrer",
+      "emptyDefault": "Commencez une nouvelle conversation pour dÃ©marrer",
       "filters": {
         "unread": "Non lus",
         "online": "En ligne",
@@ -1197,29 +1197,29 @@
     },
     "messages": {
       "today": "Aujourd'hui",
-      "systemEvent": "Événement système",
-      "bookingEvent": "Événement de réservation",
-      "bookingReference": "Réservation #{id}",
-      "aiDraftReply": "Réponse brouillon IA",
-      "summarize": "Résumer",
+      "systemEvent": "Ã‰vÃ©nement systÃ¨me",
+      "bookingEvent": "Ã‰vÃ©nement de rÃ©servation",
+      "bookingReference": "RÃ©servation #{id}",
+      "aiDraftReply": "RÃ©ponse brouillon IA",
+      "summarize": "RÃ©sumer",
       "translateTo": "Traduire en",
       "translateButton": "Traduire",
       "translating": "Traduction...",
-      "translateFailed": "Impossible de traduire ce message. Réessayez.",
+      "translateFailed": "Impossible de traduire ce message. RÃ©essayez.",
       "typePlaceholder": "Tapez votre message...",
-      "callAction": "Démarrer l'appel",
-      "callUnavailable": "Aucun numéro de téléphone disponible",
-      "callFailed": "Impossible de lancer l'appel. Réessayez.",
+      "callAction": "DÃ©marrer l'appel",
+      "callUnavailable": "Aucun numÃ©ro de tÃ©lÃ©phone disponible",
+      "callFailed": "Impossible de lancer l'appel. RÃ©essayez.",
       "languages": {
-        "nl": "Néerlandais",
+        "nl": "NÃ©erlandais",
         "en": "Anglais",
         "de": "Allemand",
-        "fr": "Français"
+        "fr": "FranÃ§ais"
       },
       "status": {
         "open": "Ouvrir",
         "pending": "En attente",
-        "solved": "Résolu"
+        "solved": "RÃ©solu"
       }
     },
     "detail": {
@@ -1227,34 +1227,34 @@
       "contactInfo": "Informations de contact",
       "close": "Fermer le panneau contact",
       "editContact": "Modifier le contact",
-      "updateContact": "Mettre à jour le profil visiteur pour ce chat",
+      "updateContact": "Mettre Ã  jour le profil visiteur pour ce chat",
       "name": "Nom",
       "email": "E-mail",
-      "phone": "Téléphone",
+      "phone": "TÃ©lÃ©phone",
       "whatsapp": "Identifiant utilisateur WhatsApp",
-      "language": "Langue préférée",
+      "language": "Langue prÃ©fÃ©rÃ©e",
       "doNotContact": "Ne pas contacter",
       "doNotContactHelp": "Bloquer les relances pour ce contact.",
       "consentMarketing": "Consentement marketing",
       "consentMarketingHelp": "Autoriser les messages promotionnels et campagnes.",
       "consentService": "Consentement messages de service",
-      "consentServiceHelp": "Autoriser les mises à jour essentielles de service.",
+      "consentServiceHelp": "Autoriser les mises Ã  jour essentielles de service.",
       "location": "Emplacement",
       "company": "Entreprise",
       "sourceUrl": "URL source",
-      "sharedFiles": "Fichiers partagés ({count})",
-      "activity": "Activité",
+      "sharedFiles": "Fichiers partagÃ©s ({count})",
+      "activity": "ActivitÃ©",
       "snapshot": "Vue d'ensemble",
       "statusLabel": "Statut de la conversation",
       "save": "Enregistrer les modifications",
       "saving": "Enregistrement...",
-      "saved": "Coordonnées mises à jour.",
-      "saveFailed": "Impossible de mettre à jour le contact.",
+      "saved": "CoordonnÃ©es mises Ã  jour.",
+      "saveFailed": "Impossible de mettre Ã  jour le contact.",
       "unknownVisitor": "Visiteur anonyme",
       "noCompany": "Aucune entreprise",
-      "noPhone": "Aucun numéro de téléphone pour le moment",
+      "noPhone": "Aucun numÃ©ro de tÃ©lÃ©phone pour le moment",
       "unknownLocation": "Emplacement inconnu",
-      "noActivity": "Aucune activité enregistrée pour le moment.",
+      "noActivity": "Aucune activitÃ© enregistrÃ©e pour le moment.",
       "placeholders": {
         "name": "John Visitor",
         "email": "john@example.com",
@@ -1262,10 +1262,10 @@
         "whatsapp": "31612345678"
       },
       "languages": {
-        "nl": "Néerlandais",
+        "nl": "NÃ©erlandais",
         "en": "Anglais",
         "de": "Allemand",
-        "fr": "Français"
+        "fr": "FranÃ§ais"
       },
       "presence": {
         "online": "En ligne",
@@ -1277,50 +1277,50 @@
   "DashboardClientChat": {
     "header": {
       "title": "Chat client IA",
-      "subtitle": "Assistant privé",
-      "description": "Posez des questions sur votre bateau, l’assurance, les visites ou l’assistance du port. Cette conversation est liée à votre emplacement afin que l’équipe puisse la suivre si nécessaire.",
-      "location": "Emplacement lié : {location}",
-      "dismiss": "Masquer l’introduction"
+      "subtitle": "Assistant privÃ©",
+      "description": "Posez des questions sur votre bateau, lâ€™assurance, les visites ou lâ€™assistance du port. Cette conversation est liÃ©e Ã  votre emplacement afin que lâ€™Ã©quipe puisse la suivre si nÃ©cessaire.",
+      "location": "Emplacement liÃ© : {location}",
+      "dismiss": "Masquer lâ€™introduction"
     },
     "assistant": {
       "title": "Assistant IA fluide",
-      "description": "L’IA répond dans le même fil et l’équipe de votre emplacement peut suivre la conversation."
+      "description": "Lâ€™IA rÃ©pond dans le mÃªme fil et lâ€™Ã©quipe de votre emplacement peut suivre la conversation."
     },
-    "loading": "Préparation de votre conversation...",
-    "thinking": "Réflexion en cours...",
-    "sources": "Connaissances utilisées",
+    "loading": "PrÃ©paration de votre conversation...",
+    "thinking": "RÃ©flexion en cours...",
+    "sources": "Connaissances utilisÃ©es",
     "empty": {
       "title": "Commencez votre conversation",
-      "description": "Écrivez votre premier message ci-dessous et l’IA répondra dans ce fil."
+      "description": "Ã‰crivez votre premier message ci-dessous et lâ€™IA rÃ©pondra dans ce fil."
     },
     "composer": {
       "placeholder": "Posez votre question...",
       "send": "Envoyer le message",
-      "enterHint": "Appuyez sur Entrée pour envoyer",
-      "encrypted": "Conversation chiffrée"
+      "enterHint": "Appuyez sur EntrÃ©e pour envoyer",
+      "encrypted": "Conversation chiffrÃ©e"
     },
     "errors": {
-      "startFailed": "Impossible de démarrer votre conversation IA.",
-      "sendFailed": "Impossible d’envoyer votre message pour le moment.",
-      "replyMissing": "L’IA n’a pas renvoyé de réponse."
+      "startFailed": "Impossible de dÃ©marrer votre conversation IA.",
+      "sendFailed": "Impossible dâ€™envoyer votre message pour le moment.",
+      "replyMissing": "Lâ€™IA nâ€™a pas renvoyÃ© de rÃ©ponse."
     },
     "noLocation": {
-      "title": "Aucun emplacement attribué",
-      "description": "Votre compte n’a pas encore d’emplacement, le chat IA ne peut donc pas démarrer."
+      "title": "Aucun emplacement attribuÃ©",
+      "description": "Votre compte nâ€™a pas encore dâ€™emplacement, le chat IA ne peut donc pas dÃ©marrer."
     }
   },
   "DashboardSignhostFlow": {
     "agreement": {
       "title": "Conditions de l'accord",
-      "description": "La pièce jointe affichée ici suit la langue de contrat sélectionnée.",
+      "description": "La piÃ¨ce jointe affichÃ©e ici suit la langue de contrat sÃ©lectionnÃ©e.",
       "activeLanguage": "Langue active : {language}",
-      "view": "Voir la pièce jointe",
-      "download": "Télécharger le PDF"
+      "view": "Voir la piÃ¨ce jointe",
+      "download": "TÃ©lÃ©charger le PDF"
     }
   },
   "DashboardFaq": {
     "title": "FAQ Knowledge Base",
-    "subtitle": "AI-Powered • {count} FAQs Available",
+    "subtitle": "AI-Powered â€¢ {count} FAQs Available",
     "addFaq": "Add FAQ",
     "trainAi": "Train AI",
     "totalFaqs": "Total FAQs",
@@ -1363,7 +1363,7 @@
     "added": "Added",
     "support": {
       "title": "Need more help? Contact our maritime support team",
-      "contact": "support@schepen-kring.nl • +31 20 123 4567"
+      "contact": "support@schepen-kring.nl â€¢ +31 20 123 4567"
     }
   },
   "WidgetChat": {
@@ -1372,11 +1372,11 @@
     "welcome": {
       "kicker": "Conciergerie en direct",
       "title": "Posez vos questions sur les bateaux, les visites ou l'assistance portuaire.",
-      "description": "Envoyez un message et notre équipe reviendra vers vous avec les bonnes informations.",
+      "description": "Envoyez un message et notre Ã©quipe reviendra vers vous avec les bonnes informations.",
       "quickPrompts": "Suggestions rapides"
     },
     "quickPrompts": {
-      "details": "Je veux des détails sur ce bateau",
+      "details": "Je veux des dÃ©tails sur ce bateau",
       "viewing": "Puis-je planifier une visite ?",
       "harbor": "Prenez-vous en charge ce port ?",
       "harborSupport": "Assistance pour {harborName}"
@@ -1385,179 +1385,180 @@
       "supportOnline": "Support en ligne"
     },
     "composer": {
-      "placeholder": "Écrivez votre message...",
+      "placeholder": "Ã‰crivez votre message...",
       "sendAria": "Envoyer le message",
-      "enterToSend": "Appuyez sur Entrée pour envoyer",
+      "enterToSend": "Appuyez sur EntrÃ©e pour envoyer",
       "sending": "Envoi...",
-      "encrypted": "Support chiffré"
+      "encrypted": "Support chiffrÃ©"
     },
     "system": {
-      "firstReply": "Merci ! Votre message a bien été reçu. Un agent du support vous répondra sous peu.",
-      "sentReply": "Message envoyé. Notre équipe reviendra vers vous rapidement.",
-      "sendFailed": "Désolé, nous n'avons pas pu envoyer votre message pour le moment. Réessayez."
+      "firstReply": "Merci ! Votre message a bien Ã©tÃ© reÃ§u. Un agent du support vous rÃ©pondra sous peu.",
+      "sentReply": "Message envoyÃ©. Notre Ã©quipe reviendra vers vous rapidement.",
+      "sendFailed": "DÃ©solÃ©, nous n'avons pas pu envoyer votre message pour le moment. RÃ©essayez."
     },
     "header": {
-      "auctionWidget": "Widget d'enchères",
+      "auctionWidget": "Widget d'enchÃ¨res",
       "smartBoatWidget": "Assistant bateau",
       "conversationActive": "Conversation active",
       "onlineSupport": "Support en ligne",
       "boat": "Bateau {boatId}",
-      "locationAware": "Bateau {boatId} • piloté par lieu",
-      "connected": "Connecté",
+      "locationAware": "Bateau {boatId} â€¢ pilotÃ© par lieu",
+      "connected": "ConnectÃ©",
       "supportOnline": "Support en ligne",
-      "encrypted": "Chiffré"
+      "encrypted": "ChiffrÃ©"
     },
     "tabs": {
       "chat": "Chat",
-      "tasks": "Tâches",
-      "booking": "Réservation"
+      "tasks": "TÃ¢ches",
+      "booking": "RÃ©servation"
     },
     "tasks": {
-      "kicker": "Parcours guidé",
-      "title": "Tâches du bateau et prochaines étapes",
-      "description": "Nous connaissons déjà le contexte du bateau {boatId}. Utilisez cet onglet pour demander ce qu'il manque encore pour cette annonce pilotée par lieu.",
+      "kicker": "Parcours guidÃ©",
+      "title": "TÃ¢ches du bateau et prochaines Ã©tapes",
+      "description": "Nous connaissons dÃ©jÃ  le contexte du bateau {boatId}. Utilisez cet onglet pour demander ce qu'il manque encore pour cette annonce pilotÃ©e par lieu.",
       "prompts": {
-        "progress": "Que reste-t-il à faire pour ce bateau ?",
+        "progress": "Que reste-t-il Ã  faire pour ce bateau ?",
         "documents": "Quels documents manquent encore pour ce bateau ?",
-        "nextStep": "Quelle est la prochaine étape pour cette annonce ?"
+        "nextStep": "Quelle est la prochaine Ã©tape pour cette annonce ?"
       }
     },
     "booking": {
-      "kicker": "Réservation par lieu",
-      "title": "Réservation et calendrier",
-      "description": "Utilisez le chat pour créer, modifier ou annuler des rendez-vous pour le bateau {boatId} à {locationName}.",
-      "descriptionCompact": "Choisissez une date et une heure pour ce bateau avec les paramètres de réservation du lieu.",
-      "context": "Ce widget garde automatiquement le contexte de réservation lié au lieu {locationId}.",
+      "kicker": "RÃ©servation par lieu",
+      "title": "RÃ©servation et calendrier",
+      "description": "Utilisez le chat pour crÃ©er, modifier ou annuler des rendez-vous pour le bateau {boatId} Ã  {locationName}.",
+      "descriptionCompact": "Choisissez une date et une heure pour ce bateau avec les paramÃ¨tres de rÃ©servation du lieu.",
+      "context": "Ce widget garde automatiquement le contexte de rÃ©servation liÃ© au lieu {locationId}.",
       "locationFallback": "ce lieu",
-      "prevMonth": "Mois précédent",
+      "prevMonth": "Mois prÃ©cÃ©dent",
       "nextMonth": "Mois suivant",
-      "loadingSlots": "Chargement des créneaux disponibles...",
-      "noSlots": "Aucun créneau disponible pour cette date.",
+      "loadingSlots": "Chargement des crÃ©neaux disponibles...",
+      "noSlots": "Aucun crÃ©neau disponible pour cette date.",
       "confirm": "Confirmer le rendez-vous",
       "confirming": "Confirmation...",
-      "success": "Rendez-vous planifié avec succès.",
+      "success": "Rendez-vous planifiÃ© avec succÃ¨s.",
       "fields": {
         "name": "Nom *",
         "email": "E-mail *",
-        "phone": "Téléphone",
+        "phone": "TÃ©lÃ©phone",
         "notes": "Notes"
       },
       "errors": {
         "dates": "Impossible de charger les dates disponibles pour le moment.",
-        "slots": "Impossible de charger les créneaux disponibles pour le moment.",
-        "selectDateTime": "Sélectionnez d'abord une date et une heure.",
+        "slots": "Impossible de charger les crÃ©neaux disponibles pour le moment.",
+        "selectDateTime": "SÃ©lectionnez d'abord une date et une heure.",
         "fillNameEmail": "Renseignez d'abord votre nom et votre e-mail.",
-        "submit": "La réservation n'a pas pu être créée."
+        "submit": "La rÃ©servation n'a pas pu Ãªtre crÃ©Ã©e."
       },
       "prompts": {
         "viewing": "Je veux voir ce bateau vendredi",
         "seaTrial": "Puis-je faire un essai en mer ?",
-        "reschedule": "Déplacez mon rendez-vous à lundi",
-        "cancel": "Annulez ma réservation"
+        "reschedule": "DÃ©placez mon rendez-vous Ã  lundi",
+        "cancel": "Annulez ma rÃ©servation"
       }
     },
     "offline": {
       "title": "Aucune connexion Internet",
-      "description": "Veuillez vérifier votre connexion et réessayer. Nous serons là dès votre retour en ligne."
+      "description": "Veuillez vÃ©rifier votre connexion et rÃ©essayer. Nous serons lÃ  dÃ¨s votre retour en ligne."
     },
     "aria": {
       "open": "Ouvrir le chat",
-      "minimize": "Réduire le chat",
-      "closeReset": "Fermer et réinitialiser le chat"
+      "minimize": "RÃ©duire le chat",
+      "closeReset": "Fermer et rÃ©initialiser le chat"
     }
   },
   "WidgetAuction": {
     "common": {
-      "encrypted": "Chiffré"
+      "encrypted": "ChiffrÃ©"
     },
     "mode": {
-      "live": "Enchère en direct",
+      "live": "EnchÃ¨re en direct",
       "bids": "Collecte d'offres",
       "open": "Offres ouvertes"
     },
     "hero": {
-      "liveTitle": "ENCHÈRE BATEAU EN DIRECT",
+      "liveTitle": "ENCHÃˆRE BATEAU EN DIRECT",
       "bidTitle": "PLACEZ VOTRE OFFRE",
-      "liveDescription": "Placez des offres en temps réel pour ce bateau. L'offre la plus élevée gagne lorsque le temps est écoulé.",
-      "bidDescription": "Soumettez votre offre pour ce bateau. L'offre vérifiée la plus élevée reste en tête."
+      "liveDescription": "Placez des offres en temps rÃ©el pour ce bateau. L'offre la plus Ã©levÃ©e gagne lorsque le temps est Ã©coulÃ©.",
+      "bidDescription": "Soumettez votre offre pour ce bateau. L'offre vÃ©rifiÃ©e la plus Ã©levÃ©e reste en tÃªte."
     },
     "countdown": {
-      "startsIn": "L'enchère commence dans",
-      "endsIn": "L'enchère se termine dans"
+      "startsIn": "L'enchÃ¨re commence dans",
+      "endsIn": "L'enchÃ¨re se termine dans"
     },
     "stats": {
-      "highestBid": "Offre la plus élevée",
-      "bidSummary": "{bids} offres • {bidders} enchérisseurs"
+      "highestBid": "Offre la plus Ã©levÃ©e",
+      "bidSummary": "{bids} offres â€¢ {bidders} enchÃ©risseurs"
     },
     "status": {
-      "ended": "Terminée",
-      "scheduled": "Planifiée",
-      "winning": "En tête"
+      "ended": "TerminÃ©e",
+      "scheduled": "PlanifiÃ©e",
+      "winning": "En tÃªte"
     },
     "recent": {
-      "title": "Offres récentes",
+      "title": "Offres rÃ©centes",
       "refresh": "Actualiser"
     },
     "registration": {
-      "title": "S'inscrire pour enchérir",
-      "button": "Inscrire l'enchérisseur",
+      "title": "S'inscrire pour enchÃ©rir",
+      "button": "Inscrire l'enchÃ©risseur",
       "status": "Statut : {status}",
       "fields": {
         "fullName": "Nom complet",
         "address": "Adresse",
         "postalCode": "Code postal",
         "city": "Ville",
-        "phone": "Téléphone",
+        "phone": "TÃ©lÃ©phone",
         "email": "E-mail"
       }
     },
     "bidBox": {
       "placeTitle": "Placer une offre",
-      "completeRegistration": "Complétez l'inscription pour enchérir",
+      "completeRegistration": "ComplÃ©tez l'inscription pour enchÃ©rir",
       "minimumBid": "Offre minimale :",
       "button": "Placer une offre",
-      "realTime": "Enchère en temps réel"
+      "realTime": "EnchÃ¨re en temps rÃ©el"
     },
     "winner": {
       "message": "Gagnant : {bidder} {amount}"
     },
     "unavailable": {
-      "title": "Enchère indisponible",
+      "title": "EnchÃ¨re indisponible",
       "description": "Ce bateau n'accepte pas d'offres pour le moment."
     },
     "errors": {
-      "load": "Impossible de charger l'enchère.",
+      "load": "Impossible de charger l'enchÃ¨re.",
       "placeBid": "Impossible de placer l'offre.",
-      "register": "Impossible d'inscrire l'enchérisseur."
+      "register": "Impossible d'inscrire l'enchÃ©risseur."
     }
   },
   "widgetConfig": {
     "title": "Configuration du widget de chat",
-    "subtitle": "Intégrer le chat en direct sur les sites publics",
+    "subtitle": "IntÃ©grer le chat en direct sur les sites publics",
     "enableWidget": "Activer le widget",
     "welcomeText": "Texte d'accueil",
     "welcomePlaceholder": "ex. Bonjour ! Comment pouvons-nous vous aider ?",
-    "saveSuccess": "Paramètres du widget enregistrés",
-    "saveError": "Impossible d'enregistrer les paramètres du widget",
+    "saveSuccess": "ParamÃ¨tres du widget enregistrÃ©s",
+    "saveError": "Impossible d'enregistrer les paramÃ¨tres du widget",
     "copyCode": "Copier le code",
-    "copied": "Copié !",
-    "save": "Enregistrer les paramètres",
+    "copied": "CopiÃ© !",
+    "save": "Enregistrer les paramÃ¨tres",
     "loadLocationsError": "Impossible de charger les emplacements",
-    "locationSettings": "Paramètres d'emplacement",
-    "selectLocation": "Sélectionner l'emplacement",
+    "locationSettings": "ParamÃ¨tres d'emplacement",
+    "selectLocation": "SÃ©lectionner l'emplacement",
     "loading": "Chargement...",
     "tenantId": "ID du tenant",
     "appearance": "Apparence",
-    "themePreset": "Préréglage du thème",
+    "themePreset": "PrÃ©rÃ©glage du thÃ¨me",
     "accentColor": "Couleur d'accent",
-    "themeOcean": "Bleu océan",
+    "themeOcean": "Bleu ocÃ©an",
     "themeSunset": "Orange coucher de soleil",
     "themeViolet": "Violet",
-    "embedCode": "Code d'intégration",
-    "embedHelp": "Copiez et collez cet extrait dans le <head> ou juste avant la balise </body> de votre site. Le widget de chat apparaîtra automatiquement en bas à droite.",
-    "livePreview": "Aperçu en direct",
-    "hidden": "Masqué",
-    "previewHelp": "Le widget apparaîtra dans le coin inférieur droit de ce conteneur, comme sur votre site web.",
-    "previewTitle": "Aperçu du widget de chat"
+    "embedCode": "Code d'intÃ©gration",
+    "embedHelp": "Copiez et collez cet extrait dans le <head> ou juste avant la balise </body> de votre site. Le widget de chat apparaÃ®tra automatiquement en bas Ã  droite.",
+    "livePreview": "AperÃ§u en direct",
+    "hidden": "MasquÃ©",
+    "previewHelp": "Le widget apparaÃ®tra dans le coin infÃ©rieur droit de ce conteneur, comme sur votre site web.",
+    "previewTitle": "AperÃ§u du widget de chat"
   }
 }
+

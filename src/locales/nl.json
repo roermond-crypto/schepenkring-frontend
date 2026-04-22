@@ -51,7 +51,7 @@
     "forgotPasswordBackToLogin": "Terug naar inloggen",
     "forgotPasswordSuccess": "Als je e-mailadres in ons systeem bestaat, ontvang je binnenkort een link om je wachtwoord opnieuw in te stellen.",
     "forgotPasswordError": "Er is iets misgegaan. Probeer het later opnieuw.",
-    "verifyEmail": "E-mail verifiëren",
+    "verifyEmail": "E-mail verifiÃ«ren",
     "forgotPassword": "Wachtwoord vergeten?",
     "registerCta": "Registreren",
     "processing": "Bezig...",
@@ -441,7 +441,7 @@
     "title_client": "Klantenoverzicht",
     "title_employee": "Verkoopdashboard",
     "welcomeBack": "Welkom terug, {name}",
-    "todayWeather": "Vandaag: 18° zonnig in Eindhoven",
+    "todayWeather": "Vandaag: 18Â° zonnig in Eindhoven",
     "notificationSummary": "Je hebt {count} nieuwe melding{count, plural, one {} other {en}}.",
     "registrationSummary": "Je hebt {count} nieuwe registratie{count, plural, one {} other {s}} die wacht op controle.",
     "activeBiddingItems": "Je hebt {count} actief{count, plural, one {} other {e}} bieding{count, plural, one {} other {en}}.",
@@ -673,7 +673,7 @@
       "countries": {
         "nl": "Nederland (NL)",
         "de": "Duitsland (DE)",
-        "be": "België (BE)"
+        "be": "BelgiÃ« (BE)"
       },
       "devices": {
         "mobile": "Mobiel",
@@ -907,7 +907,7 @@
       "en": "English",
       "nl": "Nederlands",
       "de": "Deutsch",
-      "fr": "Français"
+      "fr": "FranÃ§ais"
     },
     "actions": {
       "syncProfile": "Profiel synchroniseren",
@@ -956,9 +956,9 @@
       "readyAvailable": "klaar om te plannen"
     },
     "library": {
-      "label": "Bibliotheek",
+      "label": "Live planning",
       "videos": "Video's",
-      "posts": "Posts"
+      "posts": "Boekingen en proefvaarten"
     },
     "videoCard": {
       "video": "Video",
@@ -982,7 +982,7 @@
     },
     "errors": {
       "loadFailed": "Sociale automatiseringsgegevens konden niet worden geladen.",
-      "selectVideos": "Selecteer minstens één video voordat je plant.",
+      "selectVideos": "Selecteer minstens Ã©Ã©n video voordat je plant.",
       "scheduleFailed": "De publicatieplanning kon niet worden aangemaakt.",
       "regenerateFailed": "Videoregeneratie kon niet in de wachtrij worden gezet.",
       "retryFailed": "Deze post kon niet opnieuw worden geprobeerd.",
@@ -1019,7 +1019,7 @@
       "rejectFailed": "Afwijzen mislukt",
       "commentAdded": "Opmerking toegevoegd",
       "commentFailed": "Opmerking toevoegen mislukt",
-      "fileUploaded": "Bestand geüpload",
+      "fileUploaded": "Bestand geÃ¼pload",
       "uploadFailed": "Uploaden mislukt",
       "fileDeleted": "Bestand verwijderd"
     },
@@ -1079,8 +1079,8 @@
       "activeTasks": "Actieve taken",
       "priority": "Prioriteit",
       "completedAssets": "Voltooide items",
-      "monthlyEfficiency": "Maandelijkse efficiëntie",
-      "todayEfficiency": "Efficiëntie van vandaag"
+      "monthlyEfficiency": "Maandelijkse efficiÃ«ntie",
+      "todayEfficiency": "EfficiÃ«ntie van vandaag"
     },
     "filters": {
       "status": "Status",
@@ -1135,7 +1135,7 @@
       "task": "Taak",
       "noDate": "Geen datum",
       "createdBy": "Aangemaakt door",
-      "na": "—",
+      "na": "â€”",
       "me": "Ik",
       "due": "Vervalt",
       "overdue": "TE LAAT"
@@ -1239,7 +1239,7 @@
       "consentMarketing": "Marketingtoestemming",
       "consentMarketingHelp": "Sta promotionele berichten en campagnes toe.",
       "consentService": "Toestemming servicemeldingen",
-      "consentServiceHelp": "Sta essentiële service- en operationele updates toe.",
+      "consentServiceHelp": "Sta essentiÃ«le service- en operationele updates toe.",
       "location": "Locatie",
       "company": "Bedrijf",
       "sourceUrl": "Bron URL",
@@ -1278,7 +1278,7 @@
   "DashboardClientChat": {
     "header": {
       "title": "AI-klantchat",
-      "subtitle": "Privé assistent",
+      "subtitle": "PrivÃ© assistent",
       "description": "Stel vragen over je boot, verzekering, bezichtigingen of havenondersteuning. Dit gesprek is gekoppeld aan je locatie zodat het team kan meekijken wanneer dat nodig is.",
       "location": "Gekoppelde locatie: {location}",
       "dismiss": "Introductie verbergen"
@@ -1320,36 +1320,36 @@
     }
   },
   "DashboardFaq": {
-    "title": "FAQ‑kennisbank",
-    "subtitle": "AI‑powered • {count} FAQ's beschikbaar",
+    "title": "FAQâ€‘kennisbank",
+    "subtitle": "AIâ€‘powered â€¢ {count} FAQ's beschikbaar",
     "addFaq": "FAQ toevoegen",
     "trainAi": "AI trainen",
     "totalFaqs": "Totaal FAQ's",
     "totalViews": "Totaal weergaven",
     "helpfulVotes": "Nuttige stemmen",
-    "categories": "Categorieën",
-    "askAssistant": "Maritieme AI‑assistent vragen",
+    "categories": "CategorieÃ«n",
+    "askAssistant": "Maritieme AIâ€‘assistent vragen",
     "trainedOn": "Getraind op {count} FAQ's",
     "placeholderAsk": "Vraag alles over jachten, boekingen of maritieme diensten...",
     "searchPlaceholder": "ZOEK FAQ's...",
     "thinking": "Denken...",
     "askAi": "AI vragen",
-    "aiAnswer": "AI‑antwoord",
+    "aiAnswer": "AIâ€‘antwoord",
     "sources": "Bronnen",
     "enterQuestion": "Vraag invoeren...",
     "enterAnswer": "Gedetailleerd antwoord invoeren...",
     "all": "Alle",
     "toastFailedLoad": "FAQ's laden mislukt",
     "toastAiAnswered": "AI heeft je vraag beantwoord!",
-    "toastFailedAi": "AI‑antwoord mislukt",
+    "toastFailedAi": "AIâ€‘antwoord mislukt",
     "toastThanksFeedback": "Bedankt voor je feedback!",
     "toastFaqAdded": "FAQ succesvol toegevoegd!",
     "toastFailedAdd": "FAQ toevoegen mislukt",
     "confirmDelete": "Weet je zeker dat je deze FAQ wilt verwijderen?",
     "toastFaqDeleted": "FAQ verwijderd!",
     "toastFailedDelete": "FAQ verwijderen mislukt",
-    "toastAiTrained": "Gemini‑AI getraind met de nieuwste FAQ's!",
-    "toastFailedTrain": "AI‑training mislukt",
+    "toastAiTrained": "Geminiâ€‘AI getraind met de nieuwste FAQ's!",
+    "toastFailedTrain": "AIâ€‘training mislukt",
     "addNewFaq": "Nieuwe FAQ toevoegen",
     "question": "Vraag",
     "answer": "Antwoord",
@@ -1364,14 +1364,14 @@
     "added": "Toegevoegd",
     "support": {
       "title": "Need more help? Contact our maritime support team",
-      "contact": "support@schepen-kring.nl • +31 20 123 4567"
+      "contact": "support@schepen-kring.nl â€¢ +31 20 123 4567"
     }
   },
   "WidgetChat": {
     "brand": "Schepenkring",
     "initialMessage": "Hallo! Hoe kunnen we je vandaag helpen? Vraag ons naar boten, havens of ondersteuning.",
     "welcome": {
-      "kicker": "Live conciërge",
+      "kicker": "Live conciÃ«rge",
       "title": "Vraag naar boten, bezichtigingen of havenondersteuning.",
       "description": "Stuur een bericht en ons team komt bij je terug met de juiste details.",
       "quickPrompts": "Snelle prompts"
@@ -1403,7 +1403,7 @@
       "conversationActive": "Conversatie actief",
       "onlineSupport": "Online support",
       "boat": "Boot {boatId}",
-      "locationAware": "Boot {boatId} • locatiegestuurd",
+      "locationAware": "Boot {boatId} â€¢ locatiegestuurd",
       "connected": "Verbonden",
       "supportOnline": "Support online",
       "encrypted": "Versleuteld"
@@ -1488,10 +1488,10 @@
     },
     "stats": {
       "highestBid": "Hoogste bod",
-      "bidSummary": "{bids} biedingen • {bidders} bieders"
+      "bidSummary": "{bids} biedingen â€¢ {bidders} bieders"
     },
     "status": {
-      "ended": "Beëindigd",
+      "ended": "BeÃ«indigd",
       "scheduled": "Gepland",
       "winning": "Winnend"
     },
@@ -1540,7 +1540,7 @@
     "welcomePlaceholder": "bijv. Hallo! Hoe kunnen we je helpen?",
     "saveSuccess": "Widgetinstellingen opgeslagen",
     "saveError": "Widgetinstellingen opslaan mislukt",
-    "copyCode": "Code kopiëren",
+    "copyCode": "Code kopiÃ«ren",
     "copied": "Gekopieerd!",
     "save": "Instellingen opslaan",
     "loadLocationsError": "Locaties laden mislukt",
@@ -1562,3 +1562,4 @@
     "previewTitle": "Chatwidget-voorbeeld"
   }
 }
+
