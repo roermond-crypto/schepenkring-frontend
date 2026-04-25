@@ -89,12 +89,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DragDropContext,
-  Draggable,
-  Droppable,
-  type DropResult,
-} from "@hello-pangea/dnd";
+import { type DropResult } from "@hello-pangea/dnd";
 
 const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
   ssr: false,
@@ -109,7 +104,6 @@ import { useYachtDraft } from "@/hooks/useYachtDraft";
 import { convertBatchToWebP } from "@/lib/convertToWebP";
 import { CatalogAutocomplete } from "@/components/ui/CatalogAutocomplete";
 import { BoatCreationAssistant } from "@/components/yachts/BoatCreationAssistant";
-import { SignhostFlow } from "@/components/yachts/SignhostFlow";
 import { signhostApi } from "@/lib/api/signhost";
 import {
   latestSignhostFromTransaction,
@@ -261,8 +255,82 @@ type BoatDocumentItem = {
   file_url?: string | null;
   file_type?: string | null;
   document_type?: string | null;
+  sort_order?: number | null;
   uploaded_at?: string | null;
 };
+
+type MarktplaatsListingState = {
+  id?: number | null;
+  channel_name: "marktplaats";
+  is_enabled: boolean;
+  auto_publish: boolean;
+  status: string;
+  external_id?: string | null;
+  external_url?: string | null;
+  last_sync_at?: string | null;
+  last_error_message?: string | null;
+  last_validation_errors_json?: string[] | null;
+  settings_json: {
+    marktplaats_promoted?: boolean;
+    marktplaats_budget_type?: string;
+    marktplaats_cpc_bid?: string | number | null;
+    marktplaats_target_views?: string | number | null;
+  };
+  capabilities?: Record<string, any> | null;
+};
+
+type SellerPublicationOption = {
+  slug: string;
+  name: string;
+  logo: string;
+  price: number;
+};
+
+const DEFAULT_MARKTPLAATS_LISTING_STATE: MarktplaatsListingState = {
+  channel_name: "marktplaats",
+  is_enabled: false,
+  auto_publish: false,
+  status: "draft",
+  external_id: null,
+  external_url: null,
+  last_sync_at: null,
+  last_error_message: null,
+  last_validation_errors_json: null,
+  settings_json: {
+    marktplaats_promoted: false,
+    marktplaats_budget_type: "cpc",
+    marktplaats_cpc_bid: "",
+    marktplaats_target_views: "",
+  },
+  capabilities: null,
+};
+
+const SELLER_PUBLICATION_OPTIONS: SellerPublicationOption[] = [
+  {
+    slug: "marktplaats",
+    name: "Marktplaats",
+    logo: "/logos/marktplaats.svg",
+    price: 149,
+  },
+  {
+    slug: "botentekoop",
+    name: "Botentekoop.nl",
+    logo: "/logos/botentekoop.svg",
+    price: 99,
+  },
+  {
+    slug: "yachtfocus",
+    name: "YachtFocus",
+    logo: "/logos/yachtfocus.svg",
+    price: 89,
+  },
+  {
+    slug: "yachtworld",
+    name: "YachtWorld",
+    logo: "/logos/yachtworld.svg",
+    price: 129,
+  },
+];
 
 // Availability Rule Type
 type AvailabilityRule = {
@@ -271,6 +339,10 @@ type AvailabilityRule = {
   end_time: string;
   enabled: boolean;
 };
+
+function normalizeBoatDocumentType(value: string): BoatDocumentType {
+  return value === "ai_reference" ? "ai_reference" : "compliance";
+}
 
 type SchedulingOption = {
   value: string;
@@ -544,10 +616,10 @@ function formatAvailabilityMinutes(totalMinutes: number): string {
 }
 
 function createDefaultAvailabilityRules(
-  harborDefaults: { opening_hours_start: string; opening_hours_end: string } | null,
+  locationDefaults: { opening_hours_start: string; opening_hours_end: string } | null,
 ): AvailabilityRule[] {
-  const startTime = harborDefaults?.opening_hours_start || "09:00";
-  const endTime = harborDefaults?.opening_hours_end || "17:00";
+  const startTime = locationDefaults?.opening_hours_start || "09:00";
+  const endTime = locationDefaults?.opening_hours_end || "17:00";
 
   return [1, 2, 3, 4, 5, 6, 0].map((day) => ({
     day_of_week: day,
@@ -559,18 +631,14 @@ function createDefaultAvailabilityRules(
 
 function normalizeAvailabilityRules(
   rawRules: any[],
-  harborDefaults: { opening_hours_start: string; opening_hours_end: string } | null,
+  locationDefaults: { opening_hours_start: string; opening_hours_end: string } | null,
 ): AvailabilityRule[] {
-  const defaults = createDefaultAvailabilityRules(harborDefaults);
+  const defaults = createDefaultAvailabilityRules(locationDefaults);
   if (!Array.isArray(rawRules) || rawRules.length === 0) {
     return defaults;
   }
 
   return defaults.map((defaultRule) => {
-    // Find matching rule in rawRules
-    // Note: rawRules might be in the old format (array of objects with day_of_week)
-    // or the new format (array of objects with days_of_week array).
-    // We want to normalize everything to the 7-day format for the UI.
     const matchingRule = rawRules.find((r: any) => {
       if (typeof r.day_of_week === "number") {
         return r.day_of_week === defaultRule.day_of_week;
@@ -1234,7 +1302,7 @@ const YACHT_FORM_TEXT = {
       fourImagesPerRow: "4 images per row",
       sixImagesPerRow: "6 images per row",
       eightImagesPerRow: "8 images per row",
-      harborLocation: "Sales Location (Harbor) *",
+      salesLocation: "Sales Location *",
       price: "Price (€)",
       minBidAmount: "Minimum Bid Amount (€)",
       yearBuilt: "Year Built",
@@ -1741,7 +1809,7 @@ const YACHT_FORM_TEXT = {
       fourImagesPerRow: "4 afbeeldingen per rij",
       sixImagesPerRow: "6 afbeeldingen per rij",
       eightImagesPerRow: "8 afbeeldingen per rij",
-      harborLocation: "Verkooplocatie (haven) *",
+      salesLocation: "Verkooplocatie *",
       price: "Prijs (€)",
       minBidAmount: "Minimum biedbedrag (€)",
       yearBuilt: "Bouwjaar",
@@ -2238,7 +2306,7 @@ const YACHT_FORM_TEXT = {
       fourImagesPerRow: "4 Bilder pro Reihe",
       sixImagesPerRow: "6 Bilder pro Reihe",
       eightImagesPerRow: "8 Bilder pro Reihe",
-      harborLocation: "Verkaufsstandort (Hafen) *",
+      salesLocation: "Verkaufsstandort *",
       price: "Preis (€)",
       minBidAmount: "Mindestgebot (€)",
       yearBuilt: "Baujahr",
@@ -2734,7 +2802,7 @@ const YACHT_FORM_TEXT = {
       fourImagesPerRow: "4 images par ligne",
       sixImagesPerRow: "6 images par ligne",
       eightImagesPerRow: "8 images par ligne",
-      harborLocation: "Lieu de vente (port) *",
+      salesLocation: "Lieu de vente *",
       price: "Prix (€)",
       minBidAmount: "Montant minimum de l'offre (€)",
       yearBuilt: "Annee de construction",
@@ -2956,7 +3024,7 @@ function hasThinDescriptions(texts: DescriptionTextState): boolean {
   );
 }
 
-export default function YachtEditorPage() {
+function YachtEditorInner() {
   const [step1Brand, setStep1Brand] = useState("");
   const [step1Model, setStep1Model] = useState("");
   const [step1Year, setStep1Year] = useState("");
@@ -3018,7 +3086,7 @@ export default function YachtEditorPage() {
     },
     fr: {
       select: "Selectionner...",
-      selectLocation: "Selectionner le port...",
+      selectLocation: "Selectionner le lieu...",
       conditionNew: "Neuf",
       conditionUsed: "Occasion",
       ceOcean: "Ocean",
@@ -3091,8 +3159,8 @@ export default function YachtEditorPage() {
       boat_name: "Official or advertised vessel name shown in the listing.",
       manufacturer: "Brand or manufacturer responsible for building the boat.",
       model: "Commercial model name or series used for this boat.",
-      ref_harbor_id:
-        "Harbor or sales location where the boat is listed or physically available.",
+      location_id:
+        "Sales location where the boat is listed or physically available.",
       price: "Public asking price for the boat in EUR.",
       min_bid_amount:
         "Lowest bid amount accepted for the auction. Leave it empty to use 90% of the asking price automatically.",
@@ -3126,8 +3194,8 @@ export default function YachtEditorPage() {
         "Officiele of geadverteerde naam van het vaartuig in de listing.",
       manufacturer: "Merk of fabrikant die de boot heeft gebouwd.",
       model: "Commerciele modelnaam of serie van deze boot.",
-      ref_harbor_id:
-        "Haven of verkooplocatie waar de boot ligt of aangeboden wordt.",
+      location_id:
+        "Verkooplocatie waar de boot ligt of aangeboden wordt.",
       price: "Publieke vraagprijs van de boot in EUR.",
       min_bid_amount:
         "Laagste bod dat geaccepteerd wordt in de veiling. Laat leeg om automatisch 90% van de vraagprijs te gebruiken.",
@@ -3160,8 +3228,8 @@ export default function YachtEditorPage() {
       boat_name: "Offizieller oder ausgeschriebener Bootsname in der Anzeige.",
       manufacturer: "Marke oder Hersteller, der das Boot gebaut hat.",
       model: "Kommerzieller Modellname oder Baureihe dieses Boots.",
-      ref_harbor_id:
-        "Hafen oder Verkaufsstandort, an dem das Boot liegt oder angeboten wird.",
+      location_id:
+        "Verkaufsstandort, an dem das Boot liegt oder angeboten wird.",
       price: "Offentlicher Angebotspreis des Boots in EUR.",
       min_bid_amount:
         "Niedrigster Gebotsbetrag fur die Auktion. Leer lassen, um automatisch 90 % des Angebotspreises zu verwenden.",
@@ -3192,8 +3260,8 @@ export default function YachtEditorPage() {
       boat_name: "Official or advertised vessel name shown in the listing.",
       manufacturer: "Brand or manufacturer responsible for building the boat.",
       model: "Commercial model name or series used for this boat.",
-      ref_harbor_id:
-        "Harbor or sales location where the boat is listed or physically available.",
+      location_id:
+        "Sales location where the boat is listed or physically available.",
       price: "Public asking price for the boat in EUR.",
       min_bid_amount:
         "Lowest bid amount accepted for the auction. Leave it empty to use 90% of the asking price automatically.",
@@ -3404,7 +3472,7 @@ export default function YachtEditorPage() {
 
   // Wizard State
   const [activeStep, setActiveStep] = useState<number>(1);
-  const showStepOneVideoSection = true;
+  const showStepOneVideoSection = false;
   const activeVisibleStepIndex = Math.max(
     0,
     visibleWizardSteps.findIndex((step) => step.id === activeStep),
@@ -3502,6 +3570,10 @@ export default function YachtEditorPage() {
       ? String(createdYachtId)
       : null
     : (yachtId as string);
+  const localizedYachtsBasePath = useMemo(
+    () => `/${locale}/dashboard/${role}/yachts`,
+    [locale, role],
+  );
   const socialLibraryHref = useMemo(() => {
     const targetId = isNewMode ? createdYachtId || yachtId : yachtId;
     const basePath = `/${locale}/dashboard/${role}/social`;
@@ -3514,7 +3586,7 @@ export default function YachtEditorPage() {
 
   // Gemini Extraction State (Step 1)
   const [isExtracting, setIsExtracting] = useState(false);
-  const [selectedHarborLocationId, setSelectedHarborLocationId] = useState<number | null>(null);
+  const [selectedWizardLocationId, setSelectedWizardLocationId] = useState<number | null>(null);
   const [step1Type, setStep1Type] = useState("");
   const [step1Category, setStep1Category] = useState("");
   const [matchedBoat, setMatchedBoat] = useState<BoatMatchResult | null>(null);
@@ -3550,10 +3622,10 @@ export default function YachtEditorPage() {
           setSelectedYacht((previous: Record<string, unknown> | null) => ({
             ...(previous && typeof previous === "object" ? previous : {}),
             ...yacht,
-            ref_harbor_id:
-              yacht?.ref_harbor_id ??
+            location_id:
               yacht?.location_id ??
-              previous?.ref_harbor_id ??
+              yacht?.location_id ??
+              previous?.location_id ??
               null,
             status:
               normalizeStatusForForm(yacht?.status) ??
@@ -3899,10 +3971,10 @@ export default function YachtEditorPage() {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Harbors
-  const [harbors, setHarbors] = useState<any[]>([]);
-  const [isHarborsLoading, setIsHarborsLoading] = useState(false);
-  const currentUserHarborId = useMemo(() => {
+  // Locations
+  const [locations, setLocations] = useState<any[]>([]);
+  const [isLocationsLoading, setIsLocationsLoading] = useState(false);
+  const currentUserLocationId = useMemo(() => {
     const rawValue =
       user?.client_location_id ??
       user?.client_location?.id ??
@@ -3956,7 +4028,7 @@ export default function YachtEditorPage() {
     return () => clearTimeout(timer);
   }, [step1Brand, step1Model, step1Year]);
 
-  const currentUserHarborCode = useMemo(
+  const currentUserLocationCode = useMemo(
     () =>
       user?.client_location?.code ??
       user?.location?.code ??
@@ -3968,7 +4040,7 @@ export default function YachtEditorPage() {
       user?.locations?.[0]?.code,
     ],
   );
-  const currentUserHarborName = useMemo(
+  const currentUserLocationName = useMemo(
     () =>
       user?.client_location?.name ??
       user?.location?.name ??
@@ -3980,8 +4052,8 @@ export default function YachtEditorPage() {
       user?.locations?.[0]?.name,
     ],
   );
-  const preferredHarborId = useMemo(() => {
-    if (harbors.length === 0) {
+  const preferredLocationId = useMemo(() => {
+    if (locations.length === 0) {
       return null;
     }
 
@@ -3991,64 +4063,62 @@ export default function YachtEditorPage() {
         .toLowerCase();
 
     const byId =
-      currentUserHarborId !== null
-        ? harbors.find(
-            (harbor: any) => Number(harbor?.id) === currentUserHarborId,
+      currentUserLocationId !== null
+        ? locations.find(
+            (location: any) => Number(location?.id) === currentUserLocationId,
           )
         : null;
 
-    const normalizedCode = normalizeText(currentUserHarborCode);
+    const normalizedCode = normalizeText(currentUserLocationCode);
     const byCode =
       !byId && normalizedCode
-        ? harbors.find(
-            (harbor: any) => normalizeText(harbor?.code) === normalizedCode,
+        ? locations.find(
+            (location: any) => normalizeText(location?.code) === normalizedCode,
           )
         : null;
 
-    const normalizedName = normalizeText(currentUserHarborName);
+    const normalizedName = normalizeText(currentUserLocationName);
     const byName =
       !byId && !byCode && normalizedName
-        ? harbors.find(
-            (harbor: any) => normalizeText(harbor?.name) === normalizedName,
+        ? locations.find(
+            (location: any) => normalizeText(location?.name) === normalizedName,
           )
         : null;
 
-    const fallbackHarbor = harbors.length === 1 ? harbors[0] : null;
-    const nextHarborId =
-      byId?.id ?? byCode?.id ?? byName?.id ?? fallbackHarbor?.id ?? null;
+    const fallbackLocation = locations.length === 1 ? locations[0] : null;
+    const nextLocationId =
+      byId?.id ?? byCode?.id ?? byName?.id ?? fallbackLocation?.id ?? null;
 
-    if (nextHarborId === null || nextHarborId === undefined) {
+    if (nextLocationId === null || nextLocationId === undefined) {
       return null;
     }
 
-    const parsed = Number(nextHarborId);
+    const parsed = Number(nextLocationId);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [
-    currentUserHarborCode,
-    currentUserHarborId,
-    currentUserHarborName,
-    harbors,
+    currentUserLocationCode,
+    currentUserLocationId,
+    currentUserLocationName,
+    locations,
   ]);
-  const selectedHarborId =
-    selectedYacht?.ref_harbor_id ??
+  const effectiveLocationId =
     selectedYacht?.location_id ??
-    preferredHarborId ??
-    currentUserHarborId ??
+    preferredLocationId ??
+    currentUserLocationId ??
     null;
-  const bootstrapDraftHarborId = useMemo(() => {
+  const bootstrapDraftLocationId = useMemo(() => {
     if (
-      selectedHarborId === null ||
-      selectedHarborId === undefined ||
-      selectedHarborId === ""
+      effectiveLocationId === null ||
+      effectiveLocationId === undefined
     ) {
       return null;
     }
 
-    const parsed = Number(selectedHarborId);
+    const parsed = Number(effectiveLocationId);
     return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : null;
-  }, [selectedHarborId]);
-  const hasSelectedHarbor = hasFilledFieldValue(selectedHarborId);
-  const isHarborSelectionBlocking = !isClientRole && !hasSelectedHarbor;
+  }, [effectiveLocationId]);
+  const hasSelectedLocation = hasFilledFieldValue(effectiveLocationId);
+  const isLocationSelectionBlocking = !isClientRole && !hasSelectedLocation;
   const draftBoatType =
     (draft?.data as any)?.step2?.selectedYacht?.boat_type ?? null;
   const boatTypeForConfig = selectedYacht?.boat_type ?? draftBoatType ?? null;
@@ -4056,8 +4126,8 @@ export default function YachtEditorPage() {
     const fd = new FormData();
     fd.append("status", "draft");
 
-    if (bootstrapDraftHarborId) {
-      fd.append("ref_harbor_id", bootstrapDraftHarborId);
+    if (bootstrapDraftLocationId) {
+      fd.append("location_id", bootstrapDraftLocationId);
     }
 
     const createRes = await api.post("/yachts", fd, {
@@ -4071,7 +4141,7 @@ export default function YachtEditorPage() {
 
     setCreatedYachtId(nextId);
     return nextId;
-  }, [bootstrapDraftHarborId]);
+  }, [bootstrapDraftLocationId]);
   const boatFormFieldHelpMap = useMemo(() => {
     const nextMap = new Map<string, string>();
 
@@ -4311,7 +4381,7 @@ export default function YachtEditorPage() {
       "boat_category",
       "new_or_used",
       "ce_category",
-      "ref_harbor_id",
+      "location_id",
       "anchor",
       "anchor_winch",
       "bimini",
@@ -4611,8 +4681,8 @@ export default function YachtEditorPage() {
     }));
   };
 
-  // Harbor Defaults State
-  const [harborDefaults, setHarborDefaults] = useState<{
+  // Location Defaults State
+  const [locationDefaults, setLocationDefaults] = useState<{
     opening_hours_start: string;
     opening_hours_end: string;
   } | null>(null);
@@ -4620,6 +4690,15 @@ export default function YachtEditorPage() {
   // Document + Checklist State
   const [checklistTemplates, setChecklistTemplates] = useState<any[]>([]);
   const [boatDocuments, setBoatDocuments] = useState<BoatDocumentItem[]>([]);
+  const [marktplaatsListing, setMarktplaatsListing] =
+    useState<MarktplaatsListingState>(DEFAULT_MARKTPLAATS_LISTING_STATE);
+  const [selectedPublicationPlatforms, setSelectedPublicationPlatforms] =
+    useState<string[]>([]);
+  const [isSavingMarktplaatsListing, setIsSavingMarktplaatsListing] =
+    useState(false);
+  const [isRunningMarktplaatsAction, setIsRunningMarktplaatsAction] =
+    useState<string | null>(null);
+  const sellerPublicationOptions = SELLER_PUBLICATION_OPTIONS;
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [documentDropTarget, setDocumentDropTarget] =
     useState<BoatDocumentType | null>(null);
@@ -4640,6 +4719,123 @@ export default function YachtEditorPage() {
         (document) => document.document_type !== "ai_reference",
       ),
     [boatDocuments],
+  );
+
+  const normalizeMarktplaatsListing = useCallback(
+    (raw?: any): MarktplaatsListingState => {
+      if (!raw) {
+        return DEFAULT_MARKTPLAATS_LISTING_STATE;
+      }
+
+      return {
+        channel_name: "marktplaats",
+        id: raw.id ?? null,
+        is_enabled: Boolean(raw.is_enabled),
+        auto_publish: Boolean(raw.auto_publish),
+        status: String(raw.status || "draft"),
+        external_id: raw.external_id || null,
+        external_url: raw.external_url || raw.capabilities?.feed_url || null,
+        last_sync_at: raw.last_sync_at || null,
+        last_error_message: raw.last_error_message || null,
+        last_validation_errors_json: Array.isArray(
+          raw.last_validation_errors_json,
+        )
+          ? raw.last_validation_errors_json
+          : null,
+        settings_json: {
+          marktplaats_promoted: Boolean(
+            raw.settings_json?.marktplaats_promoted ?? false,
+          ),
+          marktplaats_budget_type: String(
+            raw.settings_json?.marktplaats_budget_type || "cpc",
+          ),
+          marktplaats_cpc_bid: raw.settings_json?.marktplaats_cpc_bid ?? "",
+          marktplaats_target_views:
+            raw.settings_json?.marktplaats_target_views ?? "",
+        },
+        capabilities: raw.capabilities || null,
+      };
+    },
+    [],
+  );
+
+  const fetchMarktplaatsListing = useCallback(
+    async (targetYachtId: string | number) => {
+      const res = await api.get(`/yachts/${targetYachtId}/channel-listings`);
+      const listings = Array.isArray(res.data) ? res.data : [];
+      const next = listings.find(
+        (entry: any) => entry?.channel_name === "marktplaats",
+      );
+      setMarktplaatsListing(normalizeMarktplaatsListing(next));
+    },
+    [normalizeMarktplaatsListing],
+  );
+
+  const persistMarktplaatsListing = useCallback(
+    async (targetYachtId: string | number) => {
+      setIsSavingMarktplaatsListing(true);
+      try {
+        const payload = {
+          is_enabled: marktplaatsListing.is_enabled,
+          auto_publish: marktplaatsListing.auto_publish,
+          settings_json: {
+            marktplaats_promoted: Boolean(
+              marktplaatsListing.settings_json?.marktplaats_promoted,
+            ),
+            marktplaats_budget_type:
+              marktplaatsListing.settings_json?.marktplaats_budget_type ||
+              "cpc",
+            marktplaats_cpc_bid:
+              marktplaatsListing.settings_json?.marktplaats_cpc_bid === ""
+                ? null
+                : Number(marktplaatsListing.settings_json?.marktplaats_cpc_bid),
+            marktplaats_target_views:
+              marktplaatsListing.settings_json?.marktplaats_target_views === ""
+                ? null
+                : Number(
+                    marktplaatsListing.settings_json?.marktplaats_target_views,
+                  ),
+          },
+        };
+
+        const res = await api.put(
+          `/yachts/${targetYachtId}/channel-listings/marktplaats`,
+          payload,
+        );
+        setMarktplaatsListing(
+          normalizeMarktplaatsListing({ ...marktplaatsListing, ...res.data }),
+        );
+        await fetchMarktplaatsListing(targetYachtId);
+      } finally {
+        setIsSavingMarktplaatsListing(false);
+      }
+    },
+    [fetchMarktplaatsListing, marktplaatsListing, normalizeMarktplaatsListing],
+  );
+
+  const runMarktplaatsAction = useCallback(
+    async (action: "retry" | "pause" | "remove" | "sync") => {
+      const targetId = activeYachtId;
+      if (!targetId) return;
+
+      setIsRunningMarktplaatsAction(action);
+      try {
+        await api.post(
+          `/yachts/${targetId}/channel-listings/marktplaats/${action}`,
+        );
+        await fetchMarktplaatsListing(targetId);
+        toast.success(`Marktplaats ${action} requested.`);
+      } catch (error: any) {
+        console.error(`Failed to ${action} Marktplaats listing`, error);
+        toast.error(
+          error?.response?.data?.message ||
+            `Failed to ${action} Marktplaats listing.`,
+        );
+      } finally {
+        setIsRunningMarktplaatsAction(null);
+      }
+    },
+    [activeYachtId, fetchMarktplaatsListing, toast],
   );
 
   useEffect(() => {
@@ -4702,41 +4898,52 @@ export default function YachtEditorPage() {
     (draft?.data as any)?.boat_type_id,
   ]);
 
-  // Harbor defaults are currently handled by createDefaultAvailabilityRules with hardcoded fallbacks
+  useEffect(() => {
+    if (!activeYachtId) {
+      setMarktplaatsListing(DEFAULT_MARKTPLAATS_LISTING_STATE);
+      return;
+    }
+
+    fetchMarktplaatsListing(activeYachtId).catch((error) => {
+      console.error("Failed to fetch Marktplaats channel listing", error);
+    });
+  }, [activeYachtId, fetchMarktplaatsListing]);
+
+  // Location defaults are currently handled by createDefaultAvailabilityRules with hardcoded fallbacks
   // until the backend locations table supports opening_hours.
 
   useEffect(() => {
-    const fetchHarbors = async () => {
+    const fetchLocations = async () => {
       try {
-        setIsHarborsLoading(true);
+        setIsLocationsLoading(true);
         const res = await api.get("/public/locations");
         const list = res.data || [];
-        setHarbors(list);
+        setLocations(list);
       } catch (err) {
-        console.error("Failed to fetch harbors", err);
+        console.error("Failed to fetch locations", err);
       } finally {
-        setIsHarborsLoading(false);
+        setIsLocationsLoading(false);
       }
     };
-    fetchHarbors();
+    fetchLocations();
   }, []);
 
   useEffect(() => {
-    if (!isNewMode || preferredHarborId === null) {
+    if (!isNewMode || preferredLocationId === null) {
       return;
     }
 
     setSelectedYacht((prev: any) => {
-      if (hasFilledFieldValue(prev?.ref_harbor_id)) {
+      if (hasFilledFieldValue(prev?.location_id)) {
         return prev;
       }
 
       return {
         ...(prev ?? {}),
-        ref_harbor_id: preferredHarborId,
+        location_id: preferredLocationId,
       };
     });
-  }, [isNewMode, preferredHarborId]);
+  }, [isNewMode, preferredLocationId]);
 
   useEffect(() => {
     if (!isClientRole || activeStep !== 4) {
@@ -4748,11 +4955,11 @@ export default function YachtEditorPage() {
   }, [activeStep, isClientRole, setDraftStep]);
 
   useEffect(() => {
-    const selectedHarborId = Number(
-      selectedYacht?.ref_harbor_id ?? preferredHarborId ?? null,
+    const selectedLocationId = Number(
+      selectedYacht?.location_id ?? preferredLocationId ?? null,
     );
 
-    if (!Number.isFinite(selectedHarborId) || selectedHarborId <= 0) {
+    if (!Number.isFinite(selectedLocationId) || selectedLocationId <= 0) {
       return;
     }
 
@@ -4775,25 +4982,25 @@ export default function YachtEditorPage() {
       };
     };
 
-    const selectedHarbor = harbors.find(
-      (harbor: any) => Number(harbor?.id) === selectedHarborId,
+    const selectedLocation = locations.find(
+      (location: any) => Number(location?.id) === selectedLocationId,
     );
     const localDefaults =
-      extractDefaults(selectedHarbor?.booking_settings) ||
-      extractDefaults(selectedHarbor?.settings) ||
-      extractDefaults(selectedHarbor);
+      extractDefaults(selectedLocation?.booking_settings) ||
+      extractDefaults(selectedLocation?.settings) ||
+      extractDefaults(selectedLocation);
 
     if (localDefaults) {
-      setHarborDefaults(localDefaults);
+      setLocationDefaults(localDefaults);
     }
 
     let cancelled = false;
 
     const fetchBookingDefaults = async () => {
       const candidatePaths = [
-        `/public/locations/${selectedHarborId}/booking-settings`,
-        `/locations/${selectedHarborId}/booking-settings`,
-        `/admin/harbors/${selectedHarborId}/booking-settings`,
+        `/public/locations/${selectedLocationId}/booking-settings`,
+        `/locations/${selectedLocationId}/booking-settings`,
+        `/admin/locations/${selectedLocationId}/booking-settings`,
       ];
 
       for (const path of candidatePaths) {
@@ -4801,7 +5008,7 @@ export default function YachtEditorPage() {
           const response = await api.get(path);
           const defaults = extractDefaults(response.data);
           if (defaults && !cancelled) {
-            setHarborDefaults(defaults);
+            setLocationDefaults(defaults);
             return;
           }
         } catch {
@@ -4815,7 +5022,7 @@ export default function YachtEditorPage() {
     return () => {
       cancelled = true;
     };
-  }, [harbors, preferredHarborId, selectedYacht?.ref_harbor_id]);
+  }, [locations, preferredLocationId, selectedYacht?.location_id]);
 
   useEffect(() => {
     let active = true;
@@ -4849,17 +5056,13 @@ export default function YachtEditorPage() {
     if (
       (activeStep === 4 || isClientRole) &&
       availabilityRules.length === 0 &&
-      harborDefaults
+      locationDefaults
     ) {
       setAvailabilityRules([
-        {
-          days_of_week: [1, 2, 3, 4, 5], // Defaulting to Mon-Fri implicitly
-          start_time: harborDefaults.opening_hours_start || "09:00",
-          end_time: harborDefaults.opening_hours_end || "17:00",
-        },
+        ...createDefaultAvailabilityRules(locationDefaults),
       ]);
     }
-  }, [activeStep, availabilityRules.length, harborDefaults, isClientRole]);
+  }, [activeStep, availabilityRules.length, locationDefaults, isClientRole]);
 
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
   const restoredDraftRef = useRef(false);
@@ -4917,11 +5120,18 @@ export default function YachtEditorPage() {
 
     // Guard: if the previous "new" draft was already submitted via Step 5,
     // clear stale data so the user starts fresh for the next yacht.
-    if (localStorage.getItem(completedDraftStorageKey)) {
+    const isFreshRequest = searchParams.get("fresh") === "true";
+    if (localStorage.getItem(completedDraftStorageKey) || isFreshRequest) {
       void clearDraft();
       localStorage.removeItem(completedDraftStorageKey);
       localStorage.removeItem(aiMetaStorageKey);
       restoredDraftRef.current = true;
+      
+      if (isFreshRequest) {
+        const newSearchParams = new URLSearchParams(searchParams.toString());
+        newSearchParams.delete("fresh");
+        router.replace(`${window.location.pathname}?${newSearchParams.toString()}`);
+      }
       return;
     }
 
@@ -4952,9 +5162,9 @@ export default function YachtEditorPage() {
 
       setSelectedYacht({
         ...restoredSelectedYacht,
-        ref_harbor_id: hasFilledFieldValue(restoredSelectedYacht.ref_harbor_id)
-          ? restoredSelectedYacht.ref_harbor_id
-          : (currentUserHarborId ?? restoredSelectedYacht.ref_harbor_id),
+        location_id: hasFilledFieldValue(restoredSelectedYacht.location_id)
+          ? restoredSelectedYacht.location_id
+          : (currentUserLocationId ?? restoredSelectedYacht.location_id),
         status: normalizeStatusForNewYacht(
           restoredSelectedYacht.status,
           isClientRole,
@@ -5001,11 +5211,13 @@ export default function YachtEditorPage() {
     aiMetaStorageKey,
     clearDraft,
     completedDraftStorageKey,
-    currentUserHarborId,
+    currentUserLocationId,
     getStepData,
     isDraftLoaded,
     isNewMode,
     yachtId,
+    router,
+    searchParams,
   ]);
 
   // Restore draft step on mount (but respect approval gate)
@@ -5046,6 +5258,19 @@ export default function YachtEditorPage() {
     confidenceMeta,
     debouncedSave,
   ]);
+
+  // Once the draft exists on the server, switch /yachts/new to the permanent id route.
+  useEffect(() => {
+    if (!isNewMode || !createdYachtId || createdYachtId <= 0) return;
+    if (typeof window === "undefined") return;
+
+    const currentPath = window.location.pathname;
+    if (!currentPath.endsWith("/new")) return;
+
+    router.replace(
+      `${localizedYachtsBasePath}/${createdYachtId}?step=${activeStep}&draftFlow=1`,
+    );
+  }, [isNewMode, createdYachtId, activeStep, localizedYachtsBasePath, router]);
 
   useEffect(() => {
     if (!isDraftLoaded) return;
@@ -5649,11 +5874,11 @@ export default function YachtEditorPage() {
         );
         return false;
       }
-      if (pipeline.images.length === 0) {
+      if (pipeline.images.length === 0 && referenceBoatDocuments.length === 0) {
         toast.error(
           labelText(
             "uploadOneImageFirst",
-            "Please upload at least one image first.",
+            "Please upload at least one image or reference document first.",
           ),
         );
         return false;
@@ -6126,6 +6351,7 @@ export default function YachtEditorPage() {
       isNewMode,
       labelText,
       pipeline.images.length,
+      referenceBoatDocuments.length,
       selectedYacht,
       yachtId,
     ],
@@ -6183,11 +6409,11 @@ export default function YachtEditorPage() {
           return;
         }
       }
-      if (targetStep > 2 && isHarborSelectionBlocking) {
+      if (targetStep > 2 && isLocationSelectionBlocking) {
         toast.error(
           labelText(
             "locationRequiredForNextStep",
-            "Select a sales location before continuing to the next step.",
+            "Please select a location first.",
           ),
         );
         return;
@@ -6199,7 +6425,7 @@ export default function YachtEditorPage() {
       isOnline,
       isNewMode,
       canProceedFromStep1,
-      isHarborSelectionBlocking,
+      isLocationSelectionBlocking,
       offlineImages,
       pipeline.images.length,
       imagesApproved,
@@ -6286,7 +6512,7 @@ export default function YachtEditorPage() {
         const yacht = res.data;
         setSelectedYacht({
           ...yacht,
-          ref_harbor_id: yacht?.ref_harbor_id ?? yacht?.location_id ?? null,
+          location_id: yacht?.location_id ?? null,
           status: normalizeStatusForForm(yacht?.status) ?? yacht?.status,
         });
 
@@ -6335,9 +6561,9 @@ export default function YachtEditorPage() {
         // Load existing availability rules
         if (yacht.availability_rules || yacht.availabilityRules) {
           const rawRules = yacht.availability_rules || yacht.availabilityRules;
-          setAvailabilityRules(normalizeAvailabilityRules(rawRules, harborDefaults));
+          setAvailabilityRules(normalizeAvailabilityRules(rawRules, locationDefaults));
         } else {
-          setAvailabilityRules(createDefaultAvailabilityRules(harborDefaults));
+          setAvailabilityRules(createDefaultAvailabilityRules(locationDefaults));
         }
 
         // Load existing AI descriptions
@@ -6606,20 +6832,20 @@ export default function YachtEditorPage() {
 
   const handleDocumentInputChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    documentType: BoatDocumentType = "compliance",
+    documentType: string = "compliance",
   ) => {
     const files = e.target.files;
     if (!files || files.length === 0) {
       return;
     }
 
-    await uploadDocumentFiles(files, documentType);
+    await uploadDocumentFiles(files, normalizeBoatDocumentType(documentType));
     e.target.value = "";
   };
 
   const handleDocumentDrop = async (
-    event: React.DragEvent<HTMLElement>,
-    documentType: BoatDocumentType,
+    event: React.DragEvent<Element>,
+    documentType: string,
   ) => {
     event.preventDefault();
     event.stopPropagation();
@@ -6630,25 +6856,26 @@ export default function YachtEditorPage() {
       return;
     }
 
-    await uploadDocumentFiles(files, documentType);
+    await uploadDocumentFiles(files, normalizeBoatDocumentType(documentType));
   };
 
   const handleDocumentDragOver = (
-    event: React.DragEvent<HTMLElement>,
-    documentType: BoatDocumentType,
+    event: React.DragEvent<Element>,
+    documentType: string,
   ) => {
     event.preventDefault();
     event.stopPropagation();
     event.dataTransfer.dropEffect = "copy";
-    setDocumentDropTarget(documentType);
+    setDocumentDropTarget(normalizeBoatDocumentType(documentType));
   };
 
   const handleDocumentDragLeave = (
-    event: React.DragEvent<HTMLElement>,
-    documentType: BoatDocumentType,
+    event: React.DragEvent<Element>,
+    documentType: string,
   ) => {
     event.preventDefault();
     event.stopPropagation();
+    const normalizedDocumentType = normalizeBoatDocumentType(documentType);
 
     const nextTarget = event.relatedTarget;
     if (
@@ -6659,7 +6886,7 @@ export default function YachtEditorPage() {
     }
 
     setDocumentDropTarget((current) =>
-      current === documentType ? null : current,
+      current === normalizedDocumentType ? null : current,
     );
   };
 
@@ -6682,6 +6909,49 @@ export default function YachtEditorPage() {
     } finally {
       setDeleteDocumentDialogOpen(false);
       setDocumentToDelete(null);
+    }
+  };
+
+  const handleReferenceDocumentDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+
+    if (sourceIndex === destinationIndex) {
+      return;
+    }
+
+    const targetId = currentBoatDocumentId;
+    if (!targetId) {
+      toast.error("Please save the yacht first.");
+      return;
+    }
+
+    const reordered = Array.from(referenceBoatDocuments);
+    const [moved] = reordered.splice(sourceIndex, 1);
+    reordered.splice(destinationIndex, 0, moved);
+
+    const reorderedIds = reordered.map((doc) => Number(doc.id));
+    const reorderedById = new Map(
+      reordered.map((doc, index) => [
+        Number(doc.id),
+        { ...doc, sort_order: index },
+      ]),
+    );
+
+    setBoatDocuments((prev) =>
+      prev.map((doc) => reorderedById.get(Number(doc.id)) ?? doc),
+    );
+
+    try {
+      await api.post(`/yachts/${targetId}/documents/reorder`, {
+        document_ids: reorderedIds,
+      });
+    } catch (err) {
+      toast.error("Failed to save document order.");
+      const refreshed = await api.get(`/yachts/${targetId}/documents`);
+      setBoatDocuments(Array.isArray(refreshed.data) ? refreshed.data : []);
     }
   };
 
@@ -8054,18 +8324,16 @@ export default function YachtEditorPage() {
       "draft";
     formData.set("status", normalizedStatus);
 
-    const harborId =
-      getFieldValue("ref_harbor_id") ??
-      toFormValue(selectedHarborId) ??
-      toFormValue(selectedHarborLocationId);
+    const locationId =
+      getFieldValue("location_id") ??
+      toFormValue(selectedWizardLocationId);
 
-    if (harborId !== null) {
-      formData.set("ref_harbor_id", harborId);
-      formData.set("location_id", harborId);
+    if (locationId !== null) {
+      formData.set("location_id", locationId);
     }
 
-    if (matchedBoat?.matched && matchedBoat?.template_id) {
-      formData.set("template_id", matchedBoat.template_id.toString());
+    if (matchedBoat?.matched && matchedBoat?.template?.template_id) {
+      formData.set("template_id", matchedBoat.template.template_id.toString());
     }
 
     // Handle boolean fields - SIMPLIFIED
@@ -8477,8 +8745,10 @@ export default function YachtEditorPage() {
       </div>
 
       {/* PAGE HEADER */}
-      <div className="bg-[#003566]">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="bg-[#003566] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_70%)]" />
+        <div className="absolute inset-0 opacity-5 bg-[linear-gradient(45deg,rgba(0,0,0,0.2)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.2)_50%,rgba(0,0,0,0.2)_75%,transparent_75%,transparent)] bg-[length:20px_20px]" />
+        <div className="max-w-7xl mx-auto px-6 py-6 relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
@@ -8610,6 +8880,7 @@ export default function YachtEditorPage() {
               referenceBoatDocuments={referenceBoatDocuments}
               resolveBoatDocumentUrl={resolveBoatDocumentUrl}
               handleDocumentDelete={handleDocumentDelete}
+              handleReferenceDocumentDragEnd={handleReferenceDocumentDragEnd}
               isUploadingDocument={isUploadingDocument}
               documentDropTarget={documentDropTarget}
               handleDocumentDragOver={handleDocumentDragOver}
@@ -8650,14 +8921,14 @@ export default function YachtEditorPage() {
               formKey={formKey}
               setFormKey={setFormKey}
               isClientRole={isClientRole}
-              harbors={harbors}
-              preferredHarborId={preferredHarborId}
-              currentUserHarborName={currentUserHarborName}
-              currentUserHarborCode={currentUserHarborCode}
+              locations={locations}
+              preferredLocationId={preferredLocationId}
+              currentUserLocationName={currentUserLocationName}
+              currentUserLocationCode={currentUserLocationCode}
               selectedBrandId={selectedBrandId}
               setSelectedBrandId={setSelectedBrandId}
-              selectedHarborLocationId={selectedHarborLocationId}
-              setSelectedHarborLocationId={setSelectedHarborLocationId}
+              selectedLocationId={selectedWizardLocationId}
+              setSelectedLocationId={setSelectedWizardLocationId}
               labelText={labelText}
               commonText={commonText}
               resolveFieldHelpText={resolveFieldHelpText}
@@ -8742,6 +9013,7 @@ export default function YachtEditorPage() {
             <WizardStep5
               labelText={labelText}
               t={t}
+              role={role}
               isClientRole={isClientRole}
               fetchingChecklist={fetchingChecklist}
               checklistTemplates={checklistTemplates}
@@ -8762,7 +9034,16 @@ export default function YachtEditorPage() {
               effectiveClientSignhostUrl={effectiveClientSignhostUrl}
               handleOpenClientSignhost={handleOpenClientSignhost}
               handleStepChange={handleStepChange}
-              activeYachtId={Number(selectedYachtId)}
+              activeYachtId={activeYachtId ? Number(activeYachtId) : null}
+              marktplaatsListing={marktplaatsListing}
+              setMarktplaatsListing={setMarktplaatsListing}
+              sellerPublicationOptions={sellerPublicationOptions}
+              selectedPublicationPlatforms={selectedPublicationPlatforms}
+              setSelectedPublicationPlatforms={setSelectedPublicationPlatforms}
+              isSavingMarktplaatsListing={isSavingMarktplaatsListing}
+              isRunningMarktplaatsAction={isRunningMarktplaatsAction}
+              persistMarktplaatsListing={persistMarktplaatsListing}
+              runMarktplaatsAction={runMarktplaatsAction}
               internalReviewStatusKey={internalReviewStatusKey}
               internalReviewApproved={internalReviewApproved}
               internalReviewSelection={internalReviewSelection}
@@ -8781,10 +9062,11 @@ export default function YachtEditorPage() {
               clientContractStatusKey={clientContractStatusKey}
               effectiveClientSignhostUrl={effectiveClientSignhostUrl}
               handleOpenClientSignhost={handleOpenClientSignhost}
-              activeYachtId={Number(selectedYachtId)}
+              activeYachtId={activeYachtId ? Number(activeYachtId) : null}
               selectedYacht={selectedYacht}
               draft={draft}
-              harbors={harbors}
+              locations={locations}
+              onNavigateToLocationStep={() => setActiveStep(2)}
               role={role}
               resolvePipelineAssetUrl={resolvePipelineAssetUrl}
               handleGenerateSticker={handleGenerateSticker}
@@ -8820,12 +9102,12 @@ export default function YachtEditorPage() {
                 }}
                 disabled={
                   (isNewMode && !canProceedFromStep1 && activeStep === 1) ||
-                  (activeStep === 2 && isHarborSelectionBlocking)
+                  (activeStep === 2 && isLocationSelectionBlocking)
                 }
                 className={cn(
                   "h-11 px-6 text-xs font-bold uppercase tracking-wider",
                   (isNewMode && !canProceedFromStep1 && activeStep === 1) ||
-                    (activeStep === 2 && isHarborSelectionBlocking)
+                    (activeStep === 2 && isLocationSelectionBlocking)
                     ? "bg-slate-300 text-slate-500 cursor-not-allowed"
                     : "bg-[#003566] text-white hover:bg-blue-800",
                 )}
@@ -8835,7 +9117,7 @@ export default function YachtEditorPage() {
                     {t?.wizard?.nav?.runExtractionFirst ||
                       labelText("approveImagesFirst", "Approve Images First")}
                   </>
-                ) : activeStep === 2 && isHarborSelectionBlocking ? (
+                ) : activeStep === 2 && isLocationSelectionBlocking ? (
                   <>
                     {labelText(
                       "locationRequiredForNextStep",
@@ -8989,6 +9271,19 @@ export default function YachtEditorPage() {
       />
     </div>
   );
+}
+
+export default function YachtEditorPage() {
+  const params = useParams<{ locale: string; role: string; id: string }>();
+  const searchParams = useSearchParams();
+  const fresh = searchParams.get("fresh");
+  
+  // Create a composite key to force React to unmount and remount the inner component 
+  // whenever the ID changes or when "fresh=true" is explicitly requested.
+  // This solves the issue of React preserving state when navigating between identical layouts.
+  const key = `${params.id}-${fresh || "no"}`;
+  
+  return <YachtEditorInner key={key} />;
 }
 
 // ---------------- Helper Components ---------------- //

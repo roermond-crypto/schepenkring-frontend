@@ -56,14 +56,14 @@ interface WizardStep2Props {
   formKey: number;
   setFormKey: React.Dispatch<React.SetStateAction<number>>;
   isClientRole: boolean;
-  harbors: any[];
-  preferredHarborId: string | number | null;
-  currentUserHarborName: string | null | undefined;
-  currentUserHarborCode: string | null | undefined;
+  locations: any[];
+  preferredLocationId: string | number | null;
+  currentUserLocationName: string | null | undefined;
+  currentUserLocationCode: string | null | undefined;
   selectedBrandId: number | null;
   setSelectedBrandId: (id: number | null) => void;
-  selectedHarborLocationId: number | null;
-  setSelectedHarborLocationId: (id: number | null) => void;
+  selectedLocationId: number | null;
+  setSelectedLocationId: (id: number | null) => void;
   
   // Localization helpers
   labelText: (key: any, fallback: string) => any;
@@ -117,14 +117,14 @@ export function WizardStep2({
   formKey,
   setFormKey,
   isClientRole,
-  harbors,
-  preferredHarborId,
-  currentUserHarborName,
-  currentUserHarborCode,
+  locations,
+  preferredLocationId,
+  currentUserLocationName,
+  currentUserLocationCode,
   selectedBrandId,
   setSelectedBrandId,
-  selectedHarborLocationId,
-  setSelectedHarborLocationId,
+  selectedLocationId,
+  setSelectedLocationId,
   
   labelText,
   commonText,
@@ -252,15 +252,15 @@ export function WizardStep2({
           <div className="space-y-2 group">
             <FieldLabel
               label={labelText(
-                "harborLocation",
-                "Sales Location (Harbor) *",
+                "salesLocation",
+                "Sales Location *",
               )}
-              fieldName="ref_harbor_id"
+              fieldName="location_id"
               helpText={resolveFieldHelpText(
-                "ref_harbor_id",
+                "location_id",
                 labelText(
-                  "harborLocation",
-                  "Sales Location (Harbor) *",
+                  "salesLocation",
+                  "Sales Location *",
                 ),
                 "select",
               )}
@@ -268,25 +268,25 @@ export function WizardStep2({
             {isClientRole ? (
               <div className="flex min-h-11 items-center rounded-md border border-amber-300 bg-amber-50/60 px-4 text-sm font-medium text-slate-700">
                 {(() => {
-                  const currentHarbor = harbors.find(
-                    (harbor) =>
-                      Number(harbor?.id) ===
+                  const currentLocation = locations.find(
+                    (location) =>
+                      Number(location?.id) ===
                       Number(
-                        selectedYacht?.ref_harbor_id ??
-                          preferredHarborId,
+                        selectedYacht?.location_id ??
+                          preferredLocationId,
                       ),
                   );
 
-                  if (!currentHarbor) {
+                  if (!currentLocation) {
                     if (
-                      currentUserHarborName &&
-                      currentUserHarborCode
+                      currentUserLocationName &&
+                      currentUserLocationCode
                     ) {
-                      return `${currentUserHarborName} (${currentUserHarborCode})`;
+                      return `${currentUserLocationName} (${currentUserLocationCode})`;
                     }
 
-                    if (currentUserHarborName) {
-                      return currentUserHarborName;
+                    if (currentUserLocationName) {
+                      return currentUserLocationName;
                     }
 
                     return labelText(
@@ -295,7 +295,7 @@ export function WizardStep2({
                     );
                   }
 
-                  return `${currentHarbor.name} (${currentHarbor.code})`;
+                  return `${currentLocation.name} (${currentLocation.code})`;
                 })()}
               </div>
             ) : (
@@ -311,31 +311,31 @@ export function WizardStep2({
                       location_city: place.city,
                       location_lat: place.lat,
                       location_lng: place.lng,
-                      ref_harbor_id: null,
-                      ref_harbor_location_id: null
+                      location_id: null,
+                      location_location_id: null
                     }));
-                    setSelectedHarborLocationId(null);
+                    setSelectedLocationId(null);
                   }}
                 />
                 <div className="mt-4">
                   <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
-                    {commonText("orSelectHarbor", "Or select internal harbor:")}
+                    {commonText("orSelectHarbor", "Or select internal location:")}
                   </p>
                   <Select
-                    value={selectedYacht?.ref_harbor_id?.toString() || ""}
+                    value={selectedYacht?.location_id?.toString() || ""}
                     onValueChange={(val) => {
                       setSelectedYacht((prev: any) => ({
                         ...prev,
-                        ref_harbor_id: Number(val),
-                        ref_harbor_location_id: null
+                        location_id: Number(val),
+                        location_location_id: null
                       }));
-                      setSelectedHarborLocationId(null);
+                      setSelectedLocationId(null);
                     }}
                   >
                     <SelectTrigger
                       className={cn(
                         "h-11 border-slate-200",
-                        hasFilledFieldValue(selectedYacht?.ref_harbor_id) &&
+                        hasFilledFieldValue(selectedYacht?.location_id) &&
                           "border-amber-300 bg-amber-50/50",
                       )}
                     >
@@ -347,9 +347,9 @@ export function WizardStep2({
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      {harbors.map((h) => (
-                        <SelectItem key={h.id} value={h.id.toString()}>
-                          {h.name} ({h.code})
+                      {locations.map((l) => (
+                        <SelectItem key={l.id} value={l.id.toString()}>
+                          {l.name} ({l.code})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -364,8 +364,8 @@ export function WizardStep2({
                 <input type="hidden" name="location_lng" value={selectedYacht?.location_lng || ''} />
                 <input
                   type="hidden"
-                  name="ref_harbor_location_id"
-                  value={selectedHarborLocationId?.toString() || ""}
+                  name="location_location_id"
+                  value={selectedLocationId?.toString() || ""}
                   readOnly
                 />
               </>

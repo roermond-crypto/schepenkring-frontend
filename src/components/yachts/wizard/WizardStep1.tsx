@@ -4,6 +4,7 @@ import React from "react";
 import {
   Images,
   Ship,
+  Shield,
   Loader2,
   CheckCircle,
   AlertCircle,
@@ -134,6 +135,7 @@ interface WizardStep1Props {
   referenceBoatDocuments: any[];
   resolveBoatDocumentUrl: (doc: any) => string | null;
   handleDocumentDelete: (id: number) => void;
+  handleReferenceDocumentDragEnd: (result: any) => void;
   isUploadingDocument: boolean;
   documentDropTarget: string | null;
   handleDocumentDragOver: (e: React.DragEvent, target: string) => void;
@@ -233,6 +235,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
   referenceBoatDocuments,
   resolveBoatDocumentUrl,
   handleDocumentDelete,
+  handleReferenceDocumentDragEnd,
   isUploadingDocument,
   documentDropTarget,
   handleDocumentDragOver,
@@ -290,13 +293,20 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
       </div>
 
       {/* ── Boat Classification & Identification ── */}
-      <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-6 space-y-6">
-        <div className="flex items-center gap-2 mb-2">
-          <Ship size={18} className="text-blue-600" />
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-visible z-20 relative">
+        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 rounded-t-lg">
+          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+            <Shield size={16} className="text-blue-600" />
             {labelText("vesselIdentification", "Vessel Identification")}
           </h3>
+          <p className="text-xs text-slate-400 font-medium mt-1">
+            {labelText(
+              "classificationDescription" as any,
+              "Select the type of boat to show the right fields",
+            )}
+          </p>
         </div>
+        <div className="p-6 space-y-6">
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2 group">
@@ -304,7 +314,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
               {labelText("boatType", "Boat Type")}
             </Label>
             <CatalogAutocomplete
-              endpoint="/api/boats/autocomplete/type"
+              endpoint="/api/autocomplete/types"
               name="boat_type"
               placeholder="e.g. Motor Yacht, Sailing Boat"
               defaultValue={step1Type}
@@ -338,7 +348,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
               {labelText("brand", "Brand")}
             </Label>
             <CatalogAutocomplete
-              endpoint="/api/boats/autocomplete/brand"
+              endpoint="/api/autocomplete/brands"
               name="brand"
               placeholder="e.g. Beneteau"
               defaultValue={step1Brand}
@@ -354,7 +364,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
               {labelText("model", "Model")}
             </Label>
             <CatalogAutocomplete
-              endpoint="/api/boats/autocomplete/model"
+              endpoint="/api/autocomplete/models"
               name="model"
               placeholder="e.g. Oceanis 38"
               defaultValue={step1Model}
@@ -445,6 +455,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
               "Adding brand/model/year helps the AI find similar boats for better results."
             )}
           </p>
+        </div>
         </div>
       </div>
 
@@ -793,19 +804,66 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
             <p className="text-sm font-semibold mt-4">Click or drag files here</p>
             <input type="file" className="hidden" multiple accept=".pdf,.doc,.docx,image/*" onChange={(e) => void handleDocumentInputChange(e, "ai_reference")} disabled={isUploadingDocument} />
           </label>
-          <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
-            {referenceBoatDocuments.map(doc => (
-              <div key={doc.id} className="flex items-center justify-between bg-white p-3 rounded-xl border shadow-sm">
-                <div className="flex items-center gap-3">
-                  <FileText className="text-blue-500" />
-                  <span className="text-sm font-medium">{doc.file_path.split("/").pop()}</span>
-                </div>
-                <div className="flex gap-2">
-                  <a href={resolveBoatDocumentUrl(doc) || "#"} target="_blank" className="p-2 hover:bg-blue-50 text-slate-400 hover:text-blue-600"><Eye size={14} /></a>
-                  <button onClick={() => handleDocumentDelete(doc.id)} className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500"><Trash size={14} /></button>
-                </div>
-              </div>
-            ))}
+          <div className="bg-slate-50 rounded-2xl p-4">
+            <DragDropContext onDragEnd={handleReferenceDocumentDragEnd}>
+              <Droppable droppableId="reference-documents" direction="vertical">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="space-y-3"
+                  >
+                    {referenceBoatDocuments.map((doc, index) => (
+                      <Draggable
+                        key={`reference-document-${doc.id}`}
+                        draggableId={`reference-document-${doc.id}`}
+                        index={index}
+                      >
+                        {(dragProvided) => (
+                          <div
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            className="flex items-center justify-between bg-white p-3 rounded-xl border shadow-sm"
+                          >
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div
+                                {...dragProvided.dragHandleProps}
+                                className="flex h-9 w-9 shrink-0 cursor-grab items-center justify-center rounded-full bg-slate-100 text-slate-500 active:cursor-grabbing"
+                                title="Drag to reorder"
+                              >
+                                <GripVertical size={14} />
+                              </div>
+                              <FileText className="shrink-0 text-blue-500" />
+                              <span className="truncate text-sm font-medium">
+                                {doc.file_path.split("/").pop()}
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <a
+                                href={resolveBoatDocumentUrl(doc) || "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 hover:bg-blue-50 text-slate-400 hover:text-blue-600"
+                              >
+                                <Eye size={14} />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleDocumentDelete(doc.id)}
+                                className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500"
+                              >
+                                <Trash size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </div>
         </div>
       </div>

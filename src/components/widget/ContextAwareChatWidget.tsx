@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 type YachtContext = {
   boatId?: number;
   locationId?: number;
-  harborName?: string;
+  locationName?: string;
   boatName?: string;
 };
 
@@ -88,19 +88,15 @@ export function ContextAwareChatWidget() {
 
         const yacht = response.data ?? {};
         const locationId = Number(
-          yacht.ref_harbor_id ??
-            yacht.location_id ??
+          yacht.location_id ??
             yacht.location?.id ??
             fallbackLocationId ??
             0,
         );
-        const harborName = getMeaningfulText(
+        const locationName = getMeaningfulText(
           yacht.location?.name,
-          yacht.harbor?.name,
-          yacht.ref_harbor?.name,
           yacht.vessel_lying,
           yacht.where,
-          yacht.location,
         );
         const boatName = getMeaningfulText(
           yacht.boat_name,
@@ -111,7 +107,7 @@ export function ContextAwareChatWidget() {
         setContext({
           boatId: yachtId,
           locationId: Number.isFinite(locationId) && locationId > 0 ? locationId : undefined,
-          harborName: harborName ?? undefined,
+          locationName: locationName ?? undefined,
           boatName: boatName ?? undefined,
         });
       } catch {
@@ -140,7 +136,7 @@ export function ContextAwareChatWidget() {
     <ChatWidget
       boatId={resolvedContext.boatId}
       locationId={resolvedContext.locationId}
-      harborName={resolvedContext.harborName}
+      locationName={resolvedContext.locationName}
       boatName={resolvedContext.boatName}
       locale={locale}
       widgetMode={resolvedContext.boatId ? "smart" : "chat"}

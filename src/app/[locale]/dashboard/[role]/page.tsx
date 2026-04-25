@@ -1365,7 +1365,7 @@ export default function AdminDashboardHome() {
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 <Link
-                  href={`${dashboardBase}/yachts/new`}
+                  href={`${dashboardBase}/yachts/new?fresh=true`}
                   className="inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
                 >
                   {t("actions.createFirstListing")}

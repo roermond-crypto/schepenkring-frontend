@@ -22,7 +22,8 @@ interface WizardStep6Props {
   activeYachtId: number | null;
   selectedYacht: any;
   draft: any;
-  harbors: any[];
+  locations: any[];
+  onNavigateToLocationStep: () => void;
   role: string;
   resolvePipelineAssetUrl: (path: string) => string | null;
   handleGenerateSticker: () => Promise<void>;
@@ -42,7 +43,8 @@ export function WizardStep6({
   activeYachtId,
   selectedYacht,
   draft,
-  harbors,
+  locations,
+  onNavigateToLocationStep,
   role,
   resolvePipelineAssetUrl,
   handleGenerateSticker,
@@ -140,8 +142,8 @@ export function WizardStep6({
               "Unnamed Vessel"
             }
             locationId={
-              selectedYacht?.ref_harbor_id ||
-              (draft?.data as any)?.step2?.selectedYacht?.ref_harbor_id ||
+              selectedYacht?.location_id ||
+              (draft?.data as any)?.step2?.selectedYacht?.location_id ||
               null
             }
             yachtData={
@@ -149,7 +151,22 @@ export function WizardStep6({
               (draft?.data as any)?.step2?.selectedYacht ||
               null
             }
-            locationOptions={harbors}
+            locationOptions={locations}
+            sellerData={
+              selectedYacht?.user
+                ? {
+                    id: selectedYacht.user.id,
+                    name: selectedYacht.user.name,
+                    email: selectedYacht.user.email,
+                    phone: selectedYacht.user.phone,
+                    address: selectedYacht.user.address_line_1,
+                    postal_code: selectedYacht.user.postal_code,
+                    city: selectedYacht.user.city,
+                    company_name: selectedYacht.user.company_name,
+                  }
+                : null
+            }
+            onNavigateToLocationStep={onNavigateToLocationStep}
           />
         ) : (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
@@ -162,7 +179,7 @@ export function WizardStep6({
       </div>
 
       {/* ── BOAT STICKER & QR ───────────────────────────── */}
-      {role === "admin" && (
+      {false && role === "admin" && (
         <div className="bg-white border border-slate-200 p-8 shadow-sm">
           <h3 className="text-[12px] font-black text-[#003566] uppercase tracking-[0.3em] flex items-center gap-3 border-b-2 border-[#003566] pb-4 mb-6">
             <Images size={18} />{" "}

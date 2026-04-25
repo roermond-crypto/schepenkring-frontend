@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { BoatFieldSettingsLink } from "@/components/yachts/BoatFieldSettingsLink";
+import { api } from "@/lib/api";
 
 interface Props {
     endpoint: string;
@@ -88,18 +89,13 @@ export function CatalogAutocomplete({
             if (query.length > 1 && isOpen) {
                 setLoading(true);
                 try {
-                    let url = `${endpoint}?q=${encodeURIComponent(query)}`;
+                    const normalizedEndpoint = endpoint.replace(/^\/api\//, "").replace(/^\//, "");
+                    const params: Record<string, number | string> = { q: query };
                     if (dependsOn && dependsOnValue) {
-                        url += `&${dependsOn}=${dependsOnValue}`;
+                        params[dependsOn] = dependsOnValue;
                     }
-                    // Assuming the api object auto-prepends /api or base url, but here we can just hit the absolute path /api/...
-                    // If the project uses a custom api instance from "@/lib/api" we might have issues if it expects token auth
-                    // Since /api/autocomplete is Public, standard fetch works.
-                    const res = await fetch(url);
-                    if (res.ok) {
-                        const data = await res.json();
-                        setResults(data);
-                    }
+                    const res = await api.get<CatalogAutocompleteItem[]>(normalizedEndpoint, { params });
+                    setResults(Array.isArray(res.data) ? res.data : []);
                 } catch (e) {
                     console.error(e);
                 } finally {
@@ -116,7 +112,10 @@ export function CatalogAutocomplete({
     const highlighted = Boolean(needsConfirmation) || (query && query.trim().length > 0);
 
     return (
-        <div className="relative" ref={wrapperRef}>
+        <div
+            className={cn("relative", isOpen && query.length > 1 && "z-[120]")}
+            ref={wrapperRef}
+        >
             <input
                 type="text"
                 name={name}
@@ -155,7 +154,7 @@ export function CatalogAutocomplete({
             )}
 
             {isOpen && (query.length > 1) && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="absolute left-0 top-full z-[140] mt-1 w-full rounded-md border border-slate-200 bg-white shadow-xl max-h-60 overflow-auto">
                     {loading ? (
                         <div className="p-3 text-sm text-slate-500 text-center">{text.searching}</div>
                     ) : results.length > 0 ? (

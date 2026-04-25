@@ -8,7 +8,10 @@ import {
   UploadCloud, 
   Eye, 
   Trash, 
-  CheckCircle 
+  CheckCircle,
+  Globe,
+  Save,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +19,7 @@ import { cn } from "@/lib/utils";
 interface WizardStep5Props {
   labelText: (key: any, fallback: string) => any;
   t: any;
+  role: string;
   isClientRole: boolean;
   fetchingChecklist: boolean;
   checklistTemplates: any[];
@@ -41,12 +45,21 @@ interface WizardStep5Props {
 
   // Internal Review Props
   activeYachtId: number | null;
+  marktplaatsListing: any;
+  setMarktplaatsListing: React.Dispatch<React.SetStateAction<any>>;
+  sellerPublicationOptions: any[];
+  selectedPublicationPlatforms: string[];
+  setSelectedPublicationPlatforms: React.Dispatch<React.SetStateAction<string[]>>;
+  isSavingMarktplaatsListing: boolean;
+  isRunningMarktplaatsAction: string | null;
+  persistMarktplaatsListing: (targetYachtId: string | number) => Promise<void>;
+  runMarktplaatsAction: (action: "retry" | "pause" | "remove" | "sync") => Promise<void>;
   internalReviewStatusKey: string;
   internalReviewApproved: boolean;
   internalReviewSelection: "Draft" | "For Sale";
   setInternalReviewSelection: (val: "Draft" | "For Sale") => void;
   reviewActionLoading: any;
-  updateInternalReviewStatus: (status: string, nextStep?: number) => Promise<void>;
+  updateInternalReviewStatus: (status: "Draft" | "For Sale", nextStep?: number) => Promise<void>;
   
   // Submit Props
   isSubmitting: boolean;
@@ -55,6 +68,7 @@ interface WizardStep5Props {
 export function WizardStep5({
   labelText,
   t,
+  role,
   isClientRole,
   fetchingChecklist,
   checklistTemplates,
@@ -76,6 +90,15 @@ export function WizardStep5({
   handleOpenClientSignhost,
   handleStepChange,
   activeYachtId,
+  marktplaatsListing,
+  setMarktplaatsListing,
+  sellerPublicationOptions,
+  selectedPublicationPlatforms,
+  setSelectedPublicationPlatforms,
+  isSavingMarktplaatsListing,
+  isRunningMarktplaatsAction,
+  persistMarktplaatsListing,
+  runMarktplaatsAction,
   internalReviewStatusKey,
   internalReviewApproved,
   internalReviewSelection,
@@ -84,6 +107,8 @@ export function WizardStep5({
   updateInternalReviewStatus,
   isSubmitting,
 }: WizardStep5Props) {
+  const isAdminRole = role === "admin";
+
   return (
     <div className="space-y-8">
       <div className="bg-white border border-slate-200 p-8 shadow-sm">
@@ -285,6 +310,387 @@ export function WizardStep5({
             </div>
           </div>
         </div>
+
+        {isAdminRole ? (
+          <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                  <Globe size={16} className="text-blue-600" />
+                  {labelText("publishingTitle", "Publishing")}
+                </h4>
+                <p className="mt-2 max-w-2xl text-xs text-slate-500">
+                  {labelText(
+                    "publishingDescription",
+                    "Configure whether this boat should appear in the Marktplaats XML feed. NauticSecure prepares the entry in the background, and Marktplaats imports that feed from your Admarkt account.",
+                  )}
+                </p>
+              </div>
+              <span className="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-600">
+                {String(marktplaatsListing.status || "draft").replaceAll("_", " ")}
+              </span>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                {labelText("publishToMarktplaats", "Publish to Marktplaats")}
+                <input
+                  type="checkbox"
+                  checked={marktplaatsListing.is_enabled}
+                  onChange={(e) =>
+                    setMarktplaatsListing((prev: any) => ({
+                      ...prev,
+                      is_enabled: e.target.checked,
+                    }))
+                  }
+                />
+              </label>
+              <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                {labelText("autoPublishOnSave", "Auto publish on save")}
+                <input
+                  type="checkbox"
+                  checked={marktplaatsListing.auto_publish}
+                  onChange={(e) =>
+                    setMarktplaatsListing((prev: any) => ({
+                      ...prev,
+                      auto_publish: e.target.checked,
+                    }))
+                  }
+                />
+              </label>
+              <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                {labelText("promoteListing", "Promote listing")}
+                <input
+                  type="checkbox"
+                  checked={Boolean(marktplaatsListing.settings_json?.marktplaats_promoted)}
+                  disabled={marktplaatsListing.capabilities?.supports_promotion === false}
+                  onChange={(e) =>
+                    setMarktplaatsListing((prev: any) => ({
+                      ...prev,
+                      settings_json: {
+                        ...prev.settings_json,
+                        marktplaats_promoted: e.target.checked,
+                      },
+                    }))
+                  }
+                />
+              </label>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  {labelText("budgetType", "Budget Type")}
+                </p>
+                <input
+                  type="text"
+                  value={String(marktplaatsListing.settings_json?.marktplaats_budget_type || "cpc")}
+                  disabled={marktplaatsListing.capabilities?.supports_promotion === false}
+                  onChange={(e) =>
+                    setMarktplaatsListing((prev: any) => ({
+                      ...prev,
+                      settings_json: {
+                        ...prev.settings_json,
+                        marktplaats_budget_type: e.target.value,
+                      },
+                    }))
+                  }
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                />
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  {labelText("cpcBid", "CPC Bid")}
+                </p>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={String(marktplaatsListing.settings_json?.marktplaats_cpc_bid ?? "")}
+                  disabled={marktplaatsListing.capabilities?.supports_cpc === false}
+                  onChange={(e) =>
+                    setMarktplaatsListing((prev: any) => ({
+                      ...prev,
+                      settings_json: {
+                        ...prev.settings_json,
+                        marktplaats_cpc_bid: e.target.value,
+                      },
+                    }))
+                  }
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                />
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  {labelText("targetViews", "Target Views")}
+                </p>
+                <input
+                  type="number"
+                  value={String(marktplaatsListing.settings_json?.marktplaats_target_views ?? "")}
+                  disabled={marktplaatsListing.capabilities?.supports_promotion === false}
+                  onChange={(e) =>
+                    setMarktplaatsListing((prev: any) => ({
+                      ...prev,
+                      settings_json: {
+                        ...prev.settings_json,
+                        marktplaats_target_views: e.target.value,
+                      },
+                    }))
+                  }
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  {labelText("lastSync", "Last Sync")}
+                </p>
+                <p className="mt-2 text-sm text-slate-700">
+                  {marktplaatsListing.last_sync_at
+                    ? new Date(marktplaatsListing.last_sync_at).toLocaleString()
+                    : labelText("notSyncedYet", "Not synced yet")}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  {labelText("feedUrl", "Feed URL")}
+                </p>
+                {marktplaatsListing.external_url ? (
+                  <a
+                    href={marktplaatsListing.external_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900"
+                  >
+                    {labelText("openXmlFeed", "Open XML feed")}{" "}
+                    <Globe size={14} />
+                  </a>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-700">
+                    {labelText("noFeedUrl", "No feed URL available yet")}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {marktplaatsListing.external_id ? (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  {labelText("feedReference", "Feed Reference")}
+                </p>
+                <p className="mt-2 break-all text-sm text-slate-700">
+                  {marktplaatsListing.external_id}
+                </p>
+              </div>
+            ) : null}
+
+            {(marktplaatsListing.last_error_message ||
+              (marktplaatsListing.last_validation_errors_json || []).length > 0) && (
+                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-semibold">
+                        {labelText("lastError", "Last error")}
+                      </p>
+                      {marktplaatsListing.last_error_message && (
+                        <p className="mt-1">{marktplaatsListing.last_error_message}</p>
+                      )}
+                      {(marktplaatsListing.last_validation_errors_json || []).length > 0 && (
+                        <p className="mt-1">
+                          {(marktplaatsListing.last_validation_errors_json || []).join(" ")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              {activeYachtId ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void persistMarktplaatsListing(activeYachtId)}
+                  disabled={isSavingMarktplaatsListing}
+                  className="rounded-lg"
+                >
+                  {isSavingMarktplaatsListing ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  {labelText("savePublishingSettings", "Save publishing settings")}
+                </Button>
+              ) : (
+                <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                  {labelText(
+                    "saveBoatFirstForPublishing",
+                    "Save the boat first to create the channel row and trigger background publishing.",
+                  )}
+                </div>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void runMarktplaatsAction("retry")}
+                disabled={!activeYachtId || isRunningMarktplaatsAction !== null}
+                className="rounded-lg"
+              >
+                {labelText("rebuildEntry", "Rebuild entry")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void runMarktplaatsAction("pause")}
+                disabled={!activeYachtId || !marktplaatsListing.external_id || isRunningMarktplaatsAction !== null}
+                className="rounded-lg"
+              >
+                {labelText("pauseInFeed", "Pause in feed")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void runMarktplaatsAction("sync")}
+                disabled={!activeYachtId || !marktplaatsListing.external_id || isRunningMarktplaatsAction !== null}
+                className="rounded-lg"
+              >
+                {labelText("refreshState", "Refresh state")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void runMarktplaatsAction("remove")}
+                disabled={!activeYachtId || !marktplaatsListing.external_id || isRunningMarktplaatsAction !== null}
+                className="rounded-lg text-red-700"
+              >
+                {labelText("removeFromFeed", "Remove from feed")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="max-w-3xl">
+                <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                  <Globe size={16} className="text-blue-600" />
+                  {labelText("sellerPublishingTitle", "Publish on sales websites")}
+                </h4>
+                <p className="mt-2 text-xs text-slate-500">
+                  {labelText(
+                    "sellerPublishingDescription",
+                    "Place your boat once on NauticSecure and choose where else we should publish the listing.",
+                  )}
+                </p>
+                <p className="mt-2 text-xs font-semibold text-slate-700">
+                  {labelText(
+                    "sellerPublishingBenefit",
+                    "You save time, reach more buyers, and keep everything in one dashboard.",
+                  )}
+                </p>
+              </div>
+              <span className="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-600">
+                {labelText("sellerPublishingPeriod", "/ 4 weeks")}
+              </span>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {sellerPublicationOptions.map((platform) => {
+                const selected = selectedPublicationPlatforms.includes(platform.slug);
+                return (
+                  <button
+                    key={platform.slug}
+                    type="button"
+                    onClick={() =>
+                      setSelectedPublicationPlatforms((prev) =>
+                        prev.includes(platform.slug)
+                          ? prev.filter((item) => item !== platform.slug)
+                          : [...prev, platform.slug],
+                      )
+                    }
+                    className={cn(
+                      "flex flex-col gap-4 rounded-2xl border p-4 text-left transition-all",
+                      selected
+                        ? "border-blue-500 bg-blue-50 shadow-sm"
+                        : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white",
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                        <img
+                          src={platform.logo}
+                          alt={platform.name}
+                          className="h-8 w-auto object-contain"
+                        />
+                      </div>
+                      <span className="text-lg font-black text-slate-800">
+                        €{platform.price}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{platform.name}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {labelText("sellerPublishingPeriod", "/ 4 weeks")}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em]",
+                        selected
+                          ? "bg-blue-600 text-white"
+                          : "border border-slate-200 bg-white text-slate-500",
+                      )}
+                    >
+                      {selected
+                        ? labelText("sellerPublishingSelected", "Selected")
+                        : labelText("sellerPublishingUnselected", "Choose")}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    {labelText("sellerPublishingSummary", "Selected websites")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {selectedPublicationPlatforms.length > 0
+                      ? selectedPublicationPlatforms
+                          .map((slug) => sellerPublicationOptions.find((option) => option.slug === slug)?.name)
+                          .filter(Boolean)
+                          .join(", ")
+                      : labelText("sellerPublishingChoose", "Choose websites")}
+                  </p>
+                </div>
+                <div className="text-left md:text-right">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    {labelText("sellerPublishingTotal", "Total")}
+                  </p>
+                  <p className="mt-1 text-2xl font-black text-blue-800">
+                    €{selectedPublicationPlatforms
+                      .reduce((sum, slug) => {
+                        const platform = sellerPublicationOptions.find((option) => option.slug === slug);
+                        return sum + (platform?.price || 0);
+                      }, 0)
+                      .toFixed(0)}
+                    <span className="ml-1 text-sm font-semibold text-slate-500">
+                      {labelText("sellerPublishingPeriod", "/ 4 weeks")}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-800">
+              {labelText(
+                "sellerPublishingAdminNote",
+                "Technical feed and API settings stay available to admins only.",
+              )}
+            </div>
+          </div>
+        )}
 
         {isClientRole ? (
           <div className="mb-8 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-5 text-sm text-blue-900">

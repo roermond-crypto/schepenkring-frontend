@@ -112,11 +112,10 @@ interface PublicLocation {
 }
 
 interface ChatWidgetProps {
-  harborId?: string;
-  harborName?: string;
+  locationId?: number;
+  locationName?: string;
   boatName?: string;
   boatId?: number;
-  locationId?: number;
   accentColor?: string;
   themePreset?: ThemePreset;
   colorSettings?: Partial<WidgetColors>;
@@ -315,11 +314,11 @@ function rememberWidgetLocationId(locationId?: number | null) {
 function buildBoatContextNote({
   boatId,
   boatName,
-  harborName,
+  locationName,
 }: {
   boatId: number;
   boatName?: string;
-  harborName?: string;
+  locationName?: string;
 }) {
   const parts = [`Boat context: this conversation is about boat #${boatId}.`];
 
@@ -327,8 +326,8 @@ function buildBoatContextNote({
     parts.push(`Boat name: ${boatName.trim()}.`);
   }
 
-  if (harborName?.trim()) {
-    parts.push(`Location: ${harborName.trim()}.`);
+  if (locationName?.trim()) {
+    parts.push(`Location: ${locationName.trim()}.`);
   }
 
   return parts.join(" ");
@@ -383,7 +382,7 @@ function ChatBody({
   onSend,
   typing,
   colors,
-  harborName,
+  locationName,
   sending,
   locale: _locale,
 }: {
@@ -394,7 +393,7 @@ function ChatBody({
   ) => void;
   typing: boolean;
   colors: WidgetColors;
-  harborName?: string;
+  locationName?: string;
   sending: boolean;
   locale?: string;
 }) {
@@ -413,7 +412,7 @@ function ChatBody({
   const quickPrompts = [
     t("quickPrompts.details"),
     t("quickPrompts.viewing"),
-    t("quickPrompts.harbor"),
+    t("quickPrompts.location"),
   ];
 
   useEffect(() => {
@@ -520,15 +519,15 @@ function ChatBody({
                     {prompt}
                   </button>
                 ))}
-                {harborName && (
+                {locationName && (
                   <button
                     onClick={() =>
-                      onSend(t("quickPrompts.harborSupport", { harborName }))
+                      onSend(t("quickPrompts.locationSupport", { locationName }))
                     }
                     disabled={sending}
                     className="shrink-0 rounded-full border border-sky-200 bg-sky-50 px-3.5 py-2 text-xs font-semibold text-sky-700 transition hover:-translate-y-0.5 hover:bg-sky-100 disabled:opacity-50"
                   >
-                    {t("quickPrompts.harborSupport", { harborName })}
+                    {t("quickPrompts.locationSupport", { locationName })}
                   </button>
                 )}
               </div>
@@ -1170,7 +1169,7 @@ function SmartBoatWidgetBody({
   sending,
   messages,
   colors,
-  harborName,
+  locationName,
   boatName,
   boatId,
   locationId,
@@ -1189,7 +1188,7 @@ function SmartBoatWidgetBody({
   sending: boolean;
   messages: WidgetMessage[];
   colors: WidgetColors;
-  harborName?: string;
+  locationName?: string;
   boatName?: string;
   boatId: number;
   locationId?: number;
@@ -1223,9 +1222,9 @@ function SmartBoatWidgetBody({
       buildBoatContextNote({
         boatId,
         boatName,
-        harborName,
+        locationName,
       }),
-    [boatId, boatName, harborName],
+    [boatId, boatName, locationName],
   );
 
   return (
@@ -1268,7 +1267,7 @@ function SmartBoatWidgetBody({
           onSend={(text, attachment) => onSend(text, attachment, boatContextNote)}
           typing={sending}
           colors={colors}
-          harborName={harborName}
+          locationName={locationName}
           sending={sending}
           locale={locale}
         />
@@ -1322,7 +1321,7 @@ function SmartBoatWidgetBody({
 // ── Main Widget ────────────────────────────────────────────────────
 
 export function ChatWidget({
-  harborName,
+  locationName,
   boatName,
   boatId,
   locationId,
@@ -1350,7 +1349,7 @@ export function ChatWidget({
   );
   const [sessionJwt, setSessionJwt] = useState<string | null>(null);
   const [resolvedLocationId, setResolvedLocationId] = useState<number | undefined>(undefined);
-  const [resolvedHarborName, setResolvedHarborName] = useState<string | undefined>(undefined);
+  const [resolvedLocationName, setResolvedLocationName] = useState<string | undefined>(undefined);
   const [resolvedBoatName, setResolvedBoatName] = useState<string | undefined>(boatName);
   const [initBrandColor, setInitBrandColor] = useState<string | undefined>(undefined);
   const [enabledTabs, setEnabledTabs] = useState<string[]>(["chat", "tasks", "booking"]);
@@ -1432,8 +1431,8 @@ export function ChatWidget({
         setResolvedLocationId(
           response.context?.location?.id ?? locationId ?? undefined,
         );
-        setResolvedHarborName(
-          harborName ?? response.context?.location?.name ?? undefined,
+        setResolvedLocationName(
+          locationName ?? response.context?.location?.name ?? undefined,
         );
         setResolvedBoatName(
           boatName ?? response.context?.boat?.name ?? undefined,
@@ -1471,7 +1470,7 @@ export function ChatWidget({
     return () => {
       cancelled = true;
     };
-  }, [boatId, widgetMode, locationId, harborName, boatName]);
+  }, [boatId, widgetMode, locationId, locationName, boatName]);
 
   useEffect(() => {
     if (!sharedChatLocationId) {
@@ -1796,7 +1795,7 @@ export function ChatWidget({
                   </div>
                   <div>
                     <h4 className="text-sm font-bold leading-tight">
-                      {resolvedHarborName || harborName || t("brand")}
+                      {resolvedLocationName || locationName || t("brand")}
                     </h4>
                     <p className="mt-1 text-[11px] text-white/78">
                       {boatId && widgetMode === "auction"
@@ -1874,7 +1873,7 @@ export function ChatWidget({
                   messages={messages}
                   onSend={handleSendMessage}
                   colors={colors}
-                  harborName={resolvedHarborName || harborName}
+                  locationName={resolvedLocationName || locationName}
                   boatName={resolvedBoatName}
                   sending={sending}
                   boatId={boatId}
@@ -1890,7 +1889,7 @@ export function ChatWidget({
                   onSend={handleSendMessage}
                   typing={sending}
                   colors={colors}
-                  harborName={harborName}
+                  locationName={locationName}
                   sending={sending}
                   locale={locale}
                 />

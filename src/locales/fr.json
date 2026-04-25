@@ -46,13 +46,11 @@
     "confirmPassword": "Confirmer le mot de passe",
     "verificationCode": "Code de vérification",
     "rememberTerminal": "Se souvenir du terminal",
-    "forgotPassword": "Mot de passe oublié ?",
     "forgotPasswordSubmit": "Envoyer le lien de réinitialisation",
     "forgotPasswordBackToLogin": "Retour à la connexion",
     "forgotPasswordSuccess": "Si votre adresse e-mail existe dans notre système, vous recevrez bientôt un lien pour réinitialiser votre mot de passe.",
     "forgotPasswordError": "Une erreur s'est produite. Veuillez réessayer plus tard.",
     "verifyEmail": "Vérifier l'e-mail",
-    "forgotPassword": "Mot de passe oublié ?",
     "registerCta": "S'enregistrer",
     "processing": "Traitement...",
     "validating": "Validation en cours...",
@@ -70,7 +68,6 @@
     "verificationCodeSent": "Code de vérification envoyé à votre e-mail.",
     "invalidLoginResponse": "Réponse de connexion invalide.",
     "authFailed": "Échec de l'authentification.",
-    "termsRequired": "Vous devez accepter les conditions générales pour vous inscrire.",
     "termsLabelBeforeLink": "J'accepte les",
     "termsLinkLabel": "conditions générales",
     "termsLabelAfterLink": ".",
@@ -116,11 +113,13 @@
       "overview_admin": "Aperçu administrateur",
       "overview_client": "Aperçu client",
       "overview_employee": "Tableau de bord des ventes",
+      "overview_location": "Aperçu emplacement",
+      "overview_partner": "Aperçu partenaire",
       "users": "Utilisateurs",
       "schedule": "Planning",
       "tasks": "Tâches",
       "copilot": "Copilote",
-      "harbor": "Port",
+      "harbor": "Sites",
       "interaction": "Chat",
       "settings": "Paramètres",
       "terminalSuffix": "Terminal",
@@ -140,7 +139,9 @@
       "integrations": "Integrations",
       "roleAdmin": "Admin",
       "roleClient": "Client",
-      "roleEmployee": "Vente"
+      "roleEmployee": "Vente",
+      "roleLocation": "Emplacement",
+      "rolePartner": "Partenaire"
     },
     "notifications": {
       "label": "Notifications",
@@ -489,7 +490,7 @@
     "shortcuts": {
       "locations": {
         "title": "Emplacements",
-        "description": "Gérez les emplacements, widgets et ports connectés depuis un seul endroit."
+        "description": "Gérez les emplacements, widgets et sites internes connectés depuis un seul endroit."
       },
       "salesfunnel": {
         "title": "Salesfunnel",
@@ -707,7 +708,7 @@
     "panels": {
       "reach": {
         "title": "Portée",
-        "description": "GA4 reste la source pour les utilisateurs, les sessions et les tendances d'interaction sur les campagnes Harbor."
+        "description": "GA4 reste la source pour les utilisateurs, les sessions et les tendances d'interaction sur les campagnes de sites."
       },
       "funnel": {
         "title": "Entonnoir",
@@ -722,7 +723,7 @@
   "DashboardAdminLocations": {
     "header": {
       "kicker": "Gestion des sites",
-      "title": "Ports et sites",
+      "title": "Sièges et sites",
       "subtitle": "Créez et gérez les sites utilisés pour l’inscription, le périmètre d’accès et les opérations."
     },
     "filters": {
@@ -1050,7 +1051,7 @@
       "priority": "Priorité",
       "dueDate": "Date d'échéance.",
       "assignTo": "Attribuer à",
-      "assignToEmployee": "Attribuer à l'employé (même port)",
+      "assignToEmployee": "Attribuer à l'employé (même site)",
       "status": "Statut",
       "personalAutoAssign": "Les tâches personnelles vous seront automatiquement attribuées.",
       "attachments": "Pièces jointes.",
@@ -1278,7 +1279,7 @@
     "header": {
       "title": "Chat client IA",
       "subtitle": "Assistant privé",
-      "description": "Posez des questions sur votre bateau, l’assurance, les visites ou l’assistance du port. Cette conversation est liée à votre emplacement afin que l’équipe puisse la suivre si nécessaire.",
+      "description": "Posez des questions sur votre bateau, l’assurance, les visites ou l’assistance du site. Cette conversation est liée à votre emplacement afin que l’équipe puisse la suivre si nécessaire.",
       "location": "Emplacement lié : {location}",
       "dismiss": "Masquer l’introduction"
     },
@@ -1368,18 +1369,18 @@
   },
   "WidgetChat": {
     "brand": "Schepenkring",
-    "initialMessage": "Bonjour ! Comment pouvons-nous vous aider aujourd'hui ? Posez-nous vos questions sur les bateaux, les ports ou l'assistance.",
+    "initialMessage": "Bonjour ! Comment pouvons-nous vous aider aujourd'hui ? Posez-nous vos questions sur les bateaux, les sites ou l'assistance.",
     "welcome": {
       "kicker": "Conciergerie en direct",
-      "title": "Posez vos questions sur les bateaux, les visites ou l'assistance portuaire.",
+      "title": "Posez vos questions sur les bateaux, les visites ou l'assistance du site.",
       "description": "Envoyez un message et notre équipe reviendra vers vous avec les bonnes informations.",
       "quickPrompts": "Suggestions rapides"
     },
     "quickPrompts": {
       "details": "Je veux des détails sur ce bateau",
       "viewing": "Puis-je planifier une visite ?",
-      "harbor": "Prenez-vous en charge ce port ?",
-      "harborSupport": "Assistance pour {harborName}"
+      "location": "Soutenez-vous cet emplacement ?",
+      "locationSupport": "Support pour {locationName}"
     },
     "status": {
       "supportOnline": "Support en ligne"

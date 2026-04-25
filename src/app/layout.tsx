@@ -1,7 +1,24 @@
 import type { Metadata, Viewport } from "next";
+import { Geist, Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ServiceWorkerRegister } from "@/components/common/ServiceWorkerRegister";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+});
 
 export const metadata: Metadata = {
   title: "Schepenkring CRM",
@@ -22,7 +39,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${inter.variable} ${playfair.variable} antialiased`}
+        suppressHydrationWarning
+      >
         <ServiceWorkerRegister />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
