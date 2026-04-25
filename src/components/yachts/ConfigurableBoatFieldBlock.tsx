@@ -9,6 +9,7 @@ import {
   type BoatFormConfigField,
   type BoatFormConfigFieldOption,
 } from "@/lib/api/boat-form-config";
+import { useLocale } from "next-intl";
 import { FieldHistoryPopover } from "@/components/yachts/FieldHistoryPopover";
 import {
   FieldCorrectionControls,
@@ -199,12 +200,20 @@ function BlockHeader({ icon, title }: { icon: ReactNode; title: string }) {
 function TextInput({
   needsConfirmation,
   confirmLabel = "confirm",
+  yesLabel,
+  noLabel,
   type = "text",
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & {
   needsConfirmation?: boolean;
   confirmLabel?: string;
+  yesLabel?: string;
+  noLabel?: string;
 }) {
+  const locale = useLocale();
+  const defaultYes = locale === "nl" ? "Ja" : locale === "de" ? "Ja" : locale === "fr" ? "Oui" : "Yes";
+  const defaultNo = locale === "nl" ? "Nee" : locale === "de" ? "Nein" : locale === "fr" ? "Non" : "No";
+  
   const sanitizedDefaultValue = sanitizeScalarFieldValue(props.defaultValue);
   const defaultHasValue = hasFilledFieldValue(sanitizedDefaultValue);
   const [hasUserValue, setHasUserValue] = useState<boolean | null>(null);
@@ -217,11 +226,18 @@ function TextInput({
         {...props}
         type={type}
         defaultValue={
-          typeof sanitizedDefaultValue === "boolean"
-            ? sanitizedDefaultValue
-              ? "true"
-              : "false"
-            : (sanitizedDefaultValue ?? undefined)
+          (() => {
+            const val = typeof sanitizedDefaultValue === "boolean"
+              ? sanitizedDefaultValue ? "true" : "false"
+              : (sanitizedDefaultValue ?? undefined);
+            
+            if (typeof val === "string") {
+              const lower = val.toLowerCase().trim();
+              if (lower === "yes" || lower === "true" || lower === "1") return yesLabel || defaultYes;
+              if (lower === "no" || lower === "false" || lower === "0") return noLabel || defaultNo;
+            }
+            return val;
+          })()
         }
         onChange={(event) => {
           setHasUserValue(hasFilledFieldValue(event.target.value));
@@ -247,9 +263,9 @@ function TextInput({
 
 function TriStateField({
   needsConfirmation,
-  yesLabel = "Yes",
-  noLabel = "No",
-  unknownLabel = "Unknown",
+  yesLabel,
+  noLabel,
+  unknownLabel,
   confirmLabel = "confirm",
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement> & {
@@ -259,6 +275,11 @@ function TriStateField({
   unknownLabel?: string;
   confirmLabel?: string;
 }) {
+  const locale = useLocale();
+  const defaultYes = locale === "nl" ? "Ja" : locale === "de" ? "Ja" : locale === "fr" ? "Oui" : "Yes";
+  const defaultNo = locale === "nl" ? "Nee" : locale === "de" ? "Nein" : locale === "fr" ? "Non" : "No";
+  const defaultUnknown = locale === "nl" ? "Onbekend" : locale === "de" ? "Unbekannt" : locale === "fr" ? "Inconnu" : "Unknown";
+
   const normalizedDefault = normalizeTriStateValue(props.defaultValue);
   const [currentValue, setCurrentValue] = useState<
     "yes" | "no" | "" | null
@@ -287,9 +308,9 @@ function TriStateField({
         )}
       >
         <option value=""></option>
-        <option value="yes">{yesLabel}</option>
-        <option value="no">{noLabel}</option>
-        <option value="unknown">{unknownLabel}</option>
+        <option value="yes">{yesLabel || defaultYes}</option>
+        <option value="no">{noLabel || defaultNo}</option>
+        <option value="unknown">{unknownLabel || defaultUnknown}</option>
       </select>
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
@@ -388,13 +409,17 @@ function DynamicField({
     option: BoatFormConfigFieldOption,
   ) => string | undefined;
 }) {
+  const locale = useLocale();
   const numeric =
     NUMERIC_FIELD_TYPES.has(field.field_type) ||
     field.field_type.includes("number");
   const selectOptions = field.options ?? [];
   const isSelectField =
     field.field_type === "select" && selectOptions.length > 0;
-  const displayLabel = resolveFieldLabel?.(field) || field.label;
+  
+  // Prioritize localized label from the backend field object if available for current locale
+  const backendLocalizedLabel = field.labels?.[locale] || field.label;
+  const displayLabel = resolveFieldLabel?.(field) || backendLocalizedLabel;
   const localizedOptions = isSelectField
     ? selectOptions.map((option) => ({
         ...option,
@@ -445,6 +470,8 @@ function DynamicField({
           defaultValue={value as any}
           needsConfirmation={needsConfirmation}
           confirmLabel={confirmLabel}
+          yesLabel={yesLabel}
+          noLabel={noLabel}
         />
       )}
       {showCorrectionControls && (
@@ -501,7 +528,9 @@ export function ConfigurableBoatFieldBlock({
       <BlockHeader icon={icon} title={title} />
       <div className={cn("grid grid-cols-2 md:grid-cols-4 gap-5", gridClassName)}>
         {block.primary_fields.map((field) => {
-          const isTriState = field.field_type === "tri_state";
+          const isTriState = 
+            field.field_type === "tri_state" || 
+            (optionalTriStateFields?.includes(field.internal_key));
 
           return (
             <DynamicField
@@ -510,7 +539,7 @@ export function ConfigurableBoatFieldBlock({
               value={values?.[field.internal_key] as any}
               yachtId={yachtId}
               needsConfirmation={needsConfirm?.(field.internal_key) ?? false}
-              isTriState={isTriState}
+              isTriState={!!isTriState}
               correctionLabel={correctionLabels?.[field.internal_key]}
               onCorrectionLabelChange={
                 onCorrectionLabelChange
@@ -529,7 +558,9 @@ export function ConfigurableBoatFieldBlock({
         })}
 
         {visibleSecondary.map((field) => {
-          const isTriState = field.field_type === "tri_state";
+          const isTriState = 
+            field.field_type === "tri_state" || 
+            (optionalTriStateFields?.includes(field.internal_key));
 
           return (
             <DynamicField
@@ -538,7 +569,7 @@ export function ConfigurableBoatFieldBlock({
               value={values?.[field.internal_key] as any}
               yachtId={yachtId}
               needsConfirmation={needsConfirm?.(field.internal_key) ?? false}
-              isTriState={isTriState}
+              isTriState={!!isTriState}
               correctionLabel={correctionLabels?.[field.internal_key]}
               onCorrectionLabelChange={
                 onCorrectionLabelChange

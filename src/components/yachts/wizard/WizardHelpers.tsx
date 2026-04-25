@@ -330,6 +330,13 @@ export function TriStateSelect(
     confirmLabel = "Confirm",
     ...selectProps
   } = props;
+
+  const locale = useLocale();
+  const defaultYes = locale === "nl" ? "Ja" : locale === "de" ? "Ja" : locale === "fr" ? "Oui" : "Yes";
+  const defaultNo = locale === "nl" ? "Nee" : locale === "de" ? "Nein" : locale === "fr" ? "Non" : "No";
+  const defaultUnknown = locale === "nl" ? "Onbekend" : locale === "de" ? "Unbekannt" : locale === "fr" ? "Inconnu" : "Unknown";
+  const defaultConfirm = locale === "nl" ? "Controleren" : locale === "de" ? "Prüfen" : locale === "fr" ? "Vérifier" : "Confirm";
+
   const shouldShowAdminEditLink =
     showAdminEditLink && typeof fieldName === "string" && fieldName !== "";
   const normalizedDefault = normalizeTriStateValue(
@@ -375,9 +382,9 @@ export function TriStateSelect(
         )}
       >
         <option value=""></option>
-        <option value="yes">{yesLabel}</option>
-        <option value="no">{noLabel}</option>
-        <option value="unknown">{unknownLabel}</option>
+        <option value="yes">{props.yesLabel || defaultYes}</option>
+        <option value="no">{props.noLabel || defaultNo}</option>
+        <option value="unknown">{props.unknownLabel || defaultUnknown}</option>
       </select>
       {shouldShowAdminEditLink && (
         <BoatFieldSettingsLink
@@ -387,7 +394,7 @@ export function TriStateSelect(
       )}
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
-          ⚠ {confirmLabel}
+          ⚠ {props.confirmLabel || defaultConfirm}
         </span>
       )}
     </div>

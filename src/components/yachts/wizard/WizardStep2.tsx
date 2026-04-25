@@ -317,44 +317,7 @@ export function WizardStep2({
                     setSelectedLocationId(null);
                   }}
                 />
-                <div className="mt-4">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
-                    {commonText("orSelectHarbor", "Or select internal location:")}
-                  </p>
-                  <Select
-                    value={selectedYacht?.location_id?.toString() || ""}
-                    onValueChange={(val) => {
-                      setSelectedYacht((prev: any) => ({
-                        ...prev,
-                        location_id: Number(val),
-                        location_location_id: null
-                      }));
-                      setSelectedLocationId(null);
-                    }}
-                  >
-                    <SelectTrigger
-                      className={cn(
-                        "h-11 border-slate-200",
-                        hasFilledFieldValue(selectedYacht?.location_id) &&
-                          "border-amber-300 bg-amber-50/50",
-                      )}
-                    >
-                      <SelectValue
-                        placeholder={commonText(
-                          "selectLocation",
-                          "Select location...",
-                        )}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map((l) => (
-                        <SelectItem key={l.id} value={l.id.toString()}>
-                          {l.name} ({l.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Managing branch selector removed per user request */}
 
                 {/* Hidden fields for geo-coordinates */}
                 <input type="hidden" name="where" value={selectedYacht?.where || ''} />
@@ -662,6 +625,14 @@ export function WizardStep2({
                 yesLabel={(commonText as any)("yes", "Yes")}
                 noLabel={(commonText as any)("no", "No")}
                 unknownLabel={(commonText as any)("unknown", "Unknown")}
+                confirmLabel={(commonText as any)("confirm", "confirm")}
+                resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+                resolveOptionLabel={(f, o) => {
+                  const label = String(o.label || "").toLowerCase();
+                  if (label === "yes" || label === "true") return commonText("yes", "Yes");
+                  if (label === "no" || label === "false") return commonText("no", "No");
+                  return labelText(o.label as any, o.label);
+                }}
                 gridClassName="md:grid-cols-2"
               />
             ) : (
@@ -871,6 +842,14 @@ export function WizardStep2({
                 yesLabel={(commonText as any)("yes", "Yes")}
                 noLabel={(commonText as any)("no", "No")}
                 unknownLabel={(commonText as any)("unknown", "Unknown")}
+                confirmLabel={(commonText as any)("confirm", "confirm")}
+                resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+                resolveOptionLabel={(f, o) => {
+              const label = String(o.label || "").toLowerCase();
+              if (label === "yes" || label === "true") return commonText("yes", "Yes");
+              if (label === "no" || label === "false") return commonText("no", "No");
+              return labelText(o.label as any, o.label);
+            }}
                 gridClassName="md:grid-cols-2"
               />
             ) : (
@@ -1078,9 +1057,20 @@ export function WizardStep2({
             yachtId={Number(selectedYachtId)}
             needsConfirm={needsConfirm}
             optionalTriStateFields={OPTIONAL_TRI_STATE_FIELDS}
+            correctionLabels={fieldCorrectionLabels}
+            onCorrectionLabelChange={handleFieldCorrectionLabelChange}
             yesLabel={(commonText as any)("yes", "Yes")}
             noLabel={(commonText as any)("no", "No")}
             unknownLabel={(commonText as any)("unknown", "Unknown")}
+            confirmLabel={(commonText as any)("confirm", "confirm")}
+            resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            resolveOptionLabel={(f, o) => {
+              const label = String(o.label || "").toLowerCase();
+              if (label === "yes" || label === "true") return commonText("yes", "Yes");
+              if (label === "no" || label === "false") return commonText("no", "No");
+              return labelText(o.label as any, o.label);
+            }}
+            gridClassName="md:grid-cols-3"
           />
         ) : (
           <div className="space-y-5">
@@ -1624,6 +1614,14 @@ export function WizardStep2({
             yesLabel={(commonText as any)("yes", "Yes")}
             noLabel={(commonText as any)("no", "No")}
             unknownLabel={(commonText as any)("unknown", "Unknown")}
+            confirmLabel={(commonText as any)("confirm", "confirm")}
+            resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            resolveOptionLabel={(f, o) => {
+              const label = String(o.label || "").toLowerCase();
+              if (label === "yes" || label === "true") return commonText("yes", "Yes");
+              if (label === "no" || label === "false") return commonText("no", "No");
+              return labelText(o.label as any, o.label);
+            }}
             gridClassName="md:grid-cols-3"
           />
         ) : (
@@ -1799,6 +1797,14 @@ export function WizardStep2({
             yesLabel={(commonText as any)("yes", "Yes")}
             noLabel={(commonText as any)("no", "No")}
             unknownLabel={(commonText as any)("unknown", "Unknown")}
+            confirmLabel={(commonText as any)("confirm", "confirm")}
+            resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            resolveOptionLabel={(f, o) => {
+              const label = String(o.label || "").toLowerCase();
+              if (label === "yes" || label === "true") return commonText("yes", "Yes");
+              if (label === "no" || label === "false") return commonText("no", "No");
+              return labelText(o.label as any, o.label);
+            }}
             gridClassName="md:grid-cols-3"
           />
         ) : (
@@ -1940,6 +1946,14 @@ export function WizardStep2({
             yesLabel={(commonText as any)("yes", "Yes")}
             noLabel={(commonText as any)("no", "No")}
             unknownLabel={(commonText as any)("unknown", "Unknown")}
+            confirmLabel={(commonText as any)("confirm", "confirm")}
+            resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            resolveOptionLabel={(f, o) => {
+              const label = String(o.label || "").toLowerCase();
+              if (label === "yes" || label === "true") return commonText("yes", "Yes");
+              if (label === "no" || label === "false") return commonText("no", "No");
+              return labelText(o.label as any, o.label);
+            }}
             gridClassName="md:grid-cols-3"
           />
         ) : (
@@ -2128,6 +2142,14 @@ export function WizardStep2({
             yesLabel={(commonText as any)("yes", "Yes")}
             noLabel={(commonText as any)("no", "No")}
             unknownLabel={(commonText as any)("unknown", "Unknown")}
+            confirmLabel={(commonText as any)("confirm", "confirm")}
+            resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            resolveOptionLabel={(f, o) => {
+              const label = String(o.label || "").toLowerCase();
+              if (label === "yes" || label === "true") return commonText("yes", "Yes");
+              if (label === "no" || label === "false") return commonText("no", "No");
+              return labelText(o.label as any, o.label);
+            }}
             gridClassName="md:grid-cols-3"
           />
         ) : (
@@ -2324,6 +2346,14 @@ export function WizardStep2({
             yesLabel={(commonText as any)("yes", "Yes")}
             noLabel={(commonText as any)("no", "No")}
             unknownLabel={(commonText as any)("unknown", "Unknown")}
+            confirmLabel={(commonText as any)("confirm", "confirm")}
+            resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            resolveOptionLabel={(f, o) => {
+              const label = String(o.label || "").toLowerCase();
+              if (label === "yes" || label === "true") return commonText("yes", "Yes");
+              if (label === "no" || label === "false") return commonText("no", "No");
+              return labelText(o.label as any, o.label);
+            }}
             gridClassName="md:grid-cols-3"
           />
         ) : (
@@ -2528,6 +2558,14 @@ export function WizardStep2({
             yesLabel={(commonText as any)("yes", "Yes")}
             noLabel={(commonText as any)("no", "No")}
             unknownLabel={(commonText as any)("unknown", "Unknown")}
+            confirmLabel={(commonText as any)("confirm", "confirm")}
+            resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            resolveOptionLabel={(f, o) => {
+              const label = String(o.label || "").toLowerCase();
+              if (label === "yes" || label === "true") return commonText("yes", "Yes");
+              if (label === "no" || label === "false") return commonText("no", "No");
+              return labelText(o.label as any, o.label);
+            }}
             gridClassName="md:grid-cols-3"
           />
         ) : (

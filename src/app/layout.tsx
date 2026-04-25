@@ -3,6 +3,7 @@ import { Geist, Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ServiceWorkerRegister } from "@/components/common/ServiceWorkerRegister";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${inter.variable} ${playfair.variable} antialiased`}
         suppressHydrationWarning
       >
+        <Script
+          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&libraries=places&loading=async`}
+          strategy="afterInteractive"
+        />
         <ServiceWorkerRegister />
         <ThemeProvider>{children}</ThemeProvider>
       </body>

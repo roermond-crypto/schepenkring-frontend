@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { BoatFieldSettingsLink } from "@/components/yachts/BoatFieldSettingsLink";
@@ -16,6 +17,7 @@ interface Props {
     onSelect?: (id: number | string, name: string) => void;
     needsConfirmation?: boolean;
     showAdminEditLink?: boolean;
+    showIcon?: boolean;
 }
 
 interface CatalogAutocompleteItem {
@@ -60,6 +62,7 @@ export function CatalogAutocomplete({
     onSelect,
     needsConfirmation,
     showAdminEditLink = true,
+    showIcon = false,
 }: Props) {
     const locale = useLocale();
     const text = CATALOG_TEXT[locale as keyof typeof CATALOG_TEXT] ?? CATALOG_TEXT.en;
@@ -116,6 +119,11 @@ export function CatalogAutocomplete({
             className={cn("relative", isOpen && query.length > 1 && "z-[120]")}
             ref={wrapperRef}
         >
+            {showIcon && (
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                    <Search className="h-4 w-4 text-slate-400" />
+                </div>
+            )}
             <input
                 type="text"
                 name={name}
@@ -128,7 +136,8 @@ export function CatalogAutocomplete({
                 }}
                 onFocus={() => setIsOpen(true)}
                 className={cn(
-                    "w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
+                    "w-full bg-white border border-slate-200 rounded-md py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
+                    showIcon ? "pl-10 pr-3.5" : "px-3.5",
                     "hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
                     shouldShowAdminEditLink && "pr-12",
                     highlighted && "ring-2 ring-amber-400 border-amber-400 bg-amber-50"

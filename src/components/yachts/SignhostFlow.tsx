@@ -260,6 +260,10 @@ type YachtContractData = {
   boat_name?: string | null;
   manufacturer?: string | null;
   model?: string | null;
+  vessel_lying?: string | null;
+  location_city?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
   email?: string | null;
   phone?: string | null;
   user?: {
@@ -1488,7 +1492,12 @@ function buildContractDraft(
     companyAddress: sellerData?.address || locationDefaults.companyAddress || "",
     companyPostalCode:
       sellerData?.postal_code || locationDefaults.companyPostalCode || "",
-    companyCity: sellerData?.city || locationDefaults.companyCity || "",
+    companyCity:
+      sellerData?.city ||
+      locationDefaults.companyCity ||
+      yachtData?.location_city ||
+      yachtData?.vessel_lying ||
+      "",
     companyPhone: sellerData?.phone || locationDefaults.companyPhone || "",
     companyEmail: sellerData?.email || locationDefaults.companyEmail || "",
     clientName: buyerDisplayName,
@@ -1535,7 +1544,11 @@ function buildContractDraft(
     askingPriceWords: "",
     storageFee: "",
     agreementDate: new Date().toISOString().slice(0, 10),
-    agreementCity: locationDefaults.agreementCity || "",
+    agreementCity:
+      locationDefaults.agreementCity ||
+      yachtData?.location_city ||
+      yachtData?.vessel_lying ||
+      "",
   };
 }
 
@@ -3489,11 +3502,14 @@ export function SignhostFlow({
               <Globe2 size={14} />
               {titleCase(draft.language)}
               <span className="text-slate-300">•</span>
-              {selectedLocation?.name || editorCopy.noLocationSelected}
+              {selectedLocation?.name ||
+                yachtData?.vessel_lying ||
+                yachtData?.location_city ||
+                editorCopy.noLocationSelected}
             </div>
           </div>
 
-          {!locationId && (
+          {!(locationId || yachtData?.vessel_lying || yachtData?.location_city) && (
             <div className="px-6 mt-5">
               <div className=" flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
