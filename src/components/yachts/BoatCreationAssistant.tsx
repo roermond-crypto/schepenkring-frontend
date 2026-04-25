@@ -17,7 +17,7 @@ type SuggestionResponse = {
 const suggestionCache = new Map<string, SuggestionResponse>();
 const suggestionInFlight = new Map<string, Promise<SuggestionResponse>>();
 const autoAppliedSignatures = new Set<string>();
-// fixes
+
 const ASSISTANT_TEXT = {
     en: {
         title: "AI Creation Assistant",
@@ -36,6 +36,10 @@ const ASSISTANT_TEXT = {
         price: "Price",
         engineSingle: "engine",
         enginePlural: "engines",
+        limitedConsensusWarning:
+            "Suggestions include a fallback because catalog consensus was limited.",
+        reviewPassWarning:
+            "Some suggestions needed an extra review pass before being shown.",
     },
     nl: {
         title: "AI-aanmaakassistent",
@@ -54,6 +58,10 @@ const ASSISTANT_TEXT = {
         price: "Prijs",
         engineSingle: "motor",
         enginePlural: "motoren",
+        limitedConsensusWarning:
+            "Suggesties bevatten een terugvaloptie omdat de catalogusconsensus beperkt was.",
+        reviewPassWarning:
+            "Sommige suggesties hadden een extra controle nodig voordat ze werden getoond.",
     },
     de: {
         title: "KI-Erstellungsassistent",
@@ -72,6 +80,10 @@ const ASSISTANT_TEXT = {
         price: "Preis",
         engineSingle: "Motor",
         enginePlural: "Motoren",
+        limitedConsensusWarning:
+            "Die Vorschläge enthalten einen Fallback, weil der Katalogkonsens begrenzt war.",
+        reviewPassWarning:
+            "Einige Vorschläge benötigten vor der Anzeige einen zusätzlichen Prüfschritt.",
     },
     fr: {
         title: "Assistant de creation IA",
@@ -90,6 +102,10 @@ const ASSISTANT_TEXT = {
         price: "Prix",
         engineSingle: "moteur",
         enginePlural: "moteurs",
+        limitedConsensusWarning:
+            "Les suggestions incluent une solution de secours car le consensus du catalogue etait limite.",
+        reviewPassWarning:
+            "Certaines suggestions ont necessite une verification supplementaire avant affichage.",
     },
 } as const;
 
@@ -218,6 +234,20 @@ export function BoatCreationAssistant({
 
     const hasSuggestions = items.length > 0;
     const warnings = Array.isArray(suggestions?.warnings) ? suggestions.warnings : [];
+    const sanitizeWarning = (warning: string) => {
+        const normalized = warning.toLowerCase();
+
+        if (normalized.includes("pinecone")) {
+            return text.limitedConsensusWarning;
+        }
+
+        if (normalized.includes("gemini") || normalized.includes("chatgpt")) {
+            return text.reviewPassWarning;
+        }
+
+        return warning;
+    };
+    const warningText = warnings.length > 0 ? sanitizeWarning(warnings[0]) : null;
 
     if (!hasSuggestions && !isLoading) return null;
     if (autoApply) return null;
@@ -261,9 +291,9 @@ export function BoatCreationAssistant({
                         ))}
                     </div>
 
-                    {warnings.length > 0 && (
+                    {warningText && (
                         <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-3 py-2">
-                            {warnings[0]}
+                            {warningText}
                         </p>
                     )}
 

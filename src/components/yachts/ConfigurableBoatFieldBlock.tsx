@@ -20,6 +20,8 @@ type ConfigurableBoatFieldBlockProps = {
   block: BoatFormConfigBlock;
   icon: ReactNode;
   title: string;
+  showMoreLabel?: string;
+  showLessLabel?: string;
   values: Record<string, unknown> | null;
   yachtId?: number;
   needsConfirm?: (fieldName: string) => boolean;
@@ -33,6 +35,13 @@ type ConfigurableBoatFieldBlockProps = {
   noLabel?: string;
   unknownLabel?: string;
   gridClassName?: string;
+  selectPlaceholder?: string;
+  confirmLabel?: string;
+  resolveFieldLabel?: (field: BoatFormConfigField) => string | undefined;
+  resolveOptionLabel?: (
+    field: BoatFormConfigField,
+    option: BoatFormConfigFieldOption,
+  ) => string | undefined;
 };
 
 const NUMERIC_FIELD_TYPES = new Set(["number", "integer", "decimal", "float"]);
@@ -154,7 +163,7 @@ function normalizeTriStateValue(value: unknown): "yes" | "no" | "" {
     return "no";
   }
 
-  return normalized === "unknown" ? "" : "";
+  return "";
 }
 
 function BlockLabel({
@@ -189,10 +198,12 @@ function BlockHeader({ icon, title }: { icon: ReactNode; title: string }) {
 
 function TextInput({
   needsConfirmation,
+  confirmLabel = "confirm",
   type = "text",
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & {
   needsConfirmation?: boolean;
+  confirmLabel?: string;
 }) {
   const sanitizedDefaultValue = sanitizeScalarFieldValue(props.defaultValue);
   const defaultHasValue = hasFilledFieldValue(sanitizedDefaultValue);
@@ -227,7 +238,7 @@ function TextInput({
       />
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
-          confirm
+          {confirmLabel}
         </span>
       )}
     </div>
@@ -239,12 +250,14 @@ function TriStateField({
   yesLabel = "Yes",
   noLabel = "No",
   unknownLabel = "Unknown",
+  confirmLabel = "confirm",
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement> & {
   needsConfirmation?: boolean;
   yesLabel?: string;
   noLabel?: string;
   unknownLabel?: string;
+  confirmLabel?: string;
 }) {
   const normalizedDefault = normalizeTriStateValue(props.defaultValue);
   const [currentValue, setCurrentValue] = useState<
@@ -280,7 +293,7 @@ function TriStateField({
       </select>
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
-          confirm
+          {confirmLabel}
         </span>
       )}
     </div>
@@ -291,11 +304,13 @@ function SelectInput({
   needsConfirmation,
   options,
   placeholder = "Select...",
+  confirmLabel = "confirm",
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement> & {
   needsConfirmation?: boolean;
   options: BoatFormConfigFieldOption[];
   placeholder?: string;
+  confirmLabel?: string;
 }) {
   const [currentValue, setCurrentValue] = useState<string | null>(null);
   const sanitizedDefaultValue = sanitizeScalarFieldValue(props.defaultValue);
@@ -332,7 +347,7 @@ function SelectInput({
       </select>
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
-          confirm
+          {confirmLabel}
         </span>
       )}
     </div>
@@ -350,6 +365,10 @@ function DynamicField({
   yesLabel,
   noLabel,
   unknownLabel,
+  selectPlaceholder,
+  confirmLabel,
+  resolveFieldLabel,
+  resolveOptionLabel,
 }: {
   field: BoatFormConfigField;
   value: unknown;
@@ -361,6 +380,13 @@ function DynamicField({
   yesLabel?: string;
   noLabel?: string;
   unknownLabel?: string;
+  selectPlaceholder?: string;
+  confirmLabel?: string;
+  resolveFieldLabel?: (field: BoatFormConfigField) => string | undefined;
+  resolveOptionLabel?: (
+    field: BoatFormConfigField,
+    option: BoatFormConfigFieldOption,
+  ) => string | undefined;
 }) {
   const numeric =
     NUMERIC_FIELD_TYPES.has(field.field_type) ||
@@ -368,6 +394,13 @@ function DynamicField({
   const selectOptions = field.options ?? [];
   const isSelectField =
     field.field_type === "select" && selectOptions.length > 0;
+  const displayLabel = resolveFieldLabel?.(field) || field.label;
+  const localizedOptions = isSelectField
+    ? selectOptions.map((option) => ({
+        ...option,
+        label: resolveOptionLabel?.(field, option) || option.label,
+      }))
+    : selectOptions;
 
   const showCorrectionControls =
     correctionLabel !== undefined && typeof onCorrectionLabelChange === "function";
@@ -375,39 +408,43 @@ function DynamicField({
   return (
     <div className="space-y-2 group">
       <div className="flex items-center gap-2">
-        <BlockLabel className="mb-0">{field.label}</BlockLabel>
-        <FieldHelpTooltip text={field.help_text} label={field.label} />
+        <BlockLabel className="mb-0">{displayLabel}</BlockLabel>
+        <FieldHelpTooltip text={field.help_text} label={displayLabel} />
         <BoatFieldSettingsLink fieldName={field.internal_key} />
         {yachtId && (
           <FieldHistoryPopover
             yachtId={yachtId}
             fieldName={field.internal_key}
-            label={field.label}
+            label={displayLabel}
           />
         )}
       </div>
       {isTriState ? (
         <TriStateField
           name={field.internal_key}
-          defaultValue={value as string | undefined}
+          defaultValue={value as any}
           needsConfirmation={needsConfirmation}
           yesLabel={yesLabel}
           noLabel={noLabel}
           unknownLabel={unknownLabel}
+          confirmLabel={confirmLabel}
         />
       ) : isSelectField ? (
         <SelectInput
           name={field.internal_key}
-          defaultValue={value as string | undefined}
+          defaultValue={value as any}
           needsConfirmation={needsConfirmation}
-          options={selectOptions}
+          options={localizedOptions}
+          placeholder={selectPlaceholder}
+          confirmLabel={confirmLabel}
         />
       ) : (
         <TextInput
           name={field.internal_key}
           type={numeric ? "number" : "text"}
-          defaultValue={value as string | number | undefined}
+          defaultValue={value as any}
           needsConfirmation={needsConfirmation}
+          confirmLabel={confirmLabel}
         />
       )}
       {showCorrectionControls && (
@@ -425,6 +462,8 @@ export function ConfigurableBoatFieldBlock({
   block,
   icon,
   title,
+  showMoreLabel = "Show more",
+  showLessLabel = "Show less",
   values,
   yachtId,
   needsConfirm,
@@ -435,6 +474,10 @@ export function ConfigurableBoatFieldBlock({
   noLabel,
   unknownLabel,
   gridClassName,
+  selectPlaceholder,
+  confirmLabel,
+  resolveFieldLabel,
+  resolveOptionLabel,
 }: ConfigurableBoatFieldBlockProps) {
   const secondaryHasValue = useMemo(
     () =>
@@ -464,7 +507,7 @@ export function ConfigurableBoatFieldBlock({
             <DynamicField
               key={`primary-${field.id}`}
               field={field}
-              value={values?.[field.internal_key]}
+              value={values?.[field.internal_key] as any}
               yachtId={yachtId}
               needsConfirmation={needsConfirm?.(field.internal_key) ?? false}
               isTriState={isTriState}
@@ -477,6 +520,10 @@ export function ConfigurableBoatFieldBlock({
               yesLabel={yesLabel}
               noLabel={noLabel}
               unknownLabel={unknownLabel}
+              selectPlaceholder={selectPlaceholder}
+              confirmLabel={confirmLabel}
+              resolveFieldLabel={resolveFieldLabel}
+              resolveOptionLabel={resolveOptionLabel}
             />
           );
         })}
@@ -488,7 +535,7 @@ export function ConfigurableBoatFieldBlock({
             <DynamicField
               key={`secondary-${field.id}`}
               field={field}
-              value={values?.[field.internal_key]}
+              value={values?.[field.internal_key] as any}
               yachtId={yachtId}
               needsConfirmation={needsConfirm?.(field.internal_key) ?? false}
               isTriState={isTriState}
@@ -501,6 +548,10 @@ export function ConfigurableBoatFieldBlock({
               yesLabel={yesLabel}
               noLabel={noLabel}
               unknownLabel={unknownLabel}
+              selectPlaceholder={selectPlaceholder}
+              confirmLabel={confirmLabel}
+              resolveFieldLabel={resolveFieldLabel}
+              resolveOptionLabel={resolveOptionLabel}
             />
           );
         })}
@@ -515,8 +566,8 @@ export function ConfigurableBoatFieldBlock({
           >
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             {expanded
-              ? "- Show less"
-              : `+ Show more (${block.secondary_count})`}
+              ? `- ${showLessLabel}`
+              : `+ ${showMoreLabel} (${block.secondary_count})`}
           </button>
         </div>
       )}
