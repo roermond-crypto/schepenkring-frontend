@@ -9,6 +9,7 @@ import {
   type BoatFormConfigField,
   type BoatFormConfigFieldOption,
 } from "@/lib/api/boat-form-config";
+import { useLocale } from "next-intl";
 import { FieldHistoryPopover } from "@/components/yachts/FieldHistoryPopover";
 import {
   FieldCorrectionControls,
@@ -20,6 +21,8 @@ type ConfigurableBoatFieldBlockProps = {
   block: BoatFormConfigBlock;
   icon: ReactNode;
   title: string;
+  showMoreLabel?: string;
+  showLessLabel?: string;
   values: Record<string, unknown> | null;
   yachtId?: number;
   needsConfirm?: (fieldName: string) => boolean;
@@ -33,6 +36,13 @@ type ConfigurableBoatFieldBlockProps = {
   noLabel?: string;
   unknownLabel?: string;
   gridClassName?: string;
+  selectPlaceholder?: string;
+  confirmLabel?: string;
+  resolveFieldLabel?: (field: BoatFormConfigField) => string | undefined;
+  resolveOptionLabel?: (
+    field: BoatFormConfigField,
+    option: BoatFormConfigFieldOption,
+  ) => string | undefined;
 };
 
 const NUMERIC_FIELD_TYPES = new Set(["number", "integer", "decimal", "float"]);
@@ -154,7 +164,7 @@ function normalizeTriStateValue(value: unknown): "yes" | "no" | "" {
     return "no";
   }
 
-  return normalized === "unknown" ? "" : "";
+  return "";
 }
 
 function BlockLabel({
@@ -189,11 +199,21 @@ function BlockHeader({ icon, title }: { icon: ReactNode; title: string }) {
 
 function TextInput({
   needsConfirmation,
+  confirmLabel = "confirm",
+  yesLabel,
+  noLabel,
   type = "text",
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & {
   needsConfirmation?: boolean;
+  confirmLabel?: string;
+  yesLabel?: string;
+  noLabel?: string;
 }) {
+  const locale = useLocale();
+  const defaultYes = locale === "nl" ? "Ja" : locale === "de" ? "Ja" : locale === "fr" ? "Oui" : "Yes";
+  const defaultNo = locale === "nl" ? "Nee" : locale === "de" ? "Nein" : locale === "fr" ? "Non" : "No";
+  
   const sanitizedDefaultValue = sanitizeScalarFieldValue(props.defaultValue);
   const defaultHasValue = hasFilledFieldValue(sanitizedDefaultValue);
   const [hasUserValue, setHasUserValue] = useState<boolean | null>(null);
@@ -206,11 +226,18 @@ function TextInput({
         {...props}
         type={type}
         defaultValue={
-          typeof sanitizedDefaultValue === "boolean"
-            ? sanitizedDefaultValue
-              ? "true"
-              : "false"
-            : (sanitizedDefaultValue ?? undefined)
+          (() => {
+            const val = typeof sanitizedDefaultValue === "boolean"
+              ? sanitizedDefaultValue ? "true" : "false"
+              : (sanitizedDefaultValue ?? undefined);
+            
+            if (typeof val === "string") {
+              const lower = val.toLowerCase().trim();
+              if (lower === "yes" || lower === "true" || lower === "1") return yesLabel || defaultYes;
+              if (lower === "no" || lower === "false" || lower === "0") return noLabel || defaultNo;
+            }
+            return val;
+          })()
         }
         onChange={(event) => {
           setHasUserValue(hasFilledFieldValue(event.target.value));
@@ -227,7 +254,7 @@ function TextInput({
       />
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
-          confirm
+          {confirmLabel}
         </span>
       )}
     </div>
@@ -236,16 +263,23 @@ function TextInput({
 
 function TriStateField({
   needsConfirmation,
-  yesLabel = "Yes",
-  noLabel = "No",
-  unknownLabel = "Unknown",
+  yesLabel,
+  noLabel,
+  unknownLabel,
+  confirmLabel = "confirm",
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement> & {
   needsConfirmation?: boolean;
   yesLabel?: string;
   noLabel?: string;
   unknownLabel?: string;
+  confirmLabel?: string;
 }) {
+  const locale = useLocale();
+  const defaultYes = locale === "nl" ? "Ja" : locale === "de" ? "Ja" : locale === "fr" ? "Oui" : "Yes";
+  const defaultNo = locale === "nl" ? "Nee" : locale === "de" ? "Nein" : locale === "fr" ? "Non" : "No";
+  const defaultUnknown = locale === "nl" ? "Onbekend" : locale === "de" ? "Unbekannt" : locale === "fr" ? "Inconnu" : "Unknown";
+
   const normalizedDefault = normalizeTriStateValue(props.defaultValue);
   const [currentValue, setCurrentValue] = useState<
     "yes" | "no" | "" | null
@@ -274,13 +308,13 @@ function TriStateField({
         )}
       >
         <option value=""></option>
-        <option value="yes">{yesLabel}</option>
-        <option value="no">{noLabel}</option>
-        <option value="unknown">{unknownLabel}</option>
+        <option value="yes">{yesLabel || defaultYes}</option>
+        <option value="no">{noLabel || defaultNo}</option>
+        <option value="unknown">{unknownLabel || defaultUnknown}</option>
       </select>
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
-          confirm
+          {confirmLabel}
         </span>
       )}
     </div>
@@ -291,11 +325,13 @@ function SelectInput({
   needsConfirmation,
   options,
   placeholder = "Select...",
+  confirmLabel = "confirm",
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement> & {
   needsConfirmation?: boolean;
   options: BoatFormConfigFieldOption[];
   placeholder?: string;
+  confirmLabel?: string;
 }) {
   const [currentValue, setCurrentValue] = useState<string | null>(null);
   const sanitizedDefaultValue = sanitizeScalarFieldValue(props.defaultValue);
@@ -332,7 +368,7 @@ function SelectInput({
       </select>
       {needsConfirmation && (
         <span className="absolute -top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
-          confirm
+          {confirmLabel}
         </span>
       )}
     </div>
@@ -350,6 +386,10 @@ function DynamicField({
   yesLabel,
   noLabel,
   unknownLabel,
+  selectPlaceholder,
+  confirmLabel,
+  resolveFieldLabel,
+  resolveOptionLabel,
 }: {
   field: BoatFormConfigField;
   value: unknown;
@@ -361,13 +401,31 @@ function DynamicField({
   yesLabel?: string;
   noLabel?: string;
   unknownLabel?: string;
+  selectPlaceholder?: string;
+  confirmLabel?: string;
+  resolveFieldLabel?: (field: BoatFormConfigField) => string | undefined;
+  resolveOptionLabel?: (
+    field: BoatFormConfigField,
+    option: BoatFormConfigFieldOption,
+  ) => string | undefined;
 }) {
+  const locale = useLocale();
   const numeric =
     NUMERIC_FIELD_TYPES.has(field.field_type) ||
     field.field_type.includes("number");
   const selectOptions = field.options ?? [];
   const isSelectField =
     field.field_type === "select" && selectOptions.length > 0;
+  
+  // Prioritize localized label from the backend field object if available for current locale
+  const backendLocalizedLabel = field.labels?.[locale] || field.label;
+  const displayLabel = resolveFieldLabel?.(field) || backendLocalizedLabel;
+  const localizedOptions = isSelectField
+    ? selectOptions.map((option) => ({
+        ...option,
+        label: resolveOptionLabel?.(field, option) || option.label,
+      }))
+    : selectOptions;
 
   const showCorrectionControls =
     correctionLabel !== undefined && typeof onCorrectionLabelChange === "function";
@@ -375,39 +433,45 @@ function DynamicField({
   return (
     <div className="space-y-2 group">
       <div className="flex items-center gap-2">
-        <BlockLabel className="mb-0">{field.label}</BlockLabel>
-        <FieldHelpTooltip text={field.help_text} label={field.label} />
+        <BlockLabel className="mb-0">{displayLabel}</BlockLabel>
+        <FieldHelpTooltip text={field.help_text} label={displayLabel} />
         <BoatFieldSettingsLink fieldName={field.internal_key} />
         {yachtId && (
           <FieldHistoryPopover
             yachtId={yachtId}
             fieldName={field.internal_key}
-            label={field.label}
+            label={displayLabel}
           />
         )}
       </div>
       {isTriState ? (
         <TriStateField
           name={field.internal_key}
-          defaultValue={value as string | undefined}
+          defaultValue={value as any}
           needsConfirmation={needsConfirmation}
           yesLabel={yesLabel}
           noLabel={noLabel}
           unknownLabel={unknownLabel}
+          confirmLabel={confirmLabel}
         />
       ) : isSelectField ? (
         <SelectInput
           name={field.internal_key}
-          defaultValue={value as string | undefined}
+          defaultValue={value as any}
           needsConfirmation={needsConfirmation}
-          options={selectOptions}
+          options={localizedOptions}
+          placeholder={selectPlaceholder}
+          confirmLabel={confirmLabel}
         />
       ) : (
         <TextInput
           name={field.internal_key}
           type={numeric ? "number" : "text"}
-          defaultValue={value as string | number | undefined}
+          defaultValue={value as any}
           needsConfirmation={needsConfirmation}
+          confirmLabel={confirmLabel}
+          yesLabel={yesLabel}
+          noLabel={noLabel}
         />
       )}
       {showCorrectionControls && (
@@ -425,6 +489,8 @@ export function ConfigurableBoatFieldBlock({
   block,
   icon,
   title,
+  showMoreLabel = "Show more",
+  showLessLabel = "Show less",
   values,
   yachtId,
   needsConfirm,
@@ -435,6 +501,10 @@ export function ConfigurableBoatFieldBlock({
   noLabel,
   unknownLabel,
   gridClassName,
+  selectPlaceholder,
+  confirmLabel,
+  resolveFieldLabel,
+  resolveOptionLabel,
 }: ConfigurableBoatFieldBlockProps) {
   const secondaryHasValue = useMemo(
     () =>
@@ -458,16 +528,18 @@ export function ConfigurableBoatFieldBlock({
       <BlockHeader icon={icon} title={title} />
       <div className={cn("grid grid-cols-2 md:grid-cols-4 gap-5", gridClassName)}>
         {block.primary_fields.map((field) => {
-          const isTriState = field.field_type === "tri_state";
+          const isTriState = 
+            field.field_type === "tri_state" || 
+            (optionalTriStateFields?.includes(field.internal_key));
 
           return (
             <DynamicField
               key={`primary-${field.id}`}
               field={field}
-              value={values?.[field.internal_key]}
+              value={values?.[field.internal_key] as any}
               yachtId={yachtId}
               needsConfirmation={needsConfirm?.(field.internal_key) ?? false}
-              isTriState={isTriState}
+              isTriState={!!isTriState}
               correctionLabel={correctionLabels?.[field.internal_key]}
               onCorrectionLabelChange={
                 onCorrectionLabelChange
@@ -477,21 +549,27 @@ export function ConfigurableBoatFieldBlock({
               yesLabel={yesLabel}
               noLabel={noLabel}
               unknownLabel={unknownLabel}
+              selectPlaceholder={selectPlaceholder}
+              confirmLabel={confirmLabel}
+              resolveFieldLabel={resolveFieldLabel}
+              resolveOptionLabel={resolveOptionLabel}
             />
           );
         })}
 
         {visibleSecondary.map((field) => {
-          const isTriState = field.field_type === "tri_state";
+          const isTriState = 
+            field.field_type === "tri_state" || 
+            (optionalTriStateFields?.includes(field.internal_key));
 
           return (
             <DynamicField
               key={`secondary-${field.id}`}
               field={field}
-              value={values?.[field.internal_key]}
+              value={values?.[field.internal_key] as any}
               yachtId={yachtId}
               needsConfirmation={needsConfirm?.(field.internal_key) ?? false}
-              isTriState={isTriState}
+              isTriState={!!isTriState}
               correctionLabel={correctionLabels?.[field.internal_key]}
               onCorrectionLabelChange={
                 onCorrectionLabelChange
@@ -501,6 +579,10 @@ export function ConfigurableBoatFieldBlock({
               yesLabel={yesLabel}
               noLabel={noLabel}
               unknownLabel={unknownLabel}
+              selectPlaceholder={selectPlaceholder}
+              confirmLabel={confirmLabel}
+              resolveFieldLabel={resolveFieldLabel}
+              resolveOptionLabel={resolveOptionLabel}
             />
           );
         })}
@@ -515,8 +597,8 @@ export function ConfigurableBoatFieldBlock({
           >
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             {expanded
-              ? "- Show less"
-              : `+ Show more (${block.secondary_count})`}
+              ? `- ${showLessLabel}`
+              : `+ ${showMoreLabel} (${block.secondary_count})`}
           </button>
         </div>
       )}

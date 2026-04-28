@@ -11,7 +11,7 @@ export type SessionUser = {
   email: string;
   avatar?: string;
   role: UserRole;
-  type?: "ADMIN" | "EMPLOYEE" | "CLIENT";
+  type?: "ADMIN" | "EMPLOYEE" | "CLIENT" | "LOCATION" | "PARTNER";
   status?: "ACTIVE" | "DISABLED" | "BLOCKED";
   phone?: string | null;
   location_id?: number | null;

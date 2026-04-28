@@ -155,11 +155,13 @@
       "overview_admin": "Admin Overview",
       "overview_client": "Client Overview",
       "overview_employee": "Sales Dashboard",
+      "overview_location": "Location Overview",
+      "overview_partner": "Partner Overview",
       "users": "Users",
       "schedule": "Schedule",
       "tasks": "Tasks",
       "copilot": "Copilot",
-      "harbor": "Harbor",
+      "harbor": "Locations",
       "interaction": "Chat",
       "settings": "Settings",
       "terminalSuffix": "Terminal",
@@ -171,8 +173,8 @@
       "audit": "Audit",
       "errors": "Errors",
       "bookings": "Bookings",
-      "locations": "Locations",
       "knowledgeBrain": "Knowledge Brain",
+      "locationPerformance": "Salesfunnel",
       "knowledgebase": "Knowledge Library",
       "harborPerformance": "Salesfunnel",
       "socialAutomation": "Social Automation",
@@ -181,6 +183,8 @@
       "roleAdmin": "Admin",
       "roleClient": "Client",
       "roleEmployee": "Sales",
+      "roleLocation": "Location",
+      "rolePartner": "Partner"
       "roleBuyer": "Buyer",
       "roleSeller": "Seller"
     },
@@ -531,7 +535,7 @@
     "shortcuts": {
       "locations": {
         "title": "Locations",
-        "description": "Manage locations, widgets, and connected harbors in one place."
+        "description": "Manage locations, widgets, and connected internal locations in one place."
       },
       "salesfunnel": {
         "title": "Salesfunnel",
@@ -689,7 +693,8 @@
       "lastPage": "Last page"
     }
   },
-  "DashboardAdminHarborPerformance": {
+  "DashboardAdminLocationPerformance": {
+    "title": "Locations Performance",
     "hero": {
       "kicker": "Sales Analytics",
       "title": "Salesfunnel",
@@ -735,9 +740,18 @@
     },
     "table": {
       "location": "Location",
-      "users": "Users",
-      "impressions": "Impressions",
-      "clicks": "Clicks",
+      "status": "Status",
+      "activeUsers": "Users",
+      "sessions": "Sessions",
+      "openLeads": "Leads",
+      "openConversations": "Chats",
+      "openTasks": "Tasks",
+      "clientsTotal": "Clients",
+      "boatsTotal": "Boats",
+      "yachtsTotal": "Listings",
+      "leadsCreated": "New Leads",
+      "tasksCreated": "New Tasks",
+      "tasksCompleted": "Resolved",
       "forms": "Forms",
       "submitted": "Submitted",
       "deals": "Deals",
@@ -753,7 +767,7 @@
     "panels": {
       "reach": {
         "title": "Reach",
-        "description": "GA4 remains the source for users, sessions, and interaction trends across harbor campaigns."
+        "description": "GA4 remains the source for users, sessions, and interaction trends across location campaigns."
       },
       "funnel": {
         "title": "Funnel",
@@ -768,7 +782,7 @@
   "DashboardAdminLocations": {
     "header": {
       "kicker": "Location Management",
-      "title": "Harbors & Locations",
+      "title": "Headquarters & Locations",
       "subtitle": "Create and manage locations used for signup, scoping, and operations."
     },
     "filters": {
@@ -1096,7 +1110,7 @@
       "priority": "Priority",
       "dueDate": "Due Date",
       "assignTo": "Assign To",
-      "assignToEmployee": "Assign to employee (same harbor)",
+      "assignToEmployee": "Assign to employee (same location)",
       "status": "Status",
       "personalAutoAssign": "Personal tasks will be assigned to you automatically",
       "attachments": "Attachments",
@@ -1324,7 +1338,7 @@
     "header": {
       "title": "AI Client Chat",
       "subtitle": "Private assistant",
-      "description": "Ask questions about your boat, insurance, viewings, or harbor support. This conversation is linked to your location so the team can follow along when needed.",
+      "description": "Ask questions about your boat, insurance, viewings, or location support. This conversation is linked to your location so the team can follow along when needed.",
       "location": "Connected location: {location}",
       "dismiss": "Hide introduction"
     },
@@ -1414,18 +1428,18 @@
   },
   "WidgetChat": {
     "brand": "Schepenkring",
-    "initialMessage": "Hi there! How can we help you today? Ask us about boats, harbors, or support.",
+    "initialMessage": "Hi there! How can we help you today? Ask us about boats, locations, or support.",
     "welcome": {
       "kicker": "Live concierge",
-      "title": "Ask about boats, viewings, or harbor support.",
+      "title": "Ask about boats, viewings, or location support.",
       "description": "Send a message and our team will follow up with the right details.",
       "quickPrompts": "Quick prompts"
     },
     "quickPrompts": {
       "details": "I need details for this boat",
       "viewing": "Can I schedule a viewing?",
-      "harbor": "Do you support this harbor?",
-      "harborSupport": "Support for {harborName}"
+      "location": "Do you support this location?",
+      "locationSupport": "Support for {locationName}"
     },
     "status": {
       "supportOnline": "Support online"

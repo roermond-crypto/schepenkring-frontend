@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "@sentry/nextjs": "^10.0.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@tiptap/extension-underline": "^3.20.0",
     "@tiptap/react": "^3.20.0",

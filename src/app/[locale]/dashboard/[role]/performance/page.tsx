@@ -18,12 +18,10 @@ import {
 type PerformanceRow = {
   id?: number;
   location_id?: number;
-  harbor_id?: number;
   name?: string;
   code?: string;
   status?: string;
   location_name?: string;
-  harbor_name?: string;
   country?: string;
   metrics?: {
     clients_total?: number;
@@ -41,7 +39,6 @@ type PerformanceRow = {
     sessions?: number;
   };
   location?: { name?: string; code?: string | null };
-  harbor?: { name?: string; country?: string };
   users?: number;
   impressions?: number;
   button_impressions?: number;
@@ -61,8 +58,8 @@ type PerformanceRow = {
   ga4?: {
     users?: number;
     funnel?: {
-      harbor_button_impression?: number;
-      harbor_button_click?: number;
+      location_button_impression?: number;
+      location_button_click?: number;
       ctr?: number;
       boat_form_started?: number;
       boat_submitted?: number;
@@ -107,15 +104,13 @@ function rowName(row: PerformanceRow) {
   return (
     row?.location?.name ||
     row?.location_name ||
-    row?.harbor?.name ||
     row?.name ||
-    row?.harbor_name ||
-    `Location #${row?.location_id ?? row?.harbor_id ?? row?.id ?? "—"}`
+    `Location #${row?.location_id ?? row?.id ?? "—"}`
   );
 }
 
 export default function AdminPerformancePage() {
-  const t = useTranslations("DashboardAdminHarborPerformance");
+  const t = useTranslations("DashboardAdminLocationPerformance");
   const [rows, setRows] = useState<PerformanceRow[]>([]);
   const [summary, setSummary] = useState<Totals>({
     activeUsers: 0,
@@ -174,7 +169,7 @@ export default function AdminPerformancePage() {
       if (filters.device) params.device = filters.device;
       if (filters.source_medium) params.source_medium = filters.source_medium;
 
-      const res = await api.get("/admin/harbors/performance", { params });
+      const res = await api.get("/admin/locations/performance", { params });
       const payload = (res.data ?? {}) as { data?: PerformanceRow[] };
       const list = Array.isArray(payload?.data) ? payload.data : [];
       if (requestId !== latestRequestRef.current) return;
@@ -496,13 +491,13 @@ export default function AdminPerformancePage() {
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr className="text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
                   <th className="px-5 py-4">{t("table.location")}</th>
-                  <th className="px-5 py-4">{t("table.users")}</th>
-                  <th className="px-5 py-4">{t("table.impressions")}</th>
-                  <th className="px-5 py-4">{t("table.clicks")}</th>
+                  <th className="px-5 py-4">{t("table.activeUsers")}</th>
+                  <th className="px-5 py-4">{t("table.leadsCreated")}</th>
+                  <th className="px-5 py-4">{t("table.openConversations")}</th>
                   <th className="px-5 py-4">CTR</th>
-                  <th className="px-5 py-4">{t("table.forms")}</th>
-                  <th className="px-5 py-4">{t("table.submitted")}</th>
-                  <th className="px-5 py-4">{t("table.deals")}</th>
+                  <th className="px-5 py-4">{t("table.openLeads")}</th>
+                  <th className="px-5 py-4">{t("table.tasksCreated")}</th>
+                  <th className="px-5 py-4">{t("table.tasksCompleted")}</th>
                   <th className="px-5 py-4">{t("table.commission")}</th>
                   <th className="px-5 py-4">{t("table.benchmark")}</th>
                   <th className="px-5 py-4">{t("table.rank")}</th>
@@ -527,7 +522,7 @@ export default function AdminPerformancePage() {
 
                   return (
                     <tr
-                      key={String(row?.location_id ?? row?.harbor_id ?? row?.id ?? index)}
+                      key={String(row?.location_id ?? row?.id ?? index)}
                       className="border-b border-slate-100 text-sm text-slate-600 last:border-b-0"
                     >
                       <td className="px-5 py-4">
@@ -542,7 +537,6 @@ export default function AdminPerformancePage() {
                             <p className="text-xs text-slate-400">
                               {row?.location?.code ||
                                 row?.code ||
-                                row?.harbor?.country ||
                                 row?.country ||
                                 "—"}
                             </p>

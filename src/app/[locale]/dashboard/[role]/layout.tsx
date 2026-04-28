@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { isUserRole } from "@/lib/auth/roles";
+import { isUserRole, rolesAreEquivalent, type UserRole } from "@/lib/auth/roles";
 import { getServerSession } from "@/lib/auth/session";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 import { getLocaleOrDefault, isSupportedLocale } from "@/lib/i18n";
@@ -33,6 +33,8 @@ export default async function DashboardRoleLayout({ children, params }: Dashboar
     notFound();
   }
 
+  const routeRole = role as UserRole;
+
   const realSession = await getServerSession();
 
   // TODO: Remove this dev bypass before production
@@ -45,7 +47,7 @@ export default async function DashboardRoleLayout({ children, params }: Dashboar
   //   redirect(`/${locale}/login`);
   // }
 
-  if (realSession && realSession.user.role !== role) {
+  if (realSession && !rolesAreEquivalent(realSession.user.role, routeRole)) {
     redirect(`/${locale}/dashboard/${realSession.user.role}`);
   }
 
@@ -55,7 +57,7 @@ export default async function DashboardRoleLayout({ children, params }: Dashboar
   return (
     <DashboardShell
       locale={currentLocale}
-      role={session.user.role}
+      role={routeRole}
       userName={session.user.name}
       userEmail={session.user.email}
       userAvatar={userAvatar}

@@ -44,7 +44,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Toaster, toast } from "react-hot-toast";
 import DynamicKanbanBoard from "./DynamicKanbanBoard";
-import { normalizeRole } from "@/lib/auth/roles";
+import { isPartnerLikeRole, normalizeRole } from "@/lib/auth/roles";
 import { getClientToken } from "@/lib/auth/client-session";
 import {
   getBoardColumnDisplayName,
@@ -1556,7 +1556,7 @@ export default function AdminTaskBoardPage() {
   const tasksPath = `/dashboard/${role}/tasks`;
   const canManageTaskWorkspace =
     role === "admin" ||
-    role === "location" ||
+    isPartnerLikeRole(role) ||
     (role === "employee" && canCurrentUserManageBoard());
   const canViewTaskBoard =
     canManageTaskWorkspace ||

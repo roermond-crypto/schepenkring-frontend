@@ -26,8 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
-import type { UserRole } from "@/lib/auth/roles";
-import { getProfileSetupStatus } from "@/lib/api/profile-setup";
+import { isPartnerLikeRole, type UserRole } from "@/lib/auth/roles";
 
 type SidebarProps = {
   locale: AppLocale;
@@ -100,7 +99,9 @@ export function Sidebar({
           ? t.overview_client
           : role === "employee"
             ? t.overview_employee
-            : t.overview;
+            : role === "partner"
+              ? t.overview_partner
+              : t.overview_location;
 
     const items: MenuItem[] = [
       {
@@ -161,6 +162,12 @@ export function Sidebar({
         href: `${root}/chat`,
         icon: MessageSquare,
       });
+    } else if (isPartnerLikeRole(role)) {
+      items.push({
+        title: t.interaction,
+        href: `${root}/chat`,
+        icon: MessageSquare,
+      });
     }
 
     items.push({ title: t.boats, href: `${root}/yachts`, icon: Ship });
@@ -189,10 +196,10 @@ export function Sidebar({
                 ? t.roleEmployee
                 : role === "client"
                   ? t.roleClient
-                  : role === "buyer"
-                    ? t.roleBuyer
-                    : role === "seller"
-                      ? t.roleSeller
+                  : role === "partner"
+                    ? t.rolePartner
+                    : role === "location"
+                      ? t.roleLocation
                       : t.roleAdmin
             } ${t.terminalSuffix}`}
           </p>

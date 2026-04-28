@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { BoatFieldSettingsLink } from "@/components/yachts/BoatFieldSettingsLink";
+import { api } from "@/lib/api";
 
 interface Props {
     endpoint: string;
@@ -15,6 +17,7 @@ interface Props {
     onSelect?: (id: number | string, name: string) => void;
     needsConfirmation?: boolean;
     showAdminEditLink?: boolean;
+    showIcon?: boolean;
 }
 
 interface CatalogAutocompleteItem {
@@ -59,6 +62,7 @@ export function CatalogAutocomplete({
     onSelect,
     needsConfirmation,
     showAdminEditLink = true,
+    showIcon = false,
 }: Props) {
     const locale = useLocale();
     const text = CATALOG_TEXT[locale as keyof typeof CATALOG_TEXT] ?? CATALOG_TEXT.en;
@@ -88,18 +92,13 @@ export function CatalogAutocomplete({
             if (query.length > 1 && isOpen) {
                 setLoading(true);
                 try {
-                    let url = `${endpoint}?q=${encodeURIComponent(query)}`;
+                    const normalizedEndpoint = endpoint.replace(/^\/api\//, "").replace(/^\//, "");
+                    const params: Record<string, number | string> = { q: query };
                     if (dependsOn && dependsOnValue) {
-                        url += `&${dependsOn}=${dependsOnValue}`;
+                        params[dependsOn] = dependsOnValue;
                     }
-                    // Assuming the api object auto-prepends /api or base url, but here we can just hit the absolute path /api/...
-                    // If the project uses a custom api instance from "@/lib/api" we might have issues if it expects token auth
-                    // Since /api/autocomplete is Public, standard fetch works.
-                    const res = await fetch(url);
-                    if (res.ok) {
-                        const data = await res.json();
-                        setResults(data);
-                    }
+                    const res = await api.get<CatalogAutocompleteItem[]>(normalizedEndpoint, { params });
+                    setResults(Array.isArray(res.data) ? res.data : []);
                 } catch (e) {
                     console.error(e);
                 } finally {
@@ -116,7 +115,15 @@ export function CatalogAutocomplete({
     const highlighted = Boolean(needsConfirmation) || (query && query.trim().length > 0);
 
     return (
-        <div className="relative" ref={wrapperRef}>
+        <div
+            className={cn("relative", isOpen && query.length > 1 && "z-[120]")}
+            ref={wrapperRef}
+        >
+            {showIcon && (
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                    <Search className="h-4 w-4 text-slate-400" />
+                </div>
+            )}
             <input
                 type="text"
                 name={name}
@@ -129,7 +136,8 @@ export function CatalogAutocomplete({
                 }}
                 onFocus={() => setIsOpen(true)}
                 className={cn(
-                    "w-full bg-white border border-slate-200 rounded-md px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
+                    "w-full bg-white border border-slate-200 rounded-md py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200",
+                    showIcon ? "pl-10 pr-3.5" : "px-3.5",
                     "hover:border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
                     shouldShowAdminEditLink && "pr-12",
                     highlighted && "ring-2 ring-amber-400 border-amber-400 bg-amber-50"
@@ -155,7 +163,7 @@ export function CatalogAutocomplete({
             )}
 
             {isOpen && (query.length > 1) && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="absolute left-0 top-full z-[140] mt-1 w-full rounded-md border border-slate-200 bg-white shadow-xl max-h-60 overflow-auto">
                     {loading ? (
                         <div className="p-3 text-sm text-slate-500 text-center">{text.searching}</div>
                     ) : results.length > 0 ? (

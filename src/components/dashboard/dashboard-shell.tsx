@@ -129,6 +129,8 @@ function DashboardShellInner({
   const mapTypeToRole = (type: string | undefined): UserRole => {
     if (type === "ADMIN") return "admin";
     if (type === "EMPLOYEE") return "employee";
+    if (type === "LOCATION") return "location";
+    if (type === "PARTNER") return "partner";
     return "client";
   };
 

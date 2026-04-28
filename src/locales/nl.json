@@ -46,7 +46,6 @@
     "confirmPassword": "Bevestig wachtwoord",
     "verificationCode": "Verificatiecode",
     "rememberTerminal": "Onthoud dit apparaat",
-    "forgotPassword": "Wachtwoord vergeten?",
     "forgotPasswordSubmit": "Resetlink versturen",
     "forgotPasswordBackToLogin": "Terug naar inloggen",
     "forgotPasswordSuccess": "Als je e-mailadres in ons systeem bestaat, ontvang je binnenkort een link om je wachtwoord opnieuw in te stellen.",
@@ -155,11 +154,13 @@
       "overview_admin": "Admin-overzicht",
       "overview_client": "Klantenoverzicht",
       "overview_employee": "Verkoopdashboard",
+      "overview_location": "Locatie-overzicht",
+      "overview_partner": "Partneroverzicht",
       "users": "Gebruikers",
       "schedule": "Planning",
       "tasks": "Taken",
       "copilot": "Copilot",
-      "harbor": "Haven / Website",
+      "harbor": "Locaties",
       "interaction": "Chat",
       "chatWidget": "Chat Widget",
       "settings": "Instellingen",
@@ -174,13 +175,15 @@
       "bookings": "Boekingen",
       "locations": "Locaties",
       "knowledgeBrain": "Knowledge Brain",
-      "harborPerformance": "Salesfunnel",
+      "locationPerformance": "Salesfunnel",
       "socialAutomation": "Sociale automatisering",
       "faq": "FAQ",
       "integrations": "Integraties",
       "roleAdmin": "Admin",
       "roleClient": "Klant",
       "roleEmployee": "Medewerker",
+      "roleLocation": "Locatie",
+      "rolePartner": "Partner"
       "roleBuyer": "Koper",
       "roleSeller": "Verkoper",
       "knowledgebase": "Kennisbank"
@@ -532,7 +535,7 @@
     "shortcuts": {
       "locations": {
         "title": "Locaties",
-        "description": "Beheer locaties, widgets en gekoppelde havens vanuit een plek."
+        "description": "Beheer locaties, widgets en gekoppelde interne locaties vanuit een plek."
       },
       "salesfunnel": {
         "title": "Salesfunnel",
@@ -686,7 +689,8 @@
       "lastPage": "Laatste pagina"
     }
   },
-  "DashboardAdminHarborPerformance": {
+  "DashboardAdminLocationPerformance": {
+    "title": "Locatieprestaties",
     "hero": {
       "kicker": "Salesanalyse",
       "title": "Salesfunnel",
@@ -732,9 +736,18 @@
     },
     "table": {
       "location": "Locatie",
-      "users": "Gebruikers",
-      "impressions": "Vertoningen",
-      "clicks": "Klikken",
+      "status": "Status",
+      "activeUsers": "Gebruikers",
+      "sessions": "Sessies",
+      "openLeads": "Leads",
+      "openConversations": "Chats",
+      "openTasks": "Taken",
+      "clientsTotal": "Cliënten",
+      "boatsTotal": "Boten",
+      "yachtsTotal": "Listings",
+      "leadsCreated": "Nieuwe leads",
+      "tasksCreated": "Nieuwe taken",
+      "tasksCompleted": "Afgerond",
       "forms": "Formulieren",
       "submitted": "Verzonden",
       "deals": "Deals",
@@ -750,7 +763,7 @@
     "panels": {
       "reach": {
         "title": "Bereik",
-        "description": "GA4 blijft de bron voor gebruikers, sessies en interactietrends in havenkampagnes."
+        "description": "GA4 blijft de bron voor gebruikers, sessies en interactietrends in locatiekampagnes."
       },
       "funnel": {
         "title": "Funnel",
@@ -765,7 +778,7 @@
   "DashboardAdminLocations": {
     "header": {
       "kicker": "Locatiebeheer",
-      "title": "Havens en locaties",
+      "title": "Hoofdkantoren en locaties",
       "subtitle": "Maak en beheer locaties voor registratie, scope en operationeel gebruik."
     },
     "filters": {
@@ -1093,7 +1106,7 @@
       "priority": "Prioriteit",
       "dueDate": "Vervaldatum",
       "assignTo": "Toewijzen aan",
-      "assignToEmployee": "Toewijzen aan medewerker (zelfde haven)",
+      "assignToEmployee": "Toewijzen aan medewerker (zelfde locatie)",
       "status": "Status",
       "personalAutoAssign": "Persoonlijke taken worden automatisch aan jou toegewezen",
       "attachments": "Bijlagen",
@@ -1320,8 +1333,8 @@
   "DashboardClientChat": {
     "header": {
       "title": "AI-klantchat",
-      "subtitle": "PrivÃ© assistent",
-      "description": "Stel vragen over je boot, verzekering, bezichtigingen of havenondersteuning. Dit gesprek is gekoppeld aan je locatie zodat het team kan meekijken wanneer dat nodig is.",
+      "subtitle": "Privé assistent",
+      "description": "Stel vragen over je boot, verzekering, bezichtigingen of locatieondersteuning. Dit gesprek is gekoppeld aan je locatie zodat het team kan meekijken wanneer dat nodig is.",
       "location": "Gekoppelde locatie: {location}",
       "dismiss": "Introductie verbergen"
     },
@@ -1411,18 +1424,18 @@
   },
   "WidgetChat": {
     "brand": "Schepenkring",
-    "initialMessage": "Hallo! Hoe kunnen we je vandaag helpen? Vraag ons naar boten, havens of ondersteuning.",
+    "initialMessage": "Hallo! Hoe kunnen we je vandaag helpen? Vraag ons naar boten, locaties of ondersteuning.",
     "welcome": {
-      "kicker": "Live conciÃ«rge",
-      "title": "Vraag naar boten, bezichtigingen of havenondersteuning.",
+      "kicker": "Live conciërge",
+      "title": "Vraag naar boten, bezichtigingen of locatieondersteuning.",
       "description": "Stuur een bericht en ons team komt bij je terug met de juiste details.",
       "quickPrompts": "Snelle prompts"
     },
     "quickPrompts": {
       "details": "Ik wil details over deze boot",
       "viewing": "Kan ik een bezichtiging plannen?",
-      "harbor": "Ondersteunen jullie deze haven?",
-      "harborSupport": "Ondersteuning voor {harborName}"
+      "location": "Ondersteunen jullie deze locatie?",
+      "locationSupport": "Support voor {locationName}"
     },
     "status": {
       "supportOnline": "Support online"

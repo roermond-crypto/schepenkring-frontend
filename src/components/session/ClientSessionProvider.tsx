@@ -14,7 +14,7 @@ import {
   CLIENT_SESSION_UPDATED_EVENT,
 } from "@/lib/auth/client-session";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
-import type { UserRole } from "@/lib/auth/roles";
+import { normalizeRole, type UserRole } from "@/lib/auth/roles";
 
 type ClientSessionUser = {
   id?: string;
@@ -105,7 +105,7 @@ function buildUserFromStorage(
         name?: string;
         email?: string;
         avatar?: string | null;
-        role?: UserRole;
+        role?: string;
         location_id?: number | null;
         location_role?: string | null;
         client_location_id?: number | null;
@@ -138,7 +138,7 @@ function buildUserFromStorage(
       localName = parsed.name;
       localEmail = parsed.email;
       localAvatar = normalizeAvatarUrl(parsed.avatar);
-      localRole = parsed.role;
+      localRole = normalizeRole(parsed.role) ?? undefined;
       return {
         id: localId || fallback.id,
         name: localName || fallback.name,
@@ -202,7 +202,7 @@ function buildUserFromStorage(
       name?: string;
       email?: string;
       avatar?: string;
-      role?: UserRole;
+      role?: string;
       location_id?: number | null;
       location_role?: string | null;
       client_location_id?: number | null;
@@ -238,7 +238,7 @@ function buildUserFromStorage(
       email: localEmail || parsed.email || fallback.email,
       avatar:
         localAvatar || normalizeAvatarUrl(parsed.avatar) || fallback.avatar,
-      role: localRole || parsed.role || fallback.role,
+      role: localRole || normalizeRole(parsed.role) || fallback.role,
       location_id: parsed.location_id ?? fallback.location_id,
       location_role: parsed.location_role ?? fallback.location_role,
       client_location_id:

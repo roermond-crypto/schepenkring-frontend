@@ -46,7 +46,6 @@
     "confirmPassword": "Passwort bestatigen",
     "verificationCode": "Verifizierungscode",
     "rememberTerminal": "Gerat merken",
-    "forgotPassword": "Passwort vergessen?",
     "forgotPasswordSubmit": "Reset-Link senden",
     "forgotPasswordBackToLogin": "Zurück zur Anmeldung",
     "forgotPasswordSuccess": "Wenn Ihre E-Mail-Adresse in unserem System vorhanden ist, erhalten Sie in Kürze einen Link zum Zurücksetzen Ihres Passworts.",
@@ -155,11 +154,13 @@
       "overview_admin": "Admin-Übersicht",
       "overview_client": "Kunden-Übersicht",
       "overview_employee": "Verkaufs-Dashboard",
+      "overview_location": "Standort-Übersicht",
+      "overview_partner": "Partner-Übersicht",
       "users": "Benutzer",
       "schedule": "Zeitplan",
       "tasks": "Aufgaben",
       "copilot": "Copilot",
-      "harbor": "Hafen",
+      "harbor": "Standorte",
       "interaction": "Interaktion",
       "settings": "Einstellungen",
       "terminalSuffix": "Terminal",
@@ -173,14 +174,15 @@
       "bookings": "Buchungen",
       "locations": "Standorte",
       "knowledgeBrain": "Knowledge Brain",
-      "harborPerformance": "Salesfunnel",
+      "locationPerformance": "Salesfunnel",
       "socialAutomation": "Social-Automatisierung",
       "faq": "FAQ",
       "integrations": "Integrationen",
       "roleAdmin": "Admin",
       "roleClient": "Kunde",
       "roleEmployee": "Vertrieb",
-      "knowledgebase": "Knowledge Base"
+      "roleLocation": "Standort",
+      "rolePartner": "Partner"
     },
     "notifications": {
       "label": "Benachrichtigungen",
@@ -529,7 +531,7 @@
     "shortcuts": {
       "locations": {
         "title": "Standorte",
-        "description": "Verwalten Sie Standorte, Widgets und verbundene Häfen an einem Ort."
+        "description": "Verwalten Sie Standorte, Widgets und verbundene interne Standorte an einem Ort."
       },
       "salesfunnel": {
         "title": "Salesfunnel",
@@ -683,7 +685,8 @@
       "lastPage": "Letzte Seite"
     }
   },
-  "DashboardAdminHarborPerformance": {
+  "DashboardAdminLocationPerformance": {
+    "title": "Standortleistung",
     "hero": {
       "kicker": "Sales-Analyse",
       "title": "Salesfunnel",
@@ -729,9 +732,18 @@
     },
     "table": {
       "location": "Standort",
-      "users": "Benutzer",
-      "impressions": "Impressionen",
-      "clicks": "Klicks",
+      "status": "Status",
+      "activeUsers": "Benutzer",
+      "sessions": "Sitzungen",
+      "openLeads": "Leads",
+      "openConversations": "Chats",
+      "openTasks": "Aufgaben",
+      "clientsTotal": "Kunden",
+      "boatsTotal": "Boote",
+      "yachtsTotal": "Angebote",
+      "leadsCreated": "Neue Leads",
+      "tasksCreated": "Neue Aufgaben",
+      "tasksCompleted": "Erledigt",
       "forms": "Formulare",
       "submitted": "Gesendet",
       "deals": "Abschlüsse",
@@ -747,7 +759,7 @@
     "panels": {
       "reach": {
         "title": "Reichweite",
-        "description": "GA4 bleibt die Quelle für Benutzer, Sitzungen und Interaktionstrends in Hafenkampagnen."
+        "description": "GA4 bleibt die Quelle für Benutzer, Sitzungen und Interaktionstrends in Standortkampagnen."
       },
       "funnel": {
         "title": "Funnel",
@@ -762,7 +774,7 @@
   "DashboardAdminLocations": {
     "header": {
       "kicker": "Standortverwaltung",
-      "title": "Häfen und Standorte",
+      "title": "Hauptstandorte und Standorte",
       "subtitle": "Erstellen und verwalten Sie Standorte für Registrierung, Scoping und Betrieb."
     },
     "filters": {
@@ -1090,7 +1102,7 @@
       "priority": "Priorität",
       "dueDate": "Fälligkeitsdatum",
       "assignTo": "Zuweisen an",
-      "assignToEmployee": "An Mitarbeiter zuweisen (dieselbe Hafen)",
+      "assignToEmployee": "An Mitarbeiter zuweisen (derselbe Standort)",
       "status": "Status",
       "personalAutoAssign": "Persönliche Aufgaben werden automatisch Ihnen zugewiesen",
       "attachments": "Anhänge",
@@ -1318,7 +1330,7 @@
     "header": {
       "title": "KI-Kundenchat",
       "subtitle": "Privater Assistent",
-      "description": "Stellen Sie Fragen zu Ihrem Boot, zur Versicherung, zu Besichtigungen oder zur Hafenunterstützung. Diese Unterhaltung ist mit Ihrem Standort verknüpft, damit das Team bei Bedarf mitverfolgen kann.",
+      "description": "Stellen Sie Fragen zu Ihrem Boot, zur Versicherung, zu Besichtigungen oder zur Standortunterstützung. Diese Unterhaltung ist mit Ihrem Standort verknüpft, damit das Team bei Bedarf mitverfolgen kann.",
       "location": "Verknüpfter Standort: {location}",
       "dismiss": "Einführung ausblenden"
     },
@@ -1418,8 +1430,8 @@
     "quickPrompts": {
       "details": "Ich brauche Details zu diesem Boot",
       "viewing": "Kann ich eine Besichtigung vereinbaren?",
-      "harbor": "Unterstützen Sie diesen Hafen?",
-      "harborSupport": "Support für {harborName}"
+      "location": "Unterstützen Sie diesen Standort?",
+      "locationSupport": "Support für {locationName}"
     },
     "status": {
       "supportOnline": "Support online"
