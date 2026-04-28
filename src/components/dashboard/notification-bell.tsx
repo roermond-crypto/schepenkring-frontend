@@ -46,6 +46,8 @@ type BackendNotification = {
   created_at?: string;
 };
 
+export const OPEN_DASHBOARD_NOTIFICATIONS_EVENT = "dashboard:open-notifications";
+
 const resolveNotificationHref = (
   item: BackendNotification,
   role: UserRole,
@@ -207,6 +209,20 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
     if (!open || !notificationsEnabled) return;
     void fetchNotifications();
   }, [fetchNotifications, notificationsEnabled, open]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleOpen = () => {
+      setOpen(true);
+    };
+
+    window.addEventListener(OPEN_DASHBOARD_NOTIFICATIONS_EVENT, handleOpen);
+    return () =>
+      window.removeEventListener(OPEN_DASHBOARD_NOTIFICATIONS_EVENT, handleOpen);
+  }, []);
 
   const markAsRead = async (id: string) => {
     try {

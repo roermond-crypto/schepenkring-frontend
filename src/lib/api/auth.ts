@@ -116,6 +116,7 @@ export async function signup(payload: {
   name: string;
   email: string;
   locale?: string;
+  role?: string;
   phone?: string;
   location_id?: number;
   website?: string;
@@ -126,6 +127,7 @@ export async function signup(payload: {
     name: payload.name,
     email: payload.email,
     locale: payload.locale,
+    role: payload.role,
     phone: payload.phone,
     location_id: payload.location_id,
     website: payload.website ?? "",

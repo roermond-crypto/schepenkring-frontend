@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" fill="none">
+  <rect width="120" height="60" rx="8" fill="#ff6600"/>
+  <text x="60" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="9" fill="#ffffff">MARKT</text>
+  <text x="60" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="9" fill="#fff3e0">PLAATS</text>
+</svg>

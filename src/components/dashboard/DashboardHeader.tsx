@@ -13,6 +13,7 @@ import { lockScreenNow } from "@/lib/lockscreen";
 import Link from "next/link";
 import { CopilotSurface } from "@/components/copilot/CopilotSurface";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
+import { cn } from "@/lib/utils";
 
 type DashboardHeaderProps = {
   locale: AppLocale;
@@ -22,6 +23,7 @@ type DashboardHeaderProps = {
   userAvatar?: string;
   onOpenMobileNav: () => void;
   onLogout: () => void;
+  className?: string;
 };
 
 export function DashboardHeader({
@@ -32,6 +34,7 @@ export function DashboardHeader({
   userAvatar,
   onOpenMobileNav,
   onLogout,
+  className,
 }: DashboardHeaderProps) {
   const { resolvedTheme, setTheme } = useTheme();
   const { user } = useClientSession();
@@ -59,7 +62,7 @@ export function DashboardHeader({
   const accountHref = `/${locale}/dashboard/${role}/account`;
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 flex h-20 items-center justify-between border-b border-[#d9e3f0] bg-white/95 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95 sm:px-6 lg:px-8">
+    <header className={cn("fixed left-0 right-0 top-0 z-50 flex h-20 items-center justify-between border-b border-[#d9e3f0] bg-white/95 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95 sm:px-6 lg:px-8", className)}>
       <div className="flex items-center gap-3 sm:gap-4 lg:gap-6">
         <button
           type="button"

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" fill="none">
+  <rect width="120" height="60" rx="8" fill="#006994"/>
+  <text x="60" y="32" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="#ffffff">iNautia</text>
+  <path d="M25 48 Q40 38, 55 48 Q70 58, 85 48" stroke="#48cae4" stroke-width="1.5" fill="none"/>
+</svg>

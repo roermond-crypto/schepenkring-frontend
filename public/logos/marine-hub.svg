@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" fill="none">
+  <rect width="120" height="60" rx="8" fill="#0d3b66"/>
+  <text x="60" y="24" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="10" fill="#ffffff">MARINE</text>
+  <text x="60" y="40" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="10" fill="#00d4ff">HUB</text>
+  <circle cx="90" cy="30" r="8" fill="none" stroke="#00d4ff" stroke-width="1.5"/>
+  <path d="M86 30 L94 30 M90 26 L90 34" stroke="#00d4ff" stroke-width="1.5"/>
+</svg>
