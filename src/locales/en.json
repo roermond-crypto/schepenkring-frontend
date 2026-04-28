@@ -482,7 +482,7 @@
     "title_client": "Client Overview",
     "title_employee": "Sales Dashboard",
     "welcomeBack": "Welcome back, {name}",
-    "todayWeather": "Today: 18° Sunny in Eindhoven",
+    "todayWeather": "Today: 18Â° Sunny in Eindhoven",
     "notificationSummary": "You got {count} new notification{count, plural, one {} other {s}}.",
     "registrationSummary": "You have {count} new registration{count, plural, one {} other {s}} awaiting review.",
     "activeBiddingItems": "You have {count} active bidding {count, plural, one {item} other {items}}.",
@@ -952,7 +952,7 @@
       "en": "English",
       "nl": "Nederlands",
       "de": "Deutsch",
-      "fr": "Français"
+      "fr": "FranÃ§ais"
     },
     "actions": {
       "syncProfile": "Sync Profile",
@@ -1001,9 +1001,9 @@
       "readyAvailable": "ready to schedule"
     },
     "library": {
-      "label": "Library",
+      "label": "Live Scheduling",
       "videos": "Videos",
-      "posts": "Posts"
+      "posts": "Bookings and Test Drives"
     },
     "videoCard": {
       "video": "Video",
@@ -1180,7 +1180,7 @@
       "task": "Task",
       "noDate": "No date",
       "createdBy": "Created by",
-      "na": "—",
+      "na": "â€”",
       "me": "Me",
       "due": "Due",
       "overdue": "OVERDUE"
@@ -1366,7 +1366,7 @@
   },
   "DashboardFaq": {
     "title": "FAQ Knowledge Base",
-    "subtitle": "AI-Powered • {count} FAQs Available",
+    "subtitle": "AI-Powered â€¢ {count} FAQs Available",
     "addFaq": "Add FAQ",
     "trainAi": "Train AI",
     "totalFaqs": "Total FAQs",
@@ -1409,7 +1409,7 @@
     "added": "Added",
     "support": {
       "title": "Need more help? Contact our maritime support team",
-      "contact": "support@schepen-kring.nl • +31 20 123 4567"
+      "contact": "support@schepen-kring.nl â€¢ +31 20 123 4567"
     }
   },
   "WidgetChat": {
@@ -1448,7 +1448,7 @@
       "conversationActive": "Conversation active",
       "onlineSupport": "Online support",
       "boat": "Boat {boatId}",
-      "locationAware": "Boat {boatId} • location aware",
+      "locationAware": "Boat {boatId} â€¢ location aware",
       "connected": "Connected",
       "supportOnline": "Support online",
       "encrypted": "Encrypted"
@@ -1533,7 +1533,7 @@
     },
     "stats": {
       "highestBid": "Highest bid",
-      "bidSummary": "{bids} bids • {bidders} bidders"
+      "bidSummary": "{bids} bids â€¢ {bidders} bidders"
     },
     "status": {
       "ended": "Ended",

@@ -51,6 +51,7 @@ import {
   type LatestSignhostSummary,
 } from "@/lib/signhost/latest-signhost";
 import { signhostApi } from "@/lib/api/signhost";
+import { OPEN_DASHBOARD_NOTIFICATIONS_EVENT } from "@/components/dashboard/notification-bell";
 
 type DashboardData = {
   activeBidsCount: number;
@@ -911,10 +912,20 @@ export default function AdminDashboardHome() {
                       : t("title_admin")}
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#1E3A8A] dark:text-slate-300">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 font-semibold dark:bg-slate-800/90 dark:text-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(
+                      new Event(OPEN_DASHBOARD_NOTIFICATIONS_EVENT),
+                    );
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 font-semibold transition hover:bg-white dark:bg-slate-800/90 dark:text-slate-100 dark:hover:bg-slate-800"
+              >
                 <Bell size={14} />
                 {t("notificationSummary", { count: unreadNotificationCount })}
-              </span>
+              </button>
               {isAdminRole && data.pendingRegistrations > 0 && (
                 <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                   <AlertCircle size={14} />

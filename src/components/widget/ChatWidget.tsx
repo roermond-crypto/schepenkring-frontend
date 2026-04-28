@@ -8,6 +8,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import {
   MessageCircle,
@@ -19,6 +20,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Paperclip,
+  CalendarDays,
+  MapPin,
+  Info,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -411,10 +416,26 @@ function ChatBody({
   const showWelcomePanel = !hasUserMessages;
   const visibleMessages = messages.filter((message) => message.id !== "init");
   const quickPrompts = [
-    t("quickPrompts.details"),
-    t("quickPrompts.viewing"),
-    t("quickPrompts.harbor"),
+    { key: "details", text: t("quickPrompts.details") },
+    { key: "viewing", text: t("quickPrompts.viewing") },
+    { key: "harbor", text: t("quickPrompts.harbor") },
   ];
+
+  const getPromptIcon = (key: string) => {
+    switch (key) {
+      case "viewing":
+        return CalendarDays;
+      case "harbor":
+        return MapPin;
+      case "details":
+        return Info;
+      case "harborSupport":
+        return LifeBuoy;
+      default:
+        return Info;
+    }
+  };
+
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -467,6 +488,10 @@ function ChatBody({
     handleRemoveFile();
   };
 
+  const handleQuickPromptClick = (_promptKey: string, promptText: string) => {
+    onSend(promptText);
+  };
+
   return (
     <div
       className="flex h-full min-h-0 flex-col bg-[radial-gradient(circle_at_top,_rgba(219,234,254,0.72),_rgba(248,250,252,0.98)_42%,_#ffffff_100%)] text-slate-900"
@@ -504,52 +529,75 @@ function ChatBody({
               <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 {t("welcome.quickPrompts")}
               </div>
-              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-                {quickPrompts.map((prompt) => (
-                  <button
-                    key={prompt}
-                    onClick={() => onSend(prompt)}
-                    disabled={sending}
-                    className="shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition hover:-translate-y-0.5 hover:opacity-90 disabled:opacity-50"
-                    style={{
-                      borderColor: colors.quickChipBorder,
-                      background: colors.quickChipBg,
-                      color: colors.quickChipText,
-                    }}
-                  >
-                    {prompt}
-                  </button>
-                ))}
+                            <div className="flex flex-col gap-3 px-1 pb-1">
+                {quickPrompts.map((prompt) => {
+                  const Icon = getPromptIcon(prompt.key);
+                  return (
+                    <button
+                      key={prompt.key}
+                      onClick={() => handleQuickPromptClick(prompt.key, prompt.text)}
+                      disabled={sending}
+                      className="w-full rounded-[28px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                          <Icon size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {prompt.text}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
                 {harborName && (
                   <button
                     onClick={() =>
                       onSend(t("quickPrompts.harborSupport", { harborName }))
                     }
                     disabled={sending}
-                    className="shrink-0 rounded-full border border-sky-200 bg-sky-50 px-3.5 py-2 text-xs font-semibold text-sky-700 transition hover:-translate-y-0.5 hover:bg-sky-100 disabled:opacity-50"
-                  >
-                    {t("quickPrompts.harborSupport", { harborName })}
+                    className="shrink-0 min-w-[12rem] rounded-[28px] border border-slate-200 bg-sky-50 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-700 text-white">
+                        <LifeBuoy size={18} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900">
+                          {t("quickPrompts.harborSupport", { harborName })}
+                        </p>
+                      </div>
+                    </div>
                   </button>
                 )}
               </div>
             </div>
           </div>
         ) : (
-          <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1">
-            <div className="flex shrink-0 items-center gap-2 rounded-full bg-slate-950 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              {t("status.supportOnline")}
+           <div className="-mx-1 flex flex-col gap-3 px-1">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-950 px-4 py-3 text-[11px] font-semibold text-white shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                {t("status.supportOnline")}
+              </div>
             </div>
-            {quickPrompts.map((prompt) => (
-              <button
-                key={prompt}
-                onClick={() => onSend(prompt)}
-                disabled={sending}
-                className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
-              >
-                {prompt}
-              </button>
-            ))}
+             {quickPrompts.map((prompt) => {
+              const Icon = getPromptIcon(prompt.key);
+              return (
+                <button
+                  key={prompt.key}
+                  onClick={() => handleQuickPromptClick(prompt.key, prompt.text)}
+                  disabled={sending}
+                  className="w-full rounded-[24px] border border-slate-200 bg-white px-3 py-3 text-left text-[11px] font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon size={16} className="text-sky-700" />
+                    <span className="truncate">{prompt.text}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -598,9 +646,12 @@ function ChatBody({
                   >
                     {msg.attachment.type.startsWith("image/") &&
                     msg.attachment.url ? (
-                      <img
+                      <Image
                         src={msg.attachment.url}
                         alt={msg.attachment.name}
+                        width={44}
+                        height={44}
+                        unoptimized
                         className="h-11 w-11 rounded-xl object-cover"
                       />
                     ) : (
@@ -664,9 +715,12 @@ function ChatBody({
             <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
               <div className="flex min-w-0 items-center gap-3">
                 {filePreview && selectedFile.type.startsWith("image/") ? (
-                  <img
+                  <Image
                     src={filePreview}
                     alt={selectedFile.name}
+                    width={40}
+                    height={40}
+                    unoptimized
                     className="h-10 w-10 rounded-xl object-cover"
                   />
                 ) : (
@@ -1780,9 +1834,9 @@ export function ChatWidget({
             aria-label="Close chat backdrop"
           />
 
-          <div className="fixed inset-x-3 bottom-3 top-16 z-50 flex flex-col overflow-hidden rounded-[30px] border border-white/70 bg-white/90 shadow-[0_32px_80px_-28px_rgba(15,23,42,0.42)] backdrop-blur-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[calc(100vh-9rem)] sm:max-h-[720px] sm:w-[430px]">
+          <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] top-[max(0.75rem,env(safe-area-inset-top))] z-50 flex flex-col rounded-[30px] border border-white/70 bg-white/90 shadow-[0_32px_80px_-28px_rgba(15,23,42,0.42)] backdrop-blur-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[calc(100vh-9rem)] sm:max-h-[720px] sm:w-[430px]">
             <div
-              className="relative overflow-hidden border-b border-white/15 px-5 py-5 text-white"
+              className="relative shrink-0 border-b border-white/15 px-5 py-5 text-white"
               style={{
                 background: `linear-gradient(140deg, ${colors.headerStart}, ${colors.headerEnd})`,
               }}
