@@ -4,6 +4,21 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  CheckCircle2, 
+  AlertCircle, 
+  ChevronRight, 
+  ShieldCheck, 
+  Globe2, 
+  Anchor, 
+  ShoppingBag, 
+  LineChart, 
+  FileText,
+  Eye,
+  EyeOff
+} from "lucide-react";
+
 import {
   getPublicLocations,
   login,
@@ -20,6 +35,8 @@ import boatsHeroImage from "../../../public/boatslogo.jpg";
 import schepenkringLogo from "../../../public/schepenkring-logo.png";
 
 type AuthMode = "login" | "register";
+type SignupRole = "buyer" | "seller";
+
 const PENDING_VERIFICATION_EMAIL_KEY = "pending_verification_email";
 
 type HeroSectionProps = {
@@ -62,47 +79,100 @@ type HeroSectionProps = {
     termsLabelBeforeLink: string;
     termsLinkLabel: string;
     termsLabelAfterLink: string;
+    secureAccess: string;
+    buyerSignup: string;
+    sellerSignup: string;
+    loginHeroTitle: string;
+    buyerHeroTitle: string;
+    sellerHeroTitle: string;
+    loginHeroSubtitle: string;
+    memberSupport: string;
+    offices: string;
+    buyer: string;
+    seller: string;
+    benefits: {
+      buyer: {
+        watchlist: { title: string; desc: string };
+        verified: { title: string; desc: string };
+        deals: { title: string; desc: string };
+      };
+      seller: {
+        onboarding: { title: string; desc: string };
+        preparation: { title: string; desc: string };
+        support: { title: string; desc: string };
+      };
+    };
   };
 };
 
-type StepUpChallenge = {
-  email: string;
-  otp_challenge_id: string;
-  otp_ttl_minutes?: number;
-  device_id?: string;
-  reasons?: string[];
-};
+const getBenefits = (copy: HeroSectionProps['copy']) => {
+  const buyerBenefits = copy?.benefits?.buyer || {
+    watchlist: { title: "", desc: "" },
+    verified: { title: "", desc: "" },
+    deals: { title: "", desc: "" },
+  };
+  const sellerBenefits = copy?.benefits?.seller || {
+    onboarding: { title: "", desc: "" },
+    preparation: { title: "", desc: "" },
+    support: { title: "", desc: "" },
+  };
 
-type AuthPayload = {
-  token: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: UserRole;
+  return {
+    buyer: [
+      {
+        icon: ShoppingBag,
+        title: buyerBenefits.watchlist?.title || "",
+        desc: buyerBenefits.watchlist?.desc || ""
+      },
+      {
+        icon: ShieldCheck,
+        title: buyerBenefits.verified?.title || "",
+        desc: buyerBenefits.verified?.desc || ""
+      },
+      {
+        icon: LineChart,
+        title: buyerBenefits.deals?.title || "",
+        desc: buyerBenefits.deals?.desc || ""
+      }
+    ],
+    seller: [
+      {
+        icon: Anchor,
+        title: sellerBenefits.onboarding?.title || "",
+        desc: sellerBenefits.onboarding?.desc || ""
+      },
+      {
+        icon: FileText,
+        title: sellerBenefits.preparation?.title || "",
+        desc: sellerBenefits.preparation?.desc || ""
+      },
+      {
+        icon: Globe2,
+        title: sellerBenefits.support?.title || "",
+        desc: sellerBenefits.support?.desc || ""
+      }
+    ]
   };
 };
-
-function getTermsPdfPath(locale: AppLocale) {
-  const termsLocale = locale === "fr" ? "en" : locale;
-  return `/contracts/bemiddelingsvoorwaarden-${termsLocale}.pdf`;
-}
 
 export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [signupRole, setSignupRole] = useState<SignupRole>("buyer");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [stepUpCode, setStepUpCode] = useState("");
-  const [stepUpChallenge, setStepUpChallenge] =
-    useState<StepUpChallenge | null>(null);
+  const [stepUpChallenge, setStepUpChallenge] = useState<any>(null);
   const [locations, setLocations] = useState<PublicLocation[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -112,13 +182,11 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     password: "",
     confirmPassword: "",
   });
+
   const normalizedFormEmail = formData.email.trim();
   const verifyEmailHref = normalizedFormEmail
     ? `/${locale}/auth/verify-email?email=${encodeURIComponent(normalizedFormEmail)}`
     : `/${locale}/auth/verify-email`;
-  const termsHref = getTermsPdfPath(locale);
-  const authDescription =
-    mode === "login" ? copy.loginDescription : copy.registerDescription;
 
   useEffect(() => {
     const modeParam = searchParams.get("mode");
@@ -135,11 +203,6 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
         const next = await getPublicLocations();
         if (!mounted) return;
         setLocations(Array.isArray(next) ? next : []);
-        setFormData((prev) => ({
-          ...prev,
-          location_id:
-            prev.location_id || (next.length ? String(next[0].id) : ""),
-        }));
       } catch {
         if (mounted) setLocations([]);
       } finally {
@@ -148,200 +211,12 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     }
 
     void loadLocations();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [mode]);
 
-  useEffect(() => {
-    const stored = sessionStorage.getItem("pending_step_up_challenge");
-    if (!stored) return;
-
-    try {
-      const parsed = JSON.parse(stored) as StepUpChallenge;
-      if (parsed?.otp_challenge_id) {
-        setStepUpChallenge(parsed);
-      }
-    } catch {
-      sessionStorage.removeItem("pending_step_up_challenge");
-    }
-  }, []);
-
-  function onInputChange(
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) {
+  function onInputChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  }
-
-  function persistStepUp(challenge: StepUpChallengeResponse) {
-    const nextChallenge: StepUpChallenge = {
-      email: formData.email,
-      otp_challenge_id: challenge.otp_challenge_id,
-      otp_ttl_minutes: challenge.otp_ttl_minutes,
-      device_id: challenge.device_id,
-      reasons: challenge.reasons,
-    };
-
-    setStepUpChallenge(nextChallenge);
-    sessionStorage.setItem(
-      "pending_step_up_challenge",
-      JSON.stringify(nextChallenge),
-    );
-  }
-
-  function resolveAuthPayload(response: unknown): AuthPayload | null {
-    if (!response || typeof response !== "object") return null;
-    const data = response as Record<string, unknown>;
-
-    const token = typeof data.token === "string" ? data.token : null;
-    const nestedData =
-      data.data && typeof data.data === "object"
-        ? (data.data as Record<string, unknown>)
-        : null;
-
-    const nestedUser =
-      data.user && typeof data.user === "object"
-        ? (data.user as Record<string, unknown>)
-        : null;
-
-    const role = normalizeRole(
-      (nestedUser?.role as string | undefined) ??
-        (nestedData?.type as string | undefined)?.toLowerCase() ??
-        (data.userType as string | undefined) ??
-        (data.role as string | undefined) ??
-        null,
-    );
-    const id =
-      (nestedData?.id as string | number | undefined) ??
-      (nestedUser?.id as string | number | undefined) ??
-      (data.id as string | number | undefined);
-    const name =
-      (nestedData?.name as string | undefined) ??
-      (nestedUser?.name as string | undefined) ??
-      (data.name as string | undefined);
-    const email =
-      (nestedData?.email as string | undefined) ??
-      (nestedUser?.email as string | undefined) ??
-      (data.email as string | undefined);
-
-    if (!token || !role || id === undefined || !name || !email) return null;
-
-    return {
-      token,
-      user: {
-        id: String(id),
-        name,
-        email,
-        role,
-      },
-    };
-  }
-
-  async function handleVerifyStepUp() {
-    if (!stepUpChallenge) return;
-    if (!stepUpCode.trim()) {
-      setError(copy.enterVerificationCode);
-      return;
-    }
-
-    const response = await verifyStepUp({
-      email: stepUpChallenge.email,
-      code: stepUpCode.trim(),
-      otp_challenge_id: stepUpChallenge.otp_challenge_id,
-      device_id: stepUpChallenge.device_id,
-    });
-
-    sessionStorage.removeItem("pending_step_up_challenge");
-    setStepUpChallenge(null);
-    setStepUpCode("");
-    const payload = resolveAuthPayload(response);
-    if (!payload) throw new Error(copy.invalidLoginResponse);
-    setClientSession(payload.token, payload.user);
-
-    router.push(`/${locale}/dashboard/${payload.user.role}`);
-    router.refresh();
-  }
-
-  async function executeAuth() {
-    if (mode === "register") {
-      if (!acceptedTerms) {
-        setError(copy.termsRequired);
-        return;
-      }
-
-      if (!formData.confirmPassword) {
-        setError(copy.confirmPasswordRequired);
-        return;
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        setError(copy.passwordsDontMatch);
-        return;
-      }
-
-      if (!acceptedTerms) {
-        setError(copy.termsRequired);
-        return;
-      }
-    }
-
-    if (mode === "login") {
-      const response = await login({
-        email: formData.email,
-        password: formData.password,
-        remember_terminal: rememberMe,
-      });
-
-      if ("step_up_required" in response && response.step_up_required) {
-        persistStepUp(response);
-        setSuccess(response.message ?? copy.verificationCodeSent);
-        return;
-      }
-
-      const payload = resolveAuthPayload(response);
-      if (!payload) throw new Error(copy.invalidLoginResponse);
-      setClientSession(payload.token, payload.user);
-
-      router.push(`/${locale}/dashboard/${payload.user.role}`);
-      router.refresh();
-      return;
-    }
-
-    const response = await signup({
-      name: formData.name,
-      email: formData.email,
-      locale,
-      phone: formData.phone || undefined,
-      location_id: formData.location_id
-        ? Number(formData.location_id)
-        : undefined,
-      website: formData.website,
-      password: formData.password,
-      terms_accepted: acceptedTerms,
-    });
-
-    if ("verification_required" in response && response.verification_required) {
-      setSuccess(response.message ?? copy.verificationCodeSent);
-      sessionStorage.setItem(PENDING_VERIFICATION_EMAIL_KEY, response.email);
-      setTimeout(() => {
-        router.push(
-          `/${locale}/auth/verify-email?email=${encodeURIComponent(response.email)}`,
-        );
-      }, 600);
-      return;
-    }
-
-    const payload = resolveAuthPayload(response);
-    if (payload) {
-      setClientSession(payload.token, payload.user);
-      router.push(`/${locale}/dashboard/${payload.user.role}`);
-      router.refresh();
-      return;
-    }
-
-    router.push(`/${locale}/dashboard/client`);
-    router.refresh();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -351,296 +226,400 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     setIsLoading(true);
 
     try {
-      if (mode === "login" && stepUpChallenge) {
-        await handleVerifyStepUp();
+      if (mode === "login") {
+        const response = await login({
+          email: formData.email,
+          password: formData.password,
+          remember_terminal: rememberMe,
+        });
+
+        if (response && "token" in response) {
+          setClientSession(response.token!, response.user);
+          router.push(`/${locale}/dashboard/${response.user.role}`);
+          router.refresh();
+        }
       } else {
-        await executeAuth();
+        if (!acceptedTerms) throw new Error(copy.termsRequired);
+        if (formData.password !== formData.confirmPassword) throw new Error(copy.passwordsDontMatch);
+
+        const response = await signup({
+          ...formData,
+          locale,
+          role: signupRole,
+          location_id: formData.location_id ? Number(formData.location_id) : undefined,
+          terms_accepted: acceptedTerms,
+        });
+
+        if (response && "verification_required" in response) {
+          setSuccess(response.message || "Registration successful.");
+          setTimeout(() => router.push(verifyEmailHref), 1000);
+        }
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : copy.authFailed;
-      setError(message);
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : copy.authFailed);
     } finally {
       setIsLoading(false);
     }
   }
 
-  function setModeOnRoute(nextMode: AuthMode) {
-    setMode(nextMode);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("mode", nextMode);
-    router.push(`${pathname}?${params.toString()}`);
-  }
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 dark:bg-slate-950">
-      <div className="fixed right-4 top-4 z-50">
+    <div className="min-h-screen flex items-center justify-center bg-[#f0f4f8] dark:bg-[#020617] p-2 sm:p-4 font-sans overflow-hidden">
+      <div className="fixed right-6 top-6 z-50">
         <LanguageSwitcher locale={locale} />
       </div>
 
-      <div className="relative flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-slate-900 lg:flex-row">
-        <div className="relative lg:w-1/2 h-48 lg:h-auto flex items-center justify-center p-8 overflow-hidden">
-          {/* Background Image */}
-          <Image
-            alt=""
-            src={boatsHeroImage}
-            fill
-            className="object-cover"
-            priority
-          />
-
-          {/* Overlay Logo (Centered) */}
-          <div className="relative z-10">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="relative flex w-full max-w-5xl flex-col lg:flex-row overflow-hidden rounded-[40px] bg-white shadow-[0_40px_100px_-20px_rgba(11,31,58,0.15)] dark:bg-slate-900 dark:shadow-none border border-slate-100 dark:border-slate-800"
+      >
+        {/* Left Side: Brand Imagery */}
+        <div className="relative lg:w-[45%] bg-[#0B1F3A] p-10 lg:p-14 flex flex-col justify-between overflow-hidden">
+          {/* Background Image with Overlay */}
+          <div className="absolute inset-0 pointer-events-none">
             <Image
-              src={schepenkringLogo}
-              alt={""}
-              width={240}
-              height={68}
-              className="object-contain"
+              alt=""
+              src={boatsHeroImage}
+              fill
+              className="object-cover opacity-40 mix-blend-overlay"
               priority
             />
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-center p-6 lg:w-1/2 lg:p-10">
-          <div className="mb-4">
-            {mode !== "login" ? (
-              <div className="mb-4 flex rounded-lg bg-gray-100 p-1 dark:bg-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setModeOnRoute("register")}
-                  className="flex-1 rounded-md bg-white py-1.5 text-[11px] font-bold text-[#003566] shadow dark:bg-slate-700 dark:text-white"
-                >
-                  {copy.clientSignup}
-                </button>
-              </div>
-            ) : null}
-
-            <h2 className="mb-1 text-xl font-bold text-gray-800 dark:text-slate-100">
-              {mode === "login" ? copy.welcomeBack : copy.createAccount}
-            </h2>
-            {authDescription ? (
-              <p className="text-xs text-gray-500 dark:text-slate-400">
-                {authDescription}
-              </p>
-            ) : null}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0B1F3A] via-[#0B1F3A]/95 to-[#050f1d]"></div>
           </div>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            {error ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13px] font-medium text-red-600">
-                {error}
-              </div>
-            ) : null}
-
-            {success ? (
-              <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-[13px] font-medium text-green-600">
-                {success}
-              </div>
-            ) : null}
-
-            {mode !== "login" ? (
-              <input
-                name="name"
-                type="text"
-                required
-                placeholder={copy.fullName}
-                value={formData.name}
-                onChange={onInputChange}
-                className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
-              />
-            ) : null}
-
-            {mode !== "login" ? (
-              <input
-                name="phone"
-                type="tel"
-                placeholder={copy.phone}
-                value={formData.phone}
-                onChange={onInputChange}
-                className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
-              />
-            ) : null}
-
-            {mode !== "login" ? (
-              <select
-                name="location_id"
-                value={formData.location_id}
-                onChange={onInputChange}
-                className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
-              >
-                <option value="">
-                  {loadingLocations
-                    ? "Loading locations..."
-                    : copy.selectLocation}
-                </option>
-                <option value="">{copy.noLocationYet}</option>
-                {locations.map((location) => (
-                  <option
-                    key={location.id}
-                    value={location.id}
-                    className="text-slate-900"
-                  >
-                    {location.name}
-                  </option>
-                ))}
-              </select>
-            ) : null}
-
-            <input
-              name="website"
-              type="text"
-              tabIndex={-1}
-              autoComplete="off"
-              value={formData.website}
-              onChange={onInputChange}
-              className="hidden"
-            />
-
-            <input
-              name="email"
-              type="email"
-              required
-              placeholder={copy.email}
-              value={formData.email}
-              onChange={onInputChange}
-              className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
-            />
-
-            <input
-              name="password"
-              type="password"
-              required
-              placeholder={copy.password}
-              value={formData.password}
-              onChange={onInputChange}
-              className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
-            />
-
-            {mode === "login" && stepUpChallenge ? (
-              <input
-                name="stepUpCode"
-                type="text"
-                required
-                placeholder={copy.verificationCode}
-                value={stepUpCode}
-                onChange={(event) => setStepUpCode(event.target.value)}
-                className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
-              />
-            ) : null}
-
-            {mode !== "login" ? (
-              <input
-                name="confirmPassword"
-                type="password"
-                required
-                placeholder={copy.confirmPassword}
-                value={formData.confirmPassword}
-                onChange={onInputChange}
-                className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
-              />
-            ) : null}
-
-            {mode !== "login" ? (
-              <label className="flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-3 text-xs text-gray-600 dark:border-slate-700 dark:text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={acceptedTerms}
-                  onChange={(event) => setAcceptedTerms(event.target.checked)}
-                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-gray-300 text-[#003566] focus:ring-[#003566]"
-                  required
+          <div className="relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-16"
+            >
+              <div className="bg-white rounded-full px-8 py-5 inline-block border border-white/10 shadow-2xl">
+                <Image
+                  src={schepenkringLogo}
+                  alt="Schepenkring"
+                  width={180}
+                  height={50}
+                  className="object-contain"
                 />
-                <span className="leading-5">
-                  {copy.termsLabelBeforeLink}{" "}
-                  <a
-                    href={termsHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-semibold text-[#003566] underline underline-offset-2"
-                  >
-                    {copy.termsLinkLabel}
-                  </a>
-                  {copy.termsLabelAfterLink}
-                </span>
-              </label>
-            ) : null}
+              </div>
+            </motion.div>
 
-            {mode === "login" ? (
-              <div className="mt-2 flex items-center justify-between">
-                <label className="flex items-center space-x-2 text-xs text-gray-600 dark:text-slate-400">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(event) => setRememberMe(event.target.checked)}
-                    className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 text-[#003566] focus:ring-[#003566]"
-                  />
-                  <span>{copy.rememberTerminal}</span>
-                </label>
+            <div className="mt-8">
+              <div 
+                key={mode === 'register' ? signupRole : 'login'}
+                className="transition-all duration-500"
+              >
+                <div className="inline-flex rounded-full bg-sky-400/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-sky-400 border border-sky-400/20 mb-6">
+                  {mode === 'login' 
+                    ? (copy.secureAccess || "Secure Access") 
+                    : (signupRole === 'buyer' ? (copy.buyerSignup || "Buyer Signup") : (copy.sellerSignup || "Seller Signup"))
+                  }
+                </div>
+                <h1 className="text-4xl lg:text-5xl font-bold text-white leading-[1.15] mb-6 tracking-tight">
+                  {mode === 'login' 
+                    ? copy.loginHeroTitle
+                    : signupRole === 'buyer' 
+                      ? copy.buyerHeroTitle
+                      : copy.sellerHeroTitle
+                  }
+                </h1>
+                
+                <div className="h-1 w-20 bg-sky-500/50 rounded-full mb-8" />
+                
+                {mode === 'register' ? (
+                  <div className="space-y-6">
+                    {getBenefits(copy)[signupRole].map((benefit: any, idx: number) => (
+                      <div 
+                        key={idx}
+                        className="flex items-start gap-5"
+                      >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sky-300 border border-white/5 shadow-inner">
+                          <benefit.icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-base font-bold text-white">{benefit.title}</p>
+                          <p className="text-sm text-white/50 leading-relaxed mt-0.5">{benefit.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xl text-white/60 leading-relaxed font-medium">
+                    {copy.loginHeroSubtitle}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
 
-                <div className="flex flex-col items-end gap-1">
-                  <Link
-                    href={`/${locale}/auth/forgot-password`}
-                    className="text-xs text-[#003566] hover:underline dark:text-sky-300"
-                  >
-                    {copy.forgotPassword}
-                  </Link>
-                  <Link
-                    href={verifyEmailHref}
-                    className="text-xs text-gray-600 hover:text-[#003566] dark:text-slate-300"
-                  >
-                    {copy.verifyEmail}
-                  </Link>
+          <div className="relative z-10 pt-10 mt-12 border-t border-white/5 hidden lg:block">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-500 p-0.5 shadow-lg">
+                <div className="h-full w-full rounded-full bg-[#0B1F3A] flex items-center justify-center">
+                  <span className="text-xs font-black text-white">SK</span>
                 </div>
               </div>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="mt-2 w-full rounded-lg bg-[#003566] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#001d3d] disabled:opacity-60"
-            >
-              {isLoading
-                ? mode === "login" && stepUpChallenge
-                  ? copy.validating
-                  : copy.processing
-                : mode === "login" && stepUpChallenge
-                  ? copy.verifyAndContinue
-                  : mode === "login"
-                    ? copy.login
-                    : copy.register}
-            </button>
-
-            <div className="mt-4 text-center text-xs text-gray-600 dark:text-slate-400">
-              {mode === "login" ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModeOnRoute("register");
-                    setStepUpChallenge(null);
-                    setStepUpCode("");
-                    setError("");
-                    setSuccess("");
-                  }}
-                  className="font-bold text-[#003566] hover:underline dark:text-sky-300"
-                >
-                  {copy.noAccountSignup}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModeOnRoute("login");
-                    setError("");
-                    setSuccess("");
-                  }}
-                  className="font-bold text-[#003566] hover:underline dark:text-sky-300"
-                >
-                  {copy.alreadyHaveAccount}
-                </button>
-              )}
+              <div>
+                <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] font-black leading-none">{copy.memberSupport}</p>
+                <p className="text-sm text-white/70 font-semibold mt-1">{copy.offices}</p>
+              </div>
             </div>
-          </form>
+          </div>
         </div>
+
+        {/* Right Side: Auth Form */}
+        <div className="flex flex-col justify-center p-8 lg:p-20 lg:w-[55%] bg-white dark:bg-slate-900 relative">
+          <div className="max-w-md mx-auto w-full">
+            
+            <div className="mb-12 text-center lg:text-left">
+              <h2 className="text-3xl font-black text-[#0B1F3A] dark:text-white mb-3 tracking-tight">
+                {mode === "login" ? copy.welcomeBack : copy.createAccount}
+              </h2>
+              <p className="text-base text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                {mode === "login" ? copy.loginDescription : copy.registerDescription}
+              </p>
+            </div>
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="rounded-2xl border border-red-100 bg-red-50 p-4 flex gap-4 text-sm text-red-700 font-bold dark:bg-red-900/10 dark:border-red-900/20 shadow-sm"
+                  >
+                    <AlertCircle className="h-5 w-5 shrink-0" />
+                    <p>{error}</p>
+                  </motion.div>
+                )}
+
+                {success && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 flex gap-4 text-sm text-emerald-700 font-bold dark:bg-emerald-900/10 dark:border-emerald-900/20 shadow-sm"
+                  >
+                    <CheckCircle2 className="h-5 w-5 shrink-0" />
+                    <p>{success}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {mode === "register" && (
+                <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-100/80 rounded-2xl dark:bg-slate-800/80 mb-8 border border-slate-200/50 dark:border-slate-700/50 shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => setSignupRole('buyer')}
+                    className={`flex items-center justify-center gap-2 py-3 text-sm font-black rounded-xl transition-all duration-300 ${signupRole === 'buyer' ? 'bg-white shadow-md text-[#0B1F3A] dark:bg-slate-700 dark:text-white transform scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    <ShoppingBag size={16} />
+                    {copy.buyer}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSignupRole('seller')}
+                    className={`flex items-center justify-center gap-2 py-3 text-sm font-black rounded-xl transition-all duration-300 ${signupRole === 'seller' ? 'bg-white shadow-md text-[#0B1F3A] dark:bg-slate-700 dark:text-white transform scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    <Anchor size={16} />
+                    {copy.seller}
+                  </button>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {mode !== "login" && (
+                  <InputGroup
+                    name="name"
+                    icon={FileText}
+                    placeholder={copy.fullName}
+                    value={formData.name}
+                    onChange={onInputChange}
+                    required
+                  />
+                )}
+
+                {mode !== "login" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <InputGroup
+                      name="phone"
+                      type="tel"
+                      icon={LineChart}
+                      placeholder={copy.phone}
+                      value={formData.phone}
+                      onChange={onInputChange}
+                    />
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0B1F3A] transition-colors pointer-events-none">
+                        <Anchor size={18} />
+                      </div>
+                      <select
+                        name="location_id"
+                        value={formData.location_id}
+                        onChange={onInputChange}
+                        required
+                        className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 text-sm font-bold placeholder:text-slate-400 focus:ring-4 focus:ring-sky-500/10 focus:border-[#0B1F3A] outline-none transition-all appearance-none dark:bg-slate-800/50 dark:border-slate-700 dark:text-white shadow-sm"
+                      >
+                        <option value="" className="font-sans">{copy.selectLocation}</option>
+                        {locations.map((loc) => (
+                          <option key={loc.id} value={loc.id}>{loc.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <InputGroup
+                  name="email"
+                  type="email"
+                  icon={Globe2}
+                  placeholder={copy.email}
+                  value={formData.email}
+                  onChange={onInputChange}
+                  required
+                />
+
+                <InputGroup
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  icon={ShieldCheck}
+                  placeholder={copy.password}
+                  value={formData.password}
+                  onChange={onInputChange}
+                  required
+                  showToggle
+                  onToggle={() => setShowPassword(!showPassword)}
+                  isToggled={showPassword}
+                />
+
+                {mode !== "login" && (
+                  <InputGroup
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    icon={ShieldCheck}
+                    placeholder={copy.confirmPassword}
+                    value={formData.confirmPassword}
+                    onChange={onInputChange}
+                    required
+                    showToggle
+                    onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+                    isToggled={showConfirmPassword}
+                  />
+                )}
+              </div>
+
+              {mode === "login" && (
+                <div className="flex items-center justify-between mt-4">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className={`h-5 w-5 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${rememberMe ? 'bg-[#0B1F3A] border-[#0B1F3A] shadow-md' : 'border-slate-200 bg-white group-hover:border-[#0B1F3A]'}`}>
+                      {rememberMe && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}><CheckCircle2 className="h-3.5 w-3.5 text-white" /></motion.div>}
+                      <input 
+                        type="checkbox" 
+                        className="hidden" 
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                      />
+                    </div>
+                    <span className="text-sm text-slate-500 font-bold group-hover:text-[#0B1F3A] transition-colors">{copy.rememberTerminal}</span>
+                  </label>
+                  <Link href={`/${locale}/auth/forgot-password`} className="text-sm font-black text-[#0B1F3A] hover:text-sky-600 transition-colors dark:text-sky-300">
+                    {copy.forgotPassword}
+                  </Link>
+                </div>
+              )}
+
+              {mode !== "login" && (
+                <label className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer hover:border-[#0B1F3A] transition-all group dark:bg-slate-800/30 dark:border-slate-700 shadow-sm">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-1 h-5 w-5 rounded-lg border-slate-300 text-[#0B1F3A] focus:ring-[#0B1F3A]"
+                    required
+                  />
+                  <span className="text-xs leading-5 text-slate-500 font-medium group-hover:text-slate-800 transition-colors">
+                    {copy.termsLabelBeforeLink} <Link href="/" className="font-black text-[#0B1F3A] underline decoration-sky-300 decoration-4 underline-offset-4 dark:text-sky-400">{copy.termsLinkLabel}</Link> {copy.termsLabelAfterLink}
+                  </span>
+                </label>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-16 bg-[#0B1F3A] text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-[#051121] active:scale-[0.97] transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none mt-10 shadow-[0_20px_40px_-10px_rgba(11,31,58,0.35)] lg:shadow-[0_20px_40px_-10px_rgba(11,31,58,0.25)] ring-offset-2 focus:ring-4 focus:ring-[#0B1F3A]/20"
+              >
+                {isLoading ? (
+                  <div className="h-6 w-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    {mode === 'login' ? copy.login : copy.register}
+                    <ChevronRight className="h-5 w-5" />
+                  </>
+                )}
+              </button>
+
+              <div className="text-center mt-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextMode = mode === 'login' ? 'register' : 'login';
+                    setMode(nextMode);
+                    const params = new URLSearchParams(searchParams.toString());
+                    params.set("mode", nextMode);
+                    router.push(`${pathname}?${params.toString()}`);
+                  }}
+                  className="group relative inline-flex items-center gap-2 py-2 px-4 rounded-xl hover:bg-slate-50 transition-all dark:hover:bg-slate-800"
+                >
+                  <span className="text-sm font-black uppercase tracking-[0.2em] text-slate-400 transition-colors group-hover:text-[#0B1F3A]">
+                    {mode === 'login' ? copy.noAccountSignup : copy.alreadyHaveAccount}
+                  </span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function InputGroup({ 
+  name, 
+  type = "text", 
+  icon: Icon, 
+  placeholder, 
+  value, 
+  onChange, 
+  required,
+  showToggle,
+  onToggle,
+  isToggled 
+}: any) {
+  return (
+    <div className="relative group">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0B1F3A] transition-colors pointer-events-none">
+        <Icon size={18} />
       </div>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-12 text-sm font-bold placeholder:text-slate-400 focus:ring-4 focus:ring-sky-500/10 focus:border-[#0B1F3A] outline-none transition-all dark:bg-slate-800/50 dark:border-slate-700 dark:text-white shadow-sm"
+      />
+      {showToggle && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#0B1F3A] transition-colors"
+        >
+          {isToggled ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
     </div>
   );
 }
