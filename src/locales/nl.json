@@ -46,6 +46,7 @@
     "confirmPassword": "Bevestig wachtwoord",
     "verificationCode": "Verificatiecode",
     "rememberTerminal": "Onthoud dit apparaat",
+    "forgotPassword": "Wachtwoord vergeten?",
     "forgotPasswordSubmit": "Resetlink versturen",
     "forgotPasswordBackToLogin": "Terug naar inloggen",
     "forgotPasswordSuccess": "Als je e-mailadres in ons systeem bestaat, ontvang je binnenkort een link om je wachtwoord opnieuw in te stellen.",
