@@ -10,8 +10,6 @@ export default async function WidgetPage({
     const { locale } = await params;
     const query = await searchParams;
 
-    const harborId = query.harborId;
-    const harborName = query.harborName;
     const boatId = query.boatId ? parseInt(query.boatId, 10) : undefined;
     const locationId = query.locationId ? parseInt(query.locationId, 10) : undefined;
     const widgetMode = (query.widgetMode as "chat" | "smart" | "auction") || (boatId ? "smart" : "chat");
@@ -23,8 +21,6 @@ export default async function WidgetPage({
     return (
         <main className="h-full w-full relative">
             <ChatWidget
-                harborId={harborId}
-                harborName={harborName}
                 boatId={boatId}
                 locationId={locationId}
                 accentColor={accentColor}

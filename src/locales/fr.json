@@ -46,6 +46,7 @@
     "confirmPassword": "Confirmer le mot de passe",
     "verificationCode": "Code de vÃ©rification",
     "rememberTerminal": "Se souvenir du terminal",
+    "forgotPassword": "Mot de passe oublié ?",
     "forgotPasswordSubmit": "Envoyer le lien de réinitialisation",
     "forgotPasswordBackToLogin": "Retour à la connexion",
     "forgotPasswordSuccess": "Si votre adresse e-mail existe dans notre système, vous recevrez bientôt un lien pour réinitialiser votre mot de passe.",

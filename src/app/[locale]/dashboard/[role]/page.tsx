@@ -267,7 +267,7 @@ function getDashboardYachtName(yacht: DashboardYacht | null): string {
 
 export default function AdminDashboardHome() {
   const t = useTranslations("DashboardAdminOverview");
-  const params = useParams<{ role?: string }>();
+  const params = useParams<{ locale?: string; role?: string }>();
   const role = normalizeRole(params?.role) ?? "admin";
   const dashboardBase = `/dashboard/${role}`;
   const marketplaceUrl = "https://www.schepenkring.nl/aanbod-boten/";
