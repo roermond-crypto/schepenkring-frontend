@@ -415,9 +415,9 @@ function ChatBody({
   const showWelcomePanel = !hasUserMessages;
   const visibleMessages = messages.filter((message) => message.id !== "init");
   const quickPrompts = [
-    t("quickPrompts.details"),
-    t("quickPrompts.viewing"),
-    t("quickPrompts.location"),
+    { key: "details", text: t("quickPrompts.details") },
+    { key: "viewing", text: t("quickPrompts.viewing") },
+    { key: "harbor", text: t("quickPrompts.location") },
   ];
 
   const getPromptIcon = (key: string) => {
@@ -531,8 +531,8 @@ function ChatBody({
               <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
                 {quickPrompts.map((prompt) => (
                   <button
-                    key={prompt}
-                    onClick={() => onSend(prompt)}
+                    key={prompt.key}
+                    onClick={() => onSend(prompt.text)}
                     disabled={sending}
                     className="shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition hover:-translate-y-0.5 hover:opacity-90 disabled:opacity-50"
                     style={{
@@ -541,7 +541,7 @@ function ChatBody({
                       color: colors.quickChipText,
                     }}
                   >
-                    {prompt}
+                    {prompt.text}
                   </button>
                 ))}
                 {locationName && (

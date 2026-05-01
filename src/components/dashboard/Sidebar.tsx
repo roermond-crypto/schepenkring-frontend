@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 import { isPartnerLikeRole, type UserRole } from "@/lib/auth/roles";
+import { getProfileSetupStatus } from "@/lib/api/profile-setup";
 
 type SidebarProps = {
   locale: AppLocale;
