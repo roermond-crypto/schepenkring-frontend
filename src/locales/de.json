@@ -182,7 +182,10 @@
       "roleClient": "Kunde",
       "roleEmployee": "Vertrieb",
       "roleLocation": "Standort",
-      "rolePartner": "Partner"
+      "rolePartner": "Partner",
+      "roleBuyer": "Käufer",
+      "roleSeller": "Verkäufer",
+      "knowledgebase": "Wissensdatenbank"
     },
     "notifications": {
       "label": "Benachrichtigungen",

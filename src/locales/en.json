@@ -184,7 +184,7 @@
       "roleClient": "Client",
       "roleEmployee": "Sales",
       "roleLocation": "Location",
-      "rolePartner": "Partner"
+      "rolePartner": "Partner",
       "roleBuyer": "Buyer",
       "roleSeller": "Seller"
     },
