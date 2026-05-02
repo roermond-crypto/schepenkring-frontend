@@ -4821,12 +4821,21 @@ function YachtEditorInner() {
 
   const fetchMarktplaatsListing = useCallback(
     async (targetYachtId: string | number) => {
-      const res = await api.get(`/yachts/${targetYachtId}/channel-listings`);
-      const listings = Array.isArray(res.data) ? res.data : [];
-      const next = listings.find(
-        (entry: any) => entry?.channel_name === "marktplaats",
-      );
-      setMarktplaatsListing(normalizeMarktplaatsListing(next));
+      try {
+        const res = await api.get(`/yachts/${targetYachtId}/channel-listings`);
+        const listings = Array.isArray(res.data) ? res.data : [];
+        const next = listings.find(
+          (entry: any) => entry?.channel_name === "marktplaats",
+        );
+        setMarktplaatsListing(normalizeMarktplaatsListing(next));
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          setMarktplaatsListing(DEFAULT_MARKTPLAATS_LISTING_STATE);
+          return;
+        }
+
+        throw error;
+      }
     },
     [normalizeMarktplaatsListing],
   );

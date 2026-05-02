@@ -14,9 +14,6 @@ function resolveBaseUrl() {
     finalUrl = "http://localhost:8000/api";
   }
 
-  if (typeof window !== "undefined") {
-    console.log("[DEBUG API BASE URL]", { configured, finalUrl, host: window.location.hostname });
-  }
   return finalUrl;
 }
 
@@ -40,16 +37,5 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  console.log("[AXIOS REQUEST]", {
-    url: config.url,
-    baseURL: config.baseURL,
-    method: config.method
-  });
-
   return config;
 });
-
-if (typeof window !== "undefined") {
-  const debugWindow = window as Window & { debugApi?: typeof api };
-  debugWindow.debugApi = api;
-}

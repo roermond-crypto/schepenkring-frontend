@@ -25,9 +25,6 @@ function resolveBackendBaseUrl() {
     finalUrl = "http://localhost:8000/api";
   }
 
-  if (typeof window !== "undefined") {
-    console.log("[DEBUG HTTP BASE URL]", { configured, finalUrl, host: window.location.hostname });
-  }
   return finalUrl;
 }
 

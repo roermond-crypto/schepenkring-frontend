@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "@/shims/next-intl";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -221,6 +222,7 @@ export default function AdminSocialAutomationPage() {
     const [posts, setPosts] = useState<VideoPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<"videos" | "posts">("videos");
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [selectedVideoIds, setSelectedVideoIds] = useState<number[]>([]);
     const [reschedulePostId, setReschedulePostId] = useState<number | null>(null);
@@ -610,6 +612,101 @@ export default function AdminSocialAutomationPage() {
         <div className="social-admin-page space-y-8">
             <Toaster position="top-center" />
 
+            <div className="social-hero relative overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-[#F7FAFF] to-[#EAF3FF] px-6 py-8 shadow-[0_22px_60px_rgba(15,23,42,0.08)] sm:px-8">
+                <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-blue-200/40 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-20 left-8 h-40 w-40 rounded-full bg-cyan-200/40 blur-3xl" />
+
+                <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.38em] text-blue-600">
+                            {t("subtitle")}
+                        </p>
+                        <h1 className="mt-3 text-4xl font-serif italic text-[#003566] sm:text-5xl">
+                            {t("title")}
+                        </h1>
+                        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
+                            {t("description")}
+                        </p>
+                    </div>
+
+                    <Button
+                        type="button"
+                        onClick={loadData}
+                        disabled={loading}
+                        className="h-12 rounded-2xl bg-[#003566] px-6 text-[10px] font-black uppercase tracking-[0.26em] text-white hover:bg-[#00284d] inline-flex items-center"
+                    >
+                        <Loader2 className={cn("mr-2 h-4 w-4 animate-spin", loading ? "block" : "hidden")} />
+                        <RefreshCw className={cn("mr-2 h-4 w-4", loading ? "hidden" : "block")} />
+                        {t("actions.refresh")}
+                    </Button>
+                </div>
+
+                <div className="relative mt-6 grid gap-3 sm:grid-cols-4">
+                    <div className="rounded-3xl border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur-sm">
+                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                            {t("stats.videos")}
+                        </p>
+                        <p className="mt-2 text-2xl font-bold text-[#0B1F3A]">{stats.videos}</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setPostFilter(postFilter === "scheduled" ? "all" : "scheduled");
+                            setActiveTab("posts");
+                        }}
+                        className={cn(
+                            "rounded-3xl border p-4 text-left shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-md",
+                            postFilter === "scheduled"
+                                ? "border-blue-400 bg-blue-50"
+                                : "border-white/80 bg-white/85",
+                        )}
+                    >
+                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                            {t("stats.scheduled")}
+                        </p>
+                        <p className="mt-2 text-2xl font-bold text-[#0B1F3A]">{stats.scheduled}</p>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setPostFilter(postFilter === "published" ? "all" : "published");
+                            setActiveTab("posts");
+                        }}
+                        className={cn(
+                            "rounded-3xl border p-4 text-left shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-md",
+                            postFilter === "published"
+                                ? "border-emerald-400 bg-emerald-50"
+                                : "border-white/80 bg-white/85",
+                        )}
+                    >
+                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                            {t("stats.published")}
+                        </p>
+                        <p className="mt-2 text-2xl font-bold text-[#0B1F3A]">{stats.published}</p>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setPostFilter(postFilter === "views" ? "all" : "views");
+                            setActiveTab("posts");
+                        }}
+                        className={cn(
+                            "rounded-3xl border p-4 text-left shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-md",
+                            postFilter === "views"
+                                ? "border-cyan-400 bg-cyan-50"
+                                : "border-white/80 bg-white/85",
+                        )}
+                    >
+                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                            {t("stats.impressions")}
+                        </p>
+                        <p className="mt-2 text-2xl font-bold text-[#0B1F3A]">
+                            {formatMetric(stats.impressions)}
+                        </p>
+                    </button>
+                </div>
+            </div>
+
 
             {error && (
                 <div className="flex items-center gap-3 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
@@ -617,6 +714,427 @@ export default function AdminSocialAutomationPage() {
                     <span>{error}</span>
                 </div>
             )}
+
+            <div className="grid gap-6 xl:grid-cols-[24rem_minmax(0,1fr)]">
+                <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-[#003566]">
+                            <Calendar size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                                {t("scheduler.label")}
+                            </p>
+                            <h2 className="mt-1 text-2xl font-serif italic text-[#003566]">
+                                {t("scheduler.title")}
+                            </h2>
+                        </div>
+                    </div>
+
+                    <p className="mt-4 text-sm leading-6 text-slate-500">
+                        {t("scheduler.description")}
+                    </p>
+
+                    <div className="mt-6 space-y-4">
+                        <label className="block space-y-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                                {t("scheduler.startDate")}
+                            </span>
+                            <input
+                                type="date"
+                                value={scheduleForm.start_date}
+                                onChange={(event) =>
+                                    setScheduleForm((current) => ({
+                                        ...current,
+                                        start_date: event.target.value,
+                                    }))
+                                }
+                                className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
+                            />
+                        </label>
+
+                        <label className="block space-y-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                                {t("scheduler.time")}
+                            </span>
+                            <input
+                                type="time"
+                                value={scheduleForm.time}
+                                onChange={(event) =>
+                                    setScheduleForm((current) => ({
+                                        ...current,
+                                        time: event.target.value,
+                                    }))
+                                }
+                                className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
+                            />
+                        </label>
+
+                        <div className="space-y-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                                {t("scheduler.publishers")}
+                            </span>
+                            <div className="grid grid-cols-2 gap-2">
+                                {PUBLISHER_OPTIONS.map((publisher) => {
+                                    const checked = scheduleForm.publishers.includes(publisher);
+
+                                    return (
+                                        <label
+                                            key={publisher}
+                                            className={cn(
+                                                "flex items-center gap-2 rounded-2xl border px-3 py-3 text-sm transition-colors",
+                                                checked
+                                                    ? "border-[#003566] bg-blue-50 text-[#003566]"
+                                                    : "border-slate-200 bg-white text-slate-600",
+                                            )}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() =>
+                                                    setScheduleForm((current) => ({
+                                                        ...current,
+                                                        publishers: checked
+                                                            ? current.publishers.filter((item) => item !== publisher)
+                                                            : [...current.publishers, publisher],
+                                                    }))
+                                                }
+                                                className="rounded border-slate-300 text-[#003566] focus:ring-[#003566]"
+                                            />
+                                            <span className="capitalize">{publisher}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4 text-sm text-slate-600">
+                            <input
+                                type="checkbox"
+                                checked={scheduleForm.skip_weekends}
+                                onChange={(event) =>
+                                    setScheduleForm((current) => ({
+                                        ...current,
+                                        skip_weekends: event.target.checked,
+                                    }))
+                                }
+                                className="mt-0.5 rounded border-slate-300"
+                            />
+                            <span>{t("scheduler.skipWeekends")}</span>
+                        </label>
+
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                                    {t("scheduler.selectedVideos")}
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedVideoIds(readyVideos.map((video) => video.id))}
+                                    className="text-[10px] font-black uppercase tracking-[0.2em] text-[#003566]"
+                                >
+                                    {t("scheduler.useAllReady")}
+                                </button>
+                            </div>
+                            <p className="mt-2 text-sm font-semibold text-slate-900">
+                                {selectedVideoIds.length} {t("scheduler.videosChosen")}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                                {readyVideos.length} {t("scheduler.readyAvailable")}
+                            </p>
+                            <div className="mt-3 max-h-56 space-y-2 overflow-auto rounded-2xl border border-slate-200 bg-white p-2">
+                                {readyVideos.length === 0 ? (
+                                    <p className="px-2 py-3 text-sm text-slate-500">{t("empty.videos")}</p>
+                                ) : (
+                                    readyVideos.map((video) => {
+                                        const checked = selectedVideoIds.includes(video.id);
+
+                                        return (
+                                            <label
+                                                key={video.id}
+                                                className={cn(
+                                                    "flex cursor-pointer items-center justify-between gap-3 rounded-xl border px-3 py-2 transition",
+                                                    checked
+                                                        ? "border-[#003566] bg-blue-50"
+                                                        : "border-slate-200 bg-white hover:border-slate-300",
+                                                )}
+                                            >
+                                                <span className="flex min-w-0 items-center gap-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={checked}
+                                                        onChange={() => handleToggleVideo(video.id)}
+                                                        className="rounded border-slate-300 text-[#003566] focus:ring-[#003566]"
+                                                    />
+                                                    <span className="min-w-0">
+                                                        <span className="block truncate text-sm font-bold text-slate-900">
+                                                            {t("videoCard.video")} #{video.id}
+                                                        </span>
+                                                        <span className="block truncate text-xs text-slate-500">
+                                                            {t("videoCard.boat")} #{video.yacht_id || "—"} / {video.template_type || "—"}
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                                <span
+                                                    className={`flex-none rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] ${statusClass(
+                                                        video.status,
+                                                    )}`}
+                                                >
+                                                    {video.status || "—"}
+                                                </span>
+                                            </label>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+
+                        <Button
+                            type="button"
+                            onClick={handleSchedule}
+                            disabled={actionLoading === "schedule" || selectedVideoIds.length === 0}
+                            className="h-12 w-full rounded-2xl bg-[#003566] text-[10px] font-black uppercase tracking-[0.26em] text-white hover:bg-[#00284d]"
+                        >
+                            <Loader2 className={cn("mr-2 h-4 w-4 animate-spin", actionLoading === "schedule" ? "block" : "hidden")} />
+                            <Sparkles className={cn("mr-2 h-4 w-4", actionLoading === "schedule" ? "hidden" : "block")} />
+                            {t("actions.schedule")}
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                                {t("library.label")}
+                            </p>
+                            <h2 className="mt-1 text-2xl font-serif italic text-[#003566]">
+                                {activeTab === "videos" ? t("library.videos") : t("library.posts")}
+                            </h2>
+                        </div>
+                        <div className="inline-flex w-fit rounded-2xl border border-slate-200 bg-slate-50 p-1">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("videos")}
+                                className={cn(
+                                    "rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em]",
+                                    activeTab === "videos" ? "bg-[#0B1F3A] text-white" : "text-slate-500",
+                                )}
+                            >
+                                {t("library.videos")}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("posts")}
+                                className={cn(
+                                    "rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em]",
+                                    activeTab === "posts" ? "bg-[#0B1F3A] text-white" : "text-slate-500",
+                                )}
+                            >
+                                {t("library.posts")}
+                            </button>
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex items-center justify-center py-24">
+                            <Loader2 className="h-8 w-8 animate-spin text-[#003566]" />
+                        </div>
+                    ) : activeTab === "videos" ? (
+                        videos.length === 0 ? (
+                            <div className="mt-6 rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-6 text-sm text-slate-500">
+                                {t("empty.videos")}
+                            </div>
+                        ) : (
+                            <div className="mt-6 space-y-4">
+                                {videos.map((video) => {
+                                    const checked = selectedVideoIds.includes(video.id);
+
+                                    return (
+                                        <div
+                                            key={video.id}
+                                            className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4"
+                                        >
+                                            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                                <div className="flex min-w-0 items-start gap-4">
+                                                    <label className="pt-1">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={checked}
+                                                            onChange={() => handleToggleVideo(video.id)}
+                                                            className="rounded border-slate-300 text-[#003566] focus:ring-[#003566]"
+                                                        />
+                                                    </label>
+                                                    <div className="h-20 w-20 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                                        {video.thumbnail_url ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img
+                                                                src={video.thumbnail_url}
+                                                                alt=""
+                                                                className="h-full w-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-full w-full items-center justify-center text-slate-300">
+                                                                <Video size={20} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <p className="text-sm font-bold text-slate-900">
+                                                                {t("videoCard.video")} #{video.id}
+                                                            </p>
+                                                            <span className={cn("rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em]", statusClass(video.status))}>
+                                                                {video.status || "—"}
+                                                            </span>
+                                                        </div>
+                                                        <div className="mt-2 grid gap-1 text-xs text-slate-500 sm:grid-cols-2">
+                                                            <p>{t("videoCard.boat")} #{video.boat_id || video.yacht_id || "—"}</p>
+                                                            <p>{t("videoCard.duration")} {video.duration ? `${video.duration}s` : "—"}</p>
+                                                            <p>{t("videoCard.template")} {video.template_type || "—"}</p>
+                                                            <p>{t("videoCard.created")} {formatDateTime(video.created_at, locale)}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2">
+                                                    {video.video_url ? (
+                                                        <a
+                                                            href={video.video_url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-[10px] font-black uppercase tracking-[0.18em] text-[#003566]"
+                                                        >
+                                                            <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                                                            {t("actions.open")}
+                                                        </a>
+                                                    ) : null}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRegenerate(video.id)}
+                                                        disabled={actionLoading === `video-${video.id}`}
+                                                        className="inline-flex h-10 items-center justify-center rounded-2xl bg-[#003566] px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white disabled:opacity-60"
+                                                    >
+                                                        {actionLoading === `video-${video.id}` ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="mr-2 h-3.5 w-3.5" />}
+                                                        {t("actions.regenerate")}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleNotifyOwner(video.id)}
+                                                        disabled={actionLoading === `notify-${video.id}`}
+                                                        className="inline-flex h-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 disabled:opacity-60"
+                                                    >
+                                                        {actionLoading === `notify-${video.id}` ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="mr-2 h-3.5 w-3.5" />}
+                                                        WhatsApp
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )
+                    ) : posts.length === 0 ? (
+                        <div className="mt-6 rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-6 text-sm text-slate-500">
+                            {t("empty.posts")}
+                        </div>
+                    ) : (
+                        <div className="mt-6 space-y-4">
+                            {filteredPosts.length === 0 ? (
+                                <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-6 text-sm text-slate-500">
+                                    {t("empty.posts")}
+                                </div>
+                            ) : null}
+                            {filteredPosts.map((post) => {
+                                const isRescheduling = reschedulePostId === post.id;
+
+                                return (
+                                    <div key={post.id} className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+                                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                            <div className="min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <p className="text-sm font-bold text-slate-900">{t("postCard.post")} #{post.id}</p>
+                                                    <span className={cn("rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em]", statusClass(post.status))}>
+                                                        {post.status || "—"}
+                                                    </span>
+                                                </div>
+                                                <div className="mt-2 grid gap-1 text-xs text-slate-500 sm:grid-cols-2">
+                                                    <p>{t("postCard.video")} #{post.video_id || "—"}</p>
+                                                    <p>{t("postCard.publishers")} {post.__publishers.length > 0 ? post.__publishers.join(", ") : "—"}</p>
+                                                    <p>{t("postCard.scheduled")} {formatDateTime(post.scheduled_at, locale)}</p>
+                                                    <p>{t("postCard.published")} {formatDateTime(post.published_at, locale)}</p>
+                                                    <p>{t("postCard.impressions")} {formatMetric(post.impressions)}</p>
+                                                    <p>{t("postCard.clicks")} {formatMetric(post.clicks)}</p>
+                                                </div>
+                                                {post.error_message ? (
+                                                    <div className="mt-3 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+                                                        {post.error_message}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setReschedulePostId(post.id);
+                                                        setRescheduleValue(post.scheduled_at ? new Date(post.scheduled_at).toISOString().slice(0, 16) : "");
+                                                    }}
+                                                    className="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-[10px] font-black uppercase tracking-[0.18em] text-[#003566]"
+                                                >
+                                                    <Calendar className="mr-2 h-3.5 w-3.5" />
+                                                    {t("actions.reschedule")}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRetry(post.id)}
+                                                    disabled={actionLoading === `post-${post.id}`}
+                                                    className="inline-flex h-10 items-center justify-center rounded-2xl bg-[#003566] px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white disabled:opacity-60"
+                                                >
+                                                    {actionLoading === `post-${post.id}` ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="mr-2 h-3.5 w-3.5" />}
+                                                    {t("actions.retry")}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {isRescheduling ? (
+                                            <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center">
+                                                <input
+                                                    type="datetime-local"
+                                                    value={rescheduleValue}
+                                                    onChange={(event) => setRescheduleValue(event.target.value)}
+                                                    className="h-11 flex-1 rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
+                                                />
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setReschedulePostId(null);
+                                                            setRescheduleValue("");
+                                                        }}
+                                                        className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600"
+                                                    >
+                                                        {t("actions.cancel")}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleReschedule}
+                                                        disabled={actionLoading === `reschedule-${post.id}`}
+                                                        className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#003566] px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white disabled:opacity-60"
+                                                    >
+                                                        {actionLoading === `reschedule-${post.id}` ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="mr-2 h-3.5 w-3.5" />}
+                                                        {t("actions.saveReschedule")}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

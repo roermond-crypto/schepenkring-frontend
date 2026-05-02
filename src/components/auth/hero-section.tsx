@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, type ChangeEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -18,6 +18,7 @@ import {
   Eye,
   EyeOff
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import {
   getPublicLocations,
@@ -36,6 +37,11 @@ import schepenkringLogo from "../../../public/schepenkring-logo.png";
 
 type AuthMode = "login" | "register";
 type SignupRole = "buyer" | "seller";
+type BenefitItem = {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+};
 
 const PENDING_VERIFICATION_EMAIL_KEY = "pending_verification_email";
 
@@ -167,7 +173,8 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [stepUpCode, setStepUpCode] = useState("");
-  const [stepUpChallenge, setStepUpChallenge] = useState<any>(null);
+  const [stepUpChallenge, setStepUpChallenge] =
+    useState<StepUpChallengeResponse | null>(null);
   const [locations, setLocations] = useState<PublicLocation[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -184,6 +191,11 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   });
 
   const normalizedFormEmail = formData.email.trim();
+  const nextPath = searchParams.get("next");
+  const safeNextPath =
+    nextPath?.startsWith(`/${locale}/dashboard/`) && !nextPath.startsWith("//")
+      ? nextPath
+      : null;
   const verifyEmailHref = normalizedFormEmail
     ? `/${locale}/auth/verify-email?email=${encodeURIComponent(normalizedFormEmail)}`
     : `/${locale}/auth/verify-email`;
@@ -235,7 +247,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
 
         if (response && "token" in response) {
           setClientSession(response.token!, response.user);
-          router.push(`/${locale}/dashboard/${response.user.role}`);
+          router.push(safeNextPath ?? `/${locale}/dashboard/${response.user.role}`);
           router.refresh();
         }
       } else {
@@ -255,7 +267,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
           setTimeout(() => router.push(verifyEmailHref), 1000);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : copy.authFailed);
     } finally {
       setIsLoading(false);
@@ -330,7 +342,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                 
                 {mode === 'register' ? (
                   <div className="space-y-6">
-                    {getBenefits(copy)[signupRole].map((benefit: any, idx: number) => (
+                    {getBenefits(copy)[signupRole].map((benefit: BenefitItem, idx: number) => (
                       <div 
                         key={idx}
                         className="flex items-start gap-5"
@@ -585,7 +597,20 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   );
 }
 
-function InputGroup({ 
+type InputGroupProps = {
+  name: string;
+  type?: string;
+  icon: LucideIcon;
+  placeholder: string;
+  value: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  required?: boolean;
+  showToggle?: boolean;
+  onToggle?: () => void;
+  isToggled?: boolean;
+};
+
+function InputGroup({
   name, 
   type = "text", 
   icon: Icon, 
@@ -596,7 +621,7 @@ function InputGroup({
   showToggle,
   onToggle,
   isToggled 
-}: any) {
+}: InputGroupProps) {
   return (
     <div className="relative group">
       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0B1F3A] transition-colors pointer-events-none">

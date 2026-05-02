@@ -37,15 +37,11 @@ export default async function DashboardRoleLayout({ children, params }: Dashboar
 
   const realSession = await getServerSession();
 
-  // TODO: Remove this dev bypass before production
-  const session = realSession ?? {
-    token: "dev-bypass",
-    user: { id: "dev", name: "Developer", email: "dev@test.com", role },
-  };
+  const session = realSession;
 
-  // if (!session) {
-  //   redirect(`/${locale}/login`);
-  // }
+  if (!session) {
+    redirect(`/${locale}/login`);
+  }
 
   if (realSession && !rolesAreEquivalent(realSession.user.role, routeRole)) {
     redirect(`/${locale}/dashboard/${realSession.user.role}`);

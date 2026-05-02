@@ -33,6 +33,7 @@ import {
   MoreHorizontal,
   Grid3x3,
   List,
+  Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast, Toaster } from "react-hot-toast";
@@ -594,6 +595,9 @@ export default function FleetManagementPage() {
       : `https://www.schepenkring.nl/aanbod-boten/${listingId}/`;
   };
 
+  const desktopOverlayActionClass =
+    "w-full rounded-xl px-3 py-2 font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-1.5 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0";
+
   return (
     <div className="yachts-page-theme -top-20 min-h-screen bg-[#F8FAFC] p-6 lg:p-12">
       <Toaster position="top-right" />
@@ -898,20 +902,42 @@ export default function FleetManagementPage() {
                   </div>
 
                   {/* ACTION OVERLAY */}
-                  <div className="absolute inset-0 bg-[#003566]/90 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-6">
+                  <div className="absolute inset-0 hidden md:flex bg-[#003566]/92 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center p-4 lg:p-6">
+                    <div className="grid w-full max-w-[280px] grid-cols-2 gap-1.5">
                     <button
                       onClick={() =>
                         router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
                       }
-                      className="w-full max-w-[200px] bg-white text-[#003566] px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2"
+                      className={cn(
+                        desktopOverlayActionClass,
+                        "col-span-2 bg-white text-[#003566] hover:bg-blue-500 hover:text-white",
+                      )}
                     >
                       <Edit3 size={12} />
                       {t?.actions?.editManifest || "Edit Manifest"}
                     </button>
 
                     <button
+                      onClick={() =>
+                        router.push(
+                          `/${locale}/dashboard/${role}/yachts/${yacht.id}/video-settings`,
+                        )
+                      }
+                      className={cn(
+                        desktopOverlayActionClass,
+                        "col-span-2 bg-sky-600 text-white hover:bg-sky-700",
+                      )}
+                    >
+                      <Video size={12} />
+                      Video Settings
+                    </button>
+
+                    <button
                       onClick={() => window.open(publicUrl, "_blank")}
-                      className="w-full max-w-[200px] bg-blue-600 text-white px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                      className={cn(
+                        desktopOverlayActionClass,
+                        "col-span-2 bg-blue-600 text-white hover:bg-blue-700",
+                      )}
                     >
                       <Eye size={12} />
                       {t?.actions?.viewDetails || "View Details"}
@@ -920,7 +946,10 @@ export default function FleetManagementPage() {
                     <button
                       onClick={() => handleDelete(yacht)}
                       disabled={isSubmitting}
-                      className="w-full max-w-[200px] bg-red-600 text-white px-4 py-3 font-black uppercase text-[9px] tracking-widest hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+                      className={cn(
+                        desktopOverlayActionClass,
+                        "col-span-2 bg-red-600 text-white hover:bg-red-700",
+                      )}
                     >
                       {isSubmitting ? (
                         <Loader2 className="animate-spin" size={12} />
@@ -929,6 +958,7 @@ export default function FleetManagementPage() {
                       )}
                       {t?.actions?.deleteVessel || "Delete Vessel"}
                     </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1022,6 +1052,18 @@ export default function FleetManagementPage() {
                         {getClientContractActionLabel(
                           yacht.latest_signhost ?? normalizeLatestSignhost(null),
                         )}
+                      </button>
+                    ) : null}
+                    {!isClientRole ? (
+                      <button
+                        onClick={() =>
+                          router.push(
+                            `/${locale}/dashboard/${role}/yachts/${yacht.id}/video-settings`,
+                          )
+                        }
+                        className="w-full rounded-lg bg-sky-600 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white transition-colors hover:bg-sky-700"
+                      >
+                        Video Settings
                       </button>
                     ) : null}
                     <button
@@ -1173,6 +1215,17 @@ export default function FleetManagementPage() {
                     title={t?.actions?.edit || "Edit"}
                   >
                     <Edit3 size={16} />
+                  </button>
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/${locale}/dashboard/${role}/yachts/${yacht.id}/video-settings`,
+                      )
+                    }
+                    className="p-2 text-sky-600 hover:text-sky-800 transition-colors"
+                    title="Video Settings"
+                  >
+                    <Video size={16} />
                   </button>
                   <button
                     onClick={() => window.open(publicUrl, "_blank")}

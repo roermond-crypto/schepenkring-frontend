@@ -212,6 +212,7 @@ export function SelectField(
     showAdminEditLink && typeof fieldName === "string" && fieldName !== "";
   const sanitizedValue = normalizeDomFieldValue(value);
   const sanitizedDefaultValue = normalizeDomFieldValue(defaultValue);
+  const isControlled = value !== undefined;
   const [currentValue, setCurrentValue] = useState<string | null>(null);
   const effectiveCurrentValue =
     sanitizedValue || currentValue || sanitizedDefaultValue || "";
@@ -224,8 +225,9 @@ export function SelectField(
     <div className="relative">
       <select
         {...selectProps}
-        value={value}
-        defaultValue={defaultValue ?? ""}
+        {...(isControlled
+          ? { value: sanitizedValue }
+          : { defaultValue: sanitizedDefaultValue })}
         onChange={(event) => {
           setCurrentValue(event.target.value);
           onChange?.(event);

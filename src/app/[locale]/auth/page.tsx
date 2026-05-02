@@ -10,12 +10,12 @@ import {
 
 type AuthPageProps = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ mode?: string }>;
+  searchParams: Promise<{ mode?: string; next?: string }>;
 };
 
 export default async function AuthPage({ params, searchParams }: AuthPageProps) {
   const { locale } = await params;
-  const { mode } = await searchParams;
+  const { mode, next } = await searchParams;
 
   if (!isSupportedLocale(locale)) {
     redirect(`/${DEFAULT_LOCALE}/auth`);
@@ -23,14 +23,21 @@ export default async function AuthPage({ params, searchParams }: AuthPageProps) 
 
   const currentLocale = getLocaleOrDefault(locale);
   const session = await getServerSession();
+  const safeNextPath =
+    next?.startsWith(`/${currentLocale}/dashboard/`) && !next.startsWith("//")
+      ? next
+      : null;
 
   if (session) {
-    redirect(`/${currentLocale}/dashboard/${session.user.role}`);
+    redirect(safeNextPath ?? `/${currentLocale}/dashboard/${session.user.role}`);
   }
 
   const initialMode = mode === "register" ? "register" : "login";
   const dict = getDictionary(currentLocale);
   const authDict = dict.auth || {};
+  const authCopy = authDict as Record<string, unknown>;
+  const authString = (key: string, fallback: string) =>
+    typeof authCopy[key] === "string" ? authCopy[key] : fallback;
 
   return (
     <HeroSection
@@ -76,10 +83,10 @@ export default async function AuthPage({ params, searchParams }: AuthPageProps) 
         secureAccess: authDict.secureAccess || "Secure Access",
         buyerSignup: authDict.buyerSignup || "Buyer Signup",
         sellerSignup: authDict.sellerSignup || "Seller Signup",
-        loginHeroTitle: (authDict as any)["loginHeroTitle"] || (authDict as any)["heroTitle"] || "Welcome to your workspace",
-        buyerHeroTitle: (authDict as any)["buyerHeroTitle"] || (authDict as any)["heroTitle"] || "Find your dream yacht",
-        sellerHeroTitle: (authDict as any)["sellerHeroTitle"] || (authDict as any)["heroTitle"] || "Sell your vessel",
-        loginHeroSubtitle: (authDict as any)["loginHeroSubtitle"] || (authDict as any)["heroSubtitle"] || "Access the complete maritime brokerage suite.",
+        loginHeroTitle: authString("loginHeroTitle", authString("heroTitle", "Welcome to your workspace")),
+        buyerHeroTitle: authString("buyerHeroTitle", authString("heroTitle", "Find your dream yacht")),
+        sellerHeroTitle: authString("sellerHeroTitle", authString("heroTitle", "Sell your vessel")),
+        loginHeroSubtitle: authString("loginHeroSubtitle", authString("heroSubtitle", "Access the complete maritime brokerage suite.")),
         memberSupport: authDict.memberSupport || "Support",
         offices: authDict.offices || "Global Offices",
         buyer: authDict.buyer || "Buyer",
