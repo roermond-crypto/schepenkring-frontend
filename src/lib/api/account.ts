@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 
-export type MeUserType = "ADMIN" | "EMPLOYEE" | "CLIENT";
+export type MeUserType = "ADMIN" | "EMPLOYEE" | "CLIENT" | "BUYER" | "SELLER";
 export type MeUserStatus = "ACTIVE" | "DISABLED" | "BLOCKED";
 
 export type MeUser = {

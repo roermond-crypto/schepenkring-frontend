@@ -5,11 +5,14 @@ import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 const ALLOWED_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 
 async function handleProxy(request: NextRequest, path: string[]) {
-  const configuredBackendUrl = process.env.BACKEND_API_URL;
+  const configuredBackendUrl =
+    process.env.BACKEND_API_URL ??
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ??
+    process.env.NEXT_PUBLIC_API_BASE_URL;
 
   if (!configuredBackendUrl) {
     return NextResponse.json(
-      { message: "BACKEND_API_URL is not configured" },
+      { message: "Backend API URL is not configured" },
       { status: 500 },
     );
   }

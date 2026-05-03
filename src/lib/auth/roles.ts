@@ -9,7 +9,7 @@ export function isUserRole(value: string): value is UserRole {
 export function normalizeRole(value: string | undefined | null): UserRole | null {
   if (!value) return null;
   const lowerValue = value.toLowerCase().trim();
-  if (lowerValue === "customer" || lowerValue === "seller" || lowerValue === "buyer") {
+  if (lowerValue === "customer") {
     return "client";
   }
   if (lowerValue === "harbor" || lowerValue === "harbour") {

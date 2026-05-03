@@ -51,7 +51,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type UserType = "ADMIN" | "EMPLOYEE" | "CLIENT";
+type UserType = "ADMIN" | "EMPLOYEE" | "CLIENT" | "BUYER" | "SELLER";
 type UserStatus = "ACTIVE" | "DISABLED" | "BLOCKED";
 type UserCategory = "Employee" | "Admin" | "Partner" | "Customer";
 
@@ -141,9 +141,13 @@ function mapTypeToCategory(type: UserType): UserCategory {
   return "Customer";
 }
 
-function mapCategoryToType(category: UserCategory): UserType {
+function mapCategoryToType(
+  category: UserCategory,
+  clientRole: "buyer" | "seller" = "buyer",
+): UserType {
   if (category === "Admin") return "ADMIN";
   if (category === "Employee") return "EMPLOYEE";
+  if (category === "Customer") return clientRole === "seller" ? "SELLER" : "BUYER";
   return "CLIENT";
 }
 
@@ -162,7 +166,16 @@ function mapUiToStatus(status: StatusUi): UserStatus {
 function mapTypeToRole(type: UserType) {
   if (type === "ADMIN") return "admin";
   if (type === "EMPLOYEE") return "employee";
+  if (type === "SELLER") return "seller";
+  if (type === "BUYER") return "buyer";
   return "client";
+}
+
+function isHeadquartersLocation(location: LocationOption) {
+  return (
+    location.code?.toUpperCase() === "HQ" ||
+    location.name.trim().toLowerCase() === "headquarters"
+  );
 }
 
 function idempotencyKey() {
@@ -172,16 +185,27 @@ function idempotencyKey() {
 }
 
 function extractErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message || fallback;
   if (typeof error === "object" && error !== null) {
     const maybeResponse = error as {
-      response?: { data?: { message?: string } };
+      response?: {
+        data?: {
+          message?: string;
+          errors?: Record<string, string[] | string>;
+        };
+      };
       message?: string;
     };
+    const errors = maybeResponse.response?.data?.errors;
+    if (errors) {
+      const firstError = Object.values(errors)[0];
+      if (Array.isArray(firstError)) return firstError[0] || fallback;
+      if (typeof firstError === "string") return firstError;
+    }
     return (
       maybeResponse.response?.data?.message || maybeResponse.message || fallback
     );
   }
+  if (error instanceof Error) return error.message || fallback;
   return fallback;
 }
 
@@ -229,6 +253,8 @@ export default function RoleManagementPage() {
     password: "",
     location_id: "",
     role: "Employee" as UserCategory,
+    client_role: "buyer" as "buyer" | "seller",
+    needs_onboarding: true,
     access_level: "Limited" as "Limited" | "Full",
     status: "Active" as StatusUi,
   });
@@ -291,7 +317,7 @@ export default function RoleManagementPage() {
             ? response.data
             : [];
         if (!mounted) return;
-        setLocations(list);
+        setLocations(list.filter((location: LocationOption) => !isHeadquartersLocation(location)));
       } catch {
         if (!mounted) return;
         setLocations([]);
@@ -323,15 +349,24 @@ export default function RoleManagementPage() {
 
   const handleEnrollment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newUser.password.length < 8) {
+      toast.error(t("toasts.passwordTooShort"), { id: "enroll" });
+      return;
+    }
+
     try {
       toast.loading(t("toasts.enrolling"), { id: "enroll" });
+      const isClientAccount = newUser.role === "Customer";
       const payload = {
-        type: mapCategoryToType(newUser.role),
+        type: mapCategoryToType(newUser.role, newUser.client_role),
         name: newUser.name,
         email: newUser.email,
         password: newUser.password,
         status: mapUiToStatus(newUser.status),
         location_id: newUser.location_id ? Number(newUser.location_id) : null,
+        ...(isClientAccount
+          ? { needs_onboarding: newUser.needs_onboarding }
+          : {}),
       };
       const res = await api.post("/admin/users", payload);
       setUsers((prev) => [res.data?.data ?? res.data, ...prev]);
@@ -342,6 +377,8 @@ export default function RoleManagementPage() {
         password: "",
         location_id: locations[0] ? String(locations[0].id) : "",
         role: "Employee",
+        client_role: "buyer",
+        needs_onboarding: true,
         access_level: "Limited",
         status: "Active",
       });
@@ -942,6 +979,7 @@ export default function RoleManagementPage() {
                   <div className="relative">
                     <input
                       required
+                      minLength={8}
                       type={showPassword ? "text" : "password"}
                       className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 pr-10 text-sm outline-none transition-all focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10 dark:border-slate-700 dark:bg-slate-800"
                       value={newUser.password}
@@ -960,8 +998,8 @@ export default function RoleManagementPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className={newUser.role === "Customer" ? "sm:col-span-1" : ""}>
                     <label className="mb-1.5 block text-xs font-semibold text-slate-500">
                       {t("fields.assignment")}
                     </label>
@@ -972,6 +1010,10 @@ export default function RoleManagementPage() {
                         setNewUser({
                           ...newUser,
                           role: e.target.value as UserCategory,
+                          client_role:
+                            e.target.value === "Customer"
+                              ? newUser.client_role
+                              : "buyer",
                         })
                       }
                     >
@@ -981,7 +1023,47 @@ export default function RoleManagementPage() {
                       <option value="Partner">{t("tabs.partner")}</option>
                     </select>
                   </div>
-                  <div>
+                  {newUser.role === "Customer" ? (
+                    <>
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                          {t("fields.clientType")}
+                        </label>
+                        <select
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
+                          value={newUser.client_role}
+                          onChange={(e) =>
+                            setNewUser({
+                              ...newUser,
+                              client_role: e.target.value as "buyer" | "seller",
+                            })
+                          }
+                        >
+                          <option value="buyer">{t("options.buyer")}</option>
+                          <option value="seller">{t("options.seller")}</option>
+                        </select>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                          {t("fields.onboarding")}
+                        </label>
+                        <select
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
+                          value={newUser.needs_onboarding ? "required" : "finished"}
+                          onChange={(e) =>
+                            setNewUser({
+                              ...newUser,
+                              needs_onboarding: e.target.value === "required",
+                            })
+                          }
+                        >
+                          <option value="required">{t("options.onboardingRequired")}</option>
+                          <option value="finished">{t("options.directlyFinished")}</option>
+                        </select>
+                      </div>
+                    </>
+                  ) : null}
+                  <div className={newUser.role === "Customer" ? "sm:col-span-2" : ""}>
                     <label className="mb-1.5 block text-xs font-semibold text-slate-500">
                       {t("fields.location")}
                     </label>

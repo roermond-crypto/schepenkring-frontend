@@ -1461,13 +1461,13 @@ export default function AdminDashboardHome() {
         )}
 
         {showAdminQuickAccess && (
-          <div className="rounded-2xl border border-[#CFDCF2] bg-white p-7 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
-            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">
+          <div className="rounded-2xl border border-[#CFDCF2] bg-white p-5 shadow-[0_12px_30px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:bg-slate-900">
+            <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-700">
               <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
                   {t("sections.adminShortcuts")}
                 </p>
-                <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                <h2 className="mt-0.5 text-xl font-black leading-none text-[#0B1F3A] dark:text-slate-100">
                   {t("sections.quickAccess")}
                 </h2>
               </div>
@@ -1477,7 +1477,7 @@ export default function AdminDashboardHome() {
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {adminShortcuts.map((shortcut) => {
                 const ShortcutIcon = shortcut.icon;
 
@@ -1485,30 +1485,30 @@ export default function AdminDashboardHome() {
                   <Link
                     key={shortcut.key}
                     href={shortcut.href}
-                    className="group flex items-start gap-4 rounded-[26px] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-50/70 p-5 transition hover:border-[#BBD0F2] hover:shadow-[0_12px_24px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:hover:border-slate-600"
+                    className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-50/70 px-4 py-3 transition hover:-translate-y-0.5 hover:border-[#BBD0F2] hover:shadow-[0_10px_22px_rgba(11,31,58,0.08)] dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:hover:border-slate-600"
                   >
                     <div
                       className={cn(
-                        "flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] border shadow-[0_10px_24px_rgba(15,23,42,0.08)]",
+                        "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-[0_8px_18px_rgba(15,23,42,0.07)]",
                         shortcut.iconShell,
                       )}
                     >
                       <ShortcutIcon
-                        className={cn("h-6 w-6", shortcut.iconTone)}
+                        className={cn("h-5 w-5", shortcut.iconTone)}
                       />
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xl font-bold leading-tight text-[#0B1F3A] sm:text-2xl dark:text-slate-100">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-black leading-tight text-[#0B1F3A] dark:text-slate-100">
                             {shortcut.title}
                           </p>
-                          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                          <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-500 dark:text-slate-400">
                             {shortcut.description}
                           </p>
                         </div>
-                        <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-[#1E3A8A] dark:group-hover:text-sky-300" />
+                        <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-[#1E3A8A] dark:group-hover:text-sky-300" />
                       </div>
                     </div>
                   </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 import { Link } from "@/i18n/navigation";
@@ -13,10 +13,13 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock3,
+  FlaskConical,
   Layers3,
   PlayCircle,
   Plus,
+  Settings2,
   Sparkles,
+  Trash2,
   UserRound,
   Workflow,
 } from "lucide-react";
@@ -28,6 +31,7 @@ type TriggerType =
   | "booking_created"
   | "booking_completed"
   | "bid_accepted"
+  | "offer_accepted"
   | "deposit_paid"
   | "user_registered"
   | "harbor_created"
@@ -72,6 +76,128 @@ interface AutomationRule {
   status: RuleStatus;
   boatTypeFilter: string[];
   items: AutomationRuleItem[];
+}
+
+interface AutomationTemplateOption {
+  id: number;
+  name: string;
+  title: string;
+  priority: PriorityLevel;
+}
+
+interface EngineRule {
+  id: number;
+  name: string;
+  internal_code: string | null;
+  trigger_event: TriggerType;
+  is_active: boolean;
+  target_role: "client" | "employee" | "admin";
+  target_user_type: "buyer" | "seller" | null;
+  assignee_rule: AssigneeRule;
+  assigned_user_id: number | null;
+  boat_types: string[];
+  boat_year_from: number | null;
+  boat_year_to: number | null;
+  location_filter: string | null;
+  visibility_delay_hours: number;
+  visibility_status: string | null;
+  visibility_status_source: string | null;
+  actionable_delay_hours: number | null;
+  actionable_status: string | null;
+  actionable_status_source: string | null;
+  actionable_requires_internal_tasks_completed: boolean;
+  templates: AutomationTemplateOption[];
+}
+
+interface EngineRuleForm {
+  id: number | null;
+  name: string;
+  internalCode: string;
+  triggerEvent: TriggerType;
+  isActive: boolean;
+  targetRole: "client" | "employee" | "admin";
+  targetUserType: "buyer" | "seller";
+  assigneeRule: AssigneeRule;
+  assignedUserId: string;
+  boatTypes: string;
+  boatYearFrom: string;
+  boatYearTo: string;
+  locationFilter: string;
+  visibilityDelayHours: string;
+  visibilityStatus: string;
+  visibilityStatusSource: "related" | "boat" | "deal" | "bid" | "booking";
+  actionableDelayHours: string;
+  actionableStatus: string;
+  actionableStatusSource: "related" | "boat" | "deal" | "bid" | "booking";
+  actionableRequiresInternalTasksCompleted: boolean;
+  templateIds: string[];
+}
+
+interface RawTemplate {
+  id?: number | string;
+  name?: string;
+  trigger_event?: string;
+  schedule_type?: string;
+  delay_value?: number | string;
+  delay_unit?: string;
+  due_at?: string;
+  base_at?: string;
+  title?: string;
+  description?: string;
+  priority?: string;
+  default_assignee_type?: string;
+  assigned_user_id?: number | string | null;
+  related_type?: string | null;
+  related_id?: number | string | null;
+  internal_code?: string | null;
+  is_active?: boolean;
+  boat_type_filter?: string[];
+  items?: RawTemplateItem[];
+}
+
+interface RawTemplateItem {
+  title?: string;
+  description?: string;
+  priority?: string;
+  position?: number | string;
+}
+
+interface RawAutomation {
+  assigned_user_id?: number | string | null;
+  related_type?: string | null;
+  related_id?: number | string | null;
+}
+
+interface RawEngineRule extends Omit<Partial<EngineRule>, "templates"> {
+  templates?: RawTemplate[];
+}
+
+interface SimulateTask {
+  title: string;
+  would_skip_duplicate?: boolean;
+}
+
+interface SimulatePreview {
+  rule_id: number;
+  rule_name: string;
+  tasks: SimulateTask[];
+}
+
+interface SimulateResponse {
+  error?: string;
+  matched_rules?: number;
+  preview?: SimulatePreview[];
+}
+
+interface ExecutionLog {
+  id: number;
+  rule_id?: number | null;
+  rule?: { id: number; name: string } | null;
+  trigger_event: string;
+  result: string;
+  reason?: string | null;
+  created_task_ids?: number[];
+  created_at?: string;
 }
 
 const copyByLocale = {
@@ -248,6 +374,7 @@ const triggerOptions: { value: TriggerType; label: string }[] = [
   { value: "booking_created", label: "Booking created" },
   { value: "booking_completed", label: "Booking completed" },
   { value: "bid_accepted", label: "Bid accepted" },
+  { value: "offer_accepted", label: "Offer accepted" },
   { value: "deposit_paid", label: "Deposit paid" },
   { value: "user_registered", label: "User registered" },
   { value: "harbor_created", label: "Harbor created" },
@@ -275,6 +402,24 @@ const priorityOptions: { value: PriorityLevel; label: string }[] = [
   { value: "Medium", label: "Medium" },
   { value: "High", label: "High" },
 ];
+
+const knownStatusOptions = [
+  { value: "Draft", label: "Draft" },
+  { value: "For Sale", label: "For Sale" },
+  { value: "For Bid", label: "For Bid" },
+  { value: "Sold", label: "Sold" },
+  { value: "Active", label: "Active" },
+  { value: "Inactive", label: "Inactive" },
+  { value: "Maintenance", label: "Maintenance" },
+  { value: "Pending", label: "Pending" },
+  { value: "Completed", label: "Completed" },
+  { value: "Won", label: "Won" },
+  { value: "Leading", label: "Leading" },
+  { value: "Scheduled", label: "Scheduled" },
+  { value: "Published", label: "Published" },
+  { value: "Failed", label: "Failed" },
+  { value: "Closed", label: "Closed" },
+] as const;
 
 const relatedTypeOptions: { value: RelatedModelType; label: string }[] = [
   { value: "App\\Models\\Yacht", label: "Boat / Yacht" },
@@ -402,6 +547,125 @@ const initialRule = (): AutomationRule => ({
   items: [],
 });
 
+const initialEngineRuleForm = (): EngineRuleForm => ({
+  id: null,
+  name: "",
+  internalCode: "",
+  triggerEvent: "boat_created",
+  isActive: true,
+  targetRole: "client",
+  targetUserType: "seller",
+  assigneeRule: "seller",
+  assignedUserId: "",
+  boatTypes: "",
+  boatYearFrom: "",
+  boatYearTo: "",
+  locationFilter: "",
+  visibilityDelayHours: "0",
+  visibilityStatus: "",
+  visibilityStatusSource: "related",
+  actionableDelayHours: "",
+  actionableStatus: "",
+  actionableStatusSource: "related",
+  actionableRequiresInternalTasksCompleted: false,
+  templateIds: [],
+});
+
+const triggerEntityMap: Record<string, { type: string; label: string }> = {
+  boat_created: { type: "App\\Models\\Yacht", label: "Yacht ID" },
+  boat_status_activated: { type: "App\\Models\\Yacht", label: "Yacht ID" },
+  booking_created: { type: "App\\Models\\Booking", label: "Booking ID" },
+  booking_completed: { type: "App\\Models\\Booking", label: "Booking ID" },
+  bid_accepted: { type: "App\\Models\\Bid", label: "Bid ID" },
+  offer_accepted: { type: "App\\Models\\Bid", label: "Bid ID" },
+  deposit_paid: { type: "App\\Models\\Yacht", label: "Yacht ID" },
+  user_registered: { type: "App\\Models\\Yacht", label: "Yacht ID" },
+  harbor_created: { type: "App\\Models\\Yacht", label: "Yacht ID" },
+  contract_signed: { type: "App\\Models\\Yacht", label: "Yacht ID" },
+  escrow_funded: { type: "App\\Models\\Yacht", label: "Yacht ID" },
+  escrow_released: { type: "App\\Models\\Yacht", label: "Yacht ID" },
+  manual: { type: "App\\Models\\Yacht", label: "Yacht ID" },
+};
+
+const splitCsv = (value: string) =>
+  value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+type ApiValidationErrors = Record<string, string | string[]>;
+
+type ApiErrorLike = {
+  friendlyMessage?: unknown;
+  message?: unknown;
+  response?: {
+    status?: number;
+    data?: {
+      message?: unknown;
+      error?: unknown;
+      errors?: unknown;
+    };
+  };
+};
+
+const validationMessages = (errors: unknown) => {
+  if (!errors || typeof errors !== "object") return [];
+
+  return Object.values(errors as ApiValidationErrors)
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .map((value) => String(value).trim())
+    .filter(Boolean);
+};
+
+const isRawAxiosMessage = (message: string) =>
+  /^Request failed with status code \d+$/i.test(message.trim());
+
+const errorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === "object" && error !== null) {
+    const value = error as ApiErrorLike;
+    const friendlyMessage = String(value.friendlyMessage || "").trim();
+    if (friendlyMessage) return friendlyMessage;
+
+    const status = value.response?.status;
+    const payload = value.response?.data;
+    const messages = validationMessages(payload?.errors);
+
+    if (status === 422) {
+      if (messages.length > 0) {
+        const visibleMessages = messages.slice(0, 3).join(" ");
+        const hiddenCount = messages.length - 3;
+        return hiddenCount > 0
+          ? `Please fix the form: ${visibleMessages} (${hiddenCount} more.)`
+          : `Please fix the form: ${visibleMessages}`;
+      }
+
+      const payloadMessage = String(payload?.message || payload?.error || "").trim();
+      if (payloadMessage && payloadMessage !== "The given data was invalid.") {
+        return payloadMessage;
+      }
+
+      return "Please check the required fields and try again.";
+    }
+
+    if (status === 401) return "Your session has expired. Please sign in again.";
+    if (status === 403) return "You do not have permission to perform this action.";
+    if (status === 404) return "The selected record could not be found.";
+    if (status && status >= 500) return "The server could not complete this action. Please try again.";
+
+    const payloadMessage = String(payload?.message || payload?.error || "").trim();
+    if (payloadMessage) return payloadMessage;
+
+    const message = String(value.message || "").trim();
+    if (message && !isRawAxiosMessage(message)) return message;
+
+    if (!value.response && message) {
+      return "Could not reach the backend. Check that the backend server is running.";
+    }
+  }
+
+  return fallback;
+};
+
 const normalizeTriggerType = (value: unknown): TriggerType => {
   const trigger = String(value || "");
   const matched = triggerOptions.find((option) => option.value === trigger);
@@ -430,11 +694,21 @@ export default function TaskAutomationPage() {
 
   const [draft, setDraft] = useState<AutomationRule>(initialRule);
   const [rules, setRules] = useState<AutomationRule[]>([]);
+  const [templateOptions, setTemplateOptions] = useState<AutomationTemplateOption[]>([]);
+  const [engineRules, setEngineRules] = useState<EngineRule[]>([]);
+  const [engineRuleForm, setEngineRuleForm] = useState<EngineRuleForm>(initialEngineRuleForm);
   const [automationCount, setAutomationCount] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [savingEngineRule, setSavingEngineRule] = useState(false);
   const [loadingRules, setLoadingRules] = useState(true);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [simulatingRuleId, setSimulatingRuleId] = useState<number | null>(null);
+  const [simulateEntityId, setSimulateEntityId] = useState<Record<number, string>>({});
+  const [simulateResult, setSimulateResult] = useState<Record<number, SimulateResponse>>({});
+  const [executionLogs, setExecutionLogs] = useState<ExecutionLog[]>([]);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [loadingLogs, setLoadingLogs] = useState(false);
   const [recentAssigneeIds, setRecentAssigneeIds] = useState<string[]>([]);
   const [recentRelatedRecords, setRecentRelatedRecords] = useState<
     Array<{ type: RelatedModelType; id: string }>
@@ -507,7 +781,7 @@ export default function TaskAutomationPage() {
   const updateItem = (
     index: number,
     field: keyof AutomationRuleItem,
-    value: any,
+    value: string | number,
   ) => {
     setDraft((current) => {
       const newItems = [...current.items];
@@ -516,7 +790,7 @@ export default function TaskAutomationPage() {
     });
   };
 
-  const mapTemplateToRule = (template: any): AutomationRule => ({
+  const mapTemplateToRule = useCallback((template: RawTemplate): AutomationRule => ({
     id: String(template?.id || `template-${Date.now()}`),
     name: String(template?.name || template?.title || "Automation rule"),
     trigger: normalizeTriggerType(template?.trigger_event),
@@ -552,15 +826,48 @@ export default function TaskAutomationPage() {
     ),
     status: template?.is_active === false ? "draft" : "active",
     boatTypeFilter: Array.isArray(template?.boat_type_filter) ? template.boat_type_filter : [],
-    items: Array.isArray(template?.items) 
-      ? template.items.map((item: any) => ({
+    items: Array.isArray(template?.items)
+      ? template.items.map((item) => ({
           title: String(item.title || ""),
           description: String(item.description || ""),
           priority: (item.priority || "Medium") as PriorityLevel,
           position: Number(item.position || 0),
         }))
       : [],
-  });
+  }), []);
+
+  const mapTemplateOption = useCallback((template: RawTemplate): AutomationTemplateOption => ({
+    id: Number(template.id),
+    name: String(template.name || template.title || `Template #${template.id}`),
+    title: String(template.title || ""),
+    priority: (template.priority || "Medium") as PriorityLevel,
+  }), []);
+
+  const mapEngineRule = useCallback((rule: RawEngineRule): EngineRule => ({
+    id: Number(rule.id),
+    name: String(rule.name || `Rule #${rule.id}`),
+    internal_code: rule.internal_code ? String(rule.internal_code) : null,
+    trigger_event: normalizeTriggerType(rule.trigger_event),
+    is_active: Boolean(rule.is_active),
+    target_role: (rule.target_role || "employee") as EngineRule["target_role"],
+    target_user_type: rule.target_user_type ? String(rule.target_user_type) as EngineRule["target_user_type"] : null,
+    assignee_rule: (rule.assignee_rule || "harbor_user") as AssigneeRule,
+    assigned_user_id: rule.assigned_user_id ? Number(rule.assigned_user_id) : null,
+    boat_types: Array.isArray(rule.boat_types) ? rule.boat_types.map(String) : [],
+    boat_year_from: rule.boat_year_from !== null && rule.boat_year_from !== undefined ? Number(rule.boat_year_from) : null,
+    boat_year_to: rule.boat_year_to !== null && rule.boat_year_to !== undefined ? Number(rule.boat_year_to) : null,
+    location_filter: rule.location_filter ? String(rule.location_filter) : null,
+    visibility_delay_hours: Number(rule.visibility_delay_hours || 0),
+    visibility_status: rule.visibility_status ? String(rule.visibility_status) : null,
+    visibility_status_source: rule.visibility_status_source ? String(rule.visibility_status_source) : null,
+    actionable_delay_hours: rule.actionable_delay_hours !== null && rule.actionable_delay_hours !== undefined
+      ? Number(rule.actionable_delay_hours)
+      : null,
+    actionable_status: rule.actionable_status ? String(rule.actionable_status) : null,
+    actionable_status_source: rule.actionable_status_source ? String(rule.actionable_status_source) : null,
+    actionable_requires_internal_tasks_completed: Boolean(rule.actionable_requires_internal_tasks_completed),
+    templates: Array.isArray(rule.templates) ? rule.templates.map(mapTemplateOption) : [],
+  }), [mapTemplateOption]);
 
   useEffect(() => {
     const loadAutomationData = async () => {
@@ -568,27 +875,33 @@ export default function TaskAutomationPage() {
       setErrorText(null);
 
       try {
-        const [templatesRes, automationsRes] = await Promise.all([
+        const [templatesRes, automationsRes, rulesRes] = await Promise.all([
           api.get("/task-automation-templates"),
           api.get("/task-automations"),
+          api.get("/task-automation-rules"),
         ]);
 
-        const templateData = Array.isArray(templatesRes.data)
+        const templateData: RawTemplate[] = Array.isArray(templatesRes.data)
           ? templatesRes.data
           : templatesRes.data?.data || [];
-        const automationData = Array.isArray(automationsRes.data)
+        const automationData: RawAutomation[] = Array.isArray(automationsRes.data)
           ? automationsRes.data
           : automationsRes.data?.data || [];
+        const ruleData: RawEngineRule[] = Array.isArray(rulesRes.data)
+          ? rulesRes.data
+          : rulesRes.data?.data || [];
 
         if (templateData.length > 0) {
           setRules(templateData.map(mapTemplateToRule));
         }
+        setTemplateOptions(templateData.map(mapTemplateOption));
+        setEngineRules(ruleData.map(mapEngineRule));
         setAutomationCount(automationData.length);
         setRecentAssigneeIds(
           Array.from(
             new Set(
               automationData
-                .map((item: any) => String(item?.assigned_user_id || ""))
+                .map((item) => String(item?.assigned_user_id || ""))
                 .filter(Boolean),
             ),
           ),
@@ -599,27 +912,23 @@ export default function TaskAutomationPage() {
         >();
 
         automationData
-          .filter((item: any) => item?.related_id)
-          .forEach((item: any) => {
+          .filter((item) => item?.related_id)
+          .forEach((item) => {
             const type = normalizeRelatedModelType(item?.related_type);
             const id = String(item.related_id);
             relatedRecordsMap.set(`${type}:${id}`, { type, id });
           });
 
         setRecentRelatedRecords(Array.from(relatedRecordsMap.values()));
-      } catch (error: any) {
-        setErrorText(
-          error?.friendlyMessage ||
-            error?.message ||
-            "Failed to load task automation data.",
-        );
+      } catch (error: unknown) {
+        setErrorText(errorMessage(error, "Failed to load task automation data."));
       } finally {
         setLoadingRules(false);
       }
     };
 
     void loadAutomationData();
-  }, []);
+  }, [mapEngineRule, mapTemplateOption, mapTemplateToRule]);
 
   const saveRule = async (status: RuleStatus) => {
     setSaving(true);
@@ -689,12 +998,8 @@ export default function TaskAutomationPage() {
         status: "draft",
         internalCode: `AUTO-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
       }));
-    } catch (error: any) {
-      setErrorText(
-        error?.friendlyMessage ||
-          error?.message ||
-          "Failed to save automation template.",
-      );
+    } catch (error: unknown) {
+      setErrorText(errorMessage(error, "Failed to save automation template."));
     } finally {
       setSaving(false);
     }
@@ -708,8 +1013,172 @@ export default function TaskAutomationPage() {
     }));
   };
 
+  const setEngineField = <K extends keyof EngineRuleForm>(
+    key: K,
+    value: EngineRuleForm[K],
+  ) => {
+    setEngineRuleForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const resetEngineRuleForm = () => setEngineRuleForm(initialEngineRuleForm());
+
+  const reloadEngineRules = async () => {
+    const { data } = await api.get("/task-automation-rules");
+    const ruleData: RawEngineRule[] = Array.isArray(data) ? data : data?.data || [];
+    setEngineRules(ruleData.map(mapEngineRule));
+  };
+
+  const saveEngineRule = async () => {
+    setSavingEngineRule(true);
+    setFeedback(null);
+    setErrorText(null);
+
+    const payload = {
+      name: engineRuleForm.name,
+      internal_code: engineRuleForm.internalCode || null,
+      trigger_event: engineRuleForm.triggerEvent,
+      is_active: engineRuleForm.isActive,
+      target_role: engineRuleForm.targetRole,
+      target_user_type: engineRuleForm.targetRole === "client" ? engineRuleForm.targetUserType : null,
+      assignee_rule: engineRuleForm.assigneeRule,
+      assigned_user_id: engineRuleForm.assignedUserId ? Number(engineRuleForm.assignedUserId) : null,
+      boat_types: splitCsv(engineRuleForm.boatTypes),
+      boat_year_from: engineRuleForm.boatYearFrom ? Number(engineRuleForm.boatYearFrom) : null,
+      boat_year_to: engineRuleForm.boatYearTo ? Number(engineRuleForm.boatYearTo) : null,
+      location_filter: engineRuleForm.locationFilter || null,
+      visibility_delay_hours: Number(engineRuleForm.visibilityDelayHours || 0),
+      visibility_status: engineRuleForm.visibilityStatus || null,
+      visibility_status_source: engineRuleForm.visibilityStatus ? engineRuleForm.visibilityStatusSource : null,
+      actionable_delay_hours: engineRuleForm.actionableDelayHours ? Number(engineRuleForm.actionableDelayHours) : null,
+      actionable_status: engineRuleForm.actionableStatus || null,
+      actionable_status_source: engineRuleForm.actionableStatus ? engineRuleForm.actionableStatusSource : null,
+      actionable_requires_internal_tasks_completed: engineRuleForm.actionableRequiresInternalTasksCompleted,
+      template_ids: engineRuleForm.templateIds.map((id) => Number(id)),
+    };
+
+    try {
+      if (engineRuleForm.id) {
+        await api.put(`/task-automation-rules/${engineRuleForm.id}`, payload);
+        setFeedback("Automation rule updated.");
+      } else {
+        await api.post("/task-automation-rules", payload);
+        setFeedback("Automation rule created.");
+      }
+
+      await reloadEngineRules();
+      resetEngineRuleForm();
+    } catch (error: unknown) {
+      setErrorText(errorMessage(error, "Failed to save automation rule."));
+    } finally {
+      setSavingEngineRule(false);
+    }
+  };
+
+  const editEngineRule = (rule: EngineRule) => {
+    setEngineRuleForm({
+      id: rule.id,
+      name: rule.name,
+      internalCode: rule.internal_code || "",
+      triggerEvent: rule.trigger_event,
+      isActive: rule.is_active,
+      targetRole: rule.target_role,
+      targetUserType: rule.target_user_type || "seller",
+      assigneeRule: rule.assignee_rule,
+      assignedUserId: rule.assigned_user_id ? String(rule.assigned_user_id) : "",
+      boatTypes: rule.boat_types.join(", "),
+      boatYearFrom: rule.boat_year_from !== null ? String(rule.boat_year_from) : "",
+      boatYearTo: rule.boat_year_to !== null ? String(rule.boat_year_to) : "",
+      locationFilter: rule.location_filter || "",
+      visibilityDelayHours: String(rule.visibility_delay_hours || 0),
+      visibilityStatus: rule.visibility_status || "",
+      visibilityStatusSource: (rule.visibility_status_source || "related") as EngineRuleForm["visibilityStatusSource"],
+      actionableDelayHours: rule.actionable_delay_hours !== null ? String(rule.actionable_delay_hours) : "",
+      actionableStatus: rule.actionable_status || "",
+      actionableStatusSource: (rule.actionable_status_source || "related") as EngineRuleForm["actionableStatusSource"],
+      actionableRequiresInternalTasksCompleted: rule.actionable_requires_internal_tasks_completed,
+      templateIds: rule.templates.map((template) => String(template.id)),
+    });
+  };
+
+  const deleteEngineRule = async (ruleId: number) => {
+    setFeedback(null);
+    setErrorText(null);
+
+    try {
+      await api.delete(`/task-automation-rules/${ruleId}`);
+      setFeedback("Automation rule deleted.");
+      await reloadEngineRules();
+    } catch (error: unknown) {
+      setErrorText(errorMessage(error, "Failed to delete automation rule."));
+    }
+  };
+
+  const simulateEngineRule = async (rule: EngineRule) => {
+    const entityId = simulateEntityId[rule.id];
+    if (!entityId) return;
+
+    setSimulatingRuleId(rule.id);
+    try {
+      const { data } = await api.post("/task-automation-rules/simulate", {
+        trigger_event: rule.trigger_event,
+        entity_type: triggerEntityMap[rule.trigger_event]?.type ?? "App\\Models\\Yacht",
+        entity_id: Number(entityId),
+      });
+      setSimulateResult((current) => ({ ...current, [rule.id]: data }));
+    } catch (error: unknown) {
+      setSimulateResult((current) => ({
+        ...current,
+        [rule.id]: { error: errorMessage(error, "Simulation failed.") },
+      }));
+    } finally {
+      setSimulatingRuleId(null);
+    }
+  };
+
+  const loadExecutionLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const { data } = await api.get("/task-automation-rules/logs");
+      setExecutionLogs(Array.isArray(data) ? data : data?.data || []);
+    } catch (error: unknown) {
+      setErrorText(errorMessage(error, "Failed to load automation logs."));
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  const toggleLogs = () => {
+    if (!logsOpen) {
+      void loadExecutionLogs();
+    }
+    setLogsOpen((open) => !open);
+  };
+
+  const retryExecutionLog = async (logId: number) => {
+    setFeedback(null);
+    setErrorText(null);
+
+    try {
+      await api.post(`/task-automation-rules/logs/${logId}/retry`);
+      setFeedback("Automation retry completed.");
+      await loadExecutionLogs();
+    } catch (error: unknown) {
+      setErrorText(errorMessage(error, "Failed to retry automation run."));
+    }
+  };
+
   return (
     <div className="copied-admin-theme min-h-screen px-4 py-8 text-slate-900 md:px-8 dark:text-slate-100">
+      <datalist id="automation-visible-status-options">
+        {knownStatusOptions.map((option) => (
+          <option key={option.value} value={option.value} />
+        ))}
+      </datalist>
+      <datalist id="automation-actionable-status-options">
+        {knownStatusOptions.map((option) => (
+          <option key={option.value} value={option.value} />
+        ))}
+      </datalist>
       <div className="mx-auto max-w-7xl space-y-8">
         <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_20px_70px_-40px_rgba(15,23,42,0.45)] backdrop-blur md:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -1364,6 +1833,422 @@ export default function TaskAutomationPage() {
 
           </div>
         </div>
+
+        <section className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)]">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <Settings2 className="h-5 w-5 text-sky-600" />
+                <h2 className="text-xl font-bold text-slate-900">Automation Rules</h2>
+              </div>
+              <p className="mt-2 text-sm text-slate-500">
+                Separate rule engine controls when templates run, who receives tasks, and which records qualify.
+              </p>
+            </div>
+            <Button type="button" variant="outline" className="rounded-2xl" onClick={resetEngineRuleForm}>
+              New rule
+            </Button>
+          </div>
+
+          <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <Field label="Rule name">
+              <input
+                className="input-base"
+                value={engineRuleForm.name}
+                onChange={(event) => setEngineField("name", event.target.value)}
+              />
+            </Field>
+
+            <Field label="Internal code">
+              <input
+                className="input-base"
+                value={engineRuleForm.internalCode}
+                onChange={(event) => setEngineField("internalCode", event.target.value.toUpperCase())}
+              />
+            </Field>
+
+            <Field label="Trigger event">
+              <select
+                className="input-base"
+                value={engineRuleForm.triggerEvent}
+                onChange={(event) => setEngineField("triggerEvent", event.target.value as TriggerType)}
+              >
+                {triggerOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Target role">
+              <select
+                className="input-base"
+                value={engineRuleForm.targetRole}
+                onChange={(event) => setEngineField("targetRole", event.target.value as EngineRuleForm["targetRole"])}
+              >
+                <option value="client">Client</option>
+                <option value="employee">Employee</option>
+                <option value="admin">Admin</option>
+              </select>
+            </Field>
+
+            {engineRuleForm.targetRole === "client" ? (
+              <Field label="Target user type">
+                <select
+                  className="input-base"
+                  value={engineRuleForm.targetUserType}
+                  onChange={(event) => setEngineField("targetUserType", event.target.value as EngineRuleForm["targetUserType"])}
+                >
+                  <option value="seller">Seller</option>
+                  <option value="buyer">Buyer</option>
+                </select>
+              </Field>
+            ) : (
+              <Field label="Assign to">
+                <select
+                  className="input-base"
+                  value={engineRuleForm.assigneeRule}
+                  onChange={(event) => setEngineField("assigneeRule", event.target.value as AssigneeRule)}
+                >
+                  {assigneeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+
+            <Field label="Specific user ID">
+              <input
+                className="input-base"
+                value={engineRuleForm.assignedUserId}
+                onChange={(event) => setEngineField("assignedUserId", event.target.value)}
+                placeholder="Only for specific user"
+              />
+            </Field>
+
+            <Field label="Boat types">
+              <input
+                className="input-base"
+                value={engineRuleForm.boatTypes}
+                onChange={(event) => setEngineField("boatTypes", event.target.value)}
+                placeholder="Motorboat, Sailship"
+              />
+            </Field>
+
+            <Field label="Boat year from">
+              <input
+                className="input-base"
+                type="number"
+                value={engineRuleForm.boatYearFrom}
+                onChange={(event) => setEngineField("boatYearFrom", event.target.value)}
+              />
+            </Field>
+
+            <Field label="Boat year to">
+              <input
+                className="input-base"
+                type="number"
+                value={engineRuleForm.boatYearTo}
+                onChange={(event) => setEngineField("boatYearTo", event.target.value)}
+              />
+            </Field>
+
+            <Field label="Location filter">
+              <input
+                className="input-base"
+                value={engineRuleForm.locationFilter}
+                onChange={(event) => setEngineField("locationFilter", event.target.value)}
+                placeholder="Amsterdam"
+              />
+            </Field>
+
+            <Field label="Visible after hours">
+              <input
+                className="input-base"
+                type="number"
+                min="0"
+                value={engineRuleForm.visibilityDelayHours}
+                onChange={(event) => setEngineField("visibilityDelayHours", event.target.value)}
+              />
+            </Field>
+
+            <Field label="Visible when status is">
+              <input
+                className="input-base"
+                list="automation-visible-status-options"
+                value={engineRuleForm.visibilityStatus}
+                onChange={(event) => setEngineField("visibilityStatus", event.target.value)}
+                placeholder="Select Status"
+              />
+            </Field>
+
+            <Field label="Status source">
+              <select
+                className="input-base"
+                value={engineRuleForm.visibilityStatusSource}
+                onChange={(event) => setEngineField("visibilityStatusSource", event.target.value as EngineRuleForm["visibilityStatusSource"])}
+              >
+                <option value="related">Related</option>
+                <option value="boat">Boat</option>
+                <option value="booking">Booking</option>
+                <option value="bid">Bid</option>
+                <option value="deal">Deal</option>
+              </select>
+            </Field>
+
+            <Field label="Actionable after hours">
+              <input
+                className="input-base"
+                type="number"
+                min="0"
+                value={engineRuleForm.actionableDelayHours}
+                onChange={(event) => setEngineField("actionableDelayHours", event.target.value)}
+              />
+            </Field>
+
+            <Field label="Actionable when status is">
+              <input
+                className="input-base"
+                list="automation-actionable-status-options"
+                value={engineRuleForm.actionableStatus}
+                onChange={(event) => setEngineField("actionableStatus", event.target.value)}
+                placeholder="Select Status"
+              />
+            </Field>
+
+            <Field label="Actionable source">
+              <select
+                className="input-base"
+                value={engineRuleForm.actionableStatusSource}
+                onChange={(event) => setEngineField("actionableStatusSource", event.target.value as EngineRuleForm["actionableStatusSource"])}
+              >
+                <option value="related">Related</option>
+                <option value="boat">Boat</option>
+                <option value="booking">Booking</option>
+                <option value="bid">Bid</option>
+                <option value="deal">Deal</option>
+              </select>
+            </Field>
+
+            <div className="md:col-span-2 xl:col-span-3">
+              <Field label="Linked templates">
+                <select
+                  className="input-base min-h-36"
+                  multiple
+                  value={engineRuleForm.templateIds}
+                  onChange={(event) =>
+                    setEngineField(
+                      "templateIds",
+                      Array.from(event.target.selectedOptions).map((option) => option.value),
+                    )
+                  }
+                >
+                  {templateOptions.map((template) => (
+                    <option key={template.id} value={String(template.id)}>
+                      {template.name} - {template.title}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+              <input
+                type="checkbox"
+                checked={engineRuleForm.isActive}
+                onChange={(event) => setEngineField("isActive", event.target.checked)}
+              />
+              Active
+            </label>
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+              <input
+                type="checkbox"
+                checked={engineRuleForm.actionableRequiresInternalTasksCompleted}
+                onChange={(event) => setEngineField("actionableRequiresInternalTasksCompleted", event.target.checked)}
+              />
+              Internal tasks completed gate
+            </label>
+            <Button
+              type="button"
+              className="rounded-2xl bg-slate-900 px-5 text-white hover:bg-slate-800"
+              onClick={() => void saveEngineRule()}
+              disabled={savingEngineRule || !engineRuleForm.name.trim() || engineRuleForm.templateIds.length === 0}
+            >
+              <Settings2 className="mr-2 h-4 w-4" />
+              {savingEngineRule ? "Saving..." : engineRuleForm.id ? "Update Rule" : "Create Rule"}
+            </Button>
+          </div>
+        </section>
+
+        <section className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)]">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Workflow className="h-5 w-5 text-emerald-600" />
+              <h2 className="text-xl font-bold text-slate-900">Configured Automation Rules</h2>
+            </div>
+            <Button type="button" variant="outline" className="rounded-2xl" onClick={toggleLogs}>
+              {logsOpen ? "Hide Logs" : "Show Logs"}
+            </Button>
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            {engineRules.length === 0 ? (
+              <p className="rounded-3xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+                No rule-engine rules configured yet.
+              </p>
+            ) : (
+              engineRules.map((rule) => (
+                <div key={rule.id} className="rounded-3xl border border-slate-200 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{rule.name}</p>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {rule.internal_code || `RULE-${rule.id}`}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
+                      rule.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+                    }`}>
+                      {rule.is_active ? "Active" : "Draft"}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid gap-1 text-sm text-slate-600">
+                    <p>Trigger: {rule.trigger_event}</p>
+                    <p>Audience: {rule.target_role}{rule.target_user_type ? ` / ${rule.target_user_type}` : ""}</p>
+                    <p>Visible: {rule.visibility_delay_hours}h{rule.visibility_status ? ` + ${rule.visibility_status}` : ""}</p>
+                    <p>Templates: {rule.templates.map((template) => template.title).join(", ") || "None"}</p>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" className="rounded-2xl" onClick={() => editEngineRule(rule)}>
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-2xl border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                      onClick={() => void deleteEngineRule(rule.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </Button>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs font-semibold text-slate-500">
+                      {triggerEntityMap[rule.trigger_event]?.label ?? "Entity ID"} to simulate
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        className="input-base w-36 py-2 text-sm"
+                        type="number"
+                        value={simulateEntityId[rule.id] || ""}
+                        onChange={(event) =>
+                          setSimulateEntityId((current) => ({ ...current, [rule.id]: event.target.value }))
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-2xl border-sky-300 text-sky-700 hover:bg-sky-50"
+                        disabled={!simulateEntityId[rule.id] || simulatingRuleId === rule.id}
+                        onClick={() => void simulateEngineRule(rule)}
+                      >
+                        <FlaskConical className="mr-2 h-4 w-4" />
+                        {simulatingRuleId === rule.id ? "Simulating..." : "Simulate"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {simulateResult[rule.id] && (
+                    <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                      {simulateResult[rule.id].error ? (
+                        <p className="text-rose-600">{simulateResult[rule.id].error}</p>
+                      ) : (
+                        <>
+                          <p className="font-semibold text-slate-700">
+                            {simulateResult[rule.id].matched_rules} matched rule(s)
+                          </p>
+                          {simulateResult[rule.id].preview?.map((preview) => (
+                            <div key={preview.rule_id} className="mt-2">
+                              <p className="font-semibold text-slate-800">{preview.rule_name}</p>
+                              {preview.tasks.map((task, index) => (
+                                <p key={index} className="mt-1">
+                                  {task.title}
+                                  {task.would_skip_duplicate ? " (duplicate skipped)" : ""}
+                                </p>
+                              ))}
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {logsOpen && (
+            <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <h3 className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">
+                Execution Logs
+              </h3>
+              {loadingLogs ? (
+                <p className="mt-3 text-sm text-slate-500">Loading logs...</p>
+              ) : executionLogs.length === 0 ? (
+                <p className="mt-3 text-sm text-slate-500">No logs yet.</p>
+              ) : (
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-600">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-500">
+                        <th className="pb-2 pr-4">Time</th>
+                        <th className="pb-2 pr-4">Rule</th>
+                        <th className="pb-2 pr-4">Trigger</th>
+                        <th className="pb-2 pr-4">Result</th>
+                        <th className="pb-2 pr-4">Reason</th>
+                        <th className="pb-2">Tasks</th>
+                        <th className="pb-2">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {executionLogs.map((log) => (
+                        <tr key={log.id} className="border-b border-slate-200/70">
+                          <td className="py-2 pr-4">{String(log.created_at || "").slice(0, 19).replace("T", " ")}</td>
+                          <td className="py-2 pr-4">{log.rule?.name || log.rule_id || "-"}</td>
+                          <td className="py-2 pr-4">{log.trigger_event}</td>
+                          <td className="py-2 pr-4">{log.result}</td>
+                          <td className="py-2 pr-4">{log.reason || "-"}</td>
+                          <td className="py-2">{Array.isArray(log.created_task_ids) ? log.created_task_ids.join(", ") : "-"}</td>
+                          <td className="py-2">
+                            {log.result === "failed" ? (
+                              <button
+                                type="button"
+                                className="text-xs font-semibold text-sky-700 hover:text-sky-600"
+                                onClick={() => void retryExecutionLog(Number(log.id))}
+                              >
+                                Retry
+                              </button>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
       </div>
 
       <style jsx global>{`

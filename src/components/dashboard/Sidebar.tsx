@@ -19,6 +19,7 @@ import {
   Sparkles,
   Library,
   CheckCircle2,
+  Clapperboard,
   CreditCard,
   Search,
   ArrowRight,
@@ -139,6 +140,11 @@ export function Sidebar({
         title: t.knowledgeBrain,
         href: `${root}/knowledge-brain`,
         icon: Brain,
+      });
+      items.push({
+        title: t.videoTemplates,
+        href: `${root}/video-templates`,
+        icon: Clapperboard,
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
