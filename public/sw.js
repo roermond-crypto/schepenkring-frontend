@@ -153,3 +153,49 @@ self.addEventListener("fetch", (event) => {
     // 5. Everything else — try network, fall back to cache
     event.respondWith(staleWhileRevalidate(event.request));
 });
+
+// ── Push notifications ───────────────────────────────────
+self.addEventListener("push", (event) => {
+    let payload = {
+        title: "Schepenkring",
+        body: "You have a new notification.",
+        url: "/",
+    };
+
+    if (event.data) {
+        try {
+            payload = { ...payload, ...event.data.json() };
+        } catch {
+            payload.body = event.data.text() || payload.body;
+        }
+    }
+
+    event.waitUntil(
+        self.registration.showNotification(payload.title, {
+            body: payload.body,
+            icon: "/icon-192.png",
+            badge: "/icon-192.png",
+            data: { url: payload.url },
+        })
+    );
+});
+
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+    const targetUrl = event.notification.data?.url || "/";
+
+    event.waitUntil(
+        self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+            for (const client of clients) {
+                if ("focus" in client) {
+                    client.navigate(targetUrl);
+                    return client.focus();
+                }
+            }
+            if (self.clients.openWindow) {
+                return self.clients.openWindow(targetUrl);
+            }
+            return undefined;
+        })
+    );
+});

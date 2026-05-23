@@ -23,12 +23,14 @@ import {
   CreditCard,
   Search,
   ArrowRight,
+  HandCoins,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 import { isPartnerLikeRole, type UserRole } from "@/lib/auth/roles";
 import { getProfileSetupStatus } from "@/lib/api/profile-setup";
+import { getMyLocationBidSettings } from "@/lib/api/location-bid-settings";
 
 type SidebarProps = {
   locale: AppLocale;
@@ -60,6 +62,7 @@ export function Sidebar({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [isOnboarded, setIsOnboarded] = useState<boolean | null>(null);
+  const [bidsPageEnabled, setBidsPageEnabled] = useState(false);
 
   const dictionary = getDictionary(locale);
   const t = dictionary.dashboard.sidebar;
@@ -74,6 +77,16 @@ export function Sidebar({
       window.removeEventListener("offline", syncStatus);
     };
   }, []);
+
+  useEffect(() => {
+    if (role === "buyer" || role === "seller" || role === "client") {
+      getMyLocationBidSettings()
+        .then((settings) => setBidsPageEnabled(Boolean(settings?.bids_page_enabled)))
+        .catch(() => setBidsPageEnabled(false));
+    } else if (role === "admin" || role === "employee") {
+      setBidsPageEnabled(true);
+    }
+  }, [role]);
 
   useEffect(() => {
     if (role === "buyer" || role === "seller") {
@@ -169,6 +182,13 @@ export function Sidebar({
         href: `${root}/chat`,
         icon: MessageSquare,
       });
+      if (bidsPageEnabled) {
+        items.push({
+          title: t.bids ?? "Bids",
+          href: `${root}/bids`,
+          icon: HandCoins,
+        });
+      }
     } else if (isPartnerLikeRole(role)) {
       items.push({
         title: t.interaction,
@@ -186,7 +206,7 @@ export function Sidebar({
     }
 
     return items;
-  }, [role, root, t, isOnboarded]);
+  }, [role, root, t, isOnboarded, bidsPageEnabled]);
 
   const navContent = (
     <>

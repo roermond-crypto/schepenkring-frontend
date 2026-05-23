@@ -187,6 +187,7 @@
       "rolePartner": "Partenaire",
       "roleBuyer": "Acheteur",
       "roleSeller": "Vendeur",
+      "bids": "Offres",
       "knowledgebase": "Base de connaissances",
       "videoTemplates": "Modèles vidéo"
     },
@@ -205,7 +206,21 @@
       "justNow": "Ã€ l'instant",
       "minutesAgo": "il y a m",
       "hoursAgo": "il y a h",
-      "daysAgo": "il y a d"
+      "daysAgo": "il y a d",
+      "enableNotifications": "Activer les notifications",
+      "notificationsOff": "Notifications désactivées",
+      "masterSwitch": "Interrupteur principal",
+      "toastAlerts": "Pop-ups in-app",
+      "browserPush": "Push navigateur",
+      "toastAlertsDesc": "Activer/désactiver les toasts",
+      "browserPushDesc": "Push bureau et mobile",
+      "on": "Activé",
+      "off": "Désactivé",
+      "delete": "Supprimer",
+      "deleteAll": "Tout supprimer",
+      "unreadUpdates": "mises à jour non lues",
+      "allCaughtUp": "Tout est à jour",
+      "markRead": "Marquer comme lu"
     }
   },
   "DashboardYachts": {
@@ -622,6 +637,21 @@
       "failedTitle": "Le contrat demande de l'attention",
       "failedHeading": "{boatName} necessite une nouvelle action de signature",
       "failedSubtitle": "La derniere tentative Signhost a expire, a echoue ou a ete refusee. Ouvrez la page du navire pour continuer."
+    },
+    "contractCard": {
+      "header": "Votre contrat de bateau est prêt",
+      "fallbackBoatName": "Votre bateau",
+      "noImage": "Aucune image de bateau disponible",
+      "dimensions": "Dimensions",
+      "beam": "Largeur",
+      "details": "Détails",
+      "year": "Année",
+      "brand": "Marque",
+      "signingSection": "Signature du contrat",
+      "downloadDraft": "Télécharger le projet de contrat",
+      "refreshing": "Actualisation du lien...",
+      "refreshLink": "Actualiser le lien de signature",
+      "manageVessel": "Gérer le navire"
     },
     "defaults": {
       "userName": "Martijn"
@@ -1275,6 +1305,13 @@
         "open": "Ouvrir",
         "pending": "En attente",
         "solved": "RÃ©solu"
+      },
+      "aiSummary": "Résumé IA",
+      "filters": {
+        "all": "Tout",
+        "chat": "Chat",
+        "system": "Système",
+        "signhost": "Signhost"
       }
     },
     "detail": {
@@ -2046,5 +2083,28 @@
       "overlay": "6. Overlay Rules",
       "aiRules": "7. AI Rules"
     }
+  },
+  "SellerDashboard": {
+    "stats": { "boats": "My boats", "bids": "New bids", "chats": "Open chats", "contracts": "Contracts" },
+    "sections": { "boats": "My boats", "latestBids": "Latest bids" },
+    "actions": { "view": "View", "manageBid": "Manage bid", "openChat": "Open chat" },
+    "labels": { "bids": "bids", "bid": "Bid", "buyer": "Buyer" },
+    "empty": { "boats": "No boats yet.", "bids": "No bids yet." }
+  },
+  "DashboardBids": {
+    "eyebrow": "Bidding", "title": "Bids", "subtitle": "Review, accept, reject or counter offers on your boats.",
+    "actions": { "accept": "Accept", "reject": "Reject", "counter": "Counter", "sendCounter": "Send counter", "chat": "Open chat" },
+    "labels": { "boat": "Boat", "buyer": "Buyer", "verified": "Verified" },
+    "counter": { "amount": "Counter amount" },
+    "empty": { "title": "No bids yet", "subtitle": "When a buyer places a bid, it will appear here." },
+    "toasts": { "accept": "Bid accepted", "reject": "Bid rejected", "counter": "Counter offer sent", "failed": "Action failed" }
+  },
+  "LocationBidSettings": {
+    "title": "Bid settings", "subtitle": "Control bidding visibility and routing for this location.",
+    "bidsPageEnabled": "Show bids page for users at this location",
+    "sellerNotifications": "Notify seller on new bids",
+    "directChat": "Allow direct buyer/seller chat",
+    "routingMode": "Bid routing mode", "modes": { "direct": "Direct buyer/seller", "broker": "Broker controlled", "adminReview": "Admin review" },
+    "save": "Save settings", "saving": "Saving...", "saveSuccess": "Bid settings saved", "saveError": "Failed to save bid settings", "loading": "Loading bid settings..."
   }
 }

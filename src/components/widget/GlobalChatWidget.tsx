@@ -12,5 +12,10 @@ export function GlobalChatWidget() {
     return null;
   }
 
+  // Hide floating widget on dashboard chat pages — full-page chat is already open.
+  if (segments[0] === "dashboard" && segments[2] === "chat") {
+    return null;
+  }
+
   return <ContextAwareChatWidget />;
 }

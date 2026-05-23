@@ -304,7 +304,19 @@ export const signhostApi = {
     getDocuments: async (signRequestId: number) => {
         const response = await api.get<{
             documents: SignhostDocument[];
+            yacht?: Record<string, unknown> | null;
         }>(`/signhost/documents?sign_request_id=${signRequestId}`);
+        return response.data;
+    },
+
+    refreshSigningUrl: async (signRequestId: number) => {
+        const response = await api.post<{
+            sign_url?: string | null;
+            url?: string | null;
+            sign_request?: SignRequest;
+        }>("/signhost/refresh-url", {
+            sign_request_id: signRequestId,
+        });
         return response.data;
     },
 };

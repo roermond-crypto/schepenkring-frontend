@@ -13,6 +13,7 @@ import { useParams } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import { api } from "@/lib/api";
 import { getDictionary, type AppLocale, type Dictionary } from "@/lib/i18n";
+import { LocationBidSettingsSection } from "@/components/dashboard/LocationBidSettingsSection";
 
 type LocationItem = {
   id: number;
@@ -427,6 +428,13 @@ export function LocationWidgetSettingsPage() {
           </div>
         </div>
       </div>
+
+      {selectedLocationId ? (
+        <LocationBidSettingsSection
+          locale={locale}
+          locationId={Number(selectedLocationId)}
+        />
+      ) : null}
     </div>
   );
 }

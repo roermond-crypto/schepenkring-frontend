@@ -970,7 +970,7 @@ function TaskModal({
       onClick={onClose}
     >
       <div
-        className="bg-[#f1f2f4] dark:bg-[#1d2125] rounded-xl shadow-2xl w-full max-w-[860px] relative"
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-[860px] relative border border-slate-200/80"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top color bar based on priority */}
