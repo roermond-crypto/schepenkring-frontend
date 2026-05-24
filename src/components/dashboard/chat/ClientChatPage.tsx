@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Info, Loader2, Send, Sparkles } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
 import {
   buildSharedChatScope,
@@ -552,56 +554,69 @@ export function ClientChatPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {!introDismissed ? (
-        <div className="rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-[#F7FAFF] to-[#E7F0FF] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-          <div className="flex items-start justify-between gap-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-blue-600">
-              {t("header.subtitle")}
+    <div className="mx-auto flex h-[calc(100vh-7rem)] max-w-5xl flex-col">
+      <div className="mb-4 shrink-0">
+        <p className="text-[10px] font-black uppercase tracking-[0.35em] text-blue-600">
+          {t("header.subtitle")}
+        </p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-serif italic text-[#003566] sm:text-3xl">
+              {t("header.title")}
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm text-slate-600">
+              {t("header.description")}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                {interfaceCopy.sharedThread}
-              </span>
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                {interfaceCopy.uploadsPending}
-              </span>
-            </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-serif italic text-[#003566]">
-                {t("header.title")}
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-600">
-                {t("header.description")}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
-              {t("header.location", { location: locationLabel ?? "—" })}
-            </div>
-          </div>
+          {locationLabel ? (
+            <p className="text-xs font-semibold text-slate-500">
+              {t("header.location", { location: locationLabel })}
+            </p>
+          ) : null}
         </div>
-      ) : null}
+      </div>
 
-      <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-        <div className="border-b border-slate-200 bg-gradient-to-r from-blue-600 to-sky-500 px-6 py-5 text-white">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+        <div className="border-b border-slate-200 bg-gradient-to-r from-blue-600 to-sky-500 px-5 py-4 text-white">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold">{t("assistant.title")}</h2>
+              <h2 className="text-base font-semibold">{t("assistant.title")}</h2>
               <p className="text-sm text-white/80">{t("assistant.description")}</p>
             </div>
           </div>
         </div>
 
-        <div className="h-[calc(100vh-21rem)] min-h-[32rem] overflow-y-auto bg-slate-50 px-6 py-6">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-4 sm:px-6 sm:py-6">
           {initializing ? (
-            <div className="flex h-full items-center justify-center text-slate-500">
-              <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-              {t("loading")}
+            <div className="flex h-full flex-col gap-4 px-2 py-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "flex gap-3",
+                    index % 2 === 1 ? "flex-row-reverse" : "",
+                  )}
+                >
+                  <Skeleton className="h-9 w-9 shrink-0 rounded-full bg-slate-200" />
+                  <div
+                    className={cn(
+                      "space-y-2",
+                      index % 2 === 1 ? "items-end" : "items-start",
+                    )}
+                  >
+                    <Skeleton className="h-3 w-16 rounded-md bg-slate-100" />
+                    <Skeleton
+                      className={cn(
+                        "rounded-2xl bg-slate-200",
+                        index % 2 === 0 ? "h-16 w-64" : "h-12 w-48",
+                      )}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : messages.length === 0 ? (
             <div className="flex h-full items-center justify-center">
@@ -673,13 +688,8 @@ export function ClientChatPage() {
           )}
         </div>
 
-        <div className="border-t border-slate-200 bg-white px-6 py-5">
-          <div className="mb-3 flex items-start gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-            <p>{interfaceCopy.uploadsPending}</p>
-          </div>
-
-          <div className="flex items-end gap-3 rounded-[1.75rem] border border-slate-200 bg-slate-50 p-3 shadow-sm">
+        <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
+          <div className="flex items-end gap-3 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-3 shadow-sm">
             <textarea
               rows={1}
               value={input}

@@ -14,6 +14,7 @@ import {
   updateConversationContact,
   updateConversationStatus,
   createConversation,
+  getConversationAiSummary,
 } from "@/lib/chat-api";
 import type {
   Conversation,
@@ -38,6 +39,8 @@ export function ChatPage() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<"list" | "messages">("list");
   const [showDetailPanel, setShowDetailPanel] = useState(false);
+  const [aiSummary, setAiSummary] = useState("");
+  const [messageFilter, setMessageFilter] = useState<"all" | "chat" | "system" | "signhost">("all");
 
   // Load conversations
   const loadConversations = useCallback(async () => {
@@ -69,6 +72,8 @@ export function ChatPage() {
       getContactInfo(conv.id),
     ]);
     setMessages(msgs);
+    const summary = await getConversationAiSummary(conv.id);
+    setAiSummary(summary);
     const fallbackEvents: SystemEvent[] =
       contactData?.events && contactData.events.length > 0
         ? contactData.events
@@ -264,6 +269,9 @@ export function ChatPage() {
               onStartCall={handleStartCall}
               onStatusChange={handleStatusChange}
               onOpenDetails={() => setShowDetailPanel(true)}
+              aiSummary={aiSummary}
+              messageFilter={messageFilter}
+              onMessageFilterChange={setMessageFilter}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center px-8">

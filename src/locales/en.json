@@ -187,6 +187,7 @@
       "rolePartner": "Partner",
       "roleBuyer": "Buyer",
       "roleSeller": "Seller",
+      "bids": "Bids",
       "videoTemplates": "Video Templates"
     },
     "notifications": {
@@ -204,7 +205,21 @@
       "justNow": "Just now",
       "minutesAgo": "m ago",
       "hoursAgo": "h ago",
-      "daysAgo": "d ago"
+      "daysAgo": "d ago",
+      "enableNotifications": "Enable notifications",
+      "notificationsOff": "Notifications off",
+      "masterSwitch": "Master switch",
+      "toastAlerts": "In-app popups",
+      "browserPush": "Browser push",
+      "toastAlertsDesc": "Toggle toast alerts",
+      "browserPushDesc": "Desktop and mobile push",
+      "on": "On",
+      "off": "Off",
+      "delete": "Delete",
+      "deleteAll": "Delete all",
+      "unreadUpdates": "unread updates",
+      "allCaughtUp": "All caught up",
+      "markRead": "Mark as read"
     }
   },
   "DashboardYachts": {
@@ -625,6 +640,21 @@
       "failedTitle": "Contract needs attention",
       "failedHeading": "{boatName} needs a new signing action",
       "failedSubtitle": "The last Signhost attempt expired, failed, or was declined. Open the vessel page to continue."
+    },
+    "contractCard": {
+      "header": "Your boat contract is ready",
+      "fallbackBoatName": "Your boat",
+      "noImage": "No boat image available",
+      "dimensions": "Dimensions",
+      "beam": "Beam",
+      "details": "Details",
+      "year": "Year",
+      "brand": "Brand",
+      "signingSection": "Contract signing",
+      "downloadDraft": "Download draft contract",
+      "refreshing": "Refreshing link...",
+      "refreshLink": "Refresh signing link",
+      "manageVessel": "Manage vessel"
     },
     "defaults": {
       "userName": "Martijn"
@@ -1288,6 +1318,13 @@
         "open": "Open",
         "pending": "Pending",
         "solved": "Solved"
+      },
+      "aiSummary": "AI summary",
+      "filters": {
+        "all": "All",
+        "chat": "Chat",
+        "system": "System",
+        "signhost": "Signhost"
       }
     },
     "detail": {
@@ -2059,5 +2096,79 @@
       "overlay": "6. Overlay Rules",
       "aiRules": "7. AI Rules"
     }
+  },
+  "SellerDashboard": {
+    "stats": {
+      "boats": "My boats",
+      "bids": "New bids",
+      "chats": "Open chats",
+      "contracts": "Contracts"
+    },
+    "sections": {
+      "boats": "My boats",
+      "latestBids": "Latest bids"
+    },
+    "actions": {
+      "view": "View",
+      "manageBid": "Manage bid",
+      "openChat": "Open chat"
+    },
+    "labels": {
+      "bids": "bids",
+      "bid": "Bid",
+      "buyer": "Buyer"
+    },
+    "empty": {
+      "boats": "No boats yet.",
+      "bids": "No bids yet."
+    }
+  },
+  "DashboardBids": {
+    "eyebrow": "Bidding",
+    "title": "Bids",
+    "subtitle": "Review, accept, reject or counter offers on your boats.",
+    "actions": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "counter": "Counter",
+      "sendCounter": "Send counter",
+      "chat": "Open chat"
+    },
+    "labels": {
+      "boat": "Boat",
+      "buyer": "Buyer",
+      "verified": "Verified"
+    },
+    "counter": {
+      "amount": "Counter amount"
+    },
+    "empty": {
+      "title": "No bids yet",
+      "subtitle": "When a buyer places a bid, it will appear here."
+    },
+    "toasts": {
+      "accept": "Bid accepted",
+      "reject": "Bid rejected",
+      "counter": "Counter offer sent",
+      "failed": "Action failed"
+    }
+  },
+  "LocationBidSettings": {
+    "title": "Bid settings",
+    "subtitle": "Control bidding visibility and routing for this location.",
+    "bidsPageEnabled": "Show bids page for users at this location",
+    "sellerNotifications": "Notify seller on new bids",
+    "directChat": "Allow direct buyer/seller chat",
+    "routingMode": "Bid routing mode",
+    "modes": {
+      "direct": "Direct buyer/seller",
+      "broker": "Broker controlled",
+      "adminReview": "Admin review"
+    },
+    "save": "Save settings",
+    "saving": "Saving...",
+    "saveSuccess": "Bid settings saved",
+    "saveError": "Failed to save bid settings",
+    "loading": "Loading bid settings..."
   }
 }

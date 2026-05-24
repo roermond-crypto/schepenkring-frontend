@@ -36,6 +36,9 @@ interface ConversationMessagesProps {
   onStartCall: (phoneNumber: string) => Promise<void>;
   onStatusChange: (status: ConversationStatus) => void;
   onOpenDetails?: () => void;
+  aiSummary?: string;
+  messageFilter?: "all" | "chat" | "system" | "signhost";
+  onMessageFilterChange?: (filter: "all" | "chat" | "system" | "signhost") => void;
 }
 
 function StatusBadge({
@@ -263,6 +266,9 @@ export function ConversationMessages({
   onStartCall,
   onStatusChange,
   onOpenDetails,
+  aiSummary,
+  messageFilter = "all",
+  onMessageFilterChange,
 }: ConversationMessagesProps) {
   const t = useTranslations("DashboardChat");
   const locale = useLocale();
@@ -276,6 +282,34 @@ export function ConversationMessages({
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const phoneNumber = contact?.phone || conversation.guest_phone || "";
+
+  const visibleMessages = messages.filter((message) => {
+    const roleVisibility = message.metadata?.role_visibility;
+    if (Array.isArray(roleVisibility) && roleVisibility.length > 0) {
+      if (!roleVisibility.includes("admin") && !roleVisibility.includes("employee")) {
+        return false;
+      }
+    }
+
+    const text = String(message.text ?? "").toLowerCase();
+    if (messageFilter === "signhost") {
+      return text.includes("signhost") || text.includes("contract") || text.includes("transaction");
+    }
+    if (messageFilter === "system") {
+      return (
+        message.sender_type === "system" ||
+        String(message.message_type ?? "") === "system"
+      );
+    }
+    if (messageFilter === "chat") {
+      return (
+        message.sender_type !== "system" &&
+        String(message.message_type ?? "") !== "system" &&
+        !text.includes("signhost")
+      );
+    }
+    return true;
+  });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -428,6 +462,36 @@ export function ConversationMessages({
         </div>
       </div>
 
+      {(aiSummary || onMessageFilterChange) && (
+        <div className="border-b border-slate-200/60 bg-white px-6 py-3">
+          {aiSummary ? (
+            <p className="mb-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+              <span className="font-semibold">{t("messages.aiSummary")}: </span>
+              {aiSummary}
+            </p>
+          ) : null}
+          {onMessageFilterChange ? (
+            <div className="flex flex-wrap gap-2">
+              {(["all", "chat", "system", "signhost"] as const).map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => onMessageFilterChange(filter)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-semibold",
+                    messageFilter === filter
+                      ? "bg-[#0B1F3A] text-white"
+                      : "bg-slate-100 text-slate-600",
+                  )}
+                >
+                  {t(`messages.filters.${filter}`)}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      )}
+
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         {loading ? (
@@ -464,7 +528,7 @@ export function ConversationMessages({
               <div className="flex-1 h-px bg-slate-200" />
             </div>
 
-            {messages.map((msg) =>
+            {visibleMessages.map((msg) =>
               msg.sender_type === "system" || msg.sender_type === "ai" ? (
                 <SystemEventBubble key={msg.id} message={msg} />
               ) : (

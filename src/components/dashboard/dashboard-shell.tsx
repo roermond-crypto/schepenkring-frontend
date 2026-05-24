@@ -166,8 +166,8 @@ function DashboardShellInner({
           <div className="flex flex-col min-h-screen">
              {/* Minimal Onboarding Header */}
              <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-[70]">
-                <div className="bg-white rounded-xl px-4 py-2 border border-slate-100 shadow-sm">
-                   <img src="/schepenkring-logo.png" alt="Schepenkring" className="h-8 object-contain" />
+                <div className="flex items-center">
+                   <img src="/schepenkring-logo.png" alt="Schepenkring" className="h-9 w-auto object-contain" />
                 </div>
                 <button 
                   onClick={handleLogout}

@@ -427,3 +427,17 @@ export async function createConversation(): Promise<Conversation> {
 
   return mapConversationToConversation(response);
 }
+
+export async function getConversationAiSummary(
+  conversationId: string,
+): Promise<string> {
+  try {
+    const response = await apiRequest<{ summary?: string; data?: { summary?: string } }>({
+      method: "GET",
+      url: `/chat/conversations/${conversationId}/ai-summary`,
+    });
+    return response.summary ?? response.data?.summary ?? "";
+  } catch {
+    return "";
+  }
+}

@@ -12,8 +12,10 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Image from "next/image";
+import { Link } from "@/i18n/navigation";
 import { toast } from "react-hot-toast";
 import { OnboardingStepper } from "@/components/dashboard/OnboardingStepper";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
   createSellerOnboardingPaymentSession,
@@ -162,22 +164,30 @@ export function SellerOnboardingPanel({
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   const currentStep = status?.next_step ?? (status?.is_currently_valid ? "complete" : "profile");
-  const verificationStepActive = currentStep === "verification" || currentStep === "reverification";
-  const normalizedCurrentStepKey = verificationStepActive ? "verification" : currentStep === "complete" ? "signing" : currentStep;
 
   const stepConfig = useMemo(
     () => [
       { key: "profile", label: t.steps.profile, icon: UserRound },
-      { key: "payment", label: t.steps.payment, icon: ShieldCheck },
-      { key: "contract", label: t.steps.contract, icon: ShieldCheck },
-      { key: "verification", label: t.steps.verification, icon: ShieldCheck },
       { key: "kyc", label: t.steps.kyc, icon: CircleHelp },
-      { key: "signing", label: t.steps.signing, icon: ShieldCheck },
+      { key: "complete", label: t.steps.signing, icon: ShieldCheck },
     ],
     [t.steps],
   );
 
-  const currentStepIndex = Math.max(stepConfig.findIndex((step) => step.key === "verification" ? verificationStepActive : currentStep === step.key), 0);
+  const currentStepIndex = Math.max(
+    stepConfig.findIndex((step) => {
+      if (currentStep === "complete" || status?.is_currently_valid) return step.key === "complete";
+      if (currentStep === "kyc") return step.key === "kyc";
+      return step.key === "profile";
+    }),
+    0,
+  );
+  const normalizedCurrentStepKey =
+    status?.is_currently_valid || currentStep === "complete"
+      ? "complete"
+      : currentStep === "kyc"
+        ? "kyc"
+        : "profile";
   const visibleStepKey = selectedStepKey ?? normalizedCurrentStepKey;
 
   const stepperItems = useMemo(
@@ -188,16 +198,10 @@ export function SellerOnboardingPanel({
         active: step.key === visibleStepKey,
         complete:
           step.key === "profile"
-            ? Boolean(status?.profile?.full_name)
-            : step.key === "payment"
-              ? status?.payment_status === "paid"
-              : step.key === "contract"
-                ? ["generated", "signing", "signed"].includes(status?.contract_status ?? "")
-                : step.key === "verification"
-                  ? status?.idin_status === "completed" && status?.ideal_status === "completed"
-                  : step.key === "kyc"
-                    ? status?.kyc_status === "completed"
-                    : status?.contract_status === "signed",
+            ? Boolean(status?.profile?.full_name && status?.profile?.email)
+            : step.key === "kyc"
+              ? status?.kyc_status === "completed"
+              : Boolean(status?.is_currently_valid),
         clickable: index <= currentStepIndex,
       })),
     [currentStepIndex, visibleStepKey, status, stepConfig],
@@ -228,7 +232,23 @@ export function SellerOnboardingPanel({
   }, [refresh]);
 
   useEffect(() => {
-    if (!status?.profile) return;
+    if (!status?.profile) {
+      try {
+        const raw = localStorage.getItem("user_data");
+        if (raw) {
+          const parsed = JSON.parse(raw) as { email?: string; name?: string; phone?: string };
+          setProfile((curr) => ({
+            ...curr,
+            email: curr.email || String(parsed.email ?? ""),
+            full_name: curr.full_name || String(parsed.name ?? ""),
+            phone: curr.phone || String(parsed.phone ?? ""),
+          }));
+        }
+      } catch {
+        // ignore parse errors
+      }
+      return;
+    }
     setProfile(curr => ({
         ...curr,
         seller_type: (status.profile?.seller_type as any) || curr.seller_type,
@@ -280,12 +300,6 @@ export function SellerOnboardingPanel({
     }, 250);
     return () => window.clearTimeout(handle);
   }, [addressQuery, selectedPlaceId, visibleStepKey]);
-
-  useEffect(() => {
-    if (visibleStepKey === "payment") {
-      setPaymentContent(DEFAULT_PAYMENT_CONTENT[locale] || DEFAULT_PAYMENT_CONTENT.nl);
-    }
-  }, [visibleStepKey, locale]);
 
   const handlePredictionSelect = useCallback(async (prediction: AddressPrediction) => {
     setSelectedPlaceId(prediction.place_id);
@@ -408,7 +422,7 @@ export function SellerOnboardingPanel({
     );
   }
 
-  if (loading) return <div className="flex justify-center p-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" /></div>;
+  if (loading) return <SellerOnboardingPanelSkeleton />;
 
   return (
     <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_32px_100px_-40px_rgba(15,23,42,0.3)]">
@@ -497,52 +511,6 @@ export function SellerOnboardingPanel({
             </form>
         )}
 
-        {visibleStepKey === "payment" && paymentContent && (
-          <div className="text-center">
-            <h3 className="text-2xl font-serif italic text-[#0d2848]">{paymentContent.title}</h3>
-            <p className="mt-4 text-slate-600">{paymentContent.description}</p>
-            <div className="mt-8">
-               <button onClick={handlePayment} disabled={saving} className="rounded-2xl bg-[#003566] px-8 py-4 text-white font-bold">
-                 {saving ? t.actions.opening : paymentContent.button_label}
-               </button>
-               <p className="mt-4 text-sm font-semibold text-[#0b6aa2]">{paymentContent.amount_label}</p>
-            </div>
-          </div>
-        )}
-
-        {visibleStepKey === "contract" && (
-           <div className="text-center">
-              <ShieldCheck className="mx-auto h-16 w-16 text-emerald-500" />
-              <h3 className="mt-4 text-xl font-bold">{t.sections.contract.title}</h3>
-              <p className="mt-2 text-slate-600">{t.sections.contract.description}</p>
-              <button onClick={async () => { setGeneratingContract(true); try { await generateSellerOnboardingContract(); await refresh(); } finally { setGeneratingContract(false); } }} disabled={generatingContract} className="mt-6 rounded-2xl bg-emerald-600 px-6 py-3 text-white">
-                {generatingContract ? t.sections.contract.generating : t.sections.contract.action}
-              </button>
-           </div>
-        )}
-
-        {visibleStepKey === "verification" && (
-           <div className="text-center">
-              <ShieldCheck className="mx-auto h-16 w-16 text-blue-500" />
-              <h3 className="mt-4 text-xl font-bold">{t.sections.verification.title}</h3>
-              <p className="mt-2 text-slate-600">{t.sections.verification.description}</p>
-              <button onClick={handleSignhost} disabled={saving} className="mt-6 rounded-2xl bg-blue-600 px-6 py-3 text-white">
-                {saving ? t.actions.opening : t.sections.verification.action}
-              </button>
-            <div className="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-6">
-                {BANK_LOGOS.map(bank => (
-                  <div key={bank.name} className="flex items-center justify-center">
-                    <img 
-                      src={bank.src} 
-                      alt={bank.name} 
-                      className="h-8 w-auto object-contain transition-transform hover:scale-110" 
-                    />
-                  </div>
-                ))}
-            </div>
-           </div>
-        )}
-
         {visibleStepKey === "kyc" && (
            <form onSubmit={handleKycSubmit} className="space-y-6">
              {questions.map(q => (
@@ -564,16 +532,51 @@ export function SellerOnboardingPanel({
            </form>
         )}
 
-        {visibleStepKey === "signing" && (
+        {visibleStepKey === "complete" && (
           <div className="text-center">
              <ShieldCheck className="mx-auto h-16 w-16 text-emerald-500" />
              <h3 className="mt-4 text-xl font-bold">{t.sections.signing.title}</h3>
              <p className="mt-2 text-slate-600">{t.sections.signing.description}</p>
-             <button onClick={handleSignhost} disabled={saving} className="mt-6 rounded-2xl bg-emerald-600 px-8 py-4 text-white font-bold">
-               {saving ? t.actions.opening : t.sections.signing.action}
-             </button>
+             <Link
+               href={`/${locale}/dashboard/seller/yachts/new?fresh=true`}
+               className="mt-6 inline-flex rounded-2xl bg-emerald-600 px-8 py-4 text-white font-bold"
+             >
+               Create your first boat
+             </Link>
           </div>
         )}
+      </div>
+    </section>
+  );
+}
+
+function SellerOnboardingPanelSkeleton() {
+  return (
+    <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_32px_100px_-40px_rgba(15,23,42,0.3)]">
+      <div className="border-b border-slate-100 bg-[#003566] p-8 sm:p-10">
+        <Skeleton className="h-6 w-40 rounded-full bg-white/20" />
+        <Skeleton className="mt-4 h-10 w-72 max-w-full rounded-md bg-white/20" />
+        <Skeleton className="mt-3 h-4 w-full max-w-xl rounded-md bg-white/10" />
+        <Skeleton className="mt-6 h-16 w-40 rounded-2xl bg-white/10" />
+      </div>
+
+      <div className="p-8 sm:p-10">
+        <div className="mb-8 flex flex-wrap gap-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-10 w-28 rounded-full bg-slate-100" />
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="space-y-2">
+              <Skeleton className="h-3 w-24 rounded-md bg-slate-200" />
+              <Skeleton className="h-11 w-full rounded-xl bg-slate-100" />
+            </div>
+          ))}
+        </div>
+
+        <Skeleton className="mt-8 h-12 w-full rounded-2xl bg-slate-200 sm:w-48" />
       </div>
     </section>
   );

@@ -3,10 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bell, BellOff, CheckCheck, Trash2 } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 import type { UserRole } from "@/lib/auth/roles";
 import { apiRequest } from "@/lib/api/http";
 import { cn } from "@/lib/utils";
+import {
+  subscribeToPushNotifications,
+  unsubscribeFromPushNotifications,
+} from "@/lib/api/push-notifications";
+import {
+  translateNotificationMessage,
+  translateNotificationSender,
+} from "@/lib/notification-i18n";
 
 type NotificationBellProps = {
   locale: AppLocale;
@@ -127,13 +136,19 @@ const mapNotification = (
     daysAgo: string;
   },
   role: UserRole,
+  locale: AppLocale,
 ): NotificationItem => ({
   id: String(item.id),
-  sender:
+  sender: translateNotificationSender(
     item.sender?.name ??
-    item.notification?.data?.sender_name ??
-    t.defaultSender,
-  message: item.notification?.message ?? item.message ?? t.defaultMessage,
+      item.notification?.data?.sender_name ??
+      t.defaultSender,
+    locale,
+  ),
+  message: translateNotificationMessage(
+    item.notification?.message ?? item.message ?? t.defaultMessage,
+    locale,
+  ),
   createdAt: humanizeDate(item.notification?.created_at ?? item.created_at, t),
   read: Boolean(item.read ?? item.pivot?.read ?? false),
   href: resolveNotificationHref(item, role),
@@ -149,14 +164,20 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
     loading: t.loading,
     empty: t.empty,
     markAllRead: t.markAllRead,
-    enableNotifications: "Enable notifications",
-    notificationsOff: "Notifications off",
-    masterSwitch: "Master switch",
-    toastAlerts: "In-app popups",
-    browserPush: "Browser push",
-    on: "On",
-    off: "Off",
-    delete: "Delete",
+    enableNotifications: t.enableNotifications ?? "Enable notifications",
+    notificationsOff: t.notificationsOff ?? "Notifications off",
+    masterSwitch: t.masterSwitch ?? "Master switch",
+    toastAlerts: t.toastAlerts ?? "In-app popups",
+    browserPush: t.browserPush ?? "Browser push",
+    toastAlertsDesc: t.toastAlertsDesc ?? "Toggle toast alerts",
+    browserPushDesc: t.browserPushDesc ?? "Desktop and mobile push",
+    on: t.on ?? "On",
+    off: t.off ?? "Off",
+    delete: t.delete ?? "Delete",
+    deleteAll: t.deleteAll ?? "Delete all",
+    unreadUpdates: t.unreadUpdates ?? "unread updates",
+    allCaughtUp: t.allCaughtUp ?? "All caught up",
+    markRead: t.markRead ?? "Mark as read",
   };
 
   const [open, setOpen] = useState(false);
@@ -196,14 +217,14 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
 
       const list = Array.isArray(payload) ? payload : (payload.data ?? []);
       setNotifications(
-        list.slice(0, 10).map((entry) => mapNotification(entry, t, role)),
+        list.slice(0, 10).map((entry) => mapNotification(entry, t, role, locale)),
       );
     } catch {
       // Keep UI stable even when endpoint is unavailable.
     } finally {
       setLoading(false);
     }
-  }, [notificationsEnabled, role, t]);
+  }, [notificationsEnabled, role, t, locale]);
 
   useEffect(() => {
     if (!open || !notificationsEnabled) return;
@@ -306,8 +327,28 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
     localStorage.setItem("push_alerts_enabled", String(next));
   };
 
-  const toggleBrowserPush = () => {
+  const toggleBrowserPush = async () => {
     const next = !browserPushEnabled;
+
+    if (next && "serviceWorker" in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscribed = await subscribeToPushNotifications(registration);
+        if (!subscribed) {
+          return;
+        }
+      } catch {
+        return;
+      }
+    } else if (!next && "serviceWorker" in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        await unsubscribeFromPushNotifications(registration);
+      } catch {
+        // ignore unsubscribe errors
+      }
+    }
+
     setBrowserPushEnabled(next);
     localStorage.setItem("browser_push_enabled", String(next));
   };
@@ -353,8 +394,8 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {unreadCount > 0
-                    ? `${unreadCount} unread updates`
-                    : "All caught up"}
+                    ? `${unreadCount} ${text.unreadUpdates}`
+                    : text.allCaughtUp}
                 </p>
               </div>
 
@@ -375,8 +416,8 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
                       onClick={() => void deleteAllNotifications()}
                       disabled={deletingAll}
                       className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-red-600 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                      aria-label="Delete all"
-                      title="Delete all"
+                      aria-label={text.deleteAll}
+                      title={text.deleteAll}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -405,16 +446,16 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
               <>
                 <ToggleRow
                   label={text.toastAlerts}
-                  desc="Toggle toast alerts"
+                  desc={text.toastAlertsDesc}
                   checked={pushAlertsEnabled}
                   onToggle={togglePushAlerts}
                   text={text}
                 />
                 <ToggleRow
                   label={text.browserPush}
-                  desc="Desktop and mobile push"
+                  desc={text.browserPushDesc}
                   checked={browserPushEnabled}
-                  onToggle={toggleBrowserPush}
+                  onToggle={() => void toggleBrowserPush()}
                   text={text}
                 />
               </>
@@ -428,8 +469,20 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
                 <p className="text-sm">{text.notificationsOff}</p>
               </div>
             ) : loading ? (
-              <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                {text.loading}
+              <div className="flex flex-col gap-0 p-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 border-b border-slate-100 p-4 last:border-b-0 dark:border-slate-800"
+                  >
+                    <Skeleton className="h-9 w-9 shrink-0 rounded-full bg-slate-200 dark:bg-slate-700" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <Skeleton className="h-3.5 w-3/4 rounded-md bg-slate-200 dark:bg-slate-700" />
+                      <Skeleton className="h-3 w-full rounded-md bg-slate-100 dark:bg-slate-800" />
+                      <Skeleton className="h-2.5 w-20 rounded-md bg-slate-100 dark:bg-slate-800" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : notifications.length > 0 ? (
               notifications.map((item) => (
@@ -481,7 +534,7 @@ export function NotificationBell({ locale, role }: NotificationBellProps) {
                               }}
                               className="text-xs font-medium text-blue-600 hover:text-blue-700"
                             >
-                              {text.markAllRead}
+                              {text.markRead}
                             </button>
                           ) : null}
                           <button

@@ -28,10 +28,12 @@ import {
   Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { WizardInput as Input } from "./WizardHelpers";
 import { Label } from "@/components/ui/label";
 import { SelectField } from "./WizardHelpers";
 import { CatalogAutocomplete } from "@/components/ui/CatalogAutocomplete";
+import { BoatMatchCards } from "@/components/yachts/BoatMatchCards";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -392,39 +394,44 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
         {step1Brand.trim().length >= 2 && (
           <div className="mt-2 animate-in fade-in slide-in-from-top-1 duration-300">
             {isMatchingBoat ? (
-              <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-2.5 rounded-xl border border-slate-100">
-                <Loader2 size={12} className="animate-spin text-blue-500" />
-                {labelText("matchingBoat", "Searching database...")}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <Skeleton className="h-3 w-28 rounded-md bg-emerald-100" />
+                <div className="mt-3 flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-48 rounded-md bg-slate-200" />
+                    <Skeleton className="h-3 w-32 rounded-md bg-slate-100" />
+                  </div>
+                  <Skeleton className="h-6 w-20 rounded-full bg-slate-100" />
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Skeleton className="h-9 w-24 rounded-xl bg-slate-100" />
+                  <Skeleton className="h-9 w-24 rounded-xl bg-slate-200" />
+                </div>
               </div>
             ) : matchedBoat?.matched ? (
-              <div
-                className={cn(
-                  "flex flex-col gap-1 text-xs px-4 py-3 rounded-xl border transition-all",
-                  matchedBoat.match_type === "exact"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm shadow-emerald-100/50"
-                    : "bg-amber-50 text-amber-700 border-amber-200 shadow-sm shadow-amber-100/50"
-                )}
-              >
-                <div className="flex items-center justify-between font-bold">
-                  <span className="flex items-center gap-2">
-                    {matchedBoat.match_type === "exact" ? (
-                      <CheckCircle size={14} className="text-emerald-600" />
-                    ) : (
-                      <AlertCircle size={14} className="text-amber-600" />
-                    )}
-                    {matchedBoat.match_type === "exact"
-                      ? labelText("boatMatchFound", "Boat found in database")
-                      : labelText("boatMatchPartial", "Partial match found")}
-                  </span>
-                  <span className="opacity-75 bg-white/50 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
-                    {matchedBoat.similar_boats_count}{" "}
-                    {labelText("similarBoatsFound", "similar boats")}
-                  </span>
-                </div>
-                <span className="ml-6 text-[11px] font-medium opacity-80 leading-relaxed">
-                  {matchedBoat.message}
-                </span>
-              </div>
+              <BoatMatchCards
+                matchedBoat={matchedBoat}
+                locale={locale}
+                selectedBoatId={matchedBoat.boat?.id ?? null}
+                onUseBoat={() => {
+                  const boat = matchedBoat.boat;
+                  if (!boat) return;
+                  if (boat.brand) setStep1Brand(String(boat.brand));
+                  if (boat.model) setStep1Model(String(boat.model));
+                  if (boat.year) setStep1Year(String(boat.year));
+                  if (boat.boat_type) setStep1Type(String(boat.boat_type));
+                  if (boat.boat_category) setStep1Category(String(boat.boat_category));
+                }}
+                labels={{
+                  source: labelText("matchSource", "Source: NauticSecure AI boat database"),
+                  match: labelText("matchScore", "Match"),
+                  viewBoat: labelText("viewBoat", "View boat"),
+                  useBoat: labelText("useBoat", "Use this boat"),
+                  compare: labelText("compareBoat", "Compare"),
+                  exactMatch: labelText("boatMatchFound", "Boat found in database"),
+                  similarMatch: labelText("boatMatchPartial", "Partial match found"),
+                }}
+              />
             ) : null}
           </div>
         )}
