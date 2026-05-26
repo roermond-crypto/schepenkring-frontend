@@ -177,11 +177,6 @@ export function Sidebar({
         icon: Brain,
       });
     } else if (role === "client" || role === "buyer" || role === "seller") {
-      items.push({
-        title: t.interaction,
-        href: `${root}/chat`,
-        icon: MessageSquare,
-      });
       if (bidsPageEnabled) {
         items.push({
           title: t.bids ?? "Bids",

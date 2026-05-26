@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ArrowRight, Download, Loader2, PenLine } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { signhostApi } from "@/lib/api/signhost";
 import { getStorageUrl } from "@/lib/storage-url";
+
+const LOGO_FALLBACK = "/schepenkring-logo.png";
 
 type YachtContractData = {
   id: number | string;
@@ -48,6 +50,7 @@ export function ClientContractCard({
   const t = useTranslations("DashboardAdminOverview.contractCard");
   const [activeSignUrl, setActiveSignUrl] = useState(signUrl);
   const [refreshing, setRefreshing] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
 
   const boatName = String(yacht.boat_name ?? yacht.name ?? t("fallbackBoatName"));
   const price = Number(yacht.price ?? 0);
@@ -56,7 +59,24 @@ export function ClientContractCard({
     yacht.images?.[0]?.url ??
     yacht.images?.[0]?.file_url ??
     null;
-  const resolvedImage = imageUrl ? getStorageUrl(imageUrl) : null;
+  const resolvedImage = imageUrl && !imageFailed ? getStorageUrl(imageUrl) : LOGO_FALLBACK;
+
+  useEffect(() => {
+    if (activeSignUrl || !yacht.sign_request_id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await signhostApi.refreshSigningUrl(yacht.sign_request_id!);
+        const nextUrl = res.sign_url ?? res.url ?? null;
+        if (!cancelled && nextUrl) setActiveSignUrl(nextUrl);
+      } catch {
+        // keep CTA as refresh action
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSignUrl, yacht.sign_request_id]);
 
   async function handleRefreshSignUrl() {
     if (!yacht.sign_request_id) return;
@@ -83,21 +103,16 @@ export function ClientContractCard({
 
       <div className="grid gap-6 p-7 lg:grid-cols-[1.2fr_1fr]">
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-          {resolvedImage ? (
-            <div className="relative aspect-[16/10] w-full">
-              <Image
-                src={resolvedImage}
-                alt={boatName}
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            </div>
-          ) : (
-            <div className="flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
-              {t("noImage")}
-            </div>
-          )}
+          <div className="relative aspect-[16/10] w-full">
+            <Image
+              src={resolvedImage}
+              alt={boatName}
+              fill
+              className={imageUrl && !imageFailed ? "object-cover" : "object-contain p-8"}
+              unoptimized
+              onError={() => setImageFailed(true)}
+            />
+          </div>
         </div>
 
         <div className="space-y-5">
@@ -137,6 +152,11 @@ export function ClientContractCard({
               {t("signingSection")}
             </p>
             <p className="mt-2 text-sm leading-6 text-blue-900">{content.subtitle}</p>
+            {status ? (
+              <p className="mt-2 inline-flex rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-blue-800">
+                {status}
+              </p>
+            ) : null}
             <div className="mt-4 flex flex-wrap gap-3">
               {activeSignUrl ? (
                 <a

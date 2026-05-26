@@ -23,6 +23,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   getPublicLocations,
   login,
+  resendVerification,
   type PublicLocation,
   signup,
   verifyStepUp,
@@ -93,6 +94,12 @@ type HeroSectionProps = {
     sellerHeroTitle: string;
     loginHeroSubtitle: string;
     memberSupport: string;
+    supportAddressLine1: string;
+    supportAddressLine2: string;
+    supportEmail: string;
+    supportPhone: string;
+    resendVerificationLink: string;
+    verifyEmailPrompt: string;
     offices: string;
     buyer: string;
     seller: string;
@@ -180,6 +187,8 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showVerifyActions, setShowVerifyActions] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -268,7 +277,13 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
         }
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : copy.authFailed);
+      const message = err instanceof Error ? err.message : copy.authFailed;
+      setError(message);
+      const needsVerification =
+        /verif/i.test(message) ||
+        /email.*(not|un)/i.test(message) ||
+        /geactiveerd/i.test(message);
+      setShowVerifyActions(mode === "login" && needsVerification);
     } finally {
       setIsLoading(false);
     }
@@ -319,28 +334,23 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
             </motion.div>
 
             <div className="mt-8">
+              {mode === "register" && (
               <div 
-                key={mode === 'register' ? signupRole : 'login'}
+                key={signupRole}
                 className="transition-all duration-500"
               >
                 <div className="inline-flex rounded-full bg-sky-400/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-sky-400 border border-sky-400/20 mb-6">
-                  {mode === 'login' 
-                    ? (copy.secureAccess || "Secure Access") 
-                    : (signupRole === 'buyer' ? (copy.buyerSignup || "Buyer Signup") : (copy.sellerSignup || "Seller Signup"))
-                  }
+                  {signupRole === 'buyer' ? (copy.buyerSignup || "Buyer Signup") : (copy.sellerSignup || "Seller Signup")}
                 </div>
                 <h1 className="text-4xl lg:text-5xl font-bold text-white leading-[1.15] mb-6 tracking-tight">
-                  {mode === 'login' 
-                    ? copy.loginHeroTitle
-                    : signupRole === 'buyer' 
-                      ? copy.buyerHeroTitle
-                      : copy.sellerHeroTitle
+                  {signupRole === 'buyer' 
+                    ? copy.buyerHeroTitle
+                    : copy.sellerHeroTitle
                   }
                 </h1>
                 
                 <div className="h-1 w-20 bg-sky-500/50 rounded-full mb-8" />
                 
-                {mode === 'register' ? (
                   <div className="space-y-6">
                     {getBenefits(copy)[signupRole].map((benefit: BenefitItem, idx: number) => (
                       <div 
@@ -357,26 +367,28 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-xl text-white/60 leading-relaxed font-medium">
-                    {copy.loginHeroSubtitle}
-                  </p>
-                )}
               </div>
+              )}
             </div>
           </div>
 
           <div className="relative z-10 pt-10 mt-12 border-t border-white/5 hidden lg:block">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-500 p-0.5 shadow-lg">
-                <div className="h-full w-full rounded-full bg-[#0B1F3A] flex items-center justify-center">
-                  <span className="text-xs font-black text-white">SK</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] font-black leading-none">{copy.memberSupport}</p>
-                <p className="text-sm text-white/70 font-semibold mt-1">{copy.offices}</p>
-              </div>
+            <div className="space-y-1">
+              <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] font-black leading-none">{copy.memberSupport}</p>
+              <p className="text-sm text-white/70 font-semibold">{copy.supportAddressLine1}</p>
+              <p className="text-sm text-white/70 font-semibold">{copy.supportAddressLine2}</p>
+              <p className="text-sm text-white/60 mt-2">
+                E-mail:{" "}
+                <a href={`mailto:${copy.supportEmail}`} className="text-sky-300 hover:text-sky-200">
+                  {copy.supportEmail}
+                </a>
+              </p>
+              <p className="text-sm text-white/60">
+                Telefoon:{" "}
+                <a href={`tel:${copy.supportPhone.replace(/\s/g, "")}`} className="text-sky-300 hover:text-sky-200">
+                  {copy.supportPhone}
+                </a>
+              </p>
             </div>
           </div>
         </div>
@@ -404,7 +416,42 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                     className="rounded-2xl border border-red-100 bg-red-50 p-4 flex gap-4 text-sm text-red-700 font-bold dark:bg-red-900/10 dark:border-red-900/20 shadow-sm"
                   >
                     <AlertCircle className="h-5 w-5 shrink-0" />
-                    <p>{error}</p>
+                    <div className="space-y-3">
+                      <p>{error}</p>
+                      {showVerifyActions ? (
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={verifyEmailHref}
+                            className="inline-flex items-center rounded-xl bg-red-700 px-3 py-2 text-xs font-semibold text-white hover:bg-red-800"
+                          >
+                            {copy.verifyEmail}
+                          </Link>
+                          <button
+                            type="button"
+                            disabled={resendingVerification || !normalizedFormEmail}
+                            onClick={async () => {
+                              if (!normalizedFormEmail) return;
+                              setResendingVerification(true);
+                              try {
+                                await resendVerification({ email: normalizedFormEmail, locale });
+                                setSuccess(copy.verificationCodeSent);
+                              } catch (resendErr: unknown) {
+                                setError(
+                                  resendErr instanceof Error
+                                    ? resendErr.message
+                                    : copy.authFailed,
+                                );
+                              } finally {
+                                setResendingVerification(false);
+                              }
+                            }}
+                            className="inline-flex items-center rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            {resendingVerification ? copy.processing : copy.resendVerificationLink}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
                   </motion.div>
                 )}
 

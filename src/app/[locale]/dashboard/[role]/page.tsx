@@ -654,7 +654,7 @@ export default function AdminDashboardHome() {
       label: t("stats.activeBids"),
       value: data.activeBidsCount,
       change: `${data.trends.activeBids.change > 0 ? "+" : ""}${data.trends.activeBids.change}%`,
-      trendLabel: "this week",
+      trendLabel: t("trends.thisWeek"),
       icon: TrendingUp,
       tone: "from-[#122746] to-[#1E3A8A]",
       link: `${dashboardBase}/yachts`,
@@ -665,7 +665,7 @@ export default function AdminDashboardHome() {
       label: t("stats.pendingManifest"),
       value: data.pendingTasks,
       change: `${data.trends.pendingTasks.change > 0 ? "+" : ""}${data.trends.pendingTasks.change}%`,
-      trendLabel: "from yesterday",
+      trendLabel: t("trends.fromYesterday"),
       icon: Clock,
       tone: "from-[#0B1F3A] to-[#0F355E]",
       link: `${dashboardBase}/tasks`,
@@ -676,7 +676,7 @@ export default function AdminDashboardHome() {
       label: t("stats.fleetInIntake"),
       value: data.fleetIntake,
       change: `${data.trends.fleetIntake.change > 0 ? "+" : ""}${data.trends.fleetIntake.change}%`,
-      trendLabel: "this week",
+      trendLabel: t("trends.thisWeek"),
       icon: AlertCircle,
       tone: "from-[#122746] to-[#1E3A8A]",
       link: `${dashboardBase}/yachts`,
@@ -687,7 +687,7 @@ export default function AdminDashboardHome() {
       label: t("stats.completedSales"),
       value: data.totalSalesNumber,
       change: `${data.trends.completedSales.change > 0 ? "+" : ""}${data.trends.completedSales.change}%`,
-      trendLabel: "this month",
+      trendLabel: t("trends.thisMonth"),
       icon: CheckCircle2,
       tone: "from-[#0D2A4F] to-[#1E3A8A]",
       link: `${dashboardBase}/yachts`,
@@ -929,19 +929,27 @@ export default function AdminDashboardHome() {
                 {t("notificationSummary", { count: unreadNotificationCount })}
               </button>
               {isAdminRole && data.pendingRegistrations > 0 && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                <Link
+                  href={`${dashboardBase}/yachts`}
+                  className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 transition hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-950/60"
+                >
                   <AlertCircle size={14} />
                   {t("registrationSummary", {
                     count: data.pendingRegistrations,
                   })}
-                </span>
+                  <ArrowRight size={14} />
+                </Link>
               )}
               {isAdminRole && (
-                <span className="font-semibold">
+                <Link
+                  href={`${dashboardBase}/bids`}
+                  className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 font-semibold transition hover:bg-white dark:bg-slate-800/90 dark:text-slate-100 dark:hover:bg-slate-800"
+                >
                   {t("activeBiddingItems", {
                     count: data.activeBidsCount,
                   })}
-                </span>
+                  <ArrowRight size={14} />
+                </Link>
               )}
             </p>
           </div>
@@ -995,6 +1003,8 @@ export default function AdminDashboardHome() {
 
           {!isSellerRole && (
         <>
+          {showAdminSalesInsights && (
+          <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             {stats.map((stat, i) => (
               <Link href={stat.link} key={stat.label} passHref>
@@ -1047,7 +1057,7 @@ export default function AdminDashboardHome() {
                         )}
                       </h3>
                       <p className="mt-2 text-sm font-semibold text-white/90">
-                        Weekly Trend
+                        {t("weeklyTrend")}
                       </p>
                     </div>
 
@@ -1063,7 +1073,7 @@ export default function AdminDashboardHome() {
                       />
                     </div>
                     <div className="flex items-center text-xs font-semibold text-white group-hover:text-amber-300 transition-colors duration-200">
-                      View details
+                      {t("viewDetails")}
                       <ArrowRight
                         size={13}
                         className="ml-1 transition-transform group-hover:translate-x-1"
@@ -1120,6 +1130,8 @@ export default function AdminDashboardHome() {
               ))}
             </div>
           </section>
+          </>
+          )}
 
       {isAdminRole && (
         <section className="rounded-2xl border border-[#CFDCF2] bg-white/90 p-6 shadow-[0_8px_28px_rgba(11,31,58,0.08)] backdrop-blur dark:border-slate-700 dark:bg-[#0f172a]/90">

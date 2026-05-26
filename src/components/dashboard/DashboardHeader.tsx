@@ -87,11 +87,13 @@ export function DashboardHeader({
               />
             </Link>
             <div className="hidden md:block">
-              <CopilotSurface
-                source="header"
-                variant="compact"
-                className="w-[22rem] lg:w-[24rem]"
-              />
+              {(role === "admin" || role === "employee") && (
+                <CopilotSurface
+                  source="header"
+                  variant="compact"
+                  className="w-[22rem] lg:w-[24rem]"
+                />
+              )}
             </div>
           </div>
         </div>
