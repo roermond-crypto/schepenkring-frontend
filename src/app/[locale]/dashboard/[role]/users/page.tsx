@@ -51,7 +51,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type UserType = "ADMIN" | "EMPLOYEE" | "CLIENT" | "BUYER" | "SELLER";
+type UserType = "ADMIN" | "EMPLOYEE" | "CLIENT" | "PARTNER" | "BUYER" | "SELLER";
 type UserStatus = "ACTIVE" | "DISABLED" | "BLOCKED";
 type UserCategory = "Employee" | "Admin" | "Partner" | "Customer";
 
@@ -138,6 +138,8 @@ const tabConfig: { id: UserCategory; icon: LucideIcon }[] = [
 function mapTypeToCategory(type: UserType): UserCategory {
   if (type === "ADMIN") return "Admin";
   if (type === "EMPLOYEE") return "Employee";
+  if (type === "PARTNER") return "Partner";
+  if (type === "CLIENT") return "Partner"; // CLIENT with location pivot = partner
   return "Customer";
 }
 
@@ -147,6 +149,7 @@ function mapCategoryToType(
 ): UserType {
   if (category === "Admin") return "ADMIN";
   if (category === "Employee") return "EMPLOYEE";
+  if (category === "Partner") return "PARTNER";
   if (category === "Customer") return clientRole === "seller" ? "SELLER" : "BUYER";
   return "CLIENT";
 }

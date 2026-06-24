@@ -1,18 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Anchor,
   AlertTriangle,
   ArchiveRestore,
   CheckCircle2,
+  Globe,
   LayoutTemplate,
   Loader2,
+  LogIn,
+  Mail,
+  MapPin,
   Pencil,
+  Phone,
   Plus,
   RefreshCcw,
   Trash2,
+  UserMinus,
+  UserPlus,
+  Users,
   XCircle,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
@@ -27,6 +35,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { setClientSession } from "@/lib/auth/client-session";
+import { useClientSession } from "@/components/session/ClientSessionProvider";
+import { useRouter } from "next/navigation";
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -35,6 +46,18 @@ type LocationRecord = {
   name: string;
   code: string;
   status: "ACTIVE" | "INACTIVE";
+  // address
+  address_line1?: string | null;
+  street_number?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
+  country?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  // counts
   clients_total: number;
   staff_total: number;
   employee_count?: number;
@@ -52,6 +75,17 @@ type LocationRecord = {
   open_tasks: number;
   created_at: string;
   updated_at: string;
+};
+
+type LocationUser = {
+  id: number;
+  name: string;
+  email: string;
+  type: string;
+  status: string;
+  phone?: string | null;
+  location_role?: string | null;
+  last_login_at?: string | null;
 };
 
 type ArchivedLocation = {
@@ -77,26 +111,108 @@ type FormState = {
   name: string;
   code: string;
   status: "ACTIVE" | "INACTIVE";
+  address_line1: string;
+  street_number: string;
+  postal_code: string;
+  city: string;
+  country: string;
+  phone: string;
+  email: string;
+  website: string;
 };
 
-const EMPTY_FORM: FormState = { name: "", code: "", status: "ACTIVE" };
+const EMPTY_FORM: FormState = {
+  name: "",
+  code: "",
+  status: "ACTIVE",
+  address_line1: "",
+  street_number: "",
+  postal_code: "",
+  city: "",
+  country: "Netherlands",
+  phone: "",
+  email: "",
+  website: "",
+};
 
 const IMPACT_LABELS: Record<string, string> = {
-  boats:                     "Boten",
-  yachts:                    "Jachten",
-  clients:                   "Klanten",
-  staff_assignments:         "Medewerkers",
-  leads:                     "Leads",
-  conversations:             "Chats",
-  tasks:                     "Taken",
-  boards:                    "Borden",
-  sign_requests:             "Ondertekeningsverzoeken",
-  harbor_channels:           "Kanalen",
-  call_sessions:             "Belsessies",
-  columns:                   "Kolommen",
-  task_automations:          "Automatiseringen",
+  boats: "Boten",
+  yachts: "Jachten",
+  clients: "Klanten",
+  staff_assignments: "Medewerkers",
+  leads: "Leads",
+  conversations: "Chats",
+  tasks: "Taken",
+  boards: "Borden",
+  sign_requests: "Ondertekeningsverzoeken",
+  harbor_channels: "Kanalen",
+  call_sessions: "Belsessies",
+  columns: "Kolommen",
+  task_automations: "Automatiseringen",
   task_automation_templates: "Automatiseringstemplates",
 };
+
+// ── Google Places address autocomplete ───────────────────────────
+
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    google?: any;
+    initGooglePlaces?: () => void;
+  }
+}
+
+function useGooglePlaces(
+  inputRef: React.RefObject<HTMLInputElement | null>,
+  onPlace: (data: { address: string; city: string; postal: string; country: string; lat: number; lng: number }) => void,
+) {
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    if (!apiKey || !inputRef.current) return;
+
+    const init = () => {
+      if (!window.google?.maps?.places || !inputRef.current) return;
+      const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ["address"],
+        fields: ["address_components", "geometry", "formatted_address"],
+      });
+      ac.addListener("place_changed", () => {
+        const place = ac.getPlace();
+        if (!place.address_components) return;
+
+        const get = (type: string) =>
+          place.address_components?.find((c: { types: string[] }) => c.types.includes(type))?.long_name ?? "";
+        const getShort = (type: string) =>
+          place.address_components?.find((c: { types: string[] }) => c.types.includes(type))?.short_name ?? "";
+
+        onPlace({
+          address: `${get("route")} ${get("street_number")}`.trim(),
+          city: get("locality") || get("postal_town") || get("administrative_area_level_2"),
+          postal: getShort("postal_code"),
+          country: get("country"),
+          lat: place.geometry?.location?.lat() ?? 0,
+          lng: place.geometry?.location?.lng() ?? 0,
+        });
+      });
+    };
+
+    if (window.google?.maps?.places) {
+      init();
+      return;
+    }
+
+    if (!document.getElementById("google-places-script")) {
+      const script = document.createElement("script");
+      script.id = "google-places-script";
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGooglePlaces`;
+      script.async = true;
+      window.initGooglePlaces = init;
+      document.head.appendChild(script);
+    } else {
+      window.initGooglePlaces = init;
+    }
+  }, [inputRef, onPlace]);
+}
 
 // ── Component ─────────────────────────────────────────────────────
 
@@ -108,6 +224,9 @@ export function AdminLocationsManagerPage({
   role: string;
 }) {
   const isNl = locale === "nl";
+  const router = useRouter();
+  const { user: sessionUser } = useClientSession();
+  const addressInputRef = useRef<HTMLInputElement>(null);
 
   const [locations, setLocations] = useState<LocationRecord[]>([]);
   const [archivedLocations, setArchivedLocations] = useState<ArchivedLocation[]>([]);
@@ -121,6 +240,15 @@ export function AdminLocationsManagerPage({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<LocationRecord | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [dialogTab, setDialogTab] = useState<"info" | "users">("info");
+
+  // Location users
+  const [locationUsers, setLocationUsers] = useState<LocationUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [allUsers, setAllUsers] = useState<Array<{ id: number; name: string; email: string; type: string }>>([]);
+  const [addUserId, setAddUserId] = useState("");
+  const [addUserRole, setAddUserRole] = useState("LOCATION_EMPLOYEE");
+  const [addingUser, setAddingUser] = useState(false);
 
   // Delete flow
   const [deleteTarget, setDeleteTarget] = useState<LocationRecord | null>(null);
@@ -136,7 +264,26 @@ export function AdminLocationsManagerPage({
   const [permanentTarget, setPermanentTarget] = useState<ArchivedLocation | null>(null);
   const [permanentDeleting, setPermanentDeleting] = useState(false);
 
+  // Impersonation
+  const [impersonating, setImpersonating] = useState(false);
+
   const widgetHref = `/${locale}/dashboard/${role}/locations/widget`;
+
+  // ── Google Places hook ─────────────────────────────────────────
+
+  useGooglePlaces(addressInputRef, ({ address, city, postal, country, lat, lng }) => {
+    setForm((f) => ({
+      ...f,
+      address_line1: address,
+      city,
+      postal_code: postal,
+      country,
+    }));
+    // store lat/lng separately as numbers
+    void (lat); void (lng);
+  });
+
+  // ── Data loading ────────────────────────────────────────────────
 
   const loadLocations = useCallback(async () => {
     setLoading(true);
@@ -156,6 +303,36 @@ export function AdminLocationsManagerPage({
 
   useEffect(() => { void loadLocations(); }, [loadLocations]);
 
+  const loadLocationUsers = useCallback(async (locationId: number) => {
+    setUsersLoading(true);
+    try {
+      const res = await api.get(`/admin/locations/${locationId}/users`);
+      setLocationUsers(Array.isArray(res.data?.data) ? res.data.data : []);
+    } catch {
+      toast.error(isNl ? "Gebruikers laden mislukt." : "Failed to load users.");
+    } finally {
+      setUsersLoading(false);
+    }
+  }, [isNl]);
+
+  // Load all users for "add user" dropdown
+  useEffect(() => {
+    if (!isDialogOpen || !editingLocation) return;
+    api.get("/admin/users").then((res) => {
+      const list = Array.isArray(res.data?.data) ? res.data.data : [];
+      setAllUsers(list.map((u: { id: number; name: string; email: string; type: string }) => ({
+        id: u.id, name: u.name, email: u.email, type: u.type,
+      })));
+    }).catch(() => {});
+  }, [isDialogOpen, editingLocation]);
+
+  // Load users when switching to users tab
+  useEffect(() => {
+    if (dialogTab === "users" && editingLocation) {
+      void loadLocationUsers(editingLocation.id);
+    }
+  }, [dialogTab, editingLocation, loadLocationUsers]);
+
   const filteredLocations = useMemo(() => {
     const q = search.trim().toLowerCase();
     return locations.filter((l) => {
@@ -171,20 +348,52 @@ export function AdminLocationsManagerPage({
     setEditingLocation(null);
     setForm(EMPTY_FORM);
     setIsDialogOpen(false);
+    setDialogTab("info");
+    setLocationUsers([]);
+    setAddUserId("");
+  };
+
+  const openEdit = (location: LocationRecord) => {
+    setEditingLocation(location);
+    setForm({
+      name: location.name,
+      code: location.code,
+      status: location.status,
+      address_line1: location.address_line1 ?? "",
+      street_number: location.street_number ?? "",
+      postal_code: location.postal_code ?? "",
+      city: location.city ?? "",
+      country: location.country ?? "Netherlands",
+      phone: location.phone ?? "",
+      email: location.email ?? "",
+      website: location.website ?? "",
+    });
+    setDialogTab("info");
+    setLocationUsers([]);
+    setIsDialogOpen(true);
   };
 
   const handleSubmit = async () => {
-    const payload = {
-      name: form.name.trim(),
-      code: form.code.trim().toUpperCase(),
-      status: form.status,
-    };
-    if (!payload.name || !payload.code) {
+    if (!form.name.trim() || !form.code.trim()) {
       toast.error(isNl ? "Naam en code zijn verplicht." : "Name and code are required.");
       return;
     }
     setSaving(true);
     try {
+      const payload = {
+        name: form.name.trim(),
+        code: form.code.trim().toUpperCase(),
+        status: form.status,
+        address_line1: form.address_line1 || null,
+        street_number: form.street_number || null,
+        postal_code: form.postal_code || null,
+        city: form.city || null,
+        country: form.country || null,
+        phone: form.phone || null,
+        email: form.email || null,
+        website: form.website || null,
+      };
+
       if (editingLocation) {
         await api.patch(`/admin/locations/${editingLocation.id}`, payload);
         toast.success(isNl ? "Locatie bijgewerkt." : "Location updated.");
@@ -201,6 +410,91 @@ export function AdminLocationsManagerPage({
     }
   };
 
+  // ── Location user management ────────────────────────────────────
+
+  const handleAddUser = async () => {
+    if (!editingLocation || !addUserId) return;
+    setAddingUser(true);
+    try {
+      await api.post(`/admin/locations/${editingLocation.id}/users`, {
+        user_id: Number(addUserId),
+        role: addUserRole,
+      });
+      toast.success(isNl ? "Gebruiker toegevoegd." : "User added.");
+      setAddUserId("");
+      await loadLocationUsers(editingLocation.id);
+    } catch {
+      toast.error(isNl ? "Toevoegen mislukt." : "Add failed.");
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
+  const handleRemoveUser = async (userId: number, userName: string) => {
+    if (!editingLocation) return;
+    try {
+      await api.delete(`/admin/locations/${editingLocation.id}/users/${userId}`);
+      toast.success(isNl ? `${userName} verwijderd van locatie.` : `${userName} removed from location.`);
+      setLocationUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch {
+      toast.error(isNl ? "Verwijderen mislukt." : "Remove failed.");
+    }
+  };
+
+  const handleImpersonate = async (user: LocationUser) => {
+    setImpersonating(true);
+    try {
+      const adminPassword = prompt(isNl ? "Voer je beheerderswachtwoord in om te imiteren:" : "Enter your admin password to impersonate:");
+      if (!adminPassword) { setImpersonating(false); return; }
+
+      const res = await api.post(
+        `/admin/impersonate/${user.id}`,
+        { password: adminPassword },
+        { headers: { "Idempotency-Key": crypto.randomUUID() } },
+      );
+
+      const token = res.data?.token;
+      const impersonated = res.data?.impersonated;
+      if (!token || !impersonated) throw new Error("Impersonation failed");
+
+      const roleMap: Record<string, string> = { ADMIN: "admin", EMPLOYEE: "employee", PARTNER: "partner", CLIENT: "client", SELLER: "seller", BUYER: "buyer" };
+
+      setClientSession(token, {
+        id: String(impersonated.id),
+        name: impersonated.name,
+        email: impersonated.email,
+        role: roleMap[impersonated.type] ?? "client",
+        type: impersonated.type,
+        status: impersonated.status,
+        phone: impersonated.phone ?? null,
+        location_id: impersonated.location_id ?? null,
+        location_role: impersonated.location_role ?? null,
+        client_location_id: impersonated.client_location_id ?? null,
+        has_location_assignment: impersonated.has_location_assignment ?? false,
+        can_access_board: impersonated.can_access_board ?? false,
+        location: impersonated.location ?? null,
+        locations: impersonated.locations ?? [],
+      });
+
+      localStorage.setItem("impersonation_session", JSON.stringify({
+        started_at: res.data?.session?.started_at,
+        impersonated_id: impersonated.id,
+        impersonated_name: impersonated.name,
+      }));
+
+      toast.success(isNl ? `Imitatie gestart: ${impersonated.name}` : `Impersonating: ${impersonated.name}`);
+      resetDialog();
+      setTimeout(() => {
+        router.push(`/${locale}/dashboard/${roleMap[impersonated.type] ?? "client"}`);
+        router.refresh();
+      }, 400);
+    } catch {
+      toast.error(isNl ? "Imitatie mislukt." : "Impersonation failed.");
+    } finally {
+      setImpersonating(false);
+    }
+  };
+
   // ── Delete flow ─────────────────────────────────────────────────
 
   const openDeleteFlow = async (location: LocationRecord) => {
@@ -211,7 +505,6 @@ export function AdminLocationsManagerPage({
     setDeleteSuccess(false);
     setImpactLoading(true);
     setImpactData(null);
-
     try {
       const res = await api.get(`/admin/locations/${location.id}/impact`);
       setImpactData(res.data as ImpactData);
@@ -221,12 +514,6 @@ export function AdminLocationsManagerPage({
     } finally {
       setImpactLoading(false);
     }
-  };
-
-  const closeDeleteFlow = () => {
-    setDeleteTarget(null);
-    setImpactData(null);
-    setDeleteSuccess(false);
   };
 
   const submitDeleteRequest = async () => {
@@ -246,7 +533,7 @@ export function AdminLocationsManagerPage({
     }
   };
 
-  // ── Restore ─────────────────────────────────────────────────────
+  // ── Restore / permanent delete ──────────────────────────────────
 
   const handleRestore = async (loc: ArchivedLocation) => {
     try {
@@ -258,8 +545,6 @@ export function AdminLocationsManagerPage({
     }
   };
 
-  // ── Permanent delete ────────────────────────────────────────────
-
   const handlePermanentDelete = async () => {
     if (!permanentTarget) return;
     setPermanentDeleting(true);
@@ -269,36 +554,46 @@ export function AdminLocationsManagerPage({
       setPermanentTarget(null);
       await loadLocations();
     } catch (err: unknown) {
-      const msg =
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        (err as { response?: { data?: { message?: string } } }).response?.data?.message;
-      toast.error(msg || (isNl ? "Permanent verwijderen mislukt." : "Permanent delete failed."));
+      const msg = err && typeof err === "object" && "response" in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : null;
+      toast.error(msg ?? (isNl ? "Permanent verwijderen mislukt." : "Permanent delete failed."));
     } finally {
       setPermanentDeleting(false);
     }
   };
 
+  // ── Helpers ─────────────────────────────────────────────────────
+
   const fmt = (value: string) => {
     const d = new Date(value);
     if (isNaN(d.getTime())) return value;
-    return new Intl.DateTimeFormat(isNl ? "nl-NL" : "en-US", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(d);
+    return new Intl.DateTimeFormat(isNl ? "nl-NL" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(d);
   };
 
-  // ── Impact summary helper ───────────────────────────────────────
+  const typeLabel = (type: string) => {
+    const map: Record<string, string> = {
+      ADMIN: "Admin", EMPLOYEE: "Medewerker", PARTNER: "Partner",
+      CLIENT: "Klant", SELLER: "Verkoper", BUYER: "Koper",
+    };
+    return map[type] ?? type;
+  };
+
+  const typeColor = (type: string) => {
+    if (type === "PARTNER") return "bg-teal-100 text-teal-700";
+    if (type === "EMPLOYEE") return "bg-blue-100 text-blue-700";
+    if (type === "ADMIN") return "bg-purple-100 text-purple-700";
+    return "bg-slate-100 text-slate-600";
+  };
 
   const ImpactRow = ({ label, count }: { label: string; count: number }) => (
     <div className="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-0">
       <span className="text-sm text-slate-600">{label}</span>
-      <span className={cn("text-sm font-bold tabular-nums", count > 0 ? "text-red-600" : "text-slate-300")}>
-        {count}
-      </span>
+      <span className={cn("text-sm font-bold tabular-nums", count > 0 ? "text-red-600" : "text-slate-300")}>{count}</span>
     </div>
   );
+
+  const availableUsersToAdd = allUsers.filter((u) => !locationUsers.find((lu) => lu.id === u.id));
 
   // ── Render ──────────────────────────────────────────────────────
 
@@ -307,7 +602,7 @@ export function AdminLocationsManagerPage({
       <Toaster position="top-right" />
 
       {/* Header */}
-      <div className="rounded-[28px] border border-[#C9D8EE] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_38%),linear-gradient(135deg,#F7FBFF_0%,#EDF4FF_52%,#E4EEF9_100%)] p-8 text-[#0B1F3A] shadow-[0_20px_60px_rgba(15,39,74,0.10)]">
+      <div className="rounded-[28px] border border-[#C9D8EE] bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_38%),linear-gradient(135deg,#F7FBFF_0%,#EDF4FF_52%,#E4EEF9_100%)] p-8 text-[#0B1F3A] shadow-[0_20px_60px_rgba(15,39,74,0.10)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-[11px] font-black uppercase tracking-[0.35em] text-blue-700">
@@ -318,50 +613,31 @@ export function AdminLocationsManagerPage({
             </h1>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base">
               {isNl
-                ? "Locaties kunnen niet direct worden verwijderd. Een verwijderingsverzoek vereist goedkeuring per e-mail."
-                : "Locations cannot be deleted directly. A deletion request requires e-mail approval."}
+                ? "Locaties beheren inclusief adres, gekoppelde gebruikers en partners. Verwijdering vereist goedkeuring."
+                : "Manage locations including address, linked users and partners. Deletion requires approval."}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl border-slate-200 bg-white text-slate-700"
-              onClick={() => void loadLocations()}
-            >
+            <Button type="button" variant="outline" className="rounded-xl border-slate-200 bg-white text-slate-700" onClick={() => void loadLocations()}>
               <RefreshCcw className={loading ? "animate-spin" : ""} />
               {isNl ? "Verversen" : "Refresh"}
             </Button>
             <Button asChild className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]">
-              <Link href={widgetHref}>
-                <LayoutTemplate />
-                {isNl ? "Widget-instellingen" : "Widget settings"}
-              </Link>
+              <Link href={widgetHref}><LayoutTemplate />{isNl ? "Widget-instellingen" : "Widget settings"}</Link>
             </Button>
-            <Button
-              type="button"
-              className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]"
-              onClick={() => { setEditingLocation(null); setForm(EMPTY_FORM); setIsDialogOpen(true); }}
-            >
-              <Plus />
-              {isNl ? "Locatie aanmaken" : "Create location"}
+            <Button type="button" className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]" onClick={() => { setEditingLocation(null); setForm(EMPTY_FORM); setDialogTab("info"); setIsDialogOpen(true); }}>
+              <Plus />{isNl ? "Locatie aanmaken" : "Create location"}
             </Button>
             {archivedLocations.length > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                className={cn("rounded-xl", showArchived && "bg-amber-50 border-amber-200 text-amber-700")}
-                onClick={() => setShowArchived((v) => !v)}
-              >
-                <ArchiveRestore />
-                {isNl ? `Gearchiveerd (${archivedLocations.length})` : `Archived (${archivedLocations.length})`}
+              <Button type="button" variant="outline" className={cn("rounded-xl", showArchived && "bg-amber-50 border-amber-200 text-amber-700")} onClick={() => setShowArchived((v) => !v)}>
+                <ArchiveRestore />{isNl ? `Gearchiveerd (${archivedLocations.length})` : `Archived (${archivedLocations.length})`}
               </Button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Archived locations panel */}
+      {/* Archived panel */}
       {showArchived && archivedLocations.length > 0 && (
         <div className="mt-6 rounded-[24px] border border-amber-200 bg-amber-50 p-6">
           <p className="mb-4 text-[11px] font-black uppercase tracking-[0.28em] text-amber-700">
@@ -374,42 +650,16 @@ export function AdminLocationsManagerPage({
                 <div key={loc.id} className="flex items-start justify-between rounded-xl border border-amber-200 bg-white p-4">
                   <div>
                     <p className="font-semibold text-slate-900">{loc.name} <span className="text-xs text-slate-400 font-normal">({loc.code})</span></p>
-                    {loc.delete_reason && (
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {isNl ? "Reden:" : "Reason:"} {loc.delete_reason}
-                      </p>
-                    )}
-                    {loc.deleted_by && (
-                      <p className="text-xs text-slate-400">
-                        {isNl ? "Door:" : "By:"} {loc.deleted_by} — {fmt(loc.deleted_at)}
-                      </p>
-                    )}
-                    {total > 0 && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {isNl ? `Nog ${total} gekoppelde records` : `${total} linked records remain`}
-                      </p>
-                    )}
+                    {loc.delete_reason && <p className="mt-0.5 text-xs text-slate-500">{isNl ? "Reden:" : "Reason:"} {loc.delete_reason}</p>}
+                    {loc.deleted_by && <p className="text-xs text-slate-400">{isNl ? "Door:" : "By:"} {loc.deleted_by} — {fmt(loc.deleted_at)}</p>}
+                    {total > 0 && <p className="mt-1 text-xs text-red-500">{isNl ? `Nog ${total} gekoppelde records` : `${total} linked records remain`}</p>}
                   </div>
                   <div className="flex gap-2 ml-4 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="rounded-lg text-emerald-700 border-emerald-200 hover:bg-emerald-50"
-                      onClick={() => void handleRestore(loc)}
-                    >
-                      <ArchiveRestore className="h-3.5 w-3.5 mr-1" />
-                      {isNl ? "Herstellen" : "Restore"}
+                    <Button size="sm" variant="outline" className="rounded-lg text-emerald-700 border-emerald-200 hover:bg-emerald-50" onClick={() => void handleRestore(loc)}>
+                      <ArchiveRestore className="h-3.5 w-3.5 mr-1" />{isNl ? "Herstellen" : "Restore"}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="rounded-lg text-red-600 border-red-200 hover:bg-red-50"
-                      onClick={() => setPermanentTarget(loc)}
-                      disabled={total > 0}
-                      title={total > 0 ? (isNl ? "Verwijder eerst alle gekoppelde records" : "Remove all linked records first") : undefined}
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-1" />
-                      {isNl ? "Permanent" : "Permanent"}
+                    <Button size="sm" variant="outline" className="rounded-lg text-red-600 border-red-200 hover:bg-red-50" onClick={() => setPermanentTarget(loc)} disabled={total > 0} title={total > 0 ? (isNl ? "Verwijder eerst alle gekoppelde records" : "Remove all linked records first") : undefined}>
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />{isNl ? "Permanent" : "Permanent"}
                     </Button>
                   </div>
                 </div>
@@ -421,17 +671,8 @@ export function AdminLocationsManagerPage({
 
       {/* Search & filter */}
       <div className="mt-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_280px]">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={isNl ? "Zoek op naam of code..." : "Search by name or code..."}
-          className="h-16 rounded-[22px] border border-slate-200 bg-white px-5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-400"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as "ALL" | "ACTIVE" | "INACTIVE")}
-          className="h-16 rounded-[22px] border border-slate-200 bg-white px-5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-400"
-        >
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={isNl ? "Zoek op naam of code..." : "Search by name or code..."} className="h-16 rounded-[22px] border border-slate-200 bg-white px-5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-400" />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "ALL" | "ACTIVE" | "INACTIVE")} className="h-16 rounded-[22px] border border-slate-200 bg-white px-5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-400">
           <option value="ALL">{isNl ? "Alle statussen" : "All statuses"}</option>
           <option value="ACTIVE">{isNl ? "Actief" : "Active"}</option>
           <option value="INACTIVE">{isNl ? "Inactief" : "Inactive"}</option>
@@ -440,9 +681,10 @@ export function AdminLocationsManagerPage({
 
       {/* Table */}
       <div className="mt-8 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
-        <div className="grid grid-cols-[minmax(0,2fr)_120px_minmax(0,1.3fr)_140px_180px_120px] gap-4 border-b border-slate-100 bg-slate-50 px-6 py-4 text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">
+        <div className="grid grid-cols-[minmax(0,2fr)_100px_minmax(0,1.5fr)_minmax(0,1.5fr)_140px_180px_120px] gap-4 border-b border-slate-100 bg-slate-50 px-6 py-4 text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">
           <span>{isNl ? "Locatie" : "Location"}</span>
           <span>Code</span>
+          <span>{isNl ? "Adres" : "Address"}</span>
           <span>{isNl ? "Medewerkers" : "Employees"}</span>
           <span>Status</span>
           <span>{isNl ? "Bijgewerkt" : "Updated"}</span>
@@ -450,19 +692,12 @@ export function AdminLocationsManagerPage({
         </div>
 
         {loading ? (
-          <div className="px-6 py-16 text-center text-sm text-slate-500">
-            {isNl ? "Locaties laden..." : "Loading locations..."}
-          </div>
+          <div className="px-6 py-16 text-center text-sm text-slate-500">{isNl ? "Locaties laden..." : "Loading locations..."}</div>
         ) : filteredLocations.length === 0 ? (
-          <div className="px-6 py-16 text-center text-sm text-slate-500">
-            {isNl ? "Geen locaties gevonden." : "No locations found."}
-          </div>
+          <div className="px-6 py-16 text-center text-sm text-slate-500">{isNl ? "Geen locaties gevonden." : "No locations found."}</div>
         ) : (
           filteredLocations.map((location) => (
-            <div
-              key={location.id}
-              className="grid grid-cols-[minmax(0,2fr)_120px_minmax(0,1.3fr)_140px_180px_120px] gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0"
-            >
+            <div key={location.id} className="grid grid-cols-[minmax(0,2fr)_100px_minmax(0,1.5fr)_minmax(0,1.5fr)_140px_180px_120px] gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0">
               <div className="min-w-0">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
@@ -470,67 +705,40 @@ export function AdminLocationsManagerPage({
                   </div>
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-slate-900">{location.name}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {location.boats_total} boten · {location.yachts_total} jachten · {location.open_leads} leads
-                    </p>
+                    <p className="mt-1 text-xs text-slate-500">{location.boats_total} boten · {location.yachts_total} jachten · {location.open_leads} leads</p>
                   </div>
                 </div>
               </div>
-
               <div className="self-center text-sm font-semibold text-slate-700">{location.code}</div>
-
-              <div className="self-center text-sm text-slate-700">
-                <p className="font-semibold">
-                  {(location.employee_count ?? location.employees?.length ?? 0)}{" "}
-                  {isNl ? "gekoppeld" : "assigned"}
-                </p>
-                {location.employees && location.employees.length > 0 ? (
-                  <p className="mt-1 truncate text-xs text-slate-500">
-                    {location.employees.map((e) => e.name).join(", ")}
+              <div className="self-center min-w-0">
+                {location.city ? (
+                  <p className="truncate text-sm text-slate-700 flex items-center gap-1">
+                    <MapPin className="h-3 w-3 shrink-0 text-slate-400" />{location.city}
                   </p>
                 ) : (
-                  <p className="mt-1 text-xs text-slate-400">
-                    {isNl ? "Geen medewerkers" : "No employees"}
-                  </p>
+                  <p className="text-xs text-slate-300 italic">{isNl ? "Geen adres" : "No address"}</p>
+                )}
+                {location.phone && <p className="truncate text-xs text-slate-500 mt-0.5">{location.phone}</p>}
+              </div>
+              <div className="self-center text-sm text-slate-700">
+                <p className="font-semibold">{(location.employee_count ?? location.employees?.length ?? 0)} {isNl ? "gekoppeld" : "linked"}</p>
+                {location.employees && location.employees.length > 0 ? (
+                  <p className="mt-1 truncate text-xs text-slate-500">{location.employees.map((e) => e.name).join(", ")}</p>
+                ) : (
+                  <p className="mt-1 text-xs text-slate-400">{isNl ? "Geen medewerkers" : "No employees"}</p>
                 )}
               </div>
-
               <div className="self-center">
-                <span
-                  className={cn(
-                    "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                    location.status === "ACTIVE"
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-slate-200 text-slate-700",
-                  )}
-                >
+                <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold", location.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700")}>
                   {location.status === "ACTIVE" ? (isNl ? "Actief" : "Active") : (isNl ? "Inactief" : "Inactive")}
                 </span>
               </div>
-
               <div className="self-center text-sm text-slate-600">{fmt(location.updated_at)}</div>
-
               <div className="flex items-center justify-end gap-2 self-center">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="rounded-xl"
-                  onClick={() => {
-                    setEditingLocation(location);
-                    setForm({ name: location.name, code: location.code, status: location.status });
-                    setIsDialogOpen(true);
-                  }}
-                >
+                <Button type="button" variant="outline" size="icon" className="rounded-xl" onClick={() => openEdit(location)}>
                   <Pencil />
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-                  onClick={() => void openDeleteFlow(location)}
-                >
+                <Button type="button" variant="outline" size="icon" className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => void openDeleteFlow(location)}>
                   <Trash2 />
                 </Button>
               </div>
@@ -540,223 +748,298 @@ export function AdminLocationsManagerPage({
       </div>
 
       {/* ── Create / Edit Dialog ───────────────────────────────────── */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-xl rounded-[28px] border-slate-200 bg-white p-0">
+      <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) resetDialog(); }}>
+        <DialogContent className="max-w-2xl rounded-[28px] border-slate-200 bg-white p-0 max-h-[90vh] overflow-y-auto">
           <div className="p-6 sm:p-8">
             <DialogHeader>
               <DialogTitle className="text-2xl text-[#003566]">
                 {editingLocation ? (isNl ? "Locatie bewerken" : "Edit location") : (isNl ? "Locatie aanmaken" : "Create location")}
               </DialogTitle>
               <DialogDescription className="text-slate-500">
-                {isNl
-                  ? "Maak en beheer locaties voor registratie, scope en operationeel gebruik."
-                  : "Create and manage locations for registration, scoping, and operations."}
+                {editingLocation ? editingLocation.name : (isNl ? "Maak een nieuwe locatie aan voor het platform." : "Create a new location for the platform.")}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="mt-6 space-y-4">
-              <input
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder={isNl ? "Locatienaam" : "Location name"}
-                className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-400"
-              />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <input
-                  value={form.code}
-                  onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
-                  placeholder="Code"
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm uppercase outline-none transition focus:border-blue-400"
-                />
-                <select
-                  value={form.status}
-                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as "ACTIVE" | "INACTIVE" }))}
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-400"
+            {/* Tabs (only when editing) */}
+            {editingLocation && (
+              <div className="mt-4 flex gap-1 rounded-xl bg-slate-100 p-1">
+                <button
+                  type="button"
+                  className={cn("flex-1 rounded-lg py-2 text-sm font-semibold transition-colors", dialogTab === "info" ? "bg-white text-[#003566] shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                  onClick={() => setDialogTab("info")}
                 >
-                  <option value="ACTIVE">{isNl ? "Actief" : "Active"}</option>
-                  <option value="INACTIVE">{isNl ? "Inactief" : "Inactive"}</option>
-                </select>
+                  {isNl ? "Informatie" : "Information"}
+                </button>
+                <button
+                  type="button"
+                  className={cn("flex-1 rounded-lg py-2 text-sm font-semibold transition-colors", dialogTab === "users" ? "bg-white text-[#003566] shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                  onClick={() => setDialogTab("users")}
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Users className="h-3.5 w-3.5" />
+                    {isNl ? "Gebruikers" : "Users"}
+                    {locationUsers.length > 0 && <span className="rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5">{locationUsers.length}</span>}
+                  </span>
+                </button>
               </div>
-            </div>
+            )}
 
-            <DialogFooter className="mt-8">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={resetDialog} disabled={saving}>
-                {isNl ? "Annuleren" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]"
-                onClick={() => void handleSubmit()}
-                disabled={saving}
-              >
-                {saving ? (isNl ? "Opslaan..." : "Saving...") : editingLocation ? (isNl ? "Bijwerken" : "Update") : (isNl ? "Aanmaken" : "Create")}
-              </Button>
-            </DialogFooter>
+            {/* Info tab */}
+            {dialogTab === "info" && (
+              <div className="mt-5 space-y-4">
+                {/* Core */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">{isNl ? "Naam *" : "Name *"}</label>
+                    <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Schepenkring Heeg" className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400" />
+                  </div>
+                  <div className="grid gap-3 grid-cols-2">
+                    <div>
+                      <label className="block mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">{isNl ? "Code *" : "Code *"}</label>
+                      <input value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="HG" className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm uppercase outline-none focus:border-blue-400" />
+                    </div>
+                    <div>
+                      <label className="block mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">Status</label>
+                      <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as "ACTIVE" | "INACTIVE" }))} className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400">
+                        <option value="ACTIVE">{isNl ? "Actief" : "Active"}</option>
+                        <option value="INACTIVE">{isNl ? "Inactief" : "Inactive"}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5" />{isNl ? "Adresgegevens" : "Address"}
+                  </p>
+                  <div>
+                    <label className="block mb-1 text-xs font-semibold text-slate-500">{isNl ? "Straat (Google Places)" : "Street (Google Places)"}</label>
+                    <input
+                      ref={addressInputRef}
+                      value={form.address_line1}
+                      onChange={(e) => setForm((f) => ({ ...f, address_line1: e.target.value }))}
+                      placeholder={isNl ? "Begin met typen voor Google-suggesties…" : "Start typing for Google suggestions…"}
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400"
+                    />
+                  </div>
+                  <div className="grid gap-3 grid-cols-3">
+                    <div>
+                      <label className="block mb-1 text-xs font-semibold text-slate-500">{isNl ? "Huisnr." : "Number"}</label>
+                      <input value={form.street_number} onChange={(e) => setForm((f) => ({ ...f, street_number: e.target.value }))} placeholder="12a" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-xs font-semibold text-slate-500">{isNl ? "Postcode" : "Postal code"}</label>
+                      <input value={form.postal_code} onChange={(e) => setForm((f) => ({ ...f, postal_code: e.target.value }))} placeholder="8621 AB" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-xs font-semibold text-slate-500">{isNl ? "Stad" : "City"}</label>
+                      <input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="Heeg" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block mb-1 text-xs font-semibold text-slate-500">{isNl ? "Land" : "Country"}</label>
+                    <input value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} placeholder="Netherlands" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
+                  </div>
+                </div>
+
+                {/* Contact */}
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5" />{isNl ? "Contactgegevens" : "Contact"}
+                  </p>
+                  <div className="grid gap-3 grid-cols-2">
+                    <div>
+                      <label className="block mb-1 text-xs font-semibold text-slate-500">{isNl ? "Telefoon" : "Phone"}</label>
+                      <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+31 6 12345678" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" type="tel" />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-xs font-semibold text-slate-500">E-mail</label>
+                      <input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="heeg@schepenkring.nl" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" type="email" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 text-xs font-semibold text-slate-500 flex items-center gap-1">
+                      <Globe className="h-3 w-3" /> Website
+                    </label>
+                    <input value={form.website} onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))} placeholder="https://www.schepenkring.nl/heeg" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" type="url" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Users tab */}
+            {dialogTab === "users" && editingLocation && (
+              <div className="mt-5 space-y-4">
+                {/* Add user */}
+                <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
+                    <UserPlus className="h-3.5 w-3.5" />{isNl ? "Gebruiker toevoegen" : "Add user"}
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-[1fr_160px_auto]">
+                    <select value={addUserId} onChange={(e) => setAddUserId(e.target.value)} className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400">
+                      <option value="">{isNl ? "— Selecteer gebruiker —" : "— Select user —"}</option>
+                      {availableUsersToAdd.map((u) => (
+                        <option key={u.id} value={u.id}>{u.name} ({u.type})</option>
+                      ))}
+                    </select>
+                    <select value={addUserRole} onChange={(e) => setAddUserRole(e.target.value)} className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400">
+                      <option value="LOCATION_EMPLOYEE">{isNl ? "Medewerker" : "Employee"}</option>
+                      <option value="LOCATION_MANAGER">{isNl ? "Manager" : "Manager"}</option>
+                    </select>
+                    <Button type="button" disabled={!addUserId || addingUser} onClick={() => void handleAddUser()} className="h-10 rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B] whitespace-nowrap">
+                      {addingUser ? <Loader2 className="animate-spin h-4 w-4" /> : <><UserPlus className="h-4 w-4 mr-1" />{isNl ? "Toevoegen" : "Add"}</>}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* User list */}
+                {usersLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="animate-spin h-5 w-5 text-slate-400" />
+                    <span className="ml-2 text-sm text-slate-500">{isNl ? "Gebruikers laden…" : "Loading users…"}</span>
+                  </div>
+                ) : locationUsers.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-slate-400">
+                    {isNl ? "Geen gebruikers gekoppeld aan deze locatie." : "No users linked to this location."}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {locationUsers.map((u) => (
+                      <div key={u.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-slate-900 text-sm">{u.name}</span>
+                            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase", typeColor(u.type))}>{typeLabel(u.type)}</span>
+                            {u.location_role && (
+                              <span className="rounded-full bg-slate-200 text-slate-600 px-2 py-0.5 text-[10px] font-semibold">
+                                {u.location_role === "LOCATION_MANAGER" ? (isNl ? "Manager" : "Manager") : (isNl ? "Medewerker" : "Employee")}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-xs text-slate-500 flex items-center gap-2">
+                            <Mail className="h-3 w-3" />{u.email}
+                            {u.last_login_at && <span className="text-slate-400">· {isNl ? "Ingelogd:" : "Login:"} {new Date(u.last_login_at).toLocaleDateString()}</span>}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5 ml-3 shrink-0">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 rounded-lg text-blue-600 border-blue-200 hover:bg-blue-50"
+                            title={isNl ? "Imiteer gebruiker" : "Impersonate user"}
+                            disabled={impersonating}
+                            onClick={() => void handleImpersonate(u)}
+                          >
+                            <LogIn className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50"
+                            title={isNl ? "Verwijder van locatie" : "Remove from location"}
+                            onClick={() => void handleRemoveUser(u.id, u.name)}
+                          >
+                            <UserMinus className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {dialogTab === "info" && (
+              <DialogFooter className="mt-6">
+                <Button type="button" variant="outline" className="rounded-xl" onClick={resetDialog} disabled={saving}>
+                  {isNl ? "Annuleren" : "Cancel"}
+                </Button>
+                <Button type="button" className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]" onClick={() => void handleSubmit()} disabled={saving}>
+                  {saving ? (isNl ? "Opslaan..." : "Saving...") : editingLocation ? (isNl ? "Bijwerken" : "Update") : (isNl ? "Aanmaken" : "Create")}
+                </Button>
+              </DialogFooter>
+            )}
           </div>
         </DialogContent>
       </Dialog>
 
       {/* ── Delete request Dialog ──────────────────────────────────── */}
-      <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) closeDeleteFlow(); }}>
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setImpactData(null); setDeleteSuccess(false); } }}>
         <DialogContent className="max-w-lg rounded-[28px] border-slate-200 bg-white p-0">
           <div className="p-6 sm:p-8">
-            {/* Success screen */}
             {deleteSuccess ? (
               <div className="text-center py-4">
                 <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-emerald-500" />
-                <h2 className="text-xl font-bold text-slate-900 mb-2">
-                  {isNl ? "Verzoek ingediend" : "Request submitted"}
-                </h2>
-                <p className="text-sm text-slate-500 mb-6">
-                  {isNl
-                    ? "Alle admins ontvangen een e-mail om het verwijderingsverzoek goed te keuren of te annuleren. De link is 24 uur geldig."
-                    : "All admins will receive an e-mail to approve or cancel the deletion request. The link is valid for 24 hours."}
-                </p>
-                <Button className="rounded-xl bg-[#003566] text-white" onClick={closeDeleteFlow}>
-                  {isNl ? "Sluiten" : "Close"}
-                </Button>
+                <h2 className="text-xl font-bold text-slate-900 mb-2">{isNl ? "Verzoek ingediend" : "Request submitted"}</h2>
+                <p className="text-sm text-slate-500 mb-6">{isNl ? "Alle admins ontvangen een e-mail om het verwijderingsverzoek goed te keuren. De link is 24 uur geldig." : "All admins will receive an e-mail to approve the deletion. The link is valid for 24 hours."}</p>
+                <Button className="rounded-xl bg-[#003566] text-white" onClick={() => { setDeleteTarget(null); setDeleteSuccess(false); }}>{isNl ? "Sluiten" : "Close"}</Button>
               </div>
             ) : (
               <>
                 <DialogHeader>
                   <div className="flex items-center gap-3 mb-1">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-red-600">
-                      <AlertTriangle className="h-5 w-5" />
-                    </div>
-                    <DialogTitle className="text-xl text-slate-900">
-                      {isNl ? "Locatie verwijderen" : "Delete location"}
-                    </DialogTitle>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-red-600"><AlertTriangle className="h-5 w-5" /></div>
+                    <DialogTitle className="text-xl text-slate-900">{isNl ? "Locatie verwijderen" : "Delete location"}</DialogTitle>
                   </div>
-                  <DialogDescription className="text-slate-500 text-sm">
-                    {isNl
-                      ? `Een verwijdering van "${deleteTarget?.name}" vereist goedkeuring per e-mail. Directe verwijdering is niet mogelijk.`
-                      : `Deleting "${deleteTarget?.name}" requires e-mail approval. Immediate deletion is not possible.`}
-                  </DialogDescription>
+                  <DialogDescription className="text-slate-500 text-sm">{isNl ? `Verwijdering van "${deleteTarget?.name}" vereist goedkeuring per e-mail.` : `Deleting "${deleteTarget?.name}" requires e-mail approval.`}</DialogDescription>
                 </DialogHeader>
 
                 {impactLoading ? (
                   <div className="flex items-center justify-center py-10">
-                    <Loader2 className="animate-spin h-6 w-6 text-slate-400" />
-                    <span className="ml-3 text-sm text-slate-500">{isNl ? "Impact ophalen..." : "Loading impact..."}</span>
+                    <Loader2 className="animate-spin h-6 w-6 text-slate-400" /><span className="ml-3 text-sm text-slate-500">{isNl ? "Impact ophalen..." : "Loading impact..."}</span>
                   </div>
                 ) : impactData ? (
                   <div className="mt-5 space-y-4">
-                    {/* Impact analysis */}
-                    <div className={cn(
-                      "rounded-xl border p-4",
-                      impactData.total_linked_records > 0
-                        ? "border-red-200 bg-red-50"
-                        : "border-emerald-200 bg-emerald-50"
-                    )}>
-                      <p className={cn(
-                        "text-[10px] font-black uppercase tracking-wider mb-2",
-                        impactData.total_linked_records > 0 ? "text-red-600" : "text-emerald-600"
-                      )}>
-                        {isNl ? "Gekoppelde gegevens" : "Linked records"}
-                      </p>
+                    <div className={cn("rounded-xl border p-4", impactData.total_linked_records > 0 ? "border-red-200 bg-red-50" : "border-emerald-200 bg-emerald-50")}>
+                      <p className={cn("text-[10px] font-black uppercase tracking-wider mb-2", impactData.total_linked_records > 0 ? "text-red-600" : "text-emerald-600")}>{isNl ? "Gekoppelde gegevens" : "Linked records"}</p>
                       {impactData.total_linked_records === 0 ? (
-                        <p className="text-sm text-emerald-700 flex items-center gap-1.5">
-                          <CheckCircle2 className="h-4 w-4" />
-                          {isNl ? "Geen gekoppelde gegevens gevonden." : "No linked records found."}
-                        </p>
+                        <p className="text-sm text-emerald-700 flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4" />{isNl ? "Geen gekoppelde gegevens." : "No linked records."}</p>
                       ) : (
                         <>
-                          <div className="space-y-0.5">
-                            {Object.entries(impactData.impact)
-                              .filter(([, count]) => count > 0)
-                              .map(([key, count]) => (
-                                <ImpactRow key={key} label={IMPACT_LABELS[key] ?? key} count={count} />
-                              ))}
-                          </div>
-                          <div className="mt-3 pt-3 border-t border-red-200 flex justify-between">
-                            <span className="text-xs font-bold text-red-700">{isNl ? "Totaal" : "Total"}</span>
-                            <span className="text-xs font-bold text-red-700 tabular-nums">{impactData.total_linked_records}</span>
-                          </div>
+                          <div className="space-y-0.5">{Object.entries(impactData.impact).filter(([, c]) => c > 0).map(([k, c]) => <ImpactRow key={k} label={IMPACT_LABELS[k] ?? k} count={c} />)}</div>
+                          <div className="mt-3 pt-3 border-t border-red-200 flex justify-between"><span className="text-xs font-bold text-red-700">{isNl ? "Totaal" : "Total"}</span><span className="text-xs font-bold text-red-700 tabular-nums">{impactData.total_linked_records}</span></div>
                         </>
                       )}
                     </div>
 
-                    {/* Move records option */}
                     {impactData.total_linked_records > 0 && (
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                          {isNl ? "Records verplaatsen naar (optioneel)" : "Move records to (optional)"}
-                        </label>
-                        <select
-                          value={moveToLocationId}
-                          onChange={(e) => setMoveToLocationId(e.target.value ? Number(e.target.value) : "")}
-                          className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400"
-                        >
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">{isNl ? "Records verplaatsen naar (optioneel)" : "Move records to (optional)"}</label>
+                        <select value={moveToLocationId} onChange={(e) => setMoveToLocationId(e.target.value ? Number(e.target.value) : "")} className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400">
                           <option value="">{isNl ? "— Niet verplaatsen —" : "— Do not move —"}</option>
-                          {locations
-                            .filter((l) => l.id !== deleteTarget?.id)
-                            .map((l) => (
-                              <option key={l.id} value={l.id}>{l.name} ({l.code})</option>
-                            ))}
+                          {locations.filter((l) => l.id !== deleteTarget?.id).map((l) => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
                         </select>
-                        <p className="mt-1 text-xs text-slate-400">
-                          {isNl
-                            ? "Boten, jachten, chats en leads worden verplaatst bij goedkeuring."
-                            : "Boats, yachts, chats and leads will be moved upon approval."}
-                        </p>
                       </div>
                     )}
 
-                    {/* Proceed to reason */}
                     {deleteStep === "impact" && (
                       <div className="flex justify-end gap-2 pt-1">
-                        <Button variant="outline" className="rounded-xl" onClick={closeDeleteFlow}>
-                          {isNl ? "Annuleren" : "Cancel"}
-                        </Button>
-                        <Button
-                          className="rounded-xl bg-red-600 text-white hover:bg-red-700"
-                          onClick={() => setDeleteStep("reason")}
-                        >
-                          {isNl ? "Doorgaan" : "Continue"}
-                        </Button>
+                        <Button variant="outline" className="rounded-xl" onClick={() => { setDeleteTarget(null); setImpactData(null); }}>{isNl ? "Annuleren" : "Cancel"}</Button>
+                        <Button className="rounded-xl bg-red-600 text-white hover:bg-red-700" onClick={() => setDeleteStep("reason")}>{isNl ? "Doorgaan" : "Continue"}</Button>
                       </div>
                     )}
 
-                    {/* Reason step */}
                     {deleteStep === "reason" && (
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                            {isNl ? "Reden voor verwijdering *" : "Reason for deletion *"}
-                          </label>
-                          <textarea
-                            value={deleteReason}
-                            onChange={(e) => setDeleteReason(e.target.value)}
-                            placeholder={isNl ? "Bijv. dubbele locatie, fout aangemaakt..." : "e.g. duplicate location, created by mistake..."}
-                            rows={3}
-                            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-red-400 resize-none"
-                          />
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">{isNl ? "Reden voor verwijdering *" : "Reason for deletion *"}</label>
+                          <textarea value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)} placeholder={isNl ? "Bijv. dubbele locatie, fout aangemaakt..." : "e.g. duplicate location, created by mistake..."} rows={3} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-red-400 resize-none" />
                         </div>
-
                         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
                           <p className="font-bold mb-0.5">{isNl ? "Wat er daarna gebeurt:" : "What happens next:"}</p>
                           <ul className="space-y-0.5 list-disc list-inside text-amber-600">
                             <li>{isNl ? "Alle admins ontvangen een goedkeurings-e-mail" : "All admins receive an approval e-mail"}</li>
                             <li>{isNl ? "Na goedkeuring wordt de locatie gearchiveerd" : "After approval the location is archived"}</li>
                             <li>{isNl ? "De link verloopt na 24 uur" : "The link expires after 24 hours"}</li>
-                            <li>{isNl ? "Herstel is altijd mogelijk via Gearchiveerd" : "Restore is always possible via Archived"}</li>
                           </ul>
                         </div>
-
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" className="rounded-xl" onClick={() => setDeleteStep("impact")}>
-                            {isNl ? "Terug" : "Back"}
-                          </Button>
-                          <Button
-                            className="rounded-xl bg-red-600 text-white hover:bg-red-700"
-                            onClick={() => void submitDeleteRequest()}
-                            disabled={deleteSubmitting || !deleteReason.trim()}
-                          >
-                            {deleteSubmitting ? (
-                              <><Loader2 className="animate-spin h-4 w-4 mr-2" />{isNl ? "Versturen..." : "Sending..."}</>
-                            ) : (
-                              isNl ? "Verzoek indienen" : "Submit request"
-                            )}
+                          <Button variant="outline" className="rounded-xl" onClick={() => setDeleteStep("impact")}>{isNl ? "Terug" : "Back"}</Button>
+                          <Button className="rounded-xl bg-red-600 text-white hover:bg-red-700" onClick={() => void submitDeleteRequest()} disabled={deleteSubmitting || !deleteReason.trim()}>
+                            {deleteSubmitting ? <><Loader2 className="animate-spin h-4 w-4 mr-2" />{isNl ? "Versturen..." : "Sending..."}</> : (isNl ? "Verzoek indienen" : "Submit request")}
                           </Button>
                         </div>
                       </div>
@@ -775,34 +1058,15 @@ export function AdminLocationsManagerPage({
           <div className="p-6 sm:p-8">
             <DialogHeader>
               <div className="flex items-center gap-3 mb-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-red-600">
-                  <XCircle className="h-5 w-5" />
-                </div>
-                <DialogTitle className="text-xl text-slate-900">
-                  {isNl ? "Permanent verwijderen?" : "Delete permanently?"}
-                </DialogTitle>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-red-600"><XCircle className="h-5 w-5" /></div>
+                <DialogTitle className="text-xl text-slate-900">{isNl ? "Permanent verwijderen?" : "Delete permanently?"}</DialogTitle>
               </div>
-              <DialogDescription className="text-sm text-slate-500">
-                {isNl
-                  ? `"${permanentTarget?.name}" wordt onherroepelijk verwijderd uit de database. Dit kan niet ongedaan worden gemaakt.`
-                  : `"${permanentTarget?.name}" will be permanently removed from the database. This cannot be undone.`}
-              </DialogDescription>
+              <DialogDescription className="text-sm text-slate-500">{isNl ? `"${permanentTarget?.name}" wordt onherroepelijk verwijderd uit de database.` : `"${permanentTarget?.name}" will be permanently removed from the database.`}</DialogDescription>
             </DialogHeader>
-
             <DialogFooter className="mt-6">
-              <Button variant="outline" className="rounded-xl" onClick={() => setPermanentTarget(null)}>
-                {isNl ? "Annuleren" : "Cancel"}
-              </Button>
-              <Button
-                className="rounded-xl bg-red-600 text-white hover:bg-red-700"
-                onClick={() => void handlePermanentDelete()}
-                disabled={permanentDeleting}
-              >
-                {permanentDeleting ? (
-                  <><Loader2 className="animate-spin h-4 w-4 mr-2" />{isNl ? "Verwijderen..." : "Deleting..."}</>
-                ) : (
-                  isNl ? "Permanent verwijderen" : "Delete permanently"
-                )}
+              <Button variant="outline" className="rounded-xl" onClick={() => setPermanentTarget(null)}>{isNl ? "Annuleren" : "Cancel"}</Button>
+              <Button className="rounded-xl bg-red-600 text-white hover:bg-red-700" onClick={() => void handlePermanentDelete()} disabled={permanentDeleting}>
+                {permanentDeleting ? <><Loader2 className="animate-spin h-4 w-4 mr-2" />{isNl ? "Verwijderen..." : "Deleting..."}</> : (isNl ? "Permanent verwijderen" : "Delete permanently")}
               </Button>
             </DialogFooter>
           </div>
