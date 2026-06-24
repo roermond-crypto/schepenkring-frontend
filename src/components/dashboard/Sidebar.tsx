@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   LogOut,
   Mail,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -176,6 +177,11 @@ export function Sidebar({
         title: t.emailTemplates ?? "E-mailsjablonen",
         href: `${root}/email-templates`,
         icon: Mail,
+      });
+      items.push({
+        title: t.contractTemplates ?? "Contractsjablonen",
+        href: `${root}/contract-templates`,
+        icon: FileText,
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });

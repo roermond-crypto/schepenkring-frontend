@@ -198,7 +198,8 @@
       "bids": "Gebote",
       "knowledgebase": "Wissensdatenbank",
       "videoTemplates": "Video-Vorlagen",
-      "emailTemplates": "E-Mail-Vorlagen"
+      "emailTemplates": "E-Mail-Vorlagen",
+      "contractTemplates": "Vertragsvorlagen"
     },
     "notifications": {
       "label": "Benachrichtigungen",

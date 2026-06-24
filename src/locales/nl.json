@@ -199,7 +199,8 @@
       "bids": "Biedingen",
       "knowledgebase": "Kennisbank",
       "videoTemplates": "Videosjablonen",
-      "emailTemplates": "E-mailsjablonen"
+      "emailTemplates": "E-mailsjablonen",
+      "contractTemplates": "Contractsjablonen"
     },
     "notifications": {
       "label": "Meldingen",

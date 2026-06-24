@@ -198,7 +198,8 @@
       "bids": "Offres",
       "knowledgebase": "Base de connaissances",
       "videoTemplates": "Modèles vidéo",
-      "emailTemplates": "Modèles d'e-mail"
+      "emailTemplates": "Modèles d'e-mail",
+      "contractTemplates": "Modèles de contrat"
     },
     "notifications": {
       "label": "Notifications",
