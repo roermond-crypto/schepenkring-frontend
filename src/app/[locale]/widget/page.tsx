@@ -1,4 +1,5 @@
 import { ChatWidget } from "@/components/widget/ChatWidget";
+import { LeadCaptureWidget } from "@/components/widget/LeadCaptureWidget";
 
 export default async function WidgetPage({
     params,
@@ -12,11 +13,25 @@ export default async function WidgetPage({
 
     const boatId = query.boatId ? parseInt(query.boatId, 10) : undefined;
     const locationId = query.locationId ? parseInt(query.locationId, 10) : undefined;
-    const widgetMode = (query.widgetMode as "chat" | "smart" | "auction") || (boatId ? "smart" : "chat");
+    const widgetMode = query.widgetMode ?? (boatId ? "smart" : "chat");
     const accentColor = query.accentColor;
     const themePreset = (query.themePreset as "ocean" | "violet" | "sunset") || "ocean";
     const welcomeText = query.welcomeText;
     const sourceUrl = query.sourceUrl;
+
+    // Lead capture widget for Schepenkring
+    if (widgetMode === "lead") {
+        return (
+            <main className="h-full w-full relative">
+                <LeadCaptureWidget
+                    boatId={boatId}
+                    locationId={locationId}
+                    sourceUrl={sourceUrl}
+                    isEmbedded={true}
+                />
+            </main>
+        );
+    }
 
     return (
         <main className="h-full w-full relative">
@@ -29,7 +44,7 @@ export default async function WidgetPage({
                 sourceUrl={sourceUrl}
                 isEmbedded={true}
                 locale={locale}
-                widgetMode={widgetMode}
+                widgetMode={widgetMode as "chat" | "smart" | "auction"}
             />
         </main>
     );

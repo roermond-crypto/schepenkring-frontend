@@ -8,6 +8,11 @@ import {
   LayoutTemplate,
   Paintbrush,
   Save,
+  BarChart3,
+  TrendingUp,
+  Users,
+  CalendarCheck,
+  RefreshCw,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
@@ -95,7 +100,7 @@ export function LocationWidgetSettingsPage() {
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState("");
   const [locationName, setLocationName] = useState("");
-  const [accentColor, setAccentColor] = useState("#2563eb");
+  const [accentColor, setAccentColor] = useState("#C8102E");
   const [themePreset, setThemePreset] = useState("ocean");
   const [tenant, setTenant] = useState("schepenkring");
   const [testBoatId, setTestBoatId] = useState("");
@@ -103,6 +108,35 @@ export function LocationWidgetSettingsPage() {
   const [welcomeText, setWelcomeText] = useState("");
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [widgetType, setWidgetType] = useState<"lead" | "chat">("lead");
+
+  // Performance stats
+  type PerfStats = {
+    widget_views: number;
+    widget_opens: number;
+    plan_viewing: number;
+    offer: number;
+    brochure: number;
+    callback: number;
+    question: number;
+    leads_created: number;
+    bookings_created: number;
+    conversion_rate: number;
+  };
+  const [perfStats, setPerfStats] = useState<PerfStats | null>(null);
+  const [perfLoading, setPerfLoading] = useState(false);
+
+  const fetchPerformance = async () => {
+    setPerfLoading(true);
+    try {
+      const res = await api.get("/admin/widget/performance");
+      setPerfStats(res.data);
+    } catch {
+      // non-fatal
+    } finally {
+      setPerfLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -123,6 +157,8 @@ export function LocationWidgetSettingsPage() {
     };
 
     void fetchLocations();
+    void fetchPerformance();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t.loadLocationsError]);
 
   const fetchSettings = async (locationId: number) => {
@@ -173,9 +209,10 @@ export function LocationWidgetSettingsPage() {
       : "https://app.schepen-kring.nl";
 
   const embedCodeLines = [
-    "<!-- NauticSecure Chat Widget -->",
-    "<script ",
+    "<!-- Schepenkring Lead Widget -->",
+    "<script",
     `  src="${domain}/api/widget/chat.js"`,
+    `  data-widget-type="${widgetType}"`,
     `  data-location-id="${selectedLocationId}"`,
     `  data-harbor-id="${selectedLocationId}"`,
     `  data-harbor-name="${locationName}"`,
@@ -199,6 +236,7 @@ export function LocationWidgetSettingsPage() {
     accentColor,
     themePreset,
     welcomeText,
+    widgetMode: widgetType,
   });
 
   const trimmedBoatId = testBoatId.trim();
@@ -306,6 +344,31 @@ export function LocationWidgetSettingsPage() {
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                  Widget type
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWidgetType("lead")}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-all ${widgetType === "lead" ? "border-[#C8102E] bg-red-50 text-[#C8102E]" : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"}`}
+                  >
+                    Lead capture
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWidgetType("chat")}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-all ${widgetType === "chat" ? "border-blue-500 bg-blue-50 text-blue-600" : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"}`}
+                  >
+                    Chat
+                  </button>
+                </div>
+                <p className="mt-1 text-[10px] text-slate-400">
+                  {widgetType === "lead" ? "Gestructureerde leadformulieren (aanbevolen voor Schepenkring)" : "Open AI-chat widget"}
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-500">
                   {t.testBoatId}
                 </label>
                 <input
@@ -368,6 +431,74 @@ export function LocationWidgetSettingsPage() {
         </div>
 
         <div className="space-y-6 lg:col-span-2">
+          {/* ── Widget performance stats ── */}
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800 dark:text-slate-100">
+                <BarChart3 size={18} className="text-[#C8102E]" />
+                Widget prestaties (30 dagen)
+              </h2>
+              <button
+                onClick={fetchPerformance}
+                disabled={perfLoading}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+              >
+                <RefreshCw size={12} className={perfLoading ? "animate-spin" : ""} />
+                Verversen
+              </button>
+            </div>
+
+            {perfStats ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Weergaven</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-800 dark:text-slate-100">{perfStats.widget_views.toLocaleString()}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Geopend</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-800 dark:text-slate-100">{perfStats.widget_opens.toLocaleString()}</p>
+                </div>
+                <div className="rounded-xl bg-red-50 p-3 dark:bg-red-950/30">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-red-400">Leads</p>
+                  <p className="mt-1 flex items-baseline gap-1 text-2xl font-bold text-[#C8102E]">
+                    {perfStats.leads_created.toLocaleString()}
+                    <Users size={14} className="mb-0.5 text-[#C8102E]/60" />
+                  </p>
+                </div>
+                <div className="rounded-xl bg-emerald-50 p-3 dark:bg-emerald-950/30">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500">Conversie</p>
+                  <p className="mt-1 flex items-baseline gap-1 text-2xl font-bold text-emerald-600">
+                    {perfStats.conversion_rate}%
+                    <TrendingUp size={14} className="mb-0.5 text-emerald-400" />
+                  </p>
+                </div>
+                <div className="rounded-xl bg-blue-50 p-3 dark:bg-blue-950/30">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-400">Bezichtigingen</p>
+                  <p className="mt-1 text-2xl font-bold text-blue-600">{perfStats.plan_viewing}</p>
+                </div>
+                <div className="rounded-xl bg-amber-50 p-3 dark:bg-amber-950/30">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-500">Boden</p>
+                  <p className="mt-1 text-2xl font-bold text-amber-600">{perfStats.offer}</p>
+                </div>
+                <div className="rounded-xl bg-purple-50 p-3 dark:bg-purple-950/30">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-purple-500">Brochures</p>
+                  <p className="mt-1 text-2xl font-bold text-purple-600">{perfStats.brochure}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Boekingen</p>
+                  <p className="mt-1 flex items-baseline gap-1 text-2xl font-bold text-slate-700 dark:text-slate-200">
+                    {perfStats.bookings_created}
+                    <CalendarCheck size={14} className="mb-0.5 text-slate-400" />
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-24 items-center justify-center text-sm text-slate-400">
+                {perfLoading ? "Statistieken laden…" : "Geen data beschikbaar"}
+              </div>
+            )}
+          </div>
+
           <div className="flex flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0a0f1c] shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-800/60 bg-[#0d1323] px-4 py-3">
               <div className="flex items-center gap-2">
