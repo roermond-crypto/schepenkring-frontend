@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Images,
   Ship,
@@ -13,6 +13,7 @@ import {
   Upload,
   GripVertical,
   Wand2,
+  Link,
   Trash,
   Check,
   X,
@@ -434,6 +435,18 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
               />
             ) : null}
           </div>
+        )}
+
+        {/* ── Brochure / URL Import ── */}
+        {!isClientRole && (
+          <BrochureImport
+            yachtId={yachtId}
+            isExtracting={isExtracting}
+            onHintReady={(hint) => {
+              setBoatHint(hint);
+              void handleAiExtract({ speedMode: "deep" });
+            }}
+          />
         )}
 
         {/* Additional Hint Textarea */}
@@ -1170,3 +1183,122 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
     </div>
   );
 };
+
+// ── Brochure Import sub-component ────────────────────────────────
+
+function resolveApiBase(): string {
+  const env =
+    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_BASE_URL) ||
+    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_BACKEND_API_URL);
+  if (env) return env.replace(/\/+$/, "");
+  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    return "http://localhost:8000/api";
+  }
+  return "https://app.schepen-kring.nl/api";
+}
+
+function BrochureImport({
+  yachtId,
+  isExtracting,
+  onHintReady,
+}: {
+  yachtId: string | number;
+  isExtracting: boolean;
+  onHintReady: (hint: string) => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [imported, setImported] = useState<{ chars: number; meta: Record<string, unknown> } | null>(null);
+
+  const handleImport = async () => {
+    if (!url.trim()) return;
+    setLoading(true);
+    setError(null);
+    setImported(null);
+
+    try {
+      const token = typeof localStorage !== "undefined" ? localStorage.getItem("auth_token") : null;
+      const res = await fetch(`${resolveApiBase()}/admin/yachts/import-brochure`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ brochure_url: url.trim(), yacht_id: yachtId || undefined }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || `HTTP ${res.status}`);
+      }
+
+      setImported({ chars: data.hint_text_length, meta: data.quick_meta ?? {} });
+      onHintReady(data.hint_text);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Import mislukt");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3 relative z-10 border-t border-slate-100 pt-6">
+      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+        <Link size={14} className="text-emerald-500" />
+        Importeer via brochure URL
+        <span className="text-slate-400 font-normal normal-case tracking-normal">
+          (PDF of HTML pagina)
+        </span>
+      </Label>
+
+      <div className="flex gap-2">
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://krekelberg.yachtshift.nl/yachtshift/export/brochure-html/key/..."
+          className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all"
+          disabled={loading || isExtracting}
+        />
+        <button
+          type="button"
+          onClick={handleImport}
+          disabled={loading || isExtracting || !url.trim()}
+          className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+        >
+          {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+          {loading ? "Bezig…" : "Importeer"}
+        </button>
+      </div>
+
+      {error && (
+        <p className="flex items-center gap-1.5 text-xs text-red-600">
+          <AlertCircle size={12} />
+          {error}
+        </p>
+      )}
+
+      {imported && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <p className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+            <CheckCircle size={12} />
+            Brochure geïmporteerd — {imported.chars.toLocaleString()} tekens geëxtraheerd
+          </p>
+          {Object.keys(imported.meta).length > 0 && (
+            <p className="mt-1 text-[10px] text-emerald-600">
+              Snel gevonden:{" "}
+              {Object.entries(imported.meta)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join(" · ")}
+            </p>
+          )}
+          <p className="mt-1 text-[10px] text-emerald-500">
+            AI extractie wordt nu gestart…
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

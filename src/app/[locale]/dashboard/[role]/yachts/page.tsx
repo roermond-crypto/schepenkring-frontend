@@ -40,6 +40,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { normalizeRole } from "@/lib/auth/roles";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { CompletenessScoreBadge, type CompletenessBreakdown } from "@/components/yachts/CompletenessScore";
 import {
   isClientContractActionable,
   normalizeLatestSignhost,
@@ -82,6 +83,9 @@ type YachtListItem = {
   beam?: number | string | null;
   where?: string | null;
   latest_signhost?: LatestSignhostSummary | null;
+  completeness_score?: number | null;
+  completeness_breakdown?: CompletenessBreakdown | null;
+  yachtshift_publish_status?: string | null;
   [key: string]: unknown;
 };
 
@@ -1036,6 +1040,16 @@ export default function FleetManagementPage() {
 
                   {/* FOOTER */}
                   <div className="pt-4 border-t border-slate-100 mt-auto space-y-2">
+                    {/* Completeness score badge */}
+                    {!isClientRole && yacht.completeness_score != null && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Volledigheid</span>
+                        <CompletenessScoreBadge
+                          score={yacht.completeness_score}
+                          breakdown={yacht.completeness_breakdown}
+                        />
+                      </div>
+                    )}
                     {isClientRole &&
                     isClientContractActionable(
                       yacht.latest_signhost ?? normalizeLatestSignhost(null),
@@ -1088,10 +1102,11 @@ export default function FleetManagementPage() {
           <div className="grid grid-cols-12 gap-4 p-4 border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-500">
             <div className="col-span-3">{t?.table?.vessel || "Vessel"}</div>
             <div className="col-span-2">{t?.table?.price || "Price"}</div>
-            <div className="col-span-2">{t?.table?.specifications || "Specs"}</div>
+            <div className="col-span-1">{t?.table?.specifications || "Specs"}</div>
             <div className="col-span-2">{t?.table?.status || "Status"}</div>
             <div className="col-span-1">{t?.table?.year || "Year"}</div>
-            <div className="col-span-2 text-right">{t?.table?.actions || "Actions"}</div>
+            {!isClientRole && <div className="col-span-1">Score</div>}
+            <div className={cn(isClientRole ? "col-span-2" : "col-span-2", "text-right")}>{t?.table?.actions || "Actions"}</div>
           </div>
 
           {/* TABLE ROWS */}
@@ -1134,7 +1149,7 @@ export default function FleetManagementPage() {
                 </div>
 
                 {/* SPECIFICATIONS */}
-                <div className="col-span-2 flex items-center">
+                <div className="col-span-1 flex items-center">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-[11px] text-slate-600">
                       <Maximize2 size={12} className="text-blue-600" />
@@ -1183,6 +1198,20 @@ export default function FleetManagementPage() {
                     {yacht.year || "--"}
                   </span>
                 </div>
+
+                {/* COMPLETENESS SCORE */}
+                {!isClientRole && (
+                  <div className="col-span-1 flex items-center">
+                    {yacht.completeness_score != null ? (
+                      <CompletenessScoreBadge
+                        score={yacht.completeness_score}
+                        breakdown={yacht.completeness_breakdown}
+                      />
+                    ) : (
+                      <span className="text-[10px] text-slate-300">—</span>
+                    )}
+                  </div>
+                )}
 
                 {/* ACTIONS */}
                 <div className="col-span-2 flex items-center justify-end gap-2">
