@@ -125,7 +125,9 @@
     "signin": "Anmelden",
     "signupNotice": "Die Registrierung ist nur fuer Kaeufer und Verkaeufer verfuegbar. Employee-, Location- und Admin-Konten werden vom Administrator erstellt.",
     "submitLogin": "Anmelden",
-    "submitSignup": "Als Kaeufer / Verkaeufer registrieren"
+    "submitSignup": "Als Kaeufer / Verkaeufer registrieren",
+    "intakeCtaLabel": "Neues Boot anmelden",
+    "intakeCtaSubtext": "Möchten Sie Ihr Boot verkaufen?"
   },
   "dashboard": {
     "welcome": "Willkommen zuruck",
@@ -2101,26 +2103,335 @@
     }
   },
   "SellerDashboard": {
-    "stats": { "boats": "My boats", "bids": "New bids", "chats": "Open chats", "contracts": "Contracts" },
-    "sections": { "boats": "My boats", "latestBids": "Latest bids" },
-    "actions": { "view": "View", "manageBid": "Manage bid", "openChat": "Open chat" },
-    "labels": { "bids": "bids", "bid": "Bid", "buyer": "Buyer" },
-    "empty": { "boats": "No boats yet.", "bids": "No bids yet." }
+    "stats": {
+      "boats": "My boats",
+      "bids": "New bids",
+      "chats": "Open chats",
+      "contracts": "Contracts"
+    },
+    "sections": {
+      "boats": "My boats",
+      "latestBids": "Latest bids"
+    },
+    "actions": {
+      "view": "View",
+      "manageBid": "Manage bid",
+      "openChat": "Open chat"
+    },
+    "labels": {
+      "bids": "bids",
+      "bid": "Bid",
+      "buyer": "Buyer"
+    },
+    "empty": {
+      "boats": "No boats yet.",
+      "bids": "No bids yet."
+    }
   },
   "DashboardBids": {
-    "eyebrow": "Bidding", "title": "Bids", "subtitle": "Review, accept, reject or counter offers on your boats.",
-    "actions": { "accept": "Accept", "reject": "Reject", "counter": "Counter", "sendCounter": "Send counter", "chat": "Open chat" },
-    "labels": { "boat": "Boat", "buyer": "Buyer", "verified": "Verified" },
-    "counter": { "amount": "Counter amount" },
-    "empty": { "title": "No bids yet", "subtitle": "When a buyer places a bid, it will appear here." },
-    "toasts": { "accept": "Bid accepted", "reject": "Bid rejected", "counter": "Counter offer sent", "failed": "Action failed" }
+    "eyebrow": "Bidding",
+    "title": "Bids",
+    "subtitle": "Review, accept, reject or counter offers on your boats.",
+    "actions": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "counter": "Counter",
+      "sendCounter": "Send counter",
+      "chat": "Open chat"
+    },
+    "labels": {
+      "boat": "Boat",
+      "buyer": "Buyer",
+      "verified": "Verified"
+    },
+    "counter": {
+      "amount": "Counter amount"
+    },
+    "empty": {
+      "title": "No bids yet",
+      "subtitle": "When a buyer places a bid, it will appear here."
+    },
+    "toasts": {
+      "accept": "Bid accepted",
+      "reject": "Bid rejected",
+      "counter": "Counter offer sent",
+      "failed": "Action failed"
+    }
   },
   "LocationBidSettings": {
-    "title": "Bid settings", "subtitle": "Control bidding visibility and routing for this location.",
+    "title": "Bid settings",
+    "subtitle": "Control bidding visibility and routing for this location.",
     "bidsPageEnabled": "Show bids page for users at this location",
     "sellerNotifications": "Notify seller on new bids",
     "directChat": "Allow direct buyer/seller chat",
-    "routingMode": "Bid routing mode", "modes": { "direct": "Direct buyer/seller", "broker": "Broker controlled", "adminReview": "Admin review" },
-    "save": "Save settings", "saving": "Saving...", "saveSuccess": "Bid settings saved", "saveError": "Failed to save bid settings", "loading": "Loading bid settings..."
+    "routingMode": "Bid routing mode",
+    "modes": {
+      "direct": "Direct buyer/seller",
+      "broker": "Broker controlled",
+      "adminReview": "Admin review"
+    },
+    "save": "Save settings",
+    "saving": "Saving...",
+    "saveSuccess": "Bid settings saved",
+    "saveError": "Failed to save bid settings",
+    "loading": "Loading bid settings..."
+  },
+  "BoatIntake": {
+    "nav": {
+      "supply": "Angebote",
+      "locations": "Standorte",
+      "about": "Über uns",
+      "login": "Einloggen"
+    },
+    "hero": {
+      "badge": "Kostenlose Anmeldung",
+      "title": "Verkaufen Sie Ihr Boot über Schepenkring",
+      "subtitle": "Füllen Sie Ihre Daten und Bootsinformationen aus. Unser Makler meldet sich innerhalb eines Werktages.",
+      "trust": {
+        "noCost": "Keine Vorabkosten",
+        "valuation": "Kostenlose Bewertung",
+        "experience": "25+ Jahre Erfahrung",
+        "personal": "Persönlicher Service"
+      }
+    },
+    "steps": [
+      "Ihre Daten",
+      "Boot-Details",
+      "Fotos & Dokumente",
+      "Übersicht"
+    ],
+    "contact": {
+      "title": "Ihre Kontaktdaten",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "email": "E-Mail-Adresse",
+      "phone": "Telefonnummer",
+      "streetAddress": "Straße + Nr.",
+      "postalCode": "Postleitzahl",
+      "city": "Stadt",
+      "location": "Standort",
+      "locationPlaceholder": "— Standort wählen —"
+    },
+    "boat": {
+      "title": "Boot-Details",
+      "brand": "Marke",
+      "model": "Modell",
+      "name": "Bootsname",
+      "buildYear": "Baujahr",
+      "askingPrice": "Kaufpreis (€)",
+      "length": "Länge (m)",
+      "width": "Breite (m)",
+      "draft": "Tiefgang (m)",
+      "vatStatus": "Mehrwertsteuerstatus",
+      "ceCategory": "CE-Kategorie",
+      "boatType": "Bootstyp",
+      "boatTypePlaceholder": "— Typ wählen —",
+      "description": "Beschreibung",
+      "descriptionHint": "{n}/{target} Zeichen für eine bessere Bewertung",
+      "vatOptions": {
+        "unknown": "Unbekannt",
+        "included": "MwSt. inkl.",
+        "excluded": "MwSt. exkl.",
+        "marginal": "Marge"
+      },
+      "ceOptions": {
+        "unknown": "Unbekannt",
+        "A": "A — Ozean",
+        "B": "B — Offshore",
+        "C": "C — Küstengewässer",
+        "D": "D — Geschützte Gewässer",
+        "none": "Keine"
+      },
+      "boatTypes": [
+        "Segelboot",
+        "Motoryacht",
+        "Tender",
+        "Speedboot",
+        "Katamaran",
+        "Kajütboot",
+        "Offenes Motorboot",
+        "Flachbodenboot",
+        "Motorboot",
+        "Gewerbefahrzeug",
+        "Sonstiges"
+      ]
+    },
+    "media": {
+      "title": "Fotos & Dokumente",
+      "photosLabel": "Fotos",
+      "photosHint": "{n}/12 — mindestens 12 Fotos für eine hohe Bewertung",
+      "addPhotos": "Fotos hinzufügen",
+      "uploading": "Hochladen…",
+      "dropZone": "Klicken oder Fotos hierher ziehen",
+      "docsLabel": "Dokumente",
+      "docsHint": "CE-Zertifikat, Mehrwertsteuerdokument, Rechnung, Zulassungsbescheinigung, Wartungsheft",
+      "uploadBtn": "Hochladen",
+      "uploaded": "Hochgeladen",
+      "docTypes": {
+        "ce_certificate": "CE-Zertifikat",
+        "vat_document": "Mehrwertsteuerdokument",
+        "invoice": "Kaufrechnung",
+        "registration": "Zulassungsbescheinigung",
+        "maintenance": "Wartungsheft",
+        "other": "Sonstiges Dokument"
+      }
+    },
+    "review": {
+      "title": "Anmeldung eingereicht!",
+      "confirm": "Vielen Dank. Wir haben eine Bestätigung an {email} gesendet.",
+      "completeness": "Vollständigkeit",
+      "totalScore": "Gesamtpunktzahl",
+      "fields": "Grunddaten",
+      "photos": "Fotos",
+      "description": "Beschreibung",
+      "documents": "Dokumente",
+      "missingTitle": "Noch zu verbessern:",
+      "outro": "Unser Makler meldet sich innerhalb eines Werktages.",
+      "viewSupply": "Unser Angebot ansehen"
+    },
+    "nav_buttons": {
+      "prev": "← Zurück",
+      "next": "Weiter",
+      "submit": "Anmelden",
+      "toReview": "Übersicht anzeigen",
+      "loading": "Lädt…"
+    },
+    "errors": {
+      "required": "Pflichtfeld",
+      "emailInvalid": "Gültige E-Mail-Adresse erforderlich",
+      "priceInvalid": "Bitte geben Sie einen gültigen Kaufpreis ein",
+      "locationRequired": "Bitte wählen Sie einen Schepenkring-Standort",
+      "globalError": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+    },
+    "footer": "Schepenkring — Der Spezialist für Bootsverkauf",
+    "newBoatCta": "Neues Boot anmelden"
+  },
+  "KycDashboard": {
+    "pageTitle": "KYC-Akten",
+    "pageSubtitle": "Compliance-Akten für alle Transaktionen",
+    "newCase": "Neue Akte",
+    "searchPlaceholder": "Suche nach Name, E-Mail, Aktennummer...",
+    "allStatuses": "Alle Status",
+    "allRiskLevels": "Alle Risikostufen",
+    "noCasesFound": "Keine KYC-Akten gefunden",
+    "casesTotal": "{n} Akten insgesamt",
+    "prevPage": "← Zurück",
+    "nextPage": "Weiter →",
+    "pageOf": "Seite {page} / {last}",
+    "stats": {
+      "open": "Offene Akten",
+      "waitingDocuments": "Warte auf Dokumente",
+      "highRisk": "Hohes Risiko",
+      "underReview": "In Prüfung",
+      "approvedMonth": "Genehmigt (Monat)"
+    },
+    "status": {
+      "draft": "Entwurf",
+      "in_progress": "In Bearbeitung",
+      "waiting_documents": "Warte auf Docs",
+      "under_review": "In Prüfung",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt",
+      "high_risk": "Hohes Risiko",
+      "reported": "Bei FIU gemeldet"
+    },
+    "risk": {
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch",
+      "critical": "Kritisch"
+    },
+    "riskLegend": {
+      "0-20": "Niedrig",
+      "21-60": "Mittel",
+      "61-100": "Hoch",
+      "100+": "Kritisch"
+    },
+    "flag": {
+      "warning": "Warnung",
+      "blocking": "Blockierend",
+      "critical": "Kritisch"
+    },
+    "col": {
+      "case": "Akte",
+      "buyer": "Käufer",
+      "boat": "Boot",
+      "value": "Wert",
+      "risk": "Risiko",
+      "status": "Status",
+      "date": "Datum"
+    },
+    "blocking": "Blockiert",
+    "blocksDetail": "⛔ Blockiert Deal",
+    "detail": {
+      "backToList": "Zurück",
+      "statusChange": "Status ändern",
+      "notFound": "Akte nicht gefunden.",
+      "riskScore": "Risikopunktzahl",
+      "points": "Punkte",
+      "caseData": "Aktendaten",
+      "documents": "Dokumente",
+      "noDocuments": "Noch keine Dokumente",
+      "timeline": "Zeitachse",
+      "noActivity": "Keine Aktivität",
+      "verify": "Verifizieren",
+      "verified": "Verifiziert",
+      "uploadDocument": "Dokument hochladen",
+      "uploading": "Hochladen…",
+      "required": "Pflichtfeld",
+      "saveStatus": "Speichern",
+      "cancel": "Abbrechen",
+      "changeStatus": "Status ändern",
+      "reasonPlaceholder": "Grund / Erläuterung...",
+      "noAnswer": "Noch keine Antwort",
+      "yes": "Ja",
+      "no": "Nein",
+      "notePlaceholder": "Anmerkung (optional)...",
+      "chooseOption": "— Option wählen —",
+      "answeredOk": "Antwort gespeichert",
+      "saveFailed": "Speichern fehlgeschlagen.",
+      "uploadOk": "Dokument hochgeladen",
+      "uploadFailed": "Upload fehlgeschlagen.",
+      "verifyOk": "Dokument verifiziert",
+      "verifyFailed": "Verifizierung fehlgeschlagen.",
+      "statusOk": "Status aktualisiert",
+      "statusFailed": "Statusaktualisierung fehlgeschlagen.",
+      "loadFailed": "KYC-Akte konnte nicht geladen werden.",
+      "createFailed": "KYC-Akte konnte nicht erstellt werden.",
+      "listLoadFailed": "KYC-Akten konnten nicht geladen werden."
+    },
+    "fields": {
+      "buyer": "Käufer",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "address": "Adresse",
+      "iban": "IBAN",
+      "seller": "Verkäufer",
+      "boat": "Boot",
+      "boatType": "Typ",
+      "value": "Wert",
+      "payment": "Zahlung",
+      "broker": "Makler",
+      "location": "Standort"
+    },
+    "party": {
+      "buyer": "Käufer",
+      "seller": "Verkäufer",
+      "boat": "Boot"
+    },
+    "docTypes": {
+      "passport": "Reisepass",
+      "driving_license": "Führerschein",
+      "proof_of_address": "Adressnachweis",
+      "bank_proof": "Banknachweis",
+      "ownership_proof": "Eigentumsnachweis",
+      "boat_papers": "Bootspapiere",
+      "invoice": "Rechnung",
+      "registration": "Zulassung",
+      "ce_documents": "CE-Dokumente",
+      "maintenance": "Wartungsheft",
+      "source_of_funds": "Mittelherkunft",
+      "other": "Sonstiges"
+    }
   }
 }

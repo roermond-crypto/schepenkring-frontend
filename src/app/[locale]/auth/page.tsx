@@ -96,6 +96,8 @@ export default async function AuthPage({ params, searchParams }: AuthPageProps) 
     verifyEmailPrompt: authString("verifyEmailPrompt", "Please verify your email address before logging in."),
     offices: authDict.offices || "Global Offices",
         buyer: authDict.buyer || "Buyer",
+        intakeCtaLabel: authString("intakeCtaLabel", "Nieuwe boot aanmelden"),
+        intakeCtaSubtext: authString("intakeCtaSubtext", "Wilt u uw boot verkopen?"),
         seller: authDict.seller || "Seller",
         benefits: authDict.benefits || {},
       }}

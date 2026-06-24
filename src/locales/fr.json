@@ -125,7 +125,9 @@
     "signin": "Se connecter",
     "signupNotice": "L'inscription n'est disponible que pour les acheteurs et vendeurs. Les utilisateurs Employee, Location et Admin sont crÃ©Ã©s par l'administrateur systÃ¨me.",
     "submitLogin": "Connexion",
-    "submitSignup": "S'inscrire comme acheteur / vendeur"
+    "submitSignup": "S'inscrire comme acheteur / vendeur",
+    "intakeCtaLabel": "Inscrire un nouveau bateau",
+    "intakeCtaSubtext": "Vous souhaitez vendre votre bateau ?"
   },
   "dashboard": {
     "welcome": "Content de vous revoir",
@@ -2091,26 +2093,335 @@
     }
   },
   "SellerDashboard": {
-    "stats": { "boats": "My boats", "bids": "New bids", "chats": "Open chats", "contracts": "Contracts" },
-    "sections": { "boats": "My boats", "latestBids": "Latest bids" },
-    "actions": { "view": "View", "manageBid": "Manage bid", "openChat": "Open chat" },
-    "labels": { "bids": "bids", "bid": "Bid", "buyer": "Buyer" },
-    "empty": { "boats": "No boats yet.", "bids": "No bids yet." }
+    "stats": {
+      "boats": "My boats",
+      "bids": "New bids",
+      "chats": "Open chats",
+      "contracts": "Contracts"
+    },
+    "sections": {
+      "boats": "My boats",
+      "latestBids": "Latest bids"
+    },
+    "actions": {
+      "view": "View",
+      "manageBid": "Manage bid",
+      "openChat": "Open chat"
+    },
+    "labels": {
+      "bids": "bids",
+      "bid": "Bid",
+      "buyer": "Buyer"
+    },
+    "empty": {
+      "boats": "No boats yet.",
+      "bids": "No bids yet."
+    }
   },
   "DashboardBids": {
-    "eyebrow": "Bidding", "title": "Bids", "subtitle": "Review, accept, reject or counter offers on your boats.",
-    "actions": { "accept": "Accept", "reject": "Reject", "counter": "Counter", "sendCounter": "Send counter", "chat": "Open chat" },
-    "labels": { "boat": "Boat", "buyer": "Buyer", "verified": "Verified" },
-    "counter": { "amount": "Counter amount" },
-    "empty": { "title": "No bids yet", "subtitle": "When a buyer places a bid, it will appear here." },
-    "toasts": { "accept": "Bid accepted", "reject": "Bid rejected", "counter": "Counter offer sent", "failed": "Action failed" }
+    "eyebrow": "Bidding",
+    "title": "Bids",
+    "subtitle": "Review, accept, reject or counter offers on your boats.",
+    "actions": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "counter": "Counter",
+      "sendCounter": "Send counter",
+      "chat": "Open chat"
+    },
+    "labels": {
+      "boat": "Boat",
+      "buyer": "Buyer",
+      "verified": "Verified"
+    },
+    "counter": {
+      "amount": "Counter amount"
+    },
+    "empty": {
+      "title": "No bids yet",
+      "subtitle": "When a buyer places a bid, it will appear here."
+    },
+    "toasts": {
+      "accept": "Bid accepted",
+      "reject": "Bid rejected",
+      "counter": "Counter offer sent",
+      "failed": "Action failed"
+    }
   },
   "LocationBidSettings": {
-    "title": "Bid settings", "subtitle": "Control bidding visibility and routing for this location.",
+    "title": "Bid settings",
+    "subtitle": "Control bidding visibility and routing for this location.",
     "bidsPageEnabled": "Show bids page for users at this location",
     "sellerNotifications": "Notify seller on new bids",
     "directChat": "Allow direct buyer/seller chat",
-    "routingMode": "Bid routing mode", "modes": { "direct": "Direct buyer/seller", "broker": "Broker controlled", "adminReview": "Admin review" },
-    "save": "Save settings", "saving": "Saving...", "saveSuccess": "Bid settings saved", "saveError": "Failed to save bid settings", "loading": "Loading bid settings..."
+    "routingMode": "Bid routing mode",
+    "modes": {
+      "direct": "Direct buyer/seller",
+      "broker": "Broker controlled",
+      "adminReview": "Admin review"
+    },
+    "save": "Save settings",
+    "saving": "Saving...",
+    "saveSuccess": "Bid settings saved",
+    "saveError": "Failed to save bid settings",
+    "loading": "Loading bid settings..."
+  },
+  "BoatIntake": {
+    "nav": {
+      "supply": "Offres",
+      "locations": "Agences",
+      "about": "À propos",
+      "login": "Connexion"
+    },
+    "hero": {
+      "badge": "Inscription gratuite",
+      "title": "Vendez votre bateau via Schepenkring",
+      "subtitle": "Remplissez vos coordonnées et les informations de votre bateau. Notre courtier vous contactera dans un jour ouvrable.",
+      "trust": {
+        "noCost": "Aucun frais initial",
+        "valuation": "Évaluation gratuite",
+        "experience": "25+ ans d'expérience",
+        "personal": "Service personnalisé"
+      }
+    },
+    "steps": [
+      "Vos coordonnées",
+      "Détails du bateau",
+      "Photos & docs",
+      "Résumé"
+    ],
+    "contact": {
+      "title": "Vos coordonnées",
+      "firstName": "Prénom",
+      "lastName": "Nom de famille",
+      "email": "Adresse e-mail",
+      "phone": "Numéro de téléphone",
+      "streetAddress": "Rue + numéro",
+      "postalCode": "Code postal",
+      "city": "Ville",
+      "location": "Agence",
+      "locationPlaceholder": "— Choisir une agence —"
+    },
+    "boat": {
+      "title": "Détails du bateau",
+      "brand": "Marque",
+      "model": "Modèle",
+      "name": "Nom du bateau",
+      "buildYear": "Année de construction",
+      "askingPrice": "Prix demandé (€)",
+      "length": "Longueur (m)",
+      "width": "Largeur (m)",
+      "draft": "Tirant d'eau (m)",
+      "vatStatus": "Statut TVA",
+      "ceCategory": "Catégorie CE",
+      "boatType": "Type de bateau",
+      "boatTypePlaceholder": "— Choisir un type —",
+      "description": "Description",
+      "descriptionHint": "{n}/{target} caractères pour un meilleur score",
+      "vatOptions": {
+        "unknown": "Inconnu",
+        "included": "TVA incluse",
+        "excluded": "TVA exclue",
+        "marginal": "Marge"
+      },
+      "ceOptions": {
+        "unknown": "Inconnu",
+        "A": "A — Océan",
+        "B": "B — Large",
+        "C": "C — Côtier",
+        "D": "D — Eaux abritées",
+        "none": "Aucune"
+      },
+      "boatTypes": [
+        "Voilier",
+        "Yacht à moteur",
+        "Annexe",
+        "Bateau rapide",
+        "Catamaran",
+        "Bateau à cabine",
+        "Bateau à moteur ouvert",
+        "Bateau fond plat",
+        "Bateau à moteur",
+        "Navire commercial",
+        "Autre"
+      ]
+    },
+    "media": {
+      "title": "Photos & documents",
+      "photosLabel": "Photos",
+      "photosHint": "{n}/12 — au moins 12 photos pour un score élevé",
+      "addPhotos": "Ajouter des photos",
+      "uploading": "Téléchargement…",
+      "dropZone": "Cliquez ou glissez des photos ici",
+      "docsLabel": "Documents",
+      "docsHint": "Certificat CE, document TVA, facture, certificat d'immatriculation, carnet d'entretien",
+      "uploadBtn": "Télécharger",
+      "uploaded": "Téléchargé",
+      "docTypes": {
+        "ce_certificate": "Certificat CE",
+        "vat_document": "Document TVA",
+        "invoice": "Facture d'achat",
+        "registration": "Certificat d'immatriculation",
+        "maintenance": "Carnet d'entretien",
+        "other": "Autre document"
+      }
+    },
+    "review": {
+      "title": "Inscription envoyée !",
+      "confirm": "Merci. Nous avons envoyé une confirmation à {email}.",
+      "completeness": "Complétude",
+      "totalScore": "score total",
+      "fields": "Données de base",
+      "photos": "Photos",
+      "description": "Description",
+      "documents": "Documents",
+      "missingTitle": "Encore à améliorer :",
+      "outro": "Notre courtier vous contactera dans un jour ouvrable.",
+      "viewSupply": "Voir nos offres"
+    },
+    "nav_buttons": {
+      "prev": "← Précédent",
+      "next": "Suivant",
+      "submit": "Soumettre",
+      "toReview": "Voir le résumé",
+      "loading": "Chargement…"
+    },
+    "errors": {
+      "required": "Obligatoire",
+      "emailInvalid": "Adresse e-mail valide requise",
+      "priceInvalid": "Veuillez entrer un prix demandé valide",
+      "locationRequired": "Veuillez choisir une agence Schepenkring",
+      "globalError": "Une erreur est survenue. Veuillez réessayer."
+    },
+    "footer": "Schepenkring — Le spécialiste de la vente de bateaux",
+    "newBoatCta": "Inscrire un nouveau bateau"
+  },
+  "KycDashboard": {
+    "pageTitle": "Dossiers KYC",
+    "pageSubtitle": "Dossiers de conformité pour toutes les transactions",
+    "newCase": "Nouveau dossier",
+    "searchPlaceholder": "Rechercher par nom, e-mail, numéro de dossier...",
+    "allStatuses": "Tous les statuts",
+    "allRiskLevels": "Tous les niveaux de risque",
+    "noCasesFound": "Aucun dossier KYC trouvé",
+    "casesTotal": "{n} dossiers au total",
+    "prevPage": "← Précédent",
+    "nextPage": "Suivant →",
+    "pageOf": "Page {page} / {last}",
+    "stats": {
+      "open": "Dossiers ouverts",
+      "waitingDocuments": "En attente de documents",
+      "highRisk": "Risque élevé",
+      "underReview": "En cours d'examen",
+      "approvedMonth": "Approuvés (mois)"
+    },
+    "status": {
+      "draft": "Brouillon",
+      "in_progress": "En cours",
+      "waiting_documents": "Attend docs",
+      "under_review": "En examen",
+      "approved": "Approuvé",
+      "rejected": "Rejeté",
+      "high_risk": "Risque élevé",
+      "reported": "Signalé à la CRF"
+    },
+    "risk": {
+      "low": "Faible",
+      "medium": "Moyen",
+      "high": "Élevé",
+      "critical": "Critique"
+    },
+    "riskLegend": {
+      "0-20": "Faible",
+      "21-60": "Moyen",
+      "61-100": "Élevé",
+      "100+": "Critique"
+    },
+    "flag": {
+      "warning": "Avertissement",
+      "blocking": "Bloquant",
+      "critical": "Critique"
+    },
+    "col": {
+      "case": "Dossier",
+      "buyer": "Acheteur",
+      "boat": "Bateau",
+      "value": "Valeur",
+      "risk": "Risque",
+      "status": "Statut",
+      "date": "Date"
+    },
+    "blocking": "Bloque",
+    "blocksDetail": "⛔ Bloque le deal",
+    "detail": {
+      "backToList": "Retour",
+      "statusChange": "Modifier le statut",
+      "notFound": "Dossier introuvable.",
+      "riskScore": "Score de risque",
+      "points": "points",
+      "caseData": "Données du dossier",
+      "documents": "Documents",
+      "noDocuments": "Aucun document encore",
+      "timeline": "Chronologie",
+      "noActivity": "Aucune activité",
+      "verify": "Vérifier",
+      "verified": "Vérifié",
+      "uploadDocument": "Télécharger un document",
+      "uploading": "Téléchargement…",
+      "required": "Obligatoire",
+      "saveStatus": "Enregistrer",
+      "cancel": "Annuler",
+      "changeStatus": "Modifier le statut",
+      "reasonPlaceholder": "Raison / explication...",
+      "noAnswer": "Pas encore de réponse",
+      "yes": "Oui",
+      "no": "Non",
+      "notePlaceholder": "Note (facultatif)...",
+      "chooseOption": "— Choisir une option —",
+      "answeredOk": "Réponse enregistrée",
+      "saveFailed": "Échec de l'enregistrement.",
+      "uploadOk": "Document téléchargé",
+      "uploadFailed": "Échec du téléchargement.",
+      "verifyOk": "Document vérifié",
+      "verifyFailed": "Échec de la vérification.",
+      "statusOk": "Statut mis à jour",
+      "statusFailed": "Échec de la mise à jour du statut.",
+      "loadFailed": "Impossible de charger le dossier KYC.",
+      "createFailed": "Impossible de créer le dossier KYC.",
+      "listLoadFailed": "Impossible de charger les dossiers KYC."
+    },
+    "fields": {
+      "buyer": "Acheteur",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "address": "Adresse",
+      "iban": "IBAN",
+      "seller": "Vendeur",
+      "boat": "Bateau",
+      "boatType": "Type",
+      "value": "Valeur",
+      "payment": "Paiement",
+      "broker": "Courtier",
+      "location": "Agence"
+    },
+    "party": {
+      "buyer": "Acheteur",
+      "seller": "Vendeur",
+      "boat": "Bateau"
+    },
+    "docTypes": {
+      "passport": "Passeport",
+      "driving_license": "Permis de conduire",
+      "proof_of_address": "Justificatif de domicile",
+      "bank_proof": "Relevé bancaire",
+      "ownership_proof": "Preuve de propriété",
+      "boat_papers": "Documents du bateau",
+      "invoice": "Facture",
+      "registration": "Enregistrement",
+      "ce_documents": "Documents CE",
+      "maintenance": "Carnet d'entretien",
+      "source_of_funds": "Origine des fonds",
+      "other": "Autre"
+    }
   }
 }

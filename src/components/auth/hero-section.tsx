@@ -89,6 +89,8 @@ type HeroSectionProps = {
     secureAccess: string;
     buyerSignup: string;
     sellerSignup: string;
+    intakeCtaLabel: string;
+    intakeCtaSubtext: string;
     loginHeroTitle: string;
     buyerHeroTitle: string;
     sellerHeroTitle: string;
@@ -635,6 +637,17 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                     {mode === 'login' ? copy.noAccountSignup : copy.alreadyHaveAccount}
                   </span>
                 </button>
+              </div>
+
+              {/* Boot aanmelden CTA */}
+              <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
+                <p className="text-xs text-slate-400 mb-3">{copy.intakeCtaSubtext}</p>
+                <Link
+                  href={`/${locale}/boot-aanmelden`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-[#003566] text-[#003566] text-sm font-bold hover:bg-[#003566] hover:text-white transition-colors dark:border-sky-400 dark:text-sky-400 dark:hover:bg-sky-400 dark:hover:text-slate-900"
+                >
+                  {copy.intakeCtaLabel} →
+                </Link>
               </div>
             </form>
           </div>

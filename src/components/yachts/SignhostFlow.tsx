@@ -1809,12 +1809,16 @@ export function SignhostFlow({
   const params = useParams<{ role?: string }>();
   const role = params?.role?.toLowerCase();
   const canManageContract = role !== "client";
-  const canCreateClientInline = role === "admin" && Boolean(locationId);
   const sellerAddressInputRef = useRef<HTMLInputElement>(null);
   const buyerAddressInputRef = useRef<HTMLInputElement>(null);
+
+  const [activeLocationId, setActiveLocationId] = useState<number | null>(locationId);
+  useEffect(() => { setActiveLocationId(locationId); }, [locationId]);
+
+  const canCreateClientInline = role === "admin" && Boolean(activeLocationId);
   const selectedLocation = useMemo(
-    () => locationOptions.find((option) => option.id === locationId) || null,
-    [locationId, locationOptions],
+    () => locationOptions.find((option) => option.id === activeLocationId) || null,
+    [activeLocationId, locationOptions],
   );
   const storageKey = `contract_draft_${yachtId ?? "draft"}`;
 
@@ -1985,7 +1989,7 @@ export function SignhostFlow({
 
     void listScopedClientUsers({
       dashboardRole: role,
-      locationId: locationId ?? null,
+      locationId: activeLocationId ?? null,
     })
       .then((clients) => {
         if (!active) return;
@@ -2003,7 +2007,7 @@ export function SignhostFlow({
     return () => {
       active = false;
     };
-  }, [canManageContract, locationId, role]);
+  }, [canManageContract, activeLocationId, role]);
 
   useEffect(() => {
     if (!editorOpen) return;
@@ -2221,7 +2225,7 @@ export function SignhostFlow({
     void Promise.all([
       listContractParties({
         role_type: "seller",
-        location_id: locationId ?? undefined,
+        location_id: activeLocationId ?? undefined,
       }),
       listContractParties({
         role_type: "buyer",
@@ -2245,13 +2249,13 @@ export function SignhostFlow({
     return () => {
       active = false;
     };
-  }, [canManageContract, locationId]);
+  }, [canManageContract, activeLocationId]);
 
   const refreshContractParties = async () => {
     const [sellers, buyers] = await Promise.all([
       listContractParties({
         role_type: "seller",
-        location_id: locationId ?? undefined,
+        location_id: activeLocationId ?? undefined,
       }),
       listContractParties({
         role_type: "buyer",
@@ -2510,7 +2514,7 @@ export function SignhostFlow({
   };
 
   const handleCreateClient = async () => {
-    if (!locationId) {
+    if (!activeLocationId) {
       toast.error("Select a yacht location before creating a client.");
       return;
     }
@@ -2529,7 +2533,7 @@ export function SignhostFlow({
       const { user: createdClient, temporaryPassword } =
         await createScopedClientUser({
           dashboardRole: role,
-          locationId,
+          locationId: activeLocationId,
           name: trimmedName,
           email: trimmedEmail,
           phone: createClientForm.phone.trim() || null,
@@ -2620,7 +2624,7 @@ export function SignhostFlow({
   };
 
   const handleCreateContractUser = async (roleType: "seller" | "buyer") => {
-    if (!locationId) {
+    if (!activeLocationId) {
       toast.error("Select a yacht location before creating a user.");
       return;
     }
@@ -2655,7 +2659,7 @@ export function SignhostFlow({
       const { user: createdUser, temporaryPassword } =
         await createScopedClientUser({
           dashboardRole: role,
-          locationId,
+          locationId: activeLocationId,
           name: baseValues.name,
           email: baseValues.email,
           phone: baseValues.phone || null,
@@ -2756,7 +2760,7 @@ export function SignhostFlow({
 
   const handleSaveContact = async () => {
     const roleType = contactDialogRole;
-    const payload = buildContractPartyPayload(roleType, contactForm, locationId);
+    const payload = buildContractPartyPayload(roleType, contactForm, activeLocationId);
 
     if (!payload.name) {
       toast.error("Name is required.");
@@ -3099,13 +3103,24 @@ export function SignhostFlow({
     }
   };
 
+  const handleLocationChange = async (newLocationId: number) => {
+    setActiveLocationId(newLocationId);
+    if (!yachtId) return;
+    try {
+      await api.patch(`/yachts/${yachtId}`, { location_id: newLocationId });
+      toast.success("Locatie opgeslagen.");
+    } catch {
+      toast.error("Locatie opslaan mislukt.");
+    }
+  };
+
   const handleGenerateContract = async () => {
     if (!yachtId) {
       toast.error("Save the vessel first before generating the contract PDF.");
       return;
     }
 
-    if (!locationId) {
+    if (!activeLocationId) {
       toast.error("Select a sales location before generating the contract.");
       return;
     }
@@ -3124,7 +3139,7 @@ export function SignhostFlow({
           : undefined;
 
       const res = await signhostApi.generateYachtContract(yachtId, {
-        location_id: locationId,
+        location_id: activeLocationId,
         title: `${
           contractTemplateKey === "escrow_form"
             ? "Escrow account service form"
@@ -3435,7 +3450,7 @@ export function SignhostFlow({
           <Button
             type="button"
             onClick={handleGenerateContract}
-            disabled={isGenerating || !locationId || !yachtId}
+            disabled={isGenerating || !activeLocationId || !yachtId}
             className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
           >
             {isGenerating ? (
@@ -3501,17 +3516,44 @@ export function SignhostFlow({
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
               <Globe2 size={14} />
               {titleCase(draft.language)}
-              <span className="text-slate-300">•</span>
-              {selectedLocation?.name ||
-                yachtData?.vessel_lying ||
-                yachtData?.location_city ||
-                editorCopy.noLocationSelected}
             </div>
           </div>
 
-          {!(locationId || yachtData?.vessel_lying || yachtData?.location_city) && (
+          <div className="px-6 mt-4">
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Verkooplocatie
+            </label>
+            {locationOptions.length > 0 ? (
+              <select
+                value={activeLocationId ?? ""}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val) void handleLocationChange(val);
+                }}
+                className="h-10 w-full max-w-xs rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              >
+                <option value="" disabled>
+                  {editorCopy.noLocationSelected}
+                </option>
+                {locationOptions.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm text-slate-500">
+                {selectedLocation?.name ||
+                  yachtData?.vessel_lying ||
+                  yachtData?.location_city ||
+                  editorCopy.noLocationSelected}
+              </p>
+            )}
+          </div>
+
+          {!activeLocationId && !yachtData?.vessel_lying && !yachtData?.location_city && locationOptions.length === 0 && (
             <div className="px-6 mt-5">
-              <div className=" flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+              <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                 <div>
                   <p className="font-bold">{editorCopy.locationRequired}</p>
@@ -4023,7 +4065,7 @@ export function SignhostFlow({
                       disabled={
                         creatingContractUserRole !== null ||
                         !canCreateClientInline ||
-                        !locationId
+                        !activeLocationId
                       }
                       className="mt-2 inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
                     >
@@ -4314,7 +4356,7 @@ export function SignhostFlow({
                       disabled={
                         creatingContractUserRole !== null ||
                         !canCreateClientInline ||
-                        !locationId
+                        !activeLocationId
                       }
                       className="mt-2 inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
                     >

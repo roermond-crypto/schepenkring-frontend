@@ -25,6 +25,7 @@ import {
   ArrowRight,
   HandCoins,
   Handshake,
+  ShieldCheck,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -139,6 +140,11 @@ export function Sidebar({
         title: "Boden",
         href: `${root}/offers`,
         icon: Handshake,
+      });
+      items.push({
+        title: "KYC",
+        href: `${root}/kyc`,
+        icon: ShieldCheck,
       });
       items.push({
         title: t.interaction,

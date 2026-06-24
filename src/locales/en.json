@@ -125,7 +125,9 @@
     "signin": "Sign in",
     "signupNotice": "Signup is available only for buyers and sellers. Employee, Location, and Admin users are created by the system administrator.",
     "submitLogin": "Login",
-    "submitSignup": "Sign up as buyer / seller"
+    "submitSignup": "Sign up as buyer / seller",
+    "intakeCtaLabel": "Register new boat",
+    "intakeCtaSubtext": "Want to sell your boat?"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -2176,5 +2178,263 @@
     "saveSuccess": "Bid settings saved",
     "saveError": "Failed to save bid settings",
     "loading": "Loading bid settings..."
+  },
+  "BoatIntake": {
+    "nav": {
+      "supply": "Listings",
+      "locations": "Locations",
+      "about": "About",
+      "login": "Log in"
+    },
+    "hero": {
+      "badge": "Free registration",
+      "title": "Sell your boat through Schepenkring",
+      "subtitle": "Fill in your details and boat information. Our broker will contact you within one business day.",
+      "trust": {
+        "noCost": "No upfront costs",
+        "valuation": "Free valuation",
+        "experience": "25+ years experience",
+        "personal": "Personal service"
+      }
+    },
+    "steps": [
+      "Your details",
+      "Boat details",
+      "Photos & docs",
+      "Overview"
+    ],
+    "contact": {
+      "title": "Your contact details",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email address",
+      "phone": "Phone number",
+      "streetAddress": "Street + number",
+      "postalCode": "Postal code",
+      "city": "City",
+      "location": "Branch",
+      "locationPlaceholder": "— Choose a branch —"
+    },
+    "boat": {
+      "title": "Boat details",
+      "brand": "Brand",
+      "model": "Model",
+      "name": "Boat name",
+      "buildYear": "Year built",
+      "askingPrice": "Asking price (€)",
+      "length": "Length (m)",
+      "width": "Width (m)",
+      "draft": "Draft (m)",
+      "vatStatus": "VAT status",
+      "ceCategory": "CE category",
+      "boatType": "Boat type",
+      "boatTypePlaceholder": "— Choose a type —",
+      "description": "Description",
+      "descriptionHint": "{n}/{target} characters for a better score",
+      "vatOptions": {
+        "unknown": "Unknown",
+        "included": "VAT included",
+        "excluded": "VAT excluded",
+        "marginal": "Margin"
+      },
+      "ceOptions": {
+        "unknown": "Unknown",
+        "A": "A — Ocean",
+        "B": "B — Offshore",
+        "C": "C — Coastal",
+        "D": "D — Sheltered water",
+        "none": "None"
+      },
+      "boatTypes": [
+        "Sailboat",
+        "Motor yacht",
+        "Tender",
+        "Speedboat",
+        "Catamaran",
+        "Cabin cruiser",
+        "Open motorboat",
+        "Flat-bottomed boat",
+        "Motorboat",
+        "Commercial vessel",
+        "Other"
+      ]
+    },
+    "media": {
+      "title": "Photos & documents",
+      "photosLabel": "Photos",
+      "photosHint": "{n}/12 — at least 12 photos for a high score",
+      "addPhotos": "Add photos",
+      "uploading": "Uploading…",
+      "dropZone": "Click or drag photos here",
+      "docsLabel": "Documents",
+      "docsHint": "CE certificate, VAT document, invoice, registration, maintenance booklet",
+      "uploadBtn": "Upload",
+      "uploaded": "Uploaded",
+      "docTypes": {
+        "ce_certificate": "CE certificate",
+        "vat_document": "VAT document",
+        "invoice": "Purchase invoice",
+        "registration": "Registration certificate",
+        "maintenance": "Maintenance booklet",
+        "other": "Other document"
+      }
+    },
+    "review": {
+      "title": "Listing submitted!",
+      "confirm": "Thank you. We have sent a confirmation to {email}.",
+      "completeness": "Completeness",
+      "totalScore": "total score",
+      "fields": "Basic details",
+      "photos": "Photos",
+      "description": "Description",
+      "documents": "Documents",
+      "missingTitle": "Still to improve:",
+      "outro": "Our broker will contact you within one business day.",
+      "viewSupply": "View our listings"
+    },
+    "nav_buttons": {
+      "prev": "← Back",
+      "next": "Next",
+      "submit": "Submit",
+      "toReview": "View overview",
+      "loading": "Loading…"
+    },
+    "errors": {
+      "required": "Required",
+      "emailInvalid": "Valid email address required",
+      "priceInvalid": "Please enter a valid asking price",
+      "locationRequired": "Please choose a Schepenkring branch",
+      "globalError": "An error occurred. Please try again."
+    },
+    "footer": "Schepenkring — The specialist in boat sales",
+    "newBoatCta": "Register new boat"
+  },
+  "KycDashboard": {
+    "pageTitle": "KYC files",
+    "pageSubtitle": "Compliance files for all transactions",
+    "newCase": "New file",
+    "searchPlaceholder": "Search by name, email, file number...",
+    "allStatuses": "All statuses",
+    "allRiskLevels": "All risk levels",
+    "noCasesFound": "No KYC files found",
+    "casesTotal": "{n} files total",
+    "prevPage": "← Previous",
+    "nextPage": "Next →",
+    "pageOf": "Page {page} / {last}",
+    "stats": {
+      "open": "Open files",
+      "waitingDocuments": "Awaiting documents",
+      "highRisk": "High risk",
+      "underReview": "Under review",
+      "approvedMonth": "Approved (month)"
+    },
+    "status": {
+      "draft": "Draft",
+      "in_progress": "In progress",
+      "waiting_documents": "Awaiting docs",
+      "under_review": "Under review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "high_risk": "High risk",
+      "reported": "Reported to FIU"
+    },
+    "risk": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "riskLegend": {
+      "0-20": "Low",
+      "21-60": "Medium",
+      "61-100": "High",
+      "100+": "Critical"
+    },
+    "flag": {
+      "warning": "Warning",
+      "blocking": "Blocking",
+      "critical": "Critical"
+    },
+    "col": {
+      "case": "File",
+      "buyer": "Buyer",
+      "boat": "Boat",
+      "value": "Value",
+      "risk": "Risk",
+      "status": "Status",
+      "date": "Date"
+    },
+    "blocking": "Blocks",
+    "blocksDeal": "⛔ Blocks deal",
+    "detail": {
+      "backToList": "Back",
+      "statusChange": "Change status",
+      "notFound": "File not found.",
+      "riskScore": "Risk score",
+      "points": "points",
+      "caseData": "File data",
+      "documents": "Documents",
+      "noDocuments": "No documents yet",
+      "timeline": "Timeline",
+      "noActivity": "No activity",
+      "verify": "Verify",
+      "verified": "Verified",
+      "uploadDocument": "Upload document",
+      "uploading": "Uploading…",
+      "required": "Required",
+      "saveStatus": "Save",
+      "cancel": "Cancel",
+      "changeStatus": "Change status",
+      "reasonPlaceholder": "Reason / explanation...",
+      "noAnswer": "No answer yet",
+      "yes": "Yes",
+      "no": "No",
+      "notePlaceholder": "Note (optional)...",
+      "chooseOption": "— Choose an option —",
+      "answeredOk": "Answer saved",
+      "saveFailed": "Save failed.",
+      "uploadOk": "Document uploaded",
+      "uploadFailed": "Upload failed.",
+      "verifyOk": "Document verified",
+      "verifyFailed": "Verification failed.",
+      "statusOk": "Status updated",
+      "statusFailed": "Status update failed.",
+      "loadFailed": "Could not load KYC file.",
+      "createFailed": "Could not create KYC file.",
+      "listLoadFailed": "Could not load KYC files."
+    },
+    "fields": {
+      "buyer": "Buyer",
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address",
+      "iban": "IBAN",
+      "seller": "Seller",
+      "boat": "Boat",
+      "boatType": "Type",
+      "value": "Value",
+      "payment": "Payment",
+      "broker": "Broker",
+      "location": "Branch"
+    },
+    "party": {
+      "buyer": "Buyer",
+      "seller": "Seller",
+      "boat": "Boat"
+    },
+    "docTypes": {
+      "passport": "Passport",
+      "driving_license": "Driving licence",
+      "proof_of_address": "Proof of address",
+      "bank_proof": "Bank statement",
+      "ownership_proof": "Proof of ownership",
+      "boat_papers": "Boat papers",
+      "invoice": "Invoice",
+      "registration": "Registration",
+      "ce_documents": "CE documents",
+      "maintenance": "Maintenance booklet",
+      "source_of_funds": "Source of funds",
+      "other": "Other"
+    }
   }
 }

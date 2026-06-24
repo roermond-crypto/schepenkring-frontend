@@ -125,7 +125,9 @@
     "signin": "Inloggen",
     "signupNotice": "Registratie is alleen beschikbaar voor kopers en verkopers. Employee-, Location- en Admin-accounts worden door de beheerder aangemaakt.",
     "submitLogin": "Inloggen",
-    "submitSignup": "Registreren als koper / verkoper"
+    "submitSignup": "Registreren als koper / verkoper",
+    "intakeCtaLabel": "Nieuwe boot aanmelden",
+    "intakeCtaSubtext": "Wilt u uw boot verkopen?"
   },
   "dashboard": {
     "welcome": "Welkom terug",
@@ -2174,5 +2176,263 @@
     "saveSuccess": "Instellingen opgeslagen",
     "saveError": "Opslaan mislukt",
     "loading": "Laden..."
+  },
+  "BoatIntake": {
+    "nav": {
+      "supply": "Aanbod",
+      "locations": "Vestigingen",
+      "about": "Over ons",
+      "login": "Inloggen"
+    },
+    "hero": {
+      "badge": "Gratis aanmelden",
+      "title": "Verkoop uw boot via Schepenkring",
+      "subtitle": "Vul uw gegevens en bootinformatie in. Onze makelaar neemt binnen één werkdag contact met u op.",
+      "trust": {
+        "noCost": "Geen kosten vooraf",
+        "valuation": "Gratis waardebepaling",
+        "experience": "25+ jaar ervaring",
+        "personal": "Persoonlijk contact"
+      }
+    },
+    "steps": [
+      "Uw gegevens",
+      "Boot details",
+      "Foto's & docs",
+      "Overzicht"
+    ],
+    "contact": {
+      "title": "Uw contactgegevens",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "email": "E-mailadres",
+      "phone": "Telefoonnummer",
+      "streetAddress": "Straat + nr",
+      "postalCode": "Postcode",
+      "city": "Stad",
+      "location": "Vestiging",
+      "locationPlaceholder": "— Kies een vestiging —"
+    },
+    "boat": {
+      "title": "Bootgegevens",
+      "brand": "Merk",
+      "model": "Model",
+      "name": "Bootnaam",
+      "buildYear": "Bouwjaar",
+      "askingPrice": "Vraagprijs (€)",
+      "length": "Lengte (m)",
+      "width": "Breedte (m)",
+      "draft": "Diepgang (m)",
+      "vatStatus": "BTW-status",
+      "ceCategory": "CE-categorie",
+      "boatType": "Type boot",
+      "boatTypePlaceholder": "— Kies een type —",
+      "description": "Omschrijving",
+      "descriptionHint": "{n}/{target} tekens voor een betere score",
+      "vatOptions": {
+        "unknown": "Onbekend",
+        "included": "BTW inclusief",
+        "excluded": "BTW exclusief",
+        "marginal": "Marge"
+      },
+      "ceOptions": {
+        "unknown": "Onbekend",
+        "A": "A — Oceaan",
+        "B": "B — Offshore",
+        "C": "C — Kustwater",
+        "D": "D — Beschut water",
+        "none": "Geen"
+      },
+      "boatTypes": [
+        "Zeilboot",
+        "Motorjacht",
+        "Sloep",
+        "Speedboot",
+        "Catamaran",
+        "Kajuitjacht",
+        "Open motorboot",
+        "Platbodem",
+        "Motorboot",
+        "Bedrijfsvaartuig",
+        "Anders"
+      ]
+    },
+    "media": {
+      "title": "Foto's & documenten",
+      "photosLabel": "Foto's",
+      "photosHint": "{n}/12 — minimaal 12 foto's voor een hoge score",
+      "addPhotos": "Foto's toevoegen",
+      "uploading": "Uploaden…",
+      "dropZone": "Klik of sleep foto's hierheen",
+      "docsLabel": "Documenten",
+      "docsHint": "CE-certificaat, BTW-document, factuur, registratiebewijs, onderhoudsboekje",
+      "uploadBtn": "Uploaden",
+      "uploaded": "Geüpload",
+      "docTypes": {
+        "ce_certificate": "CE-certificaat",
+        "vat_document": "BTW-document",
+        "invoice": "Aankoopfactuur",
+        "registration": "Registratiebewijs",
+        "maintenance": "Onderhoudsboekje",
+        "other": "Overig document"
+      }
+    },
+    "review": {
+      "title": "Aanmelding verstuurd!",
+      "confirm": "Bedankt. Wij hebben een bevestiging gestuurd naar {email}.",
+      "completeness": "Volledigheid",
+      "totalScore": "totaalscore",
+      "fields": "Basisgegevens",
+      "photos": "Foto's",
+      "description": "Beschrijving",
+      "documents": "Documenten",
+      "missingTitle": "Nog te verbeteren:",
+      "outro": "Onze makelaar neemt binnen één werkdag contact met u op.",
+      "viewSupply": "Bekijk ons aanbod"
+    },
+    "nav_buttons": {
+      "prev": "← Vorige",
+      "next": "Volgende",
+      "submit": "Aanmelden",
+      "toReview": "Overzicht bekijken",
+      "loading": "Bezig…"
+    },
+    "errors": {
+      "required": "Verplicht",
+      "emailInvalid": "Geldig e-mailadres verplicht",
+      "priceInvalid": "Voer een geldige vraagprijs in",
+      "locationRequired": "Kies een Schepenkring vestiging",
+      "globalError": "Er is een fout opgetreden. Probeer opnieuw."
+    },
+    "footer": "Schepenkring — De specialist in scheepsverkoop",
+    "newBoatCta": "Nieuwe boot aanmelden"
+  },
+  "KycDashboard": {
+    "pageTitle": "KYC-dossiers",
+    "pageSubtitle": "Compliance dossiers voor alle transacties",
+    "newCase": "Nieuw dossier",
+    "searchPlaceholder": "Zoek op naam, e-mail, dossiernummer...",
+    "allStatuses": "Alle statussen",
+    "allRiskLevels": "Alle risiconiveaus",
+    "noCasesFound": "Geen KYC-dossiers gevonden",
+    "casesTotal": "{n} dossiers totaal",
+    "prevPage": "← Vorige",
+    "nextPage": "Volgende →",
+    "pageOf": "Pagina {page} / {last}",
+    "stats": {
+      "open": "Open dossiers",
+      "waitingDocuments": "Wacht op documenten",
+      "highRisk": "Hoog risico",
+      "underReview": "Onder review",
+      "approvedMonth": "Goedgekeurd (maand)"
+    },
+    "status": {
+      "draft": "Concept",
+      "in_progress": "In behandeling",
+      "waiting_documents": "Wacht op docs",
+      "under_review": "Onder review",
+      "approved": "Goedgekeurd",
+      "rejected": "Afgewezen",
+      "high_risk": "Hoog risico",
+      "reported": "Gemeld bij FIU"
+    },
+    "risk": {
+      "low": "Laag",
+      "medium": "Gemiddeld",
+      "high": "Hoog",
+      "critical": "Kritiek"
+    },
+    "riskLegend": {
+      "0-20": "Laag",
+      "21-60": "Gemiddeld",
+      "61-100": "Hoog",
+      "100+": "Kritiek"
+    },
+    "flag": {
+      "warning": "Waarschuwing",
+      "blocking": "Blokkerend",
+      "critical": "Kritiek"
+    },
+    "col": {
+      "case": "Dossier",
+      "buyer": "Koper",
+      "boat": "Boot",
+      "value": "Waarde",
+      "risk": "Risico",
+      "status": "Status",
+      "date": "Datum"
+    },
+    "blocking": "Blokkeert",
+    "blocksDeal": "⛔ Blokkeert deal",
+    "detail": {
+      "backToList": "Terug",
+      "statusChange": "Status wijzigen",
+      "notFound": "Dossier niet gevonden.",
+      "riskScore": "Risicoscore",
+      "points": "punten",
+      "caseData": "Dossiergegevens",
+      "documents": "Documenten",
+      "noDocuments": "Nog geen documenten",
+      "timeline": "Timeline",
+      "noActivity": "Geen activiteit",
+      "verify": "Verifieer",
+      "verified": "Geverifieerd",
+      "uploadDocument": "Document uploaden",
+      "uploading": "Uploaden…",
+      "required": "Verplicht",
+      "saveStatus": "Opslaan",
+      "cancel": "Annuleren",
+      "changeStatus": "Status wijzigen",
+      "reasonPlaceholder": "Reden / toelichting...",
+      "noAnswer": "Nog geen antwoord",
+      "yes": "Ja",
+      "no": "Nee",
+      "notePlaceholder": "Toelichting (optioneel)...",
+      "chooseOption": "— Kies een optie —",
+      "answeredOk": "Antwoord opgeslagen",
+      "saveFailed": "Opslaan mislukt.",
+      "uploadOk": "Document geüpload",
+      "uploadFailed": "Upload mislukt.",
+      "verifyOk": "Document geverifieerd",
+      "verifyFailed": "Verificatie mislukt.",
+      "statusOk": "Status bijgewerkt",
+      "statusFailed": "Status update mislukt.",
+      "loadFailed": "Kon KYC-dossier niet laden.",
+      "createFailed": "Kon KYC-dossier niet aanmaken.",
+      "listLoadFailed": "Kon KYC-dossiers niet laden."
+    },
+    "fields": {
+      "buyer": "Koper",
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "address": "Adres",
+      "iban": "IBAN",
+      "seller": "Verkoper",
+      "boat": "Boot",
+      "boatType": "Type",
+      "value": "Waarde",
+      "payment": "Betaling",
+      "broker": "Makelaar",
+      "location": "Vestiging"
+    },
+    "party": {
+      "buyer": "Koper",
+      "seller": "Verkoper",
+      "boat": "Boot"
+    },
+    "docTypes": {
+      "passport": "Paspoort",
+      "driving_license": "Rijbewijs",
+      "proof_of_address": "Adresbewijs",
+      "bank_proof": "Bankbewijs",
+      "ownership_proof": "Eigendomsbewijs",
+      "boat_papers": "Bootpapieren",
+      "invoice": "Factuur",
+      "registration": "Registratie",
+      "ce_documents": "CE-documenten",
+      "maintenance": "Onderhoud",
+      "source_of_funds": "Herkomst vermogen",
+      "other": "Overig"
+    }
   }
 }
