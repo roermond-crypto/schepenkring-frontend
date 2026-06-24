@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SUPPORTED_LOCALES, type AppLocale } from "@/lib/i18n";
+import { api } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -142,6 +143,14 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
 
   const navigateToLocale = async (nextLocale: AppLocale) => {
     await flushDraftBeforeNavigate();
+
+    // Persist locale preference to user profile (best-effort, non-blocking).
+    // Only sends the locale field so the name is never overwritten.
+    void api.patch("/me/profile", { locale: nextLocale }).catch(() => {
+      // Ignore errors — user may not be logged in (public pages).
+      // Navigation still happens regardless.
+    });
+
     const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
     const query = searchParams.toString();
     const nextPath = `/${nextLocale}${pathWithoutLocale === "/" ? "" : pathWithoutLocale}${query ? `?${query}` : ""}`;

@@ -538,6 +538,15 @@ export default function DashboardAccountPage() {
           locale: profile.locale || null,
         });
         setUser(response.data);
+        // If the user changed their locale, navigate to the matching URL locale
+        const savedLocale = profile.locale;
+        if (savedLocale && savedLocale !== normalizedRouteLocale) {
+          const currentPath = window.location.pathname;
+          const pathWithoutLocale =
+            currentPath.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
+          router.push(`/${savedLocale}${pathWithoutLocale}`);
+          return; // skip success toast — page will reload
+        }
       } else if (activeTab === "personal") {
         const response = await updateMePersonal({
           first_name: personal.first_name || null,
