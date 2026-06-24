@@ -47,8 +47,7 @@ import {
 } from "@/lib/signhost/latest-signhost";
 
 const STORAGE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || "https://app.schepen-kring.nl/storage/";
-const PLACEHOLDER_IMAGE =
-  "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=600&q=80";
+const PLACEHOLDER_IMAGE = "/schepenkring-logo.png";
 
 type FleetStats = {
   total: number;

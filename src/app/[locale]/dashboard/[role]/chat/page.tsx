@@ -1,16 +1,22 @@
-import { ClientChatPage } from "@/components/dashboard/chat/ClientChatPage";
+import { redirect } from "next/navigation";
 import { ChatPage } from "@/components/dashboard/chat/ChatPage";
+import { normalizeRole } from "@/lib/auth/roles";
 
 export default async function ChatPageRoute({
   params,
 }: {
-  params: Promise<{ role: string }>;
+  params: Promise<{ locale: string; role: string }>;
 }) {
-  const { role } = await params;
+  const { locale, role: rawRole } = await params;
+  const role = normalizeRole(rawRole) ?? "client";
+
+  if (role === "client" || role === "buyer" || role === "seller") {
+    redirect(`/${locale}/dashboard/${role}`);
+  }
 
   return (
     <div className="w-full">
-      {role === "client" ? <ClientChatPage /> : <ChatPage />}
+      <ChatPage />
     </div>
   );
 }

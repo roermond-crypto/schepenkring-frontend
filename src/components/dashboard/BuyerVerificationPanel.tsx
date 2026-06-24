@@ -18,16 +18,13 @@ import {
   saveBuyerVerificationAnswers,
   saveBuyerVerificationProfile,
   startBuyerVerification,
-  startBuyerVerificationSignhost,
   submitBuyerVerification,
   type BuyerKycQuestion,
   type BuyerVerificationStatus,
 } from "@/lib/api/buyer-verification";
+import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 import {
-  getProfileSetupStatus,
   saveProfileAddress,
-  searchProfileAddresses,
-  type AddressPrediction,
 } from "@/lib/api/profile-setup";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 
@@ -46,6 +43,13 @@ type ProfileForm = {
   company_name: string;
   kvk_number: string;
 };
+
+function formatBirthDateLive(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
+}
 
 function formatBirthDateForInput(value: string): string {
   const normalized = String(value || "").trim();
@@ -111,26 +115,22 @@ export function BuyerVerificationPanel({
   const [selectedStepKey, setSelectedStepKey] = useState<string | null>(null);
   const [addressQuery, setAddressQuery] = useState("");
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
-  const [predictions, setPredictions] = useState<AddressPrediction[]>([]);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   const currentStep = status?.next_step ?? (status?.is_currently_valid ? "complete" : "profile");
-  const verificationStepActive = currentStep === "verification" || currentStep === "reverification";
-  const normalizedCurrentStepKey = verificationStepActive ? "verification" : currentStep;
+  const normalizedCurrentStepKey =
+    currentStep === "verification" || currentStep === "reverification" ? "kyc" : currentStep;
 
   const stepConfig = useMemo(
     () => [
       { key: "profile", label: t.steps.profile, icon: UserRound },
-      { key: "verification", label: t.steps.verification, icon: ShieldCheck },
       { key: "kyc", label: t.steps.kyc, icon: CircleHelp },
     ],
     [t.steps],
   );
 
   const currentStepIndex = Math.max(
-    stepConfig.findIndex((step) =>
-      step.key === "verification" ? verificationStepActive : currentStep === step.key,
-    ),
+    stepConfig.findIndex((step) => currentStep === step.key || normalizedCurrentStepKey === step.key),
     0,
   );
   const visibleStepKey = selectedStepKey ?? normalizedCurrentStepKey;
@@ -144,9 +144,7 @@ export function BuyerVerificationPanel({
         complete:
             step.key === "profile"
               ? Boolean(status?.profile?.full_name)
-              : step.key === "verification"
-                ? status?.idin_status === "completed" && status?.ideal_status === "completed"
-                : status?.kyc_status === "completed",
+              : status?.kyc_status === "completed",
         clickable: index <= currentStepIndex,
       })),
     [currentStepIndex, visibleStepKey, status, stepConfig],
@@ -190,6 +188,8 @@ export function BuyerVerificationPanel({
         company_name: String(status.profile?.company_name ?? curr.company_name ?? ""),
         kvk_number: String(status.profile?.kvk_number ?? curr.kvk_number ?? ""),
     }));
+    const line1 = String(status.profile?.address_line_1 ?? "").trim();
+    if (line1) setAddressQuery(line1);
   }, [status?.profile]);
 
   useEffect(() => {
@@ -209,45 +209,30 @@ export function BuyerVerificationPanel({
     void loadQuestions();
   }, [visibleStepKey, t.toasts.questionsLoad]);
 
-  useEffect(() => {
-    if (visibleStepKey !== "profile") return;
-    if (addressQuery.trim().length < 3 || selectedPlaceId) {
-      if (addressQuery.trim().length < 3) setPredictions([]);
-      return;
-    }
-    const handle = window.setTimeout(async () => {
-      try {
-        const result = await searchProfileAddresses(addressQuery.trim());
-        setPredictions(result.items);
-      } catch {
-        setPredictions([]);
-      }
-    }, 250);
-    return () => window.clearTimeout(handle);
-  }, [addressQuery, selectedPlaceId, visibleStepKey]);
-
-  const handlePredictionSelect = useCallback(async (prediction: AddressPrediction) => {
-    setSelectedPlaceId(prediction.place_id);
-    setAddressQuery(prediction.description || prediction.main_text || "");
-    setPredictions([]);
+  const applySavedAddress = useCallback(async (placeId: string, formattedAddress: string) => {
+    setSelectedPlaceId(placeId);
+    setAddressQuery(formattedAddress);
     try {
-      const profileStatus = await saveProfileAddress(prediction.place_id);
+      const profileStatus = await saveProfileAddress(placeId);
       if (profileStatus.address) {
-        setProfile(curr => ({
+        setProfile((curr) => ({
           ...curr,
-          address_line_1: buildAddressLine(
-            profileStatus.address?.street,
-            profileStatus.address?.house_number,
-            profileStatus.address?.formatted_address,
-          ) || curr.address_line_1,
+          address_line_1:
+            buildAddressLine(
+              profileStatus.address?.street,
+              profileStatus.address?.house_number,
+              profileStatus.address?.formatted_address,
+            ) || curr.address_line_1,
           city: firstNonEmpty(profileStatus.address?.city) || curr.city,
           state: firstNonEmpty(profileStatus.address?.region) || curr.state,
           postal_code: firstNonEmpty(profileStatus.address?.postal_code) || curr.postal_code,
           country: firstNonEmpty(profileStatus.address?.country, "NL") || curr.country,
         }));
       }
-    } catch {}
-  }, []);
+    } catch {
+      toast.error(t.toasts.profileSaveError);
+    }
+  }, [t.toasts.profileSaveError]);
 
   async function handleProfileSubmit(event: FormEvent) {
     event.preventDefault();
@@ -265,21 +250,6 @@ export function BuyerVerificationPanel({
     } catch (error: any) {
         if (error?.response?.status === 422) setErrors(error.response.data.errors);
         toast.error(t.toasts.profileSaveError);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleSignhost() {
-    try {
-      setSaving(true);
-      const response = await startBuyerVerificationSignhost();
-      const url = response.redirectUrl || response.status?.provider_redirect_url;
-      if (url) { window.location.href = url; return; }
-      setStatus(response.status);
-      toast.error(t.toasts.noSignhostRedirect);
-    } catch (error: any) {
-      toast.error(t.toasts.signhostError);
     } finally {
       setSaving(false);
     }
@@ -310,14 +280,23 @@ export function BuyerVerificationPanel({
   function renderInput(label: string, name: keyof ProfileForm, type = "text") {
     const errorList = errors[name];
     const hasError = !!errorList && errorList.length > 0;
+    const isBirthDate = name === "birth_date";
     return (
       <label className="flex flex-col gap-2.5 text-xs font-bold uppercase tracking-wider text-slate-500">
         {label}
         <input
-          type={type}
+          type={isBirthDate ? "text" : type}
+          inputMode={isBirthDate ? "numeric" : undefined}
+          maxLength={isBirthDate ? 10 : undefined}
+          placeholder={isBirthDate ? "DD-MM-YYYY" : undefined}
           className={cn("h-13 rounded-2xl border bg-white px-5 text-sm font-bold text-slate-700 outline-none transition shadow-sm focus:ring-4 focus:ring-blue-100/50", hasError ? "border-red-500" : "border-slate-100 focus:border-[#003566]")}
           value={profile[name]}
-          onChange={(e) => setProfile((c) => ({ ...c, [name]: e.target.value }))}
+          onChange={(e) =>
+            setProfile((c) => ({
+              ...c,
+              [name]: isBirthDate ? formatBirthDateLive(e.target.value) : e.target.value,
+            }))
+          }
         />
         {hasError && <p className="text-[10px] font-bold text-red-500 lowercase tracking-normal">{errorList[0]}</p>}
       </label>
@@ -367,29 +346,18 @@ export function BuyerVerificationPanel({
                     <Search size={16} />
                     {t.sections.profile.addressLabel}
                   </h3>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-6 pr-4 text-sm font-bold text-slate-700 outline-none transition shadow-sm focus:border-[#003566] focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-400"
-                      value={addressQuery}
-                      onChange={(e) => { setAddressQuery(e.target.value); setSelectedPlaceId(null); setPredictions([]); }}
-                      placeholder={t.sections.profile.addressPlaceholder}
-                    />
-                    {!!predictions.length && !selectedPlaceId && (
-                      <div className="absolute mt-2 w-full z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300">
-                        {predictions.map((p) => (
-                          <button 
-                            key={p.place_id} 
-                            type="button" 
-                            onClick={() => handlePredictionSelect(p)} 
-                            className="block w-full border-b border-slate-50 px-5 py-4 text-left text-sm font-semibold text-slate-600 hover:bg-blue-50 hover:text-[#003566] transition-colors"
-                          >
-                            {p.description}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <LocationAutocomplete
+                    value={addressQuery}
+                    placeholder={t.sections.profile.addressPlaceholder}
+                    className="h-14 rounded-2xl border-slate-200 text-sm font-bold shadow-sm focus:border-[#003566] focus:ring-4 focus:ring-blue-500/10"
+                    onChange={(nextValue) => {
+                      setAddressQuery(nextValue);
+                      setSelectedPlaceId(null);
+                    }}
+                    onSelectPlace={(place) => {
+                      void applySavedAddress(place.placeId, place.formattedAddress);
+                    }}
+                  />
                 </div>
               </div>
                 {renderInput(t.fields.fullName, "full_name")}
@@ -406,17 +374,6 @@ export function BuyerVerificationPanel({
                     </button>
                 </div>
             </form>
-        )}
-
-        {visibleStepKey === "verification" && (
-           <div className="text-center">
-              <ShieldCheck className="mx-auto h-16 w-16 text-blue-500" />
-              <h3 className="mt-4 text-xl font-bold">{t.sections.verification.title}</h3>
-              <p className="mt-2 text-slate-600">{currentStep === 'reverification' ? t.sections.verification.reverification : t.sections.verification.description}</p>
-              <button onClick={handleSignhost} disabled={saving} className="mt-6 rounded-2xl bg-blue-600 px-6 py-3 text-white">
-                {saving ? t.actions.opening : t.sections.verification.action}
-              </button>
-           </div>
         )}
 
         {visibleStepKey === "kyc" && (

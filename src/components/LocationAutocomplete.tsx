@@ -171,6 +171,7 @@ export function LocationAutocomplete({
         value={internalValue}
         onChange={(e) => {
           setInternalValue(e.target.value);
+          onChange?.(e.target.value);
           if (!e.target.value) setShowDropdown(false);
         }}
         onFocus={() => {
