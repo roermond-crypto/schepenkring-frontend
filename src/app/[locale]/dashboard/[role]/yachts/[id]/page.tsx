@@ -4495,6 +4495,13 @@ function YachtEditorInner() {
       "fridge",
       "freezer",
       "cooker",
+      // Offer/seller fields
+      "seller_id",
+      "minimum_offer_amount",
+      "seller_login_enabled",
+      "seller_invite_enabled",
+      "seller_email_notifications",
+      "seller_counter_offer_enabled",
     ];
 
     const configuredFieldNames = boatFormConfigBlocks.flatMap((block) =>
@@ -8406,7 +8413,15 @@ function YachtEditorInner() {
     }
 
     // Handle boolean fields - SIMPLIFIED
-    const booleanFields = ["allow_bidding", "flybridge", "air_conditioning"];
+    const booleanFields = [
+      "allow_bidding",
+      "flybridge",
+      "air_conditioning",
+      "seller_login_enabled",
+      "seller_invite_enabled",
+      "seller_email_notifications",
+      "seller_counter_offer_enabled",
+    ];
     const truthySet = new Set([true, "true", 1, "1"]);
 
     booleanFields.forEach((field) => {

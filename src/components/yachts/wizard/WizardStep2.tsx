@@ -3,6 +3,7 @@
 import React from "react";
 import {
   Coins,
+  Handshake,
   Waves,
   Ship,
   Zap,
@@ -593,6 +594,63 @@ export function WizardStep2({
           </div>
         </div>
       </div>
+
+      {/* --- SECTION 2B: OFFER & SELLER SETTINGS --- */}
+      {!isClientRole && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
+            <Handshake size={20} className="text-emerald-600" />
+            <h3 className="text-lg font-semibold text-slate-900">Bod &amp; verkopersinstellingen</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Minimumbod (€)</label>
+              <p className="text-xs text-slate-400">Boden onder dit bedrag krijgen een waarschuwing. Laat leeg voor geen minimum.</p>
+              <input
+                name="minimum_offer_amount"
+                type="number"
+                step="500"
+                min="0"
+                defaultValue={selectedYacht?.minimum_offer_amount ?? ""}
+                className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003566]/30"
+                placeholder="bv. 25000"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Verkoper ID</label>
+              <p className="text-xs text-slate-400">Koppel een verkoper (makelaar) aan deze boot.</p>
+              <input
+                name="seller_id"
+                type="number"
+                defaultValue={selectedYacht?.seller_id ?? ""}
+                className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003566]/30"
+                placeholder="User ID van verkoper"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { name: "seller_email_notifications", label: "E-mailnotificaties voor verkoper", desc: "Verkoper ontvangt e-mail bij nieuw bod", default: true },
+              { name: "seller_counter_offer_enabled", label: "Tegenbod toestaan", desc: "Verkoper kan een tegenbod doen via e-mail link", default: true },
+              { name: "seller_login_enabled", label: "Verkoper login inschakelen", desc: "Verkoper heeft een account en kan inloggen op dashboard", default: false },
+              { name: "seller_invite_enabled", label: "Uitnodiging sturen naar verkoper", desc: "Stuur een uitnodigingse-mail naar de verkoper om een account aan te maken", default: false },
+            ].map(({ name, label, desc, default: def }) => (
+              <label key={name} className="flex items-start gap-3 rounded-xl border border-slate-200 p-4 cursor-pointer hover:bg-slate-50">
+                <input
+                  type="checkbox"
+                  name={name}
+                  defaultChecked={selectedYacht?.[name] ?? def}
+                  className="mt-0.5 h-4 w-4 rounded accent-[#003566]"
+                />
+                <div>
+                  <p className="text-sm font-medium text-slate-800">{label}</p>
+                  <p className="text-xs text-slate-400">{desc}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* --- SECTION 3: TECHNICAL DOSSIER --- */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-10">

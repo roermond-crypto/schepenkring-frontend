@@ -24,6 +24,7 @@ import {
   Search,
   ArrowRight,
   HandCoins,
+  Handshake,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -133,6 +134,11 @@ export function Sidebar({
         title: t.bookings,
         href: `${root}/bookings`,
         icon: CalendarDays,
+      });
+      items.push({
+        title: "Boden",
+        href: `${root}/offers`,
+        icon: Handshake,
       });
       items.push({
         title: t.interaction,
