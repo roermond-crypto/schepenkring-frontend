@@ -196,7 +196,8 @@
       "roleBuyer": "Buyer",
       "roleSeller": "Seller",
       "bids": "Bids",
-      "videoTemplates": "Video Templates"
+      "videoTemplates": "Video Templates",
+      "emailTemplates": "Email Templates"
     },
     "notifications": {
       "label": "Notifications",

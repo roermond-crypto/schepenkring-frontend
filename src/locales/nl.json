@@ -198,7 +198,8 @@
       "roleSeller": "Verkoper",
       "bids": "Biedingen",
       "knowledgebase": "Kennisbank",
-      "videoTemplates": "Videosjablonen"
+      "videoTemplates": "Videosjablonen",
+      "emailTemplates": "E-mailsjablonen"
     },
     "notifications": {
       "label": "Meldingen",

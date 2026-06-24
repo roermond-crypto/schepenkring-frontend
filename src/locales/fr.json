@@ -197,7 +197,8 @@
       "roleSeller": "Vendeur",
       "bids": "Offres",
       "knowledgebase": "Base de connaissances",
-      "videoTemplates": "Modèles vidéo"
+      "videoTemplates": "Modèles vidéo",
+      "emailTemplates": "Modèles d'e-mail"
     },
     "notifications": {
       "label": "Notifications",

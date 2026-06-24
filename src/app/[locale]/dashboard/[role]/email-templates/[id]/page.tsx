@@ -1,0 +1,1242 @@
+"use client";
+
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  type DropResult,
+} from "@hello-pangea/dnd";
+import {
+  ArrowLeft,
+  GripVertical,
+  Plus,
+  Trash2,
+  Settings2,
+  Eye,
+  Monitor,
+  Tablet,
+  Smartphone,
+  Moon,
+  Sun,
+  Send,
+  Save,
+  History,
+  Globe2,
+  MapPin,
+  Loader2,
+  X,
+  Image as ImageIcon,
+  Type,
+  AlignLeft,
+  Square,
+  Minus,
+  Space,
+  Share2,
+  Ship,
+  Tag,
+  FileText,
+  Phone,
+  Building2,
+  CreditCard,
+  Sparkles,
+} from "lucide-react";
+import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "react-hot-toast";
+import { cn } from "@/lib/utils";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type Lang = "nl" | "en" | "de" | "fr";
+const LANGS: Lang[] = ["nl", "en", "de", "fr"];
+const LANG_LABELS: Record<Lang, string> = { nl: "NL", en: "EN", de: "DE", fr: "FR" };
+
+interface LocalizedString {
+  nl: string;
+  en: string;
+  de: string;
+  fr: string;
+}
+
+type BlockType =
+  | "logo" | "header" | "text" | "rich_text" | "button"
+  | "image" | "divider" | "spacer" | "footer" | "signature"
+  | "social_links" | "boat_card" | "offer_card" | "seller_card"
+  | "buyer_card" | "location_card" | "contract_card";
+
+interface Block {
+  id: string;
+  type: BlockType;
+  settings: Record<string, unknown>;
+}
+
+interface EmailTemplate {
+  id: number;
+  type: string;
+  name: string;
+  description: string | null;
+  is_global: boolean;
+  location_id: number | null;
+  location?: { id: number; name: string } | null;
+  language_default: Lang;
+  subject: LocalizedString;
+  blocks: Block[];
+  sender_name_override: string | null;
+  sender_email_override: string | null;
+  reply_to_override: string | null;
+  primary_color_override: string | null;
+  is_active: boolean;
+  is_archived: boolean;
+  current_version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface TemplateVersion {
+  id: number;
+  version: number;
+  change_note: string | null;
+  created_by_id: number | null;
+  created_at: string;
+}
+
+interface TemplateType {
+  value: string;
+  label: string;
+}
+
+interface TagInfo {
+  key: string;
+  description: string;
+  category: string;
+}
+
+// ─── Block palette definitions ─────────────────────────────────────────────
+
+interface BlockDef {
+  type: BlockType;
+  label: string;
+  icon: React.ReactNode;
+  category: "standard" | "smart";
+  defaultSettings: Record<string, unknown>;
+}
+
+const emptyLocalized = (): LocalizedString => ({ nl: "", en: "", de: "", fr: "" });
+
+const BLOCK_DEFS: BlockDef[] = [
+  // Standard
+  {
+    type: "logo", label: "Logo", icon: <ImageIcon size={14} />, category: "standard",
+    defaultSettings: { source: "location_logo", custom_url: "" },
+  },
+  {
+    type: "header", label: "Koptekst", icon: <Type size={14} />, category: "standard",
+    defaultSettings: { content: { nl: "Hallo {{buyer_name}},", en: "Hello {{buyer_name}},", de: "Hallo {{buyer_name}},", fr: "Bonjour {{buyer_name}}," } },
+  },
+  {
+    type: "text", label: "Tekst", icon: <AlignLeft size={14} />, category: "standard",
+    defaultSettings: { content: emptyLocalized() },
+  },
+  {
+    type: "rich_text", label: "Opgemaakte tekst", icon: <AlignLeft size={14} />, category: "standard",
+    defaultSettings: { html: emptyLocalized() },
+  },
+  {
+    type: "button", label: "Knop", icon: <Square size={14} />, category: "standard",
+    defaultSettings: { label: { nl: "Bekijk", en: "View", de: "Ansehen", fr: "Voir" }, url: "{{offer_link}}", color: "#C8102E" },
+  },
+  {
+    type: "image", label: "Afbeelding", icon: <ImageIcon size={14} />, category: "standard",
+    defaultSettings: { src: "", alt: "", link: "" },
+  },
+  {
+    type: "divider", label: "Scheidingslijn", icon: <Minus size={14} />, category: "standard",
+    defaultSettings: { color: "#eeeeee" },
+  },
+  {
+    type: "spacer", label: "Ruimte", icon: <Space size={14} />, category: "standard",
+    defaultSettings: { height: 24 },
+  },
+  {
+    type: "footer", label: "Voettekst", icon: <AlignLeft size={14} />, category: "standard",
+    defaultSettings: { content: { nl: "{{location_name}} · {{location_address}}\n{{location_email}} · {{location_phone}}", en: "{{location_name}} · {{location_address}}\n{{location_email}} · {{location_phone}}", de: "{{location_name}} · {{location_address}}\n{{location_email}} · {{location_phone}}", fr: "{{location_name}} · {{location_address}}\n{{location_email}} · {{location_phone}}" } },
+  },
+  {
+    type: "signature", label: "Handtekening", icon: <FileText size={14} />, category: "standard",
+    defaultSettings: { name: "{{location_name}}", title: "", phone: "{{location_phone}}" },
+  },
+  {
+    type: "social_links", label: "Socials", icon: <Share2 size={14} />, category: "standard",
+    defaultSettings: { links: [] },
+  },
+  // Smart
+  {
+    type: "boat_card", label: "Boot kaart", icon: <Ship size={14} />, category: "smart",
+    defaultSettings: { show_image: true, show_price: true, button_label: { nl: "Bekijk boot", en: "View boat", de: "Boot ansehen", fr: "Voir le bateau" } },
+  },
+  {
+    type: "offer_card", label: "Bod kaart", icon: <Tag size={14} />, category: "smart",
+    defaultSettings: { show_amount: true, button_label: { nl: "Bekijk bod", en: "View offer", de: "Angebot ansehen", fr: "Voir l'offre" } },
+  },
+  {
+    type: "seller_card", label: "Verkoper kaart", icon: <Phone size={14} />, category: "smart",
+    defaultSettings: { show_email: true, show_phone: true },
+  },
+  {
+    type: "buyer_card", label: "Koper kaart", icon: <Phone size={14} />, category: "smart",
+    defaultSettings: { show_email: true, show_phone: true },
+  },
+  {
+    type: "location_card", label: "Locatie kaart", icon: <Building2 size={14} />, category: "smart",
+    defaultSettings: { show_address: true, show_phone: true, show_email: true },
+  },
+  {
+    type: "contract_card", label: "Contract kaart", icon: <CreditCard size={14} />, category: "smart",
+    defaultSettings: { button_label: { nl: "Contract ondertekenen", en: "Sign contract", de: "Vertrag unterzeichnen", fr: "Signer le contrat" } },
+  },
+];
+
+const getBlockDef = (type: BlockType): BlockDef =>
+  BLOCK_DEFS.find((d) => d.type === type) ?? BLOCK_DEFS[0];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+let _blockIdCounter = 0;
+const nextBlockId = () => `b_${Date.now()}_${++_blockIdCounter}`;
+
+function localStr(val: unknown, lang: Lang, fallback = ""): string {
+  if (typeof val === "string") return val;
+  if (val && typeof val === "object") {
+    const obj = val as Record<string, string>;
+    return obj[lang] ?? obj["nl"] ?? fallback;
+  }
+  return fallback;
+}
+
+// ─── Block canvas item ────────────────────────────────────────────────────────
+
+function BlockCanvasItem({
+  block,
+  index,
+  isSelected,
+  lang,
+  onSelect,
+  onRemove,
+}: {
+  block: Block;
+  index: number;
+  isSelected: boolean;
+  lang: Lang;
+  onSelect: () => void;
+  onRemove: () => void;
+}) {
+  const def = getBlockDef(block.type);
+
+  const previewContent = () => {
+    const s = block.settings;
+    switch (block.type) {
+      case "logo": return <div className="h-8 w-20 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">LOGO</div>;
+      case "header": return <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{localStr(s.content, lang, "Koptekst...")}</p>;
+      case "text": return <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">{localStr(s.content, lang, "Tekst...")}</p>;
+      case "rich_text": return <p className="text-xs text-slate-500 dark:text-slate-400 italic">[Opgemaakte tekst]</p>;
+      case "button": return (
+        <div className="inline-block rounded-lg px-4 py-2 text-xs font-semibold text-white" style={{ backgroundColor: String(s.color ?? "#C8102E") }}>
+          {localStr(s.label, lang, "Knop")}
+        </div>
+      );
+      case "image": return <div className="h-12 w-full rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">{String(s.src || "AFBEELDING")}</div>;
+      case "divider": return <hr className="border-slate-200 dark:border-slate-700" />;
+      case "spacer": return <div className="h-3 text-[9px] text-slate-400 text-center">{Number(s.height ?? 24)}px ruimte</div>;
+      case "footer": return <p className="text-[10px] text-slate-400 text-center line-clamp-2">{localStr(s.content, lang, "Voettekst...")}</p>;
+      case "signature": return <p className="text-xs text-slate-600 dark:text-slate-300">{String(s.name ?? "Naam")} · {String(s.phone ?? "")}</p>;
+      case "social_links": return <p className="text-xs text-slate-500 dark:text-slate-400">[Social links]</p>;
+      case "boat_card": return <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30 px-3 py-2 text-xs text-blue-800 dark:text-blue-200"><Ship size={10} className="inline mr-1" />Boot kaart</div>;
+      case "offer_card": return <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 px-3 py-2 text-xs text-green-800 dark:text-green-200"><Tag size={10} className="inline mr-1" />Bod kaart</div>;
+      case "seller_card": return <div className="rounded-lg border border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-950/30 px-3 py-2 text-xs text-purple-800 dark:text-purple-200"><Phone size={10} className="inline mr-1" />Verkoper kaart</div>;
+      case "buyer_card": return <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30 px-3 py-2 text-xs text-orange-800 dark:text-orange-200"><Phone size={10} className="inline mr-1" />Koper kaart</div>;
+      case "location_card": return <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/30 px-3 py-2 text-xs text-slate-700 dark:text-slate-200"><Building2 size={10} className="inline mr-1" />Locatie kaart</div>;
+      case "contract_card": return <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30 px-3 py-2 text-xs text-red-800 dark:text-red-200"><CreditCard size={10} className="inline mr-1" />Contract kaart</div>;
+    }
+  };
+
+  return (
+    <Draggable draggableId={block.id} index={index}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          className={cn(
+            "group flex items-start gap-2 rounded-xl border bg-white p-3 transition dark:bg-slate-900",
+            isSelected
+              ? "border-[#003566] shadow-sm dark:border-blue-500"
+              : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600",
+            snapshot.isDragging && "shadow-lg ring-2 ring-[#003566]/20",
+          )}
+          onClick={onSelect}
+        >
+          <div
+            {...provided.dragHandleProps}
+            className="mt-0.5 cursor-grab text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 active:cursor-grabbing"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-slate-400 dark:text-slate-500">{def.icon}</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">{def.label}</span>
+            </div>
+            <div>{previewContent()}</div>
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            className="mt-0.5 rounded-lg p-1 text-slate-300 hover:bg-red-50 hover:text-red-500 dark:text-slate-700 dark:hover:bg-red-950/30 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      )}
+    </Draggable>
+  );
+}
+
+// ─── Block settings panel ─────────────────────────────────────────────────────
+
+function BlockSettings({
+  block,
+  lang,
+  onChange,
+  onClose,
+  tags,
+}: {
+  block: Block;
+  lang: Lang;
+  onChange: (settings: Record<string, unknown>) => void;
+  onClose: () => void;
+  tags: TagInfo[];
+}) {
+  const s = block.settings;
+  const def = getBlockDef(block.type);
+
+  const setField = (key: string, value: unknown) => onChange({ ...s, [key]: value });
+  const setLocalizedField = (key: string, value: string) => {
+    const current = (s[key] ?? emptyLocalized()) as LocalizedString;
+    onChange({ ...s, [key]: { ...current, [lang]: value } });
+  };
+
+  const tagOptions = tags.map((t) => `{{${t.key}}}`);
+
+  const LocalizedTextArea = ({ fieldKey, label, rows = 3 }: { fieldKey: string; label: string; rows?: number }) => (
+    <div>
+      <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label} ({LANG_LABELS[lang]})</label>
+      <textarea
+        rows={rows}
+        value={localStr(s[fieldKey], lang)}
+        onChange={(e) => setLocalizedField(fieldKey, e.target.value)}
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 resize-none outline-none focus:border-[#003566]"
+      />
+      <div className="mt-1.5 flex flex-wrap gap-1">
+        {tagOptions.slice(0, 6).map((tag) => (
+          <button
+            key={tag}
+            onClick={() => setLocalizedField(fieldKey, localStr(s[fieldKey], lang) + tag)}
+            className="rounded px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 text-slate-600 hover:bg-[#003566] hover:text-white dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-blue-900 transition"
+          >
+            {tag}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const LocalizedInput = ({ fieldKey, label }: { fieldKey: string; label: string }) => (
+    <div>
+      <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label} ({LANG_LABELS[lang]})</label>
+      <Input
+        value={localStr(s[fieldKey], lang)}
+        onChange={(e) => setLocalizedField(fieldKey, e.target.value)}
+        className="rounded-xl text-sm"
+      />
+    </div>
+  );
+
+  const BoolToggle = ({ fieldKey, label }: { fieldKey: string; label: string }) => (
+    <label className="flex items-center gap-2 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        checked={Boolean(s[fieldKey])}
+        onChange={(e) => setField(fieldKey, e.target.checked)}
+        className="rounded"
+      />
+      <span className="text-sm text-slate-700 dark:text-slate-200">{label}</span>
+    </label>
+  );
+
+  const renderFields = () => {
+    switch (block.type) {
+      case "logo":
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Bron</label>
+              <select
+                value={String(s.source ?? "location_logo")}
+                onChange={(e) => setField("source", e.target.value)}
+                className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              >
+                <option value="location_logo">Logo van locatie</option>
+                <option value="custom_url">Aangepaste URL</option>
+              </select>
+            </div>
+            {String(s.source ?? "location_logo") === "custom_url" && (
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Afbeeldings-URL</label>
+                <Input value={String(s.custom_url ?? "")} onChange={(e) => setField("custom_url", e.target.value)} className="rounded-xl text-sm" placeholder="https://..." />
+              </div>
+            )}
+          </div>
+        );
+      case "header":
+        return <LocalizedTextArea fieldKey="content" label="Tekst" rows={2} />;
+      case "text":
+        return <LocalizedTextArea fieldKey="content" label="Tekst" rows={5} />;
+      case "rich_text":
+        return <LocalizedTextArea fieldKey="html" label="HTML inhoud" rows={8} />;
+      case "button":
+        return (
+          <div className="space-y-4">
+            <LocalizedInput fieldKey="label" label="Label" />
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">URL / Tag</label>
+              <Input value={String(s.url ?? "")} onChange={(e) => setField("url", e.target.value)} className="rounded-xl text-sm" placeholder="{{offer_link}}" />
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {["{{offer_link}}", "{{contract_link}}", "{{chat_link}}", "{{brochure_link}}", "{{boat_url}}"].map((tag) => (
+                  <button key={tag} onClick={() => setField("url", tag)} className="rounded px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 text-slate-600 hover:bg-[#003566] hover:text-white dark:bg-slate-800 dark:text-slate-300 transition">
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Kleur</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={String(s.color ?? "#C8102E")} onChange={(e) => setField("color", e.target.value)} className="h-9 w-14 rounded-xl border border-slate-200 bg-white dark:border-slate-700 cursor-pointer" />
+                <Input value={String(s.color ?? "#C8102E")} onChange={(e) => setField("color", e.target.value)} className="rounded-xl text-sm font-mono" />
+              </div>
+            </div>
+          </div>
+        );
+      case "image":
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Afbeeldings-URL</label>
+              <Input value={String(s.src ?? "")} onChange={(e) => setField("src", e.target.value)} className="rounded-xl text-sm" placeholder="https://..." />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Alt-tekst</label>
+              <Input value={String(s.alt ?? "")} onChange={(e) => setField("alt", e.target.value)} className="rounded-xl text-sm" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Link (optioneel)</label>
+              <Input value={String(s.link ?? "")} onChange={(e) => setField("link", e.target.value)} className="rounded-xl text-sm" placeholder="https://..." />
+            </div>
+          </div>
+        );
+      case "divider":
+        return (
+          <div>
+            <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Kleur</label>
+            <div className="flex items-center gap-2">
+              <input type="color" value={String(s.color ?? "#eeeeee")} onChange={(e) => setField("color", e.target.value)} className="h-9 w-14 rounded-xl border border-slate-200 bg-white dark:border-slate-700 cursor-pointer" />
+              <Input value={String(s.color ?? "#eeeeee")} onChange={(e) => setField("color", e.target.value)} className="rounded-xl text-sm font-mono" />
+            </div>
+          </div>
+        );
+      case "spacer":
+        return (
+          <div>
+            <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Hoogte (px)</label>
+            <Input type="number" min={4} max={120} value={Number(s.height ?? 24)} onChange={(e) => setField("height", Number(e.target.value))} className="rounded-xl text-sm" />
+          </div>
+        );
+      case "footer":
+        return <LocalizedTextArea fieldKey="content" label="Voettekst" rows={4} />;
+      case "signature":
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Naam</label>
+              <Input value={String(s.name ?? "")} onChange={(e) => setField("name", e.target.value)} className="rounded-xl text-sm" placeholder="{{location_name}}" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Functietitel</label>
+              <Input value={String(s.title ?? "")} onChange={(e) => setField("title", e.target.value)} className="rounded-xl text-sm" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Telefoon</label>
+              <Input value={String(s.phone ?? "")} onChange={(e) => setField("phone", e.target.value)} className="rounded-xl text-sm" placeholder="{{location_phone}}" />
+            </div>
+          </div>
+        );
+      case "social_links":
+        return (
+          <div className="text-sm text-slate-500 dark:text-slate-400">
+            Social links configuratie (beheer via locatie-instellingen)
+          </div>
+        );
+      case "boat_card":
+        return (
+          <div className="space-y-4">
+            <BoolToggle fieldKey="show_image" label="Afbeelding tonen" />
+            <BoolToggle fieldKey="show_price" label="Prijs tonen" />
+            <LocalizedInput fieldKey="button_label" label="Knoptekst" />
+          </div>
+        );
+      case "offer_card":
+        return (
+          <div className="space-y-4">
+            <BoolToggle fieldKey="show_amount" label="Bedrag tonen" />
+            <LocalizedInput fieldKey="button_label" label="Knoptekst" />
+          </div>
+        );
+      case "seller_card":
+      case "buyer_card":
+        return (
+          <div className="space-y-4">
+            <BoolToggle fieldKey="show_email" label="E-mail tonen" />
+            <BoolToggle fieldKey="show_phone" label="Telefoon tonen" />
+          </div>
+        );
+      case "location_card":
+        return (
+          <div className="space-y-4">
+            <BoolToggle fieldKey="show_address" label="Adres tonen" />
+            <BoolToggle fieldKey="show_phone" label="Telefoon tonen" />
+            <BoolToggle fieldKey="show_email" label="E-mail tonen" />
+          </div>
+        );
+      case "contract_card":
+        return <LocalizedInput fieldKey="button_label" label="Knoptekst" />;
+      default:
+        return <p className="text-sm text-slate-400">Geen instellingen beschikbaar.</p>;
+    }
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <span className="text-slate-500">{def.icon}</span>
+          <span className="font-semibold text-sm text-slate-900 dark:text-white">{def.label} — instellingen</span>
+        </div>
+        <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <X size={15} />
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        {renderFields()}
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Beschikbare tags</p>
+          <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
+            {tags.map((t) => (
+              <span key={t.key} title={t.description} className="rounded px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 cursor-default">
+                {`{{${t.key}}}`}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Preview pane ─────────────────────────────────────────────────────────────
+
+type PreviewMode = "desktop" | "tablet" | "mobile";
+
+function PreviewPane({
+  templateId,
+  lang,
+  blocks,
+  subject,
+}: {
+  templateId: number;
+  lang: Lang;
+  blocks: Block[];
+  subject: LocalizedString;
+}) {
+  const [mode, setMode] = useState<PreviewMode>("desktop");
+  const [dark, setDark] = useState(false);
+  const [html, setHtml] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const loadPreview = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.post<{ html: string }>(`/admin/email-templates/${templateId}/preview`, { lang, blocks });
+      setHtml(res.data.html);
+    } catch {
+      setHtml("<p style='color:red;padding:20px;'>Preview kon niet worden geladen.</p>");
+    } finally {
+      setLoading(false);
+    }
+  }, [templateId, lang, blocks]);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => { void loadPreview(); }, 600);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [loadPreview]);
+
+  const handleTestSend = async () => {
+    if (!testEmail) return;
+    setSendingTest(true);
+    try {
+      await api.post(`/admin/email-templates/${templateId}/test-send`, { email: testEmail, lang });
+      toast.success(`Test-e-mail verzonden naar ${testEmail}`);
+    } catch {
+      toast.error("Verzenden mislukt.");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  const widthMap: Record<PreviewMode, string> = {
+    desktop: "100%",
+    tablet: "768px",
+    mobile: "375px",
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Top controls */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex-wrap">
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 p-0.5">
+          {(["desktop", "tablet", "mobile"] as PreviewMode[]).map((m) => {
+            const Icon = m === "desktop" ? Monitor : m === "tablet" ? Tablet : Smartphone;
+            return (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={cn("rounded-lg p-1.5 transition", mode === m ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")}
+              >
+                <Icon size={14} />
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={() => setDark(!dark)}
+          className={cn("rounded-xl border p-1.5 transition", dark ? "border-slate-600 bg-slate-800 text-white" : "border-slate-200 text-slate-400 hover:text-slate-700")}
+        >
+          {dark ? <Sun size={14} /> : <Moon size={14} />}
+        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <Input
+            value={testEmail}
+            onChange={(e) => setTestEmail(e.target.value)}
+            placeholder="test@voorbeeld.nl"
+            className="h-8 rounded-xl text-xs w-44"
+            type="email"
+          />
+          <Button
+            onClick={() => void handleTestSend()}
+            disabled={!testEmail || sendingTest}
+            size="sm"
+            className="h-8 rounded-xl bg-[#003566] text-white text-xs hover:bg-blue-900 disabled:opacity-50"
+          >
+            {sendingTest ? <Loader2 size={12} className="animate-spin mr-1" /> : <Send size={12} className="mr-1" />}
+            Test
+          </Button>
+        </div>
+      </div>
+
+      {/* Subject preview */}
+      <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800">
+        <p className="text-[10px] text-slate-400 dark:text-slate-500">Onderwerp ({LANG_LABELS[lang]}):</p>
+        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{subject[lang] || "(geen onderwerp)"}</p>
+      </div>
+
+      {/* Frame */}
+      <div className={cn("flex-1 overflow-auto p-4 transition", dark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-900")}>
+        {loading ? (
+          <div className="flex h-full items-center justify-center">
+            <Loader2 size={24} className="animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <div className="mx-auto transition-all" style={{ maxWidth: widthMap[mode] }}>
+            {html && (
+              <iframe
+                srcDoc={html}
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white"
+                style={{ height: "600px" }}
+                sandbox="allow-same-origin"
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Versions panel ───────────────────────────────────────────────────────────
+
+function VersionsPanel({
+  templateId,
+  currentVersion,
+  onRestore,
+}: {
+  templateId: number;
+  currentVersion: number;
+  onRestore: () => void;
+}) {
+  const [versions, setVersions] = useState<TemplateVersion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [restoring, setRestoring] = useState<number | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await api.get<TemplateVersion[]>(`/admin/email-templates/${templateId}/versions`);
+        setVersions(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        toast.error("Versies laden mislukt.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [templateId]);
+
+  const handleRestore = async (v: TemplateVersion) => {
+    if (!confirm(`Versie ${v.version} herstellen? De huidige versie wordt opgeslagen als nieuwe versie.`)) return;
+    setRestoring(v.version);
+    try {
+      await api.post(`/admin/email-templates/${templateId}/restore-version`, { version: v.version });
+      toast.success(`Versie ${v.version} hersteld.`);
+      onRestore();
+    } catch {
+      toast.error("Herstellen mislukt.");
+    } finally {
+      setRestoring(null);
+    }
+  };
+
+  return (
+    <div className="p-5">
+      <p className="mb-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Versiegeschiedenis</p>
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 size={20} className="animate-spin text-slate-400" />
+        </div>
+      ) : versions.length === 0 ? (
+        <p className="text-sm text-slate-500">Geen versies beschikbaar.</p>
+      ) : (
+        <div className="space-y-2">
+          {versions.map((v) => (
+            <div key={v.id} className={cn("rounded-xl border p-3", v.version === currentVersion ? "border-[#003566]/40 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900")}>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">v{v.version}</span>
+                    {v.version === currentVersion && (
+                      <span className="rounded-full bg-[#003566] px-1.5 py-0.5 text-[9px] font-black text-white">Huidig</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">{new Date(v.created_at).toLocaleString("nl-NL")}</p>
+                  {v.change_note && <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{v.change_note}</p>}
+                </div>
+                {v.version !== currentVersion && (
+                  <button
+                    onClick={() => void handleRestore(v)}
+                    disabled={restoring === v.version}
+                    className="rounded-lg border border-slate-200 px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    {restoring === v.version ? <Loader2 size={10} className="animate-spin" /> : "Herstellen"}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main editor page ─────────────────────────────────────────────────────────
+
+export default function EmailTemplateEditorPage() {
+  const locale = useLocale();
+  const params = useParams<{ role?: string; id?: string }>();
+  const role = params?.role ?? "admin";
+  const templateId = Number(params?.id);
+  const router = useRouter();
+  const root = `/${locale}/dashboard/${role}`;
+
+  const [template, setTemplate] = useState<EmailTemplate | null>(null);
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [subject, setSubject] = useState<LocalizedString>({ nl: "", en: "", de: "", fr: "" });
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [templateType, setTemplateType] = useState("");
+  const [languageDefault, setLanguageDefault] = useState<Lang>("nl");
+  const [senderName, setSenderName] = useState("");
+  const [senderEmail, setSenderEmail] = useState("");
+  const [replyTo, setReplyTo] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#C8102E");
+  const [isGlobal, setIsGlobal] = useState(false);
+
+  const [activeLang, setActiveLang] = useState<Lang>("nl");
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [rightPanel, setRightPanel] = useState<"settings" | "preview" | "versions" | "meta">("preview");
+
+  const [types, setTypes] = useState<TemplateType[]>([]);
+  const [tags, setTags] = useState<TagInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [changeNote, setChangeNote] = useState("");
+  const [showChangeNoteModal, setShowChangeNoteModal] = useState(false);
+  const [savingWithNote, setSavingWithNote] = useState(false);
+  const [blockFilter, setBlockFilter] = useState<"standard" | "smart" | "all">("all");
+
+  const selectedBlock = blocks.find((b) => b.id === selectedBlockId) ?? null;
+
+  useEffect(() => {
+    if (!templateId) return;
+    void loadTemplate();
+    void loadMeta();
+  }, [templateId]);
+
+  const loadTemplate = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get<EmailTemplate>(`/admin/email-templates/${templateId}`);
+      const t = res.data;
+      setTemplate(t);
+      setBlocks(Array.isArray(t.blocks) ? t.blocks : []);
+      setSubject(t.subject ?? { nl: "", en: "", de: "", fr: "" });
+      setName(t.name ?? "");
+      setDescription(t.description ?? "");
+      setTemplateType(t.type ?? "");
+      setLanguageDefault(t.language_default ?? "nl");
+      setSenderName(t.sender_name_override ?? "");
+      setSenderEmail(t.sender_email_override ?? "");
+      setReplyTo(t.reply_to_override ?? "");
+      setPrimaryColor(t.primary_color_override ?? "#C8102E");
+      setIsGlobal(t.is_global ?? false);
+      setIsDirty(false);
+    } catch {
+      toast.error("Sjabloon laden mislukt.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMeta = async () => {
+    try {
+      const [typesRes, tagsRes] = await Promise.all([
+        api.get<TemplateType[]>("/admin/email-templates/types"),
+        api.get<TagInfo[]>("/admin/email-templates/tags"),
+      ]);
+      setTypes(Array.isArray(typesRes.data) ? typesRes.data : []);
+      setTags(Array.isArray(tagsRes.data) ? tagsRes.data : []);
+    } catch {
+      // non-fatal
+    }
+  };
+
+  const markDirty = () => setIsDirty(true);
+
+  const handleAddBlock = (def: BlockDef) => {
+    const newBlock: Block = {
+      id: nextBlockId(),
+      type: def.type,
+      settings: JSON.parse(JSON.stringify(def.defaultSettings)) as Record<string, unknown>,
+    };
+    setBlocks((prev) => [...prev, newBlock]);
+    setSelectedBlockId(newBlock.id);
+    setRightPanel("settings");
+    markDirty();
+  };
+
+  const handleRemoveBlock = (id: string) => {
+    setBlocks((prev) => prev.filter((b) => b.id !== id));
+    if (selectedBlockId === id) setSelectedBlockId(null);
+    markDirty();
+  };
+
+  const handleBlockSettingsChange = (id: string, settings: Record<string, unknown>) => {
+    setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, settings } : b)));
+    markDirty();
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const reordered = Array.from(blocks);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
+    setBlocks(reordered);
+    markDirty();
+  };
+
+  const handleSave = async (note?: string) => {
+    setSaving(true);
+    try {
+      await api.patch(`/admin/email-templates/${templateId}`, {
+        name,
+        description: description || null,
+        type: templateType,
+        language_default: languageDefault,
+        subject,
+        blocks,
+        sender_name_override: senderName || null,
+        sender_email_override: senderEmail || null,
+        reply_to_override: replyTo || null,
+        primary_color_override: primaryColor || null,
+        is_global: isGlobal,
+        change_note: note || null,
+      });
+      toast.success("Opgeslagen.");
+      setIsDirty(false);
+      setChangeNote("");
+      await loadTemplate();
+    } catch {
+      toast.error("Opslaan mislukt.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveWithNote = async () => {
+    setSavingWithNote(true);
+    await handleSave(changeNote);
+    setSavingWithNote(false);
+    setShowChangeNoteModal(false);
+  };
+
+  const filteredBlockDefs = blockFilter === "all"
+    ? BLOCK_DEFS
+    : BLOCK_DEFS.filter((d) => d.category === blockFilter);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <Loader2 size={32} className="animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
+  if (!template) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <p className="text-slate-500">Sjabloon niet gevonden.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden">
+      {/* Top bar */}
+      <div className="flex items-center gap-3 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3 flex-shrink-0">
+        <button
+          onClick={() => router.push(`${root}/email-templates`)}
+          className="rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+        >
+          <ArrowLeft size={16} />
+        </button>
+        <div className="flex-1 min-w-0">
+          <input
+            value={name}
+            onChange={(e) => { setName(e.target.value); markDirty(); }}
+            className="w-full bg-transparent text-base font-bold text-slate-900 dark:text-white outline-none placeholder:text-slate-400 truncate"
+            placeholder="Sjabloonnaam..."
+          />
+          <div className="flex items-center gap-2 mt-0.5">
+            {template.is_global ? (
+              <span className="inline-flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-semibold">
+                <Globe2 size={9} /> Globaal master
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                <MapPin size={9} /> {template.location?.name ?? "Locatie"}
+              </span>
+            )}
+            <span className="text-[10px] text-slate-400">v{template.current_version}</span>
+            {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-orange-400" title="Niet opgeslagen wijzigingen" />}
+          </div>
+        </div>
+
+        {/* Language tabs */}
+        <div className="flex items-center gap-0.5 rounded-xl border border-slate-200 dark:border-slate-700 p-0.5">
+          {LANGS.map((l) => (
+            <button
+              key={l}
+              onClick={() => setActiveLang(l)}
+              className={cn(
+                "rounded-lg px-2.5 py-1 text-xs font-bold transition",
+                activeLang === l ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200",
+              )}
+            >
+              {LANG_LABELS[l]}
+            </button>
+          ))}
+        </div>
+
+        {/* Right panel toggles */}
+        <div className="flex items-center gap-0.5 rounded-xl border border-slate-200 dark:border-slate-700 p-0.5">
+          <button onClick={() => setRightPanel("preview")} className={cn("rounded-lg p-1.5 transition", rightPanel === "preview" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title="Preview">
+            <Eye size={14} />
+          </button>
+          <button onClick={() => setRightPanel("versions")} className={cn("rounded-lg p-1.5 transition", rightPanel === "versions" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title="Versies">
+            <History size={14} />
+          </button>
+          <button onClick={() => setRightPanel("meta")} className={cn("rounded-lg p-1.5 transition", rightPanel === "meta" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title="Instellingen">
+            <Settings2 size={14} />
+          </button>
+        </div>
+
+        <button
+          onClick={() => setShowChangeNoteModal(true)}
+          disabled={saving || !isDirty}
+          className="flex items-center gap-2 rounded-xl bg-[#003566] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50 transition"
+        >
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+          Opslaan
+        </button>
+      </div>
+
+      {/* Three-column layout */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left: Block palette */}
+        <div className="w-52 flex-shrink-0 flex flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+          <div className="px-3 pt-4 pb-2">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Blokken</p>
+            <div className="flex gap-0.5 rounded-lg border border-slate-200 dark:border-slate-700 p-0.5">
+              {(["all", "standard", "smart"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setBlockFilter(f)}
+                  className={cn("flex-1 rounded-md py-0.5 text-[10px] font-bold transition",
+                    blockFilter === f ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                  )}
+                >
+                  {f === "all" ? "Alles" : f === "standard" ? "Basis" : <Sparkles size={10} className="mx-auto" />}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
+            {filteredBlockDefs.map((def) => (
+              <button
+                key={def.type}
+                onClick={() => handleAddBlock(def)}
+                className="flex w-full items-center gap-2 rounded-xl border border-transparent px-2.5 py-2 text-left text-xs text-slate-600 hover:border-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800 transition"
+              >
+                <span className="text-slate-400 dark:text-slate-500 flex-shrink-0">{def.icon}</span>
+                <span className="truncate">{def.label}</span>
+                <Plus size={11} className="ml-auto flex-shrink-0 text-slate-300 dark:text-slate-600" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Center: Canvas */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Subject input */}
+          <div className="mb-4 rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3">
+            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
+              Onderwerp ({LANG_LABELS[activeLang]})
+            </label>
+            <input
+              value={subject[activeLang] ?? ""}
+              onChange={(e) => { setSubject((prev) => ({ ...prev, [activeLang]: e.target.value })); markDirty(); }}
+              className="w-full bg-transparent text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300"
+              placeholder="E-mailonderwerp..."
+            />
+          </div>
+
+          {/* Blocks */}
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="canvas">
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="space-y-2"
+                >
+                  {blocks.length === 0 && (
+                    <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 py-12 text-center">
+                      <Plus size={24} className="mx-auto mb-2 text-slate-300" />
+                      <p className="text-sm text-slate-400">Klik op een blok links om toe te voegen</p>
+                    </div>
+                  )}
+                  {blocks.map((block, i) => (
+                    <BlockCanvasItem
+                      key={block.id}
+                      block={block}
+                      index={i}
+                      isSelected={selectedBlockId === block.id}
+                      lang={activeLang}
+                      onSelect={() => {
+                        setSelectedBlockId(block.id);
+                        setRightPanel("settings");
+                      }}
+                      onRemove={() => handleRemoveBlock(block.id)}
+                    />
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+
+          <div className="mt-4 text-center text-[10px] text-slate-300 dark:text-slate-600">
+            {blocks.length} blokken · sleep om te herordenen
+          </div>
+        </div>
+
+        {/* Right panel */}
+        <div className="w-80 flex-shrink-0 flex flex-col border-l border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+          {rightPanel === "settings" && selectedBlock ? (
+            <BlockSettings
+              key={selectedBlock.id}
+              block={selectedBlock}
+              lang={activeLang}
+              onChange={(settings) => handleBlockSettingsChange(selectedBlock.id, settings)}
+              onClose={() => { setSelectedBlockId(null); setRightPanel("preview"); }}
+              tags={tags}
+            />
+          ) : rightPanel === "preview" ? (
+            <PreviewPane
+              templateId={templateId}
+              lang={activeLang}
+              blocks={blocks}
+              subject={subject}
+            />
+          ) : rightPanel === "versions" ? (
+            <div className="flex-1 overflow-y-auto">
+              <VersionsPanel
+                templateId={templateId}
+                currentVersion={template.current_version}
+                onRestore={() => { void loadTemplate(); }}
+              />
+            </div>
+          ) : (
+            // Meta settings
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Sjablooninstellingen</p>
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Type</label>
+                <select
+                  value={templateType}
+                  onChange={(e) => { setTemplateType(e.target.value); markDirty(); }}
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                >
+                  {types.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Beschrijving</label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={(e) => { setDescription(e.target.value); markDirty(); }}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 resize-none outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Standaardtaal</label>
+                <select
+                  value={languageDefault}
+                  onChange={(e) => { setLanguageDefault(e.target.value as Lang); markDirty(); }}
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                >
+                  {LANGS.map((l) => <option key={l} value={l}>{LANG_LABELS[l]}</option>)}
+                </select>
+              </div>
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-4">
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Afzenderinstellingen</p>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Naam afzender</label>
+                  <Input value={senderName} onChange={(e) => { setSenderName(e.target.value); markDirty(); }} className="rounded-xl text-sm" placeholder="Schepenkring {{location_name}}" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">E-mailadres afzender</label>
+                  <Input value={senderEmail} onChange={(e) => { setSenderEmail(e.target.value); markDirty(); }} className="rounded-xl text-sm" type="email" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Antwoord-naar</label>
+                  <Input value={replyTo} onChange={(e) => { setReplyTo(e.target.value); markDirty(); }} className="rounded-xl text-sm" type="email" />
+                </div>
+              </div>
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-4">
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Stijl</p>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Primaire kleur</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={primaryColor} onChange={(e) => { setPrimaryColor(e.target.value); markDirty(); }} className="h-9 w-14 rounded-xl border border-slate-200 cursor-pointer dark:border-slate-700" />
+                    <Input value={primaryColor} onChange={(e) => { setPrimaryColor(e.target.value); markDirty(); }} className="rounded-xl text-sm font-mono" />
+                  </div>
+                </div>
+              </div>
+              {template.location && (
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">Locatie</p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50 px-3 py-2">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{template.location.name}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Change note modal */}
+      {showChangeNoteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-2xl p-6">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Wijziging opslaan</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Voeg optioneel een notitie toe over wat je hebt gewijzigd. Dit wordt opgeslagen in de versiegeschiedenis.</p>
+            <textarea
+              rows={3}
+              value={changeNote}
+              onChange={(e) => setChangeNote(e.target.value)}
+              placeholder="Bijv. Koptekst aangepast voor nieuwe campagne..."
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:border-[#003566] resize-none mb-4"
+            />
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setShowChangeNoteModal(false)} className="rounded-xl">Annuleren</Button>
+              <Button
+                onClick={() => void handleSave()}
+                disabled={saving}
+                variant="outline"
+                className="rounded-xl text-slate-500"
+              >
+                Opslaan zonder notitie
+              </Button>
+              <Button
+                onClick={() => void handleSaveWithNote()}
+                disabled={savingWithNote}
+                className="rounded-xl bg-[#003566] text-white hover:bg-blue-900"
+              >
+                {savingWithNote ? <Loader2 size={14} className="animate-spin mr-1" /> : <Save size={14} className="mr-1" />}
+                Opslaan
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

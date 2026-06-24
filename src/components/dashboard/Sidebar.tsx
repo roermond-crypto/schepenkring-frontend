@@ -27,6 +27,7 @@ import {
   Handshake,
   ShieldCheck,
   LogOut,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -170,6 +171,11 @@ export function Sidebar({
         title: t.videoTemplates,
         href: `${root}/video-templates`,
         icon: Clapperboard,
+      });
+      items.push({
+        title: t.emailTemplates ?? "E-mailsjablonen",
+        href: `${root}/email-templates`,
+        icon: Mail,
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
