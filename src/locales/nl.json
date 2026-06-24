@@ -874,9 +874,9 @@
       "provisionNew": "Nieuwe gebruiker"
     },
     "tabs": {
-      "employee": "Medewerker",
+      "employee": "Medewerker (intern)",
       "admin": "Admin",
-      "partner": "Partner",
+      "partner": "Locatiemedewerkers",
       "customer": "Klant"
     },
     "fields": {
@@ -2102,26 +2102,77 @@
     }
   },
   "SellerDashboard": {
-    "stats": { "boats": "Mijn boten", "bids": "Nieuwe biedingen", "chats": "Open gesprekken", "contracts": "Contracten" },
-    "sections": { "boats": "Mijn boten", "latestBids": "Laatste biedingen" },
-    "actions": { "view": "Bekijken", "manageBid": "Bod beheren", "openChat": "Chat openen" },
-    "labels": { "bids": "biedingen", "bid": "Bod", "buyer": "Koper" },
-    "empty": { "boats": "Nog geen boten.", "bids": "Nog geen biedingen." }
+    "stats": {
+      "boats": "Mijn boten",
+      "bids": "Nieuwe biedingen",
+      "chats": "Open gesprekken",
+      "contracts": "Contracten"
+    },
+    "sections": {
+      "boats": "Mijn boten",
+      "latestBids": "Laatste biedingen"
+    },
+    "actions": {
+      "view": "Bekijken",
+      "manageBid": "Bod beheren",
+      "openChat": "Chat openen"
+    },
+    "labels": {
+      "bids": "biedingen",
+      "bid": "Bod",
+      "buyer": "Koper"
+    },
+    "empty": {
+      "boats": "Nog geen boten.",
+      "bids": "Nog geen biedingen."
+    }
   },
   "DashboardBids": {
-    "eyebrow": "Biedingen", "title": "Biedingen", "subtitle": "Beoordeel, accepteer, weiger of doe een tegenbod.",
-    "actions": { "accept": "Accepteren", "reject": "Weigeren", "counter": "Tegenbod", "sendCounter": "Tegenbod versturen", "chat": "Chat openen" },
-    "labels": { "boat": "Boot", "buyer": "Koper", "verified": "Geverifieerd" },
-    "counter": { "amount": "Tegenbedrag" },
-    "empty": { "title": "Nog geen biedingen", "subtitle": "Wanneer een koper een bod plaatst, verschijnt het hier." },
-    "toasts": { "accept": "Bod geaccepteerd", "reject": "Bod geweigerd", "counter": "Tegenbod verzonden", "failed": "Actie mislukt" }
+    "eyebrow": "Biedingen",
+    "title": "Biedingen",
+    "subtitle": "Beoordeel, accepteer, weiger of doe een tegenbod.",
+    "actions": {
+      "accept": "Accepteren",
+      "reject": "Weigeren",
+      "counter": "Tegenbod",
+      "sendCounter": "Tegenbod versturen",
+      "chat": "Chat openen"
+    },
+    "labels": {
+      "boat": "Boot",
+      "buyer": "Koper",
+      "verified": "Geverifieerd"
+    },
+    "counter": {
+      "amount": "Tegenbedrag"
+    },
+    "empty": {
+      "title": "Nog geen biedingen",
+      "subtitle": "Wanneer een koper een bod plaatst, verschijnt het hier."
+    },
+    "toasts": {
+      "accept": "Bod geaccepteerd",
+      "reject": "Bod geweigerd",
+      "counter": "Tegenbod verzonden",
+      "failed": "Actie mislukt"
+    }
   },
   "LocationBidSettings": {
-    "title": "Biedingsinstellingen", "subtitle": "Beheer biedingszichtbaarheid en routing voor deze locatie.",
+    "title": "Biedingsinstellingen",
+    "subtitle": "Beheer biedingszichtbaarheid en routing voor deze locatie.",
     "bidsPageEnabled": "Toon biedingenpagina voor gebruikers op deze locatie",
     "sellerNotifications": "Verkoper informeren bij nieuw bod",
     "directChat": "Directe koper/verkoper chat toestaan",
-    "routingMode": "Biedingsrouting", "modes": { "direct": "Direct", "broker": "Makelaar", "adminReview": "Admin review" },
-    "save": "Instellingen opslaan", "saving": "Opslaan...", "saveSuccess": "Instellingen opgeslagen", "saveError": "Opslaan mislukt", "loading": "Laden..."
+    "routingMode": "Biedingsrouting",
+    "modes": {
+      "direct": "Direct",
+      "broker": "Makelaar",
+      "adminReview": "Admin review"
+    },
+    "save": "Instellingen opslaan",
+    "saving": "Opslaan...",
+    "saveSuccess": "Instellingen opgeslagen",
+    "saveError": "Opslaan mislukt",
+    "loading": "Laden..."
   }
 }

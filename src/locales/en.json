@@ -876,9 +876,9 @@
       "provisionNew": "Provision New"
     },
     "tabs": {
-      "employee": "Employee",
+      "employee": "Internal Staff",
       "admin": "Admin",
-      "partner": "Partner",
+      "partner": "Location Staff",
       "customer": "Customer"
     },
     "fields": {

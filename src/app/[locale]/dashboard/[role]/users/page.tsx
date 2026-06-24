@@ -59,6 +59,7 @@ type UserRecord = {
   id: number;
   type: UserType;
   role?: string;
+  location_role?: string | null;
   status: UserStatus;
   name: string;
   first_name?: string | null;
@@ -169,9 +170,24 @@ function mapUiToStatus(status: StatusUi): UserStatus {
 function mapTypeToRole(type: UserType) {
   if (type === "ADMIN") return "admin";
   if (type === "EMPLOYEE") return "employee";
+  if (type === "PARTNER") return "partner";
   if (type === "SELLER") return "seller";
   if (type === "BUYER") return "buyer";
   return "client";
+}
+
+function locationRoleLabel(type: UserType, locationRole?: string | null): string {
+  if (locationRole === "LOCATION_MANAGER") return "Vestigingsmanager";
+  if (locationRole === "BROKER") return "Makelaar";
+  if (locationRole === "LOCATION_EMPLOYEE") {
+    return type === "PARTNER" ? "Medewerker (Partner)" : "Medewerker";
+  }
+  if (type === "ADMIN") return "Admin";
+  if (type === "EMPLOYEE") return "Medewerker";
+  if (type === "PARTNER") return "Partner";
+  if (type === "SELLER") return "Verkoper";
+  if (type === "BUYER") return "Koper";
+  return "Klant";
 }
 
 function isHeadquartersLocation(location: LocationOption) {
@@ -767,7 +783,7 @@ export default function RoleManagementPage() {
                         <>
                           <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
                             <Shield size={11} />
-                            {user.role || user.type}
+                            {locationRoleLabel(user.type, user.location_role)}
                           </span>
                           <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
                             {user.two_factor_enabled ? "2FA On" : "2FA Off"}

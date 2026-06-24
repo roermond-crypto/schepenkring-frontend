@@ -192,7 +192,26 @@ function DashboardShellInner({
               onLogout={handleLogout}
             />
 
-            <div className="flex w-full min-w-0 pt-20">
+            {/* Impersonation banner */}
+            {impersonatingName && (
+              <div className="fixed left-0 right-0 z-65 flex items-center justify-between gap-4 bg-amber-500 px-4 py-2 text-white shadow-md" style={{ top: "80px" }}>
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-black uppercase tracking-wider">Imitatie</span>
+                  <span>Je imiteert <strong>{impersonatingName}</strong></span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 rounded-lg border-white/40 bg-white/10 text-white hover:bg-white/20 text-xs font-bold"
+                  onClick={() => void handleStopImpersonation()}
+                  disabled={stoppingImpersonation}
+                >
+                  {stoppingImpersonation ? "Stoppen..." : "Stop imitatie"}
+                </Button>
+              </div>
+            )}
+
+            <div className={cn("flex w-full min-w-0", impersonatingName ? "pt-[120px]" : "pt-20")}>
               <Sidebar
                 locale={locale}
                 role={role}

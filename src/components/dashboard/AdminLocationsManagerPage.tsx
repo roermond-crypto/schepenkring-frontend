@@ -46,6 +46,8 @@ type LocationRecord = {
   name: string;
   code: string;
   status: "ACTIVE" | "INACTIVE";
+  public_visible?: boolean;
+  location_color?: string | null;
   // address
   address_line1?: string | null;
   street_number?: string | null;
@@ -57,6 +59,16 @@ type LocationRecord = {
   website?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  // content
+  description_nl?: string | null;
+  description_en?: string | null;
+  description_de?: string | null;
+  opening_hours?: Record<string, { open: string; close: string; closed: boolean }> | null;
+  default_seller_id?: number | null;
+  default_seller?: { id: number; name: string; email: string } | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_keywords?: string | null;
   // counts
   clients_total: number;
   staff_total: number;
@@ -107,10 +119,20 @@ type ImpactData = {
   safe_to_delete: boolean;
 };
 
+const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+type Day = typeof DAYS[number];
+const DAY_LABELS: Record<Day, string> = {
+  mon: "Maandag", tue: "Dinsdag", wed: "Woensdag", thu: "Donderdag",
+  fri: "Vrijdag", sat: "Zaterdag", sun: "Zondag",
+};
+const EMPTY_HOURS = { open: "09:00", close: "17:00", closed: false };
+
 type FormState = {
   name: string;
   code: string;
   status: "ACTIVE" | "INACTIVE";
+  public_visible: boolean;
+  location_color: string;
   address_line1: string;
   street_number: string;
   postal_code: string;
@@ -119,12 +141,22 @@ type FormState = {
   phone: string;
   email: string;
   website: string;
+  description_nl: string;
+  description_en: string;
+  description_de: string;
+  opening_hours: Record<Day, { open: string; close: string; closed: boolean }>;
+  default_seller_id: number | "";
+  seo_title: string;
+  seo_description: string;
+  seo_keywords: string;
 };
 
 const EMPTY_FORM: FormState = {
   name: "",
   code: "",
   status: "ACTIVE",
+  public_visible: false,
+  location_color: "#003566",
   address_line1: "",
   street_number: "",
   postal_code: "",
@@ -133,6 +165,14 @@ const EMPTY_FORM: FormState = {
   phone: "",
   email: "",
   website: "",
+  description_nl: "",
+  description_en: "",
+  description_de: "",
+  opening_hours: Object.fromEntries(DAYS.map((d) => [d, { ...EMPTY_HOURS }])) as FormState["opening_hours"],
+  default_seller_id: "",
+  seo_title: "",
+  seo_description: "",
+  seo_keywords: "",
 };
 
 const IMPACT_LABELS: Record<string, string> = {
@@ -355,10 +395,16 @@ export function AdminLocationsManagerPage({
 
   const openEdit = (location: LocationRecord) => {
     setEditingLocation(location);
+    const defaultHours = Object.fromEntries(DAYS.map((d) => [d, { ...EMPTY_HOURS }])) as FormState["opening_hours"];
+    const savedHours = (location.opening_hours ?? {}) as Partial<Record<Day, { open: string; close: string; closed: boolean }>>;
+    const mergedHours = { ...defaultHours };
+    DAYS.forEach((d) => { if (savedHours[d]) mergedHours[d] = { ...EMPTY_HOURS, ...savedHours[d] }; });
     setForm({
       name: location.name,
       code: location.code,
       status: location.status,
+      public_visible: location.public_visible ?? false,
+      location_color: location.location_color ?? "#003566",
       address_line1: location.address_line1 ?? "",
       street_number: location.street_number ?? "",
       postal_code: location.postal_code ?? "",
@@ -367,6 +413,14 @@ export function AdminLocationsManagerPage({
       phone: location.phone ?? "",
       email: location.email ?? "",
       website: location.website ?? "",
+      description_nl: location.description_nl ?? "",
+      description_en: location.description_en ?? "",
+      description_de: location.description_de ?? "",
+      opening_hours: mergedHours,
+      default_seller_id: location.default_seller_id ?? "",
+      seo_title: location.seo_title ?? "",
+      seo_description: location.seo_description ?? "",
+      seo_keywords: location.seo_keywords ?? "",
     });
     setDialogTab("info");
     setLocationUsers([]);
@@ -384,6 +438,8 @@ export function AdminLocationsManagerPage({
         name: form.name.trim(),
         code: form.code.trim().toUpperCase(),
         status: form.status,
+        public_visible: form.public_visible,
+        location_color: form.location_color || null,
         address_line1: form.address_line1 || null,
         street_number: form.street_number || null,
         postal_code: form.postal_code || null,
@@ -392,6 +448,14 @@ export function AdminLocationsManagerPage({
         phone: form.phone || null,
         email: form.email || null,
         website: form.website || null,
+        description_nl: form.description_nl || null,
+        description_en: form.description_en || null,
+        description_de: form.description_de || null,
+        opening_hours: form.opening_hours,
+        default_seller_id: form.default_seller_id || null,
+        seo_title: form.seo_title || null,
+        seo_description: form.seo_description || null,
+        seo_keywords: form.seo_keywords || null,
       };
 
       if (editingLocation) {
@@ -735,6 +799,11 @@ export function AdminLocationsManagerPage({
               </div>
               <div className="self-center text-sm text-slate-600">{fmt(location.updated_at)}</div>
               <div className="flex items-center justify-end gap-2 self-center">
+                <Button asChild type="button" variant="outline" size="icon" className="rounded-xl" title={isNl ? "Vestigingspagina" : "Location detail"}>
+                  <Link href={`/${locale}/dashboard/${role}/locations/${location.id}`}>
+                    <Users />
+                  </Link>
+                </Button>
                 <Button type="button" variant="outline" size="icon" className="rounded-xl" onClick={() => openEdit(location)}>
                   <Pencil />
                 </Button>
@@ -863,6 +932,93 @@ export function AdminLocationsManagerPage({
                       <Globe className="h-3 w-3" /> Website
                     </label>
                     <input value={form.website} onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))} placeholder="https://www.schepenkring.nl/heeg" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" type="url" />
+                  </div>
+                </div>
+
+                {/* Visibility + color */}
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{isNl ? "Zichtbaarheid" : "Visibility"}</p>
+                  <div className="grid gap-3 grid-cols-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={form.public_visible} onChange={(e) => setForm((f) => ({ ...f, public_visible: e.target.checked }))} className="h-4 w-4 rounded border-slate-300 accent-[#003566]" />
+                      <span className="text-sm text-slate-700">{isNl ? "Publiek zichtbaar" : "Publicly visible"}</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-semibold text-slate-500">{isNl ? "Kleur" : "Color"}</label>
+                      <input type="color" value={form.location_color} onChange={(e) => setForm((f) => ({ ...f, location_color: e.target.value }))} className="h-8 w-16 rounded-lg border border-slate-200 p-0.5 cursor-pointer" />
+                      <span className="text-xs text-slate-400">{form.location_color}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Descriptions */}
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{isNl ? "Omschrijving" : "Description"}</p>
+                  {(["nl", "en", "de"] as const).map((lang) => (
+                    <div key={lang}>
+                      <label className="block mb-1 text-xs font-semibold text-slate-500 uppercase">{lang.toUpperCase()}</label>
+                      <textarea
+                        rows={2}
+                        value={form[`description_${lang}` as "description_nl" | "description_en" | "description_de"]}
+                        onChange={(e) => setForm((f) => ({ ...f, [`description_${lang}`]: e.target.value }))}
+                        placeholder={isNl ? `Omschrijving in het ${lang === "nl" ? "Nederlands" : lang === "en" ? "Engels" : "Duits"}…` : `Description in ${lang}…`}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Opening hours */}
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-2">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{isNl ? "Openingstijden" : "Opening hours"}</p>
+                  {DAYS.map((day) => (
+                    <div key={day} className="flex items-center gap-3">
+                      <span className="w-24 text-xs font-semibold text-slate-600 shrink-0">{DAY_LABELS[day]}</span>
+                      <label className="flex items-center gap-1.5 text-xs text-slate-500 shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={!form.opening_hours[day].closed}
+                          onChange={(e) => setForm((f) => ({ ...f, opening_hours: { ...f.opening_hours, [day]: { ...f.opening_hours[day], closed: !e.target.checked } } }))}
+                          className="h-3.5 w-3.5 accent-[#003566]"
+                        />
+                        {isNl ? "Open" : "Open"}
+                      </label>
+                      {!form.opening_hours[day].closed && (
+                        <>
+                          <input
+                            type="time"
+                            value={form.opening_hours[day].open}
+                            onChange={(e) => setForm((f) => ({ ...f, opening_hours: { ...f.opening_hours, [day]: { ...f.opening_hours[day], open: e.target.value } } }))}
+                            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs outline-none focus:border-blue-400"
+                          />
+                          <span className="text-slate-400 text-xs">–</span>
+                          <input
+                            type="time"
+                            value={form.opening_hours[day].close}
+                            onChange={(e) => setForm((f) => ({ ...f, opening_hours: { ...f.opening_hours, [day]: { ...f.opening_hours[day], close: e.target.value } } }))}
+                            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs outline-none focus:border-blue-400"
+                          />
+                        </>
+                      )}
+                      {form.opening_hours[day].closed && <span className="text-xs text-slate-400 italic">{isNl ? "Gesloten" : "Closed"}</span>}
+                    </div>
+                  ))}
+                </div>
+
+                {/* SEO */}
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">SEO</p>
+                  <div>
+                    <label className="block mb-1 text-xs font-semibold text-slate-500">SEO-titel</label>
+                    <input value={form.seo_title} onChange={(e) => setForm((f) => ({ ...f, seo_title: e.target.value }))} placeholder="Schepenkring Heeg | Jachten te koop" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
+                  </div>
+                  <div>
+                    <label className="block mb-1 text-xs font-semibold text-slate-500">SEO-beschrijving</label>
+                    <textarea value={form.seo_description} onChange={(e) => setForm((f) => ({ ...f, seo_description: e.target.value }))} rows={2} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Bezoek onze vestiging in Heeg…" />
+                  </div>
+                  <div>
+                    <label className="block mb-1 text-xs font-semibold text-slate-500">{isNl ? "Trefwoorden" : "Keywords"}</label>
+                    <input value={form.seo_keywords} onChange={(e) => setForm((f) => ({ ...f, seo_keywords: e.target.value }))} placeholder="jacht, heeg, te koop, friesland" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
                   </div>
                 </div>
               </div>
