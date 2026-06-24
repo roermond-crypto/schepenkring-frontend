@@ -84,6 +84,11 @@ export interface SignhostTransaction {
     webhook_last_payload?: Record<string, unknown> | null;
     created_at: string;
     updated_at: string;
+    signhost_raw_status?: string | null;
+    signhost_expires_at?: string | null;
+    signhost_last_checked_at?: string | null;
+    signhost_buyer_link?: string | null;
+    signhost_seller_link?: string | null;
 }
 
 function appendNestedFormData(
@@ -317,6 +322,18 @@ export const signhostApi = {
         }>("/signhost/refresh-url", {
             sign_request_id: signRequestId,
         });
+        return response.data;
+    },
+
+    refreshYachtSignhostStatus: async (yachtId: number) => {
+        const response = await api.post<{
+            sign_request?: SignRequest;
+            transaction?: SignhostTransaction | null;
+            signhost_status?: string | null;
+            signhost_expires_at?: string | null;
+            signhost_last_checked_at?: string | null;
+            error?: string;
+        }>(`/yachts/${yachtId}/signhost/refresh-status`);
         return response.data;
     },
 };

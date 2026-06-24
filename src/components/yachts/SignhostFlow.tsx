@@ -1814,6 +1814,15 @@ export function SignhostFlow({
 
   const [activeLocationId, setActiveLocationId] = useState<number | null>(locationId);
   useEffect(() => { setActiveLocationId(locationId); }, [locationId]);
+  useEffect(() => {
+    if (activeLocationId) return;
+    const userLoc = user?.location_id ?? user?.client_location_id;
+    if (userLoc && locationOptions.some(l => l.id === userLoc)) {
+      setActiveLocationId(userLoc);
+    } else if (locationOptions.length === 1) {
+      setActiveLocationId(locationOptions[0].id);
+    }
+  }, [user, locationOptions]);
 
   const canCreateClientInline = role === "admin" && Boolean(activeLocationId);
   const selectedLocation = useMemo(
@@ -1885,6 +1894,12 @@ export function SignhostFlow({
   const [selectingContractUserRole, setSelectingContractUserRole] = useState<
     "seller" | "buyer" | null
   >(null);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [signhostRawStatus, setSignhostRawStatus] = useState<string | null>(null);
+  const [signhostExpiresAt, setSignhostExpiresAt] = useState<string | null>(null);
+  const [signhostLastChecked, setSignhostLastChecked] = useState<string | null>(null);
+  const [showSignhostConfirm, setShowSignhostConfirm] = useState(false);
+  const [signhostCostConfirmed, setSignhostCostConfirmed] = useState(false);
 
   useEffect(() => {
     const nextDraft = buildContractDraft(
@@ -3114,7 +3129,26 @@ export function SignhostFlow({
     }
   };
 
-  const handleGenerateContract = async () => {
+  const handleCheckSignhostStatus = async () => {
+    if (!yachtId) return;
+    setIsCheckingStatus(true);
+    try {
+      const res = await signhostApi.refreshYachtSignhostStatus(yachtId);
+      if (res.sign_request) setSignRequest(res.sign_request);
+      else if (res.transaction) setSignRequest(mapTransactionToSignRequest(res.transaction));
+      if (res.signhost_status) setSignhostRawStatus(res.signhost_status);
+      if (res.signhost_expires_at) setSignhostExpiresAt(res.signhost_expires_at);
+      if (res.signhost_last_checked_at) setSignhostLastChecked(res.signhost_last_checked_at);
+      toast.success('Signhost status bijgewerkt.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Status controleren mislukt.';
+      toast.error(message);
+    } finally {
+      setIsCheckingStatus(false);
+    }
+  };
+
+  const handleGenerateContract = async (pdfOnly = false) => {
     if (!yachtId) {
       toast.error("Save the vessel first before generating the contract PDF.");
       return;
@@ -3127,7 +3161,7 @@ export function SignhostFlow({
 
     setIsGenerating(true);
     try {
-      const shouldSendToSignhost = resolvedRecipients.length > 0;
+      const shouldSendToSignhost = !pdfOnly && resolvedRecipients.length > 0;
       const contractRenderUrl =
         contractTemplateKey === "escrow_form"
           ? buildEscrowContractUrl(
@@ -3239,6 +3273,12 @@ export function SignhostFlow({
           icon: XCircle,
           tone: "text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-950/40 dark:border-red-900",
         };
+      case "EXPIRED":
+        return {
+          label: "Verlopen",
+          icon: XCircle,
+          tone: "text-orange-700 bg-orange-50 border-orange-200 dark:text-orange-300 dark:bg-orange-950/40 dark:border-orange-900",
+        };
       default:
         return {
           label: editorCopy.statusDraft,
@@ -3251,6 +3291,11 @@ export function SignhostFlow({
     () => extractSignhostLinks(signRequest),
     [signRequest],
   );
+
+  const isExpiredOrFailed = useMemo(() => {
+    const s = signRequest?.status?.toUpperCase();
+    return s === 'EXPIRED' || s === 'FAILED';
+  }, [signRequest?.status]);
 
   const handleOpenSignhostLink = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
@@ -3313,7 +3358,7 @@ export function SignhostFlow({
 
           <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-              Link client owner
+              Koper koppelen
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <select
@@ -3323,8 +3368,8 @@ export function SignhostFlow({
               >
                 <option value="">
                   {availableClientsLoading
-                    ? "Loading clients..."
-                    : "Select linked client"}
+                    ? "Klanten laden..."
+                    : "Selecteer koper"}
                 </option>
                 {availableClients.map((client) => (
                   <option key={client.id} value={client.id}>
@@ -3340,7 +3385,7 @@ export function SignhostFlow({
                   className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Client
+                  Nieuwe koper
                 </Button>
               ) : null}
               <Button
@@ -3357,16 +3402,15 @@ export function SignhostFlow({
                 {isLinkingClient ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
-                Link Client
+                Koppelen
               </Button>
             </div>
             <p className="mt-2 text-xs text-slate-500">
-              This linked client becomes the yacht owner used for brokerage
-              agreement defaults and owner visibility.
+              De gekoppelde koper wordt gebruikt voor de bemiddelingsovereenkomst en Signhost.
             </p>
             {!availableClientsLoading && availableClients.length === 0 ? (
               <p className="mt-2 text-xs text-amber-700">
-                No clients found for this location yet.
+                Geen klanten gevonden voor deze locatie.
                 {canCreateClientInline
                   ? " Create one here and it will be linked immediately."
                   : " Ask an admin to create a client first."}
@@ -3424,84 +3468,82 @@ export function SignhostFlow({
           )}
         </div>
 
+        {/* Status bar */}
         <div className="flex flex-wrap items-center gap-2">
-          <div
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em]",
-              statusDisplay.tone,
-            )}
-          >
+          <div className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em]", statusDisplay.tone)}>
             <statusDisplay.icon size={12} />
             {statusDisplay.label}
+            {signhostLastChecked ? (
+              <span className="ml-1 font-normal normal-case tracking-normal opacity-70">
+                · gecontroleerd {new Date(signhostLastChecked).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            ) : null}
           </div>
-          <select
-            value={contractTemplateKey}
-            onChange={(event) =>
-              setContractTemplateKey(event.target.value as ContractTemplateKey)
-            }
-            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-          >
-            {contractTemplateOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+          <select value={contractTemplateKey} onChange={(e) => setContractTemplateKey(e.target.value as ContractTemplateKey)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+            {contractTemplateOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
           </select>
-          <Button
-            type="button"
-            onClick={handleGenerateContract}
-            disabled={isGenerating || !activeLocationId || !yachtId}
-            className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
-          >
-            {isGenerating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            {contractTemplateKey === "escrow_form"
-              ? editorCopy.sendEscrowToSignhost
-              : editorCopy.sendToSignhost}
+        </div>
+
+        {/* Expired/Failed warning */}
+        {isExpiredOrFailed && (
+          <div className="mt-3 flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-800 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-200">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-bold">Signhost-transactie verlopen of mislukt</p>
+              <p className="mt-1">Verstuur de Signhost-link niet meer. Maak een nieuwe transactie aan om door te gaan.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {/* PDF only */}
+          <Button type="button" onClick={() => handleGenerateContract(true)} disabled={isGenerating || !activeLocationId || !yachtId} variant="outline" className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50">
+            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+            PDF genereren
           </Button>
-          <Button
-            type="button"
-            onClick={() => openEditor()}
-            className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
-          >
+
+          {/* Check status */}
+          {signRequest?.signhost_transaction_id && (
+            <Button type="button" onClick={() => void handleCheckSignhostStatus()} disabled={isCheckingStatus || !yachtId} variant="outline" className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50">
+              {isCheckingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              Signhost status controleren
+            </Button>
+          )}
+
+          {/* Edit contract */}
+          <Button type="button" onClick={() => openEditor()} variant="outline" className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50">
             <PencilLine className="mr-2 h-4 w-4" />
             {editorCopy.editContract}
           </Button>
-          {signhostLinks.map((link, index) => (
+
+          {/* Signhost links (only if not expired/failed) */}
+          {!isExpiredOrFailed && signhostLinks.map((link, index) => (
             <Fragment key={`${link.url}-${index}`}>
-              <Button
-                type="button"
-                onClick={() => handleOpenSignhostLink(link.url)}
-                className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
-              >
+              <Button type="button" onClick={() => handleOpenSignhostLink(link.url)} variant="outline" className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50">
                 <ExternalLink className="mr-2 h-4 w-4" />
-                {editorCopy.openDeeplink}
-                {link.role ? ` (${link.role})` : ""}
+                {editorCopy.openDeeplink}{link.role ? ` (${link.role})` : ""}
               </Button>
-              <Button
-                type="button"
-                onClick={() => void handleCopySignhostLink(link.url)}
-                className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
-                title={link.url}
-              >
+              <Button type="button" onClick={() => void handleCopySignhostLink(link.url)} variant="outline" className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50" title={link.url}>
                 <Copy className="mr-2 h-4 w-4" />
-                Copy Signhost link
-                {link.role ? ` (${link.role})` : ""}
+                Kopieer Signhost-link{link.role ? ` (${link.role})` : ""}
               </Button>
             </Fragment>
           ))}
-          <Button
-            type="button"
-            onClick={handleDownloadGeneratedPdf}
-            disabled={isGenerating || !yachtId}
-            className="rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
-          >
+
+          {/* Download PDF */}
+          <Button type="button" onClick={handleDownloadGeneratedPdf} disabled={isGenerating || !yachtId} variant="outline" className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50">
             <FileText className="mr-2 h-4 w-4" />
             {editorCopy.downloadPdf}
           </Button>
+
+          {/* Create NEW Signhost transaction (requires confirmation) */}
+          {resolvedRecipients.length > 0 && (
+            <Button type="button" onClick={() => { setSignhostCostConfirmed(false); setShowSignhostConfirm(true); }} disabled={isGenerating || !activeLocationId || !yachtId} className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50">
+              <Send className="mr-2 h-4 w-4" />
+              {isExpiredOrFailed ? "Nieuwe Signhost-transactie aanmaken" : (contractTemplateKey === "escrow_form" ? editorCopy.sendEscrowToSignhost : editorCopy.sendToSignhost)}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -5068,6 +5110,51 @@ export function SignhostFlow({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
               Create and Link Client
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSignhostConfirm} onOpenChange={setShowSignhostConfirm}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nieuwe Signhost-transactie aanmaken</DialogTitle>
+            <DialogDescription>
+              U staat op het punt een nieuwe Signhost-transactie aan te maken. Dit kan extra kosten met zich meebrengen.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2 text-sm text-slate-700 dark:text-slate-300">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+              <div className="flex gap-2"><span className="font-semibold w-24">Vaartuig:</span><span>{draft.vesselName || yachtName}</span></div>
+              <div className="flex gap-2"><span className="font-semibold w-24">Koper:</span><span>{draft.clientName || "—"}</span></div>
+              <div className="flex gap-2"><span className="font-semibold w-24">Verkoper:</span><span>{draft.sellerContactName || draft.companyName || "—"}</span></div>
+              <div className="flex gap-2"><span className="font-semibold w-24">Locatie:</span><span>{selectedLocation?.name || "—"}</span></div>
+            </div>
+            {isExpiredOrFailed && (
+              <div className="flex items-start gap-2 rounded-xl border border-orange-200 bg-orange-50 p-3 text-orange-800">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>De vorige Signhost-transactie is verlopen of mislukt. Een nieuwe transactie aanmaken kan extra kosten met zich meebrengen.</p>
+              </div>
+            )}
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50">
+              <input
+                type="checkbox"
+                checked={signhostCostConfirmed}
+                onChange={e => setSignhostCostConfirmed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300"
+              />
+              <span>Ik begrijp dat het aanmaken van een Signhost-transactie externe kosten met zich mee kan brengen.</span>
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSignhostConfirm(false)}>Annuleren</Button>
+            <Button
+              disabled={!signhostCostConfirmed || isGenerating}
+              onClick={() => { setShowSignhostConfirm(false); void handleGenerateContract(false); }}
+              className="bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
+            >
+              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Signhost-transactie aanmaken
             </Button>
           </DialogFooter>
         </DialogContent>
