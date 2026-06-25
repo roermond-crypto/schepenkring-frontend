@@ -208,9 +208,9 @@ export default function KycCaseDetailPage() {
       );
       setKycCase((prev) => prev ? {
         ...prev,
-        risk_score: res.risk.score,
-        risk_level: res.risk.level,
-        blocking: res.blocking,
+        risk_score: res.data.risk.score,
+        risk_level: res.data.risk.level,
+        blocking: res.data.blocking,
       } : prev);
       toast.success(td.answeredOk);
     } catch {

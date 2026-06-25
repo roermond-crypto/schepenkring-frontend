@@ -112,10 +112,10 @@ export default function KycCasesPage() {
         data: KycCase[]; total: number; last_page: number; stats: KycStats;
       }>(`/admin/kyc-cases?${qp}`);
 
-      setCases(res.data ?? []);
-      setStats(res.stats ?? null);
-      setTotal(res.total ?? 0);
-      setLastPage(res.last_page ?? 1);
+      setCases(res.data.data ?? []);
+      setStats(res.data.stats ?? null);
+      setTotal(res.data.total ?? 0);
+      setLastPage(res.data.last_page ?? 1);
     } catch {
       toast.error(t.detail.listLoadFailed);
     } finally {
@@ -129,7 +129,7 @@ export default function KycCasesPage() {
     setCreating(true);
     try {
       const res = await api.post<{ kyc_case: KycCase }>("/admin/kyc-cases", {});
-      router.push(`/${locale}/dashboard/${role}/kyc/${res.kyc_case.id}`);
+      router.push(`/${locale}/dashboard/${role}/kyc/${res.data.kyc_case.id}`);
     } catch {
       toast.error(t.detail.createFailed);
       setCreating(false);
