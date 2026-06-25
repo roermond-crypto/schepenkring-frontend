@@ -171,22 +171,22 @@ export default function KycCaseDetailPage() {
         missing_documents: { party: string; type: string }[];
       }>(`/admin/kyc-cases/${caseId}`);
 
-      const caseWithMissing = { ...res.kyc_case, missing_documents: res.missing_documents ?? [] };
+      const caseWithMissing = { ...res.data.kyc_case, missing_documents: res.data.missing_documents ?? [] };
       setKycCase(caseWithMissing);
-      setSections(res.sections ?? {});
-      setProgress(res.progress ?? {});
+      setSections(res.data.sections ?? {});
+      setProgress(res.data.progress ?? {});
 
       const answerMap: Record<number, string> = {};
       const noteMap: Record<number, string> = {};
-      res.kyc_case.answers.forEach((a) => {
+      res.data.kyc_case.answers.forEach((a) => {
         answerMap[a.question_id] = a.answer;
         if (a.note) noteMap[a.question_id] = a.note;
       });
       setAnswers(answerMap);
       setNotes(noteMap);
 
-      if (!activeSection && Object.keys(res.sections ?? {}).length > 0) {
-        setActiveSection(Object.keys(res.sections)[0]);
+      if (!activeSection && Object.keys(res.data.sections ?? {}).length > 0) {
+        setActiveSection(Object.keys(res.data.sections)[0]);
       }
     } catch {
       toast.error(td.loadFailed);
