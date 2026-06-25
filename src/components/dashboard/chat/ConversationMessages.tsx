@@ -72,6 +72,12 @@ function StatusBadge({
       text: "text-slate-600",
       icon: <CheckCircle2 size={12} />,
     },
+    archived: {
+      label: t("messages.status.archived"),
+      bg: "bg-slate-50 border-slate-200 hover:bg-slate-100",
+      text: "text-slate-400",
+      icon: <CheckCircle2 size={12} />,
+    },
   };
   const c = config[status];
   return (

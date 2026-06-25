@@ -1351,7 +1351,8 @@
       "status": {
         "open": "Open",
         "pending": "Pending",
-        "solved": "Solved"
+        "solved": "Solved",
+        "archived": "Archived"
       },
       "aiSummary": "AI summary",
       "filters": {

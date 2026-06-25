@@ -1338,7 +1338,8 @@
       "status": {
         "open": "Ouvrir",
         "pending": "En attente",
-        "solved": "Résolu"
+        "solved": "Résolu",
+        "archived": "Archivé"
       },
       "aiSummary": "Résumé IA",
       "filters": {

@@ -1349,7 +1349,8 @@
       "status": {
         "open": "Open",
         "pending": "In afwachting",
-        "solved": "Opgelost"
+        "solved": "Opgelost",
+        "archived": "Gearchiveerd"
       },
       "aiSummary": "AI-samenvatting",
       "filters": {

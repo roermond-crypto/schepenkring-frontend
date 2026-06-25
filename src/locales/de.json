@@ -1348,7 +1348,8 @@
       "status": {
         "open": "Offen",
         "pending": "Ausstehend",
-        "solved": "Gelöst"
+        "solved": "Gelöst",
+        "archived": "Archiviert"
       },
       "aiSummary": "KI-Zusammenfassung",
       "filters": {
