@@ -47,10 +47,20 @@ export interface Chat {
 
 // ── Support / Helpdesk conversation types ──────────────────────────
 
-export type ConversationStatus = "open" | "pending" | "solved"
+export type ConversationStatus = "open" | "pending" | "solved" | "archived"
 export type ConversationSource = "webapp" | "widget"
 export type SenderType = "guest" | "user" | "admin" | "system" | "ai"
 export type SupportMessageType = "text" | "call"
+export type ChatType =
+  | "general"
+  | "offer"
+  | "viewing"
+  | "callback"
+  | "question"
+  | "brochure"
+  | "seller"
+  | "buyer"
+export type SendChannel = "chat" | "email" | "whatsapp"
 
 export interface ConversationContext {
   hiswa_company_id?: string
@@ -65,6 +75,8 @@ export interface Conversation {
   id: string
   status: ConversationStatus
   source: ConversationSource
+  chat_type?: ChatType
+  send_channel?: SendChannel
   assigned_to?: string
   assigned_name?: string
   user_id?: string
@@ -77,11 +89,18 @@ export interface Conversation {
   updated_at: Date
   last_message?: string
   last_message_at?: Date
+  last_customer_message_at?: Date
+  waiting_since?: Date
   unread_count: number
   contact_name: string
   contact_avatar?: string
   contact_company?: string
   intent?: "onboarding" | "technical" | "billing" | "general"
+  // linked business objects
+  offer_id?: number
+  booking_id?: number
+  boat_id?: number
+  boat_name?: string
 }
 
 export interface SupportMessage {
@@ -92,6 +111,9 @@ export interface SupportMessage {
   sender_avatar?: string
   text: string
   message_type?: SupportMessageType
+  channel?: string
+  delivery_status?: "sent" | "failed" | "opened" | "bounced"
+  is_internal_note?: boolean
   metadata?: Record<string, unknown>
   attachments: Attachment[]
   created_at: Date

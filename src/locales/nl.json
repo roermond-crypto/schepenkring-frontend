@@ -200,7 +200,8 @@
       "knowledgebase": "Kennisbank",
       "videoTemplates": "Videosjablonen",
       "emailTemplates": "E-mailsjablonen",
-      "contractTemplates": "Contractsjablonen"
+      "contractTemplates": "Contractsjablonen",
+      "i18nQuality": "Vertalingskwaliteit"
     },
     "notifications": {
       "label": "Meldingen",
@@ -514,7 +515,7 @@
     "title_client": "Klantenoverzicht",
     "title_employee": "Verkoopdashboard",
     "welcomeBack": "Welkom terug, {name}",
-    "todayWeather": "Vandaag: 18Â° zonnig in Eindhoven",
+    "todayWeather": "Vandaag: 18° zonnig in Eindhoven",
     "notificationSummary": "Je hebt {count} nieuwe melding{count, plural, one {} other {en}}.",
     "registrationSummary": "Je hebt {count} nieuwe registratie{count, plural, one {} other {s}} die wachten op controle.",
     "activeBiddingItems": "Je hebt {count} actieve bieding{count, plural, one {} other {en}}.",
@@ -690,9 +691,31 @@
       "searchPlaceholder": "Zoek beschrijvingen, gebruikers, IP's...",
       "fromDate": "Vanaf datum",
       "toDate": "Tot datum",
+      "from": "Van",
+      "to": "Tot",
       "eventTypes": "Gebeurtenistypes",
       "entityTypes": "Entiteitstypes",
-      "clearAll": "Wis alle filters ({count})"
+      "allEventTypes": "Alle gebeurtenistypes",
+      "allEntityTypes": "Alle entiteitstypes",
+      "allRiskLevels": "Alle risiconiveaus",
+      "riskLow": "Laag",
+      "riskMedium": "Gemiddeld",
+      "riskHigh": "Hoog",
+      "riskCritical": "Kritiek",
+      "sourcePlaceholder": "Bron...",
+      "clearAll": "Wis alle filters ({count})",
+      "clearAllPlain": "Wis alle filters",
+      "clearSelection": "Wis selectie",
+      "activeFilters": "Actieve filters",
+      "dateShortcuts": "Datumkeuze",
+      "customRange": "Aangepast bereik",
+      "shortcuts": {
+        "today": "Vandaag",
+        "yesterday": "Gisteren",
+        "last7": "Afgelopen 7 dagen",
+        "last30": "Afgelopen 30 dagen",
+        "thisMonth": "Deze maand"
+      }
     },
     "errors": {
       "title": "Fout bij laden van gegevens",
@@ -722,7 +745,8 @@
     "empty": {
       "title": "Geen activiteitslogs gevonden",
       "filtered": "Er zijn geen activiteitslogs die overeenkomen met je huidige filters. Probeer je zoekcriteria aan te passen.",
-      "default": "Er zijn nog geen activiteitslogs beschikbaar. Begin met het aanmaken van taken, het bijwerken van jachten of laat gebruikers inloggen."
+      "default": "Er zijn nog geen activiteitslogs beschikbaar. Begin met het aanmaken van taken, het bijwerken van jachten of laat gebruikers inloggen.",
+      "noData": "Geen gegevens beschikbaar"
     },
     "pagination": {
       "resultsSummary": "Toont {from} tot {to} van {total} resultaten",
@@ -762,7 +786,7 @@
       "countries": {
         "nl": "Nederland (NL)",
         "de": "Duitsland (DE)",
-        "be": "BelgiÃ« (BE)"
+        "be": "België (BE)"
       },
       "devices": {
         "mobile": "Mobiel",
@@ -1012,7 +1036,7 @@
       "en": "English",
       "nl": "Nederlands",
       "de": "Deutsch",
-      "fr": "FranÃ§ais"
+      "fr": "Français"
     },
     "actions": {
       "syncProfile": "Profiel synchroniseren",
@@ -1087,7 +1111,7 @@
     },
     "errors": {
       "loadFailed": "Sociale automatiseringsgegevens konden niet worden geladen.",
-      "selectVideos": "Selecteer minstens Ã©Ã©n video voordat je plant.",
+      "selectVideos": "Selecteer minstens één video voordat je plant.",
       "scheduleFailed": "De publicatieplanning kon niet worden aangemaakt.",
       "regenerateFailed": "Videoregeneratie kon niet in de wachtrij worden gezet.",
       "retryFailed": "Deze post kon niet opnieuw worden geprobeerd.",
@@ -1124,7 +1148,7 @@
       "rejectFailed": "Afwijzen mislukt",
       "commentAdded": "Opmerking toegevoegd",
       "commentFailed": "Opmerking toevoegen mislukt",
-      "fileUploaded": "Bestand geÃ¼pload",
+      "fileUploaded": "Bestand geüpload",
       "uploadFailed": "Uploaden mislukt",
       "fileDeleted": "Bestand verwijderd"
     },
@@ -1184,8 +1208,8 @@
       "activeTasks": "Actieve taken",
       "priority": "Prioriteit",
       "completedAssets": "Voltooide items",
-      "monthlyEfficiency": "Maandelijkse efficiÃ«ntie",
-      "todayEfficiency": "EfficiÃ«ntie van vandaag"
+      "monthlyEfficiency": "Maandelijkse efficiëntie",
+      "todayEfficiency": "Efficiëntie van vandaag"
     },
     "filters": {
       "status": "Status",
@@ -1240,7 +1264,7 @@
       "task": "Taak",
       "noDate": "Geen datum",
       "createdBy": "Aangemaakt door",
-      "na": "â€”",
+      "na": "—",
       "me": "Ik",
       "due": "Vervalt",
       "overdue": "TE LAAT"
@@ -1351,7 +1375,7 @@
       "consentMarketing": "Marketingtoestemming",
       "consentMarketingHelp": "Sta promotionele berichten en campagnes toe.",
       "consentService": "Toestemming servicemeldingen",
-      "consentServiceHelp": "Sta essentiÃ«le service- en operationele updates toe.",
+      "consentServiceHelp": "Sta essentiële service- en operationele updates toe.",
       "location": "Locatie",
       "company": "Bedrijf",
       "sourceUrl": "Bron URL",
@@ -1368,6 +1392,9 @@
       "noPhone": "Nog geen telefoonnummer",
       "unknownLocation": "Onbekende locatie",
       "noActivity": "Nog geen activiteit geregistreerd.",
+      "normalized": "Genormaliseerd",
+      "boat": "Gekoppelde boot",
+      "offer": "Gekoppeld bod",
       "placeholders": {
         "name": "John Visitor",
         "email": "john@example.com",
@@ -1384,6 +1411,33 @@
         "online": "Online",
         "offline": "Offline",
         "away": "Afwezig"
+      }
+    },
+    "composer": {
+      "alreadyOpen": "Componist staat al open. Vul hem in of annuleer hem eerst.",
+      "title": "Nieuwe chat",
+      "subtitle": "Vul de contactgegevens in en stuur een openingsbericht",
+      "recipient": "Ontvanger",
+      "context": "Context",
+      "chatType": "Chat type",
+      "sendVia": "Verzendkanaal",
+      "openingMessage": "Openingsbericht",
+      "send": "Verstuur",
+      "sending": "Versturen...",
+      "cancel": "Annuleren",
+      "nameRequired": "Naam is verplicht.",
+      "messageRequired": "Voer een openingsbericht in.",
+      "emailRequiredForEmail": "Voer een geldig e-mailadres in om via e-mail te sturen.",
+      "failed": "Kon chat niet starten.",
+      "chatTypes": {
+        "general": "Algemeen",
+        "offer": "Bod",
+        "viewing": "Bezichtiging",
+        "callback": "Terugbellen",
+        "question": "Vraag",
+        "brochure": "Brochure",
+        "seller": "Verkoper",
+        "buyer": "Koper"
       }
     }
   },
@@ -1432,36 +1486,36 @@
     }
   },
   "DashboardFaq": {
-    "title": "FAQâ€‘kennisbank",
-    "subtitle": "AIâ€‘powered â€¢ {count} FAQ's beschikbaar",
+    "title": "FAQ‑kennisbank",
+    "subtitle": "AI‑powered • {count} FAQ's beschikbaar",
     "addFaq": "FAQ toevoegen",
     "trainAi": "AI trainen",
     "totalFaqs": "Totaal FAQ's",
     "totalViews": "Totaal weergaven",
     "helpfulVotes": "Nuttige stemmen",
-    "categories": "CategorieÃ«n",
-    "askAssistant": "Maritieme AIâ€‘assistent vragen",
+    "categories": "Categorieën",
+    "askAssistant": "Maritieme AI‑assistent vragen",
     "trainedOn": "Getraind op {count} FAQ's",
     "placeholderAsk": "Vraag alles over jachten, boekingen of maritieme diensten...",
     "searchPlaceholder": "ZOEK FAQ's...",
     "thinking": "Denken...",
     "askAi": "AI vragen",
-    "aiAnswer": "AIâ€‘antwoord",
+    "aiAnswer": "AI‑antwoord",
     "sources": "Bronnen",
     "enterQuestion": "Vraag invoeren...",
     "enterAnswer": "Gedetailleerd antwoord invoeren...",
     "all": "Alle",
     "toastFailedLoad": "FAQ's laden mislukt",
     "toastAiAnswered": "AI heeft je vraag beantwoord!",
-    "toastFailedAi": "AIâ€‘antwoord mislukt",
+    "toastFailedAi": "AI‑antwoord mislukt",
     "toastThanksFeedback": "Bedankt voor je feedback!",
     "toastFaqAdded": "FAQ succesvol toegevoegd!",
     "toastFailedAdd": "FAQ toevoegen mislukt",
     "confirmDelete": "Weet je zeker dat je deze FAQ wilt verwijderen?",
     "toastFaqDeleted": "FAQ verwijderd!",
     "toastFailedDelete": "FAQ verwijderen mislukt",
-    "toastAiTrained": "Geminiâ€‘AI getraind met de nieuwste FAQ's!",
-    "toastFailedTrain": "AIâ€‘training mislukt",
+    "toastAiTrained": "Gemini‑AI getraind met de nieuwste FAQ's!",
+    "toastFailedTrain": "AI‑training mislukt",
     "addNewFaq": "Nieuwe FAQ toevoegen",
     "question": "Vraag",
     "answer": "Antwoord",
@@ -1476,7 +1530,7 @@
     "added": "Toegevoegd",
     "support": {
       "title": "Need more help? Contact our maritime support team",
-      "contact": "support@schepen-kring.nl â€¢ +31 20 123 4567"
+      "contact": "support@schepen-kring.nl • +31 20 123 4567"
     }
   },
   "WidgetChat": {
@@ -1515,7 +1569,7 @@
       "conversationActive": "Conversatie actief",
       "onlineSupport": "Online support",
       "boat": "Boot {boatId}",
-      "locationAware": "Boot {boatId} â€¢ locatiegestuurd",
+      "locationAware": "Boot {boatId} • locatiegestuurd",
       "connected": "Verbonden",
       "supportOnline": "Support online",
       "encrypted": "Versleuteld"
@@ -1600,10 +1654,10 @@
     },
     "stats": {
       "highestBid": "Hoogste bod",
-      "bidSummary": "{bids} biedingen â€¢ {bidders} bieders"
+      "bidSummary": "{bids} biedingen • {bidders} bieders"
     },
     "status": {
-      "ended": "BeÃ«indigd",
+      "ended": "Beëindigd",
       "scheduled": "Gepland",
       "winning": "Winnend"
     },
@@ -1652,7 +1706,7 @@
     "welcomePlaceholder": "bijv. Hallo! Hoe kunnen we je helpen?",
     "saveSuccess": "Widgetinstellingen opgeslagen",
     "saveError": "Widgetinstellingen opslaan mislukt",
-    "copyCode": "Code kopiÃ«ren",
+    "copyCode": "Code kopiëren",
     "copied": "Gekopieerd!",
     "save": "Instellingen opslaan",
     "loadLocationsError": "Locaties laden mislukt",

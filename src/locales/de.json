@@ -199,7 +199,8 @@
       "knowledgebase": "Wissensdatenbank",
       "videoTemplates": "Video-Vorlagen",
       "emailTemplates": "E-Mail-Vorlagen",
-      "contractTemplates": "Vertragsvorlagen"
+      "contractTemplates": "Vertragsvorlagen",
+      "i18nQuality": "Übersetzungsqualität"
     },
     "notifications": {
       "label": "Benachrichtigungen",
@@ -689,9 +690,31 @@
       "searchPlaceholder": "Suche nach Beschreibungen, Benutzern, IP-Adressen...",
       "fromDate": "Von Datum",
       "toDate": "Bis Datum",
+      "from": "Von",
+      "to": "Bis",
       "eventTypes": "Ereignistypen",
       "entityTypes": "Entitätstypen",
-      "clearAll": "Alle Filter löschen ({count})"
+      "allEventTypes": "Alle Ereignistypen",
+      "allEntityTypes": "Alle Entitätstypen",
+      "allRiskLevels": "Alle Risikostufen",
+      "riskLow": "Niedrig",
+      "riskMedium": "Mittel",
+      "riskHigh": "Hoch",
+      "riskCritical": "Kritisch",
+      "sourcePlaceholder": "Quelle...",
+      "clearAll": "Alle Filter löschen ({count})",
+      "clearAllPlain": "Alle Filter löschen",
+      "clearSelection": "Auswahl löschen",
+      "activeFilters": "Aktive Filter",
+      "dateShortcuts": "Datumsauswahl",
+      "customRange": "Benutzerdefinierter Bereich",
+      "shortcuts": {
+        "today": "Heute",
+        "yesterday": "Gestern",
+        "last7": "Letzte 7 Tage",
+        "last30": "Letzte 30 Tage",
+        "thisMonth": "Diesen Monat"
+      }
     },
     "errors": {
       "title": "Fehler beim Laden der Daten",
@@ -721,7 +744,8 @@
     "empty": {
       "title": "Keine Aktivitätsprotokolle gefunden",
       "filtered": "Keine Aktivitätsprotokolle entsprechen Ihren aktuellen Filtern. Versuchen Sie, Ihre Suchkriterien anzupassen.",
-      "default": "Es sind noch keine Aktivitätsprotokolle verfügbar. Beginnen Sie, indem Sie Aufgaben erstellen, Yachten aktualisieren oder Benutzer anmelden lassen."
+      "default": "Es sind noch keine Aktivitätsprotokolle verfügbar. Beginnen Sie, indem Sie Aufgaben erstellen, Yachten aktualisieren oder Benutzer anmelden lassen.",
+      "noData": "Keine Daten verfügbar"
     },
     "pagination": {
       "resultsSummary": "Anzeigen von {from} bis {to} von {total} Ergebnissen",

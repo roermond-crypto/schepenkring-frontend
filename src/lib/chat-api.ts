@@ -1,9 +1,11 @@
 "use client";
 
 import type {
+  ChatType,
   Conversation,
   ConversationStatus,
   ContactInfo,
+  SendChannel,
   SupportMessage,
 } from "@/types/chat";
 import { apiRequest } from "@/lib/api/http";
@@ -26,9 +28,16 @@ interface BackendConversation {
   status: string;
   priority?: string | null;
   channel: string;
+  chat_type?: string | null;
+  send_channel?: string | null;
   created_at: string;
   updated_at: string;
   last_message_at?: string | null;
+  last_customer_message_at?: string | null;
+  waiting_since?: string | null;
+  boat_id?: number | null;
+  offer_id?: number | null;
+  booking_id?: number | null;
   location?: {
     id: number;
     name: string;
@@ -49,6 +58,11 @@ interface BackendConversation {
     email?: string | null;
     phone?: string | null;
   } | null;
+  boat?: {
+    id: number;
+    name?: string | null;
+    title?: string | null;
+  } | null;
 }
 
 interface BackendMessage {
@@ -59,6 +73,8 @@ interface BackendMessage {
   body?: string | null;
   message_type?: "text" | "call" | string;
   channel?: string;
+  delivery_status?: string | null;
+  is_internal_note?: boolean | null;
   metadata?: Record<string, unknown>;
   employee?: { id: number; name: string; first_name?: string; last_name?: string } | null;
   attachments?: Array<{
@@ -90,6 +106,7 @@ function mapConversationStatus(status?: string | null): ConversationStatus {
   const normalized = String(status ?? "").toLowerCase();
   if (normalized === "pending") return "pending";
   if (normalized === "solved" || normalized === "closed") return "solved";
+  if (normalized === "archived") return "archived";
   return "open";
 }
 
@@ -107,12 +124,20 @@ function mapConversationToConversation(
     source: (conversation.channel === "web_widget" ? "widget" : "webapp") as
       | "widget"
       | "webapp",
+    chat_type: (conversation.chat_type ?? undefined) as ChatType | undefined,
+    send_channel: (conversation.send_channel ?? undefined) as SendChannel | undefined,
     contact_name: contactName,
     contact_avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(contactName)}`,
     contact_company: conversation.location?.name ?? undefined,
     last_message_at: conversation.last_message_at
       ? new Date(conversation.last_message_at)
       : new Date(conversation.updated_at),
+    last_customer_message_at: conversation.last_customer_message_at
+      ? new Date(conversation.last_customer_message_at)
+      : undefined,
+    waiting_since: conversation.waiting_since
+      ? new Date(conversation.waiting_since)
+      : undefined,
     unread_count: conversation.status === "open" ? 1 : 0,
     created_at: new Date(conversation.created_at),
     updated_at: new Date(conversation.updated_at),
@@ -127,6 +152,10 @@ function mapConversationToConversation(
       conversation.lead?.id !== null && conversation.lead?.id !== undefined
         ? String(conversation.lead.id)
         : undefined,
+    boat_id: conversation.boat_id ?? undefined,
+    boat_name: conversation.boat?.name ?? conversation.boat?.title ?? undefined,
+    offer_id: conversation.offer_id ?? undefined,
+    booking_id: conversation.booking_id ?? undefined,
   };
 }
 
@@ -166,6 +195,14 @@ function mapBackendMessage(message: BackendMessage): SupportMessage {
         : ""),
     message_type: message.message_type === "call" ? "call" : "text",
     metadata: message.metadata ?? undefined,
+    channel: message.channel ?? undefined,
+    delivery_status: (message.delivery_status ?? undefined) as
+      | "sent"
+      | "failed"
+      | "opened"
+      | "bounced"
+      | undefined,
+    is_internal_note: message.is_internal_note ?? false,
     attachments: Array.isArray(message.attachments)
       ? message.attachments.map((attachment, index) => ({
           id: attachment.id ?? `${message.id}-attachment-${index}`,
@@ -415,13 +452,33 @@ export async function startSupportCall(
   return mapBackendMessage(response);
 }
 
-export async function createConversation(): Promise<Conversation> {
+export interface CreateConversationPayload {
+  contact?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    language_preferred?: string;
+  };
+  location_id?: number;
+  boat_id?: number;
+  chat_type?: ChatType;
+  send_channel?: SendChannel;
+  initial_message?: string;
+  offer_id?: number;
+  booking_id?: number;
+  channel?: string;
+}
+
+export async function createConversation(
+  payload?: CreateConversationPayload,
+): Promise<Conversation> {
   const response = await apiRequest<BackendConversation>({
     method: "POST",
     url: "/chat/conversations",
     data: {
       status: "open",
-      channel: "webapp",
+      channel: payload?.channel ?? "webapp",
+      ...payload,
     },
   });
 

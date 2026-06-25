@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { ConversationList } from "./ConversationList";
 import { ConversationMessages } from "./ConversationMessages";
 import { ContactDetailPanel } from "./ContactDetailPanel";
+import { NewChatComposer, type ComposerPayload } from "./NewChatComposer";
 import {
   getConversations,
   getMessages,
@@ -23,7 +24,7 @@ import type {
   SystemEvent,
   SupportMessage,
 } from "@/types/chat";
-import { Menu } from "lucide-react";
+import { AlertCircle, Menu } from "lucide-react";
 
 export function ChatPage() {
   const t = useTranslations("DashboardChat");
@@ -41,6 +42,8 @@ export function ChatPage() {
   const [showDetailPanel, setShowDetailPanel] = useState(false);
   const [aiSummary, setAiSummary] = useState("");
   const [messageFilter, setMessageFilter] = useState<"all" | "chat" | "system" | "signhost">("all");
+  const [showComposer, setShowComposer] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
 
   // Load conversations
   const loadConversations = useCallback(async () => {
@@ -198,18 +201,26 @@ export function ChatPage() {
     [selectedConv, loadConversations],
   );
 
-  // Create New Conversation
-  const handleCreateConversation = useCallback(async () => {
-    setLoading(true);
-    try {
-      const newConv = await createConversation();
-      setConversations((prev) => [newConv, ...prev]);
-      handleSelectConversation(newConv);
-    } catch (error) {
-      console.error(error);
+  // Open composer (prevent duplicate if already open)
+  const handleCreateConversation = useCallback(() => {
+    if (showComposer) {
+      setDuplicateWarning(true);
+      setTimeout(() => setDuplicateWarning(false), 3000);
+      return;
     }
-    setLoading(false);
-  }, [handleSelectConversation]);
+    setShowComposer(true);
+  }, [showComposer]);
+
+  // Submit from composer
+  const handleComposerSubmit = useCallback(
+    async (payload: ComposerPayload) => {
+      const newConv = await createConversation(payload);
+      setConversations((prev) => [newConv, ...prev]);
+      setShowComposer(false);
+      void handleSelectConversation(newConv);
+    },
+    [handleSelectConversation],
+  );
 
   return (
     <div className="chat-page-theme space-y-6">
@@ -324,6 +335,25 @@ export function ChatPage() {
           </div>
         </div>
       )}
+
+      {/* New chat composer modal */}
+      {showComposer && (
+        <NewChatComposer
+          onSubmit={handleComposerSubmit}
+          onCancel={() => setShowComposer(false)}
+        />
+      )}
+
+      {/* Duplicate warning toast */}
+      {duplicateWarning && (
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 shadow-lg shadow-amber-100">
+          <AlertCircle size={16} className="shrink-0 text-amber-600" />
+          <span className="text-sm font-medium text-amber-800">
+            {t("composer.alreadyOpen")}
+          </span>
+        </div>
+      )}
+
       <style jsx global>{`
         .dark .chat-page-theme .bg-white,
         .dark .chat-page-theme .bg-white\/70,

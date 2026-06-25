@@ -11,15 +11,10 @@ import {
   ChevronRight,
   MessageSquare,
   Ship,
-  Settings,
   Users,
   WifiOff,
   Wifi,
-  Brain,
-  Sparkles,
-  Library,
   CheckCircle2,
-  Clapperboard,
   CreditCard,
   Search,
   ArrowRight,
@@ -29,6 +24,7 @@ import {
   LogOut,
   Mail,
   FileText,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -154,26 +150,6 @@ export function Sidebar({
         icon: MessageSquare,
       });
       items.push({
-        title: t.copilot,
-        href: `${root}/copilot`,
-        icon: Sparkles,
-      });
-      items.push({
-        title: t.knowledgebase,
-        href: `${root}/knowledgebase/articles`,
-        icon: Library,
-      });
-      items.push({
-        title: t.knowledgeBrain,
-        href: `${root}/knowledge-brain`,
-        icon: Brain,
-      });
-      items.push({
-        title: t.videoTemplates,
-        href: `${root}/video-templates`,
-        icon: Clapperboard,
-      });
-      items.push({
         title: t.emailTemplates ?? "E-mailsjablonen",
         href: `${root}/email-templates`,
         icon: Mail,
@@ -183,22 +159,17 @@ export function Sidebar({
         href: `${root}/contract-templates`,
         icon: FileText,
       });
+      items.push({
+        title: t.i18nQuality ?? "Vertalingskwaliteit",
+        href: `${root}/i18n`,
+        icon: Globe,
+      });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
       items.push({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,
-      });
-      items.push({
-        title: t.knowledgebase,
-        href: `${root}/knowledgebase/articles`,
-        icon: Library,
-      });
-      items.push({
-        title: t.knowledgeBrain,
-        href: `${root}/knowledge-brain`,
-        icon: Brain,
       });
     } else if (role === "client" || role === "buyer" || role === "seller") {
       if (bidsPageEnabled) {
@@ -217,8 +188,6 @@ export function Sidebar({
     }
 
     items.push({ title: t.boats, href: `${root}/yachts`, icon: Ship });
-
-    items.push({ title: t.settings, href: `${root}/account`, icon: Settings });
 
     if (isOnboarded === false) {
       return items.filter(item => item.href === root);

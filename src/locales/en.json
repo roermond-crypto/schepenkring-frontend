@@ -198,7 +198,8 @@
       "bids": "Bids",
       "videoTemplates": "Video Templates",
       "emailTemplates": "Email Templates",
-      "contractTemplates": "Contract Templates"
+      "contractTemplates": "Contract Templates",
+      "i18nQuality": "Translation Quality"
     },
     "notifications": {
       "label": "Notifications",
@@ -512,7 +513,7 @@
     "title_client": "Client Overview",
     "title_employee": "Sales Dashboard",
     "welcomeBack": "Welcome back, {name}",
-    "todayWeather": "Today: 18Â° Sunny in Eindhoven",
+    "todayWeather": "Today: 18° Sunny in Eindhoven",
     "notificationSummary": "You got {count} new notification{count, plural, one {} other {s}}.",
     "registrationSummary": "You have {count} new registration{count, plural, one {} other {s}} awaiting review.",
     "activeBiddingItems": "You have {count} active bidding {count, plural, one {item} other {items}}.",
@@ -692,9 +693,31 @@
       "searchPlaceholder": "Search descriptions, users, IPs...",
       "fromDate": "From Date",
       "toDate": "To Date",
+      "from": "From",
+      "to": "To",
       "eventTypes": "Event Types",
       "entityTypes": "Entity Types",
-      "clearAll": "Clear all filters ({count})"
+      "allEventTypes": "All event types",
+      "allEntityTypes": "All entity types",
+      "allRiskLevels": "All risk levels",
+      "riskLow": "Low",
+      "riskMedium": "Medium",
+      "riskHigh": "High",
+      "riskCritical": "Critical",
+      "sourcePlaceholder": "Source...",
+      "clearAll": "Clear all filters ({count})",
+      "clearAllPlain": "Clear all filters",
+      "clearSelection": "Clear selection",
+      "activeFilters": "Active filters",
+      "dateShortcuts": "Date shortcuts",
+      "customRange": "Custom range",
+      "shortcuts": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "last7": "Last 7 days",
+        "last30": "Last 30 days",
+        "thisMonth": "This month"
+      }
     },
     "errors": {
       "title": "Error Loading Data",
@@ -724,7 +747,8 @@
     "empty": {
       "title": "No activity logs found",
       "filtered": "No activity logs match your current filters. Try adjusting your search criteria.",
-      "default": "No activity logs available yet. Start by creating tasks, updating yachts, or having users log in."
+      "default": "No activity logs available yet. Start by creating tasks, updating yachts, or having users log in.",
+      "noData": "No data available"
     },
     "pagination": {
       "resultsSummary": "Showing {from} to {to} of {total} results",
@@ -1014,7 +1038,7 @@
       "en": "English",
       "nl": "Nederlands",
       "de": "Deutsch",
-      "fr": "FranÃ§ais"
+      "fr": "Français"
     },
     "actions": {
       "syncProfile": "Sync Profile",
@@ -1242,7 +1266,7 @@
       "task": "Task",
       "noDate": "No date",
       "createdBy": "Created by",
-      "na": "â€”",
+      "na": "—",
       "me": "Me",
       "due": "Due",
       "overdue": "OVERDUE"
@@ -1435,7 +1459,7 @@
   },
   "DashboardFaq": {
     "title": "FAQ Knowledge Base",
-    "subtitle": "AI-Powered â€¢ {count} FAQs Available",
+    "subtitle": "AI-Powered • {count} FAQs Available",
     "addFaq": "Add FAQ",
     "trainAi": "Train AI",
     "totalFaqs": "Total FAQs",
@@ -1478,7 +1502,7 @@
     "added": "Added",
     "support": {
       "title": "Need more help? Contact our maritime support team",
-      "contact": "support@schepen-kring.nl â€¢ +31 20 123 4567"
+      "contact": "support@schepen-kring.nl • +31 20 123 4567"
     }
   },
   "WidgetChat": {
@@ -1517,7 +1541,7 @@
       "conversationActive": "Conversation active",
       "onlineSupport": "Online support",
       "boat": "Boat {boatId}",
-      "locationAware": "Boat {boatId} â€¢ location aware",
+      "locationAware": "Boat {boatId} • location aware",
       "connected": "Connected",
       "supportOnline": "Support online",
       "encrypted": "Encrypted"
@@ -1602,7 +1626,7 @@
     },
     "stats": {
       "highestBid": "Highest bid",
-      "bidSummary": "{bids} bids â€¢ {bidders} bidders"
+      "bidSummary": "{bids} bids • {bidders} bidders"
     },
     "status": {
       "ended": "Ended",

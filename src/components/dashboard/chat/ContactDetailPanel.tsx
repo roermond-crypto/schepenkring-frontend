@@ -4,12 +4,15 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
+  Anchor,
   Building2,
   Check,
+  ExternalLink,
   Globe,
   Loader2,
   Mail,
   MapPin,
+  MessageCircle,
   Phone,
   Save,
   ShieldOff,
@@ -65,6 +68,19 @@ function buildFormState(
 function normalizeOptional(value: string) {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("31") && digits.length === 11) return `+${digits}`;
+  if (digits.startsWith("0") && digits.length === 10) return `+31${digits.slice(1)}`;
+  if (digits.length === 9) return `+31${digits}`;
+  return raw.trim();
+}
+
+function buildWaLink(phone: string): string {
+  const e164 = normalizePhone(phone).replace(/[^+\d]/g, "");
+  return `https://wa.me/${e164.replace("+", "")}`;
 }
 
 function ToggleRow({
@@ -286,6 +302,11 @@ export function ContactDetailPanel({
                     placeholder={t("detail.placeholders.phone")}
                   />
                 </div>
+                {form.phone && (
+                  <p className="text-[11px] text-slate-400 pl-1">
+                    {t("detail.normalized")}: <span className="font-mono font-medium text-slate-600">{normalizePhone(form.phone)}</span>
+                  </p>
+                )}
               </label>
 
               <label className="space-y-1.5">
@@ -384,17 +405,34 @@ export function ContactDetailPanel({
               {t("detail.snapshot")}
             </p>
             <div className="space-y-3">
-              <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 px-4 py-3">
-                <Phone size={16} className="mt-0.5 text-emerald-500" />
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
-                    {t("detail.phone")}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-700">
-                    {contact?.phone ?? conversation.guest_phone ?? t("detail.noPhone")}
-                  </p>
-                </div>
-              </div>
+              {(() => {
+                const rawPhone = contact?.phone ?? conversation.guest_phone;
+                return (
+                  <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 px-4 py-3">
+                    <Phone size={16} className="mt-0.5 text-emerald-500" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                        {t("detail.phone")}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-700 font-mono">
+                        {rawPhone ? normalizePhone(rawPhone) : t("detail.noPhone")}
+                      </p>
+                      {rawPhone && (
+                        <a
+                          href={buildWaLink(rawPhone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-600 transition-colors"
+                        >
+                          <MessageCircle size={12} />
+                          WhatsApp
+                          <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
               <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 px-4 py-3">
                 <Building2 size={16} className="mt-0.5 text-fuchsia-500" />
                 <div>
@@ -432,6 +470,30 @@ export function ContactDetailPanel({
                   </p>
                 </div>
               </div>
+              {(conversation.boat_id ?? conversation.boat_name) && (
+                <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 px-4 py-3">
+                  <Anchor size={16} className="mt-0.5 text-sky-500" />
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                      {t("detail.boat")}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      {conversation.boat_name ?? `#${String(conversation.boat_id)}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {conversation.offer_id && (
+                <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 px-4 py-3">
+                  <ExternalLink size={16} className="mt-0.5 text-violet-500" />
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                      {t("detail.offer")}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-700">#{conversation.offer_id}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 

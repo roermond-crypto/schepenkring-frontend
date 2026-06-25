@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import { useTranslations } from "next-intl"
-import { Search, Plus, Filter, MessageSquare, Inbox } from "lucide-react"
-import type { Conversation, ConversationStatus } from "@/types/chat"
+import { Search, Plus, MessageSquare, Inbox, AtSign, User } from "lucide-react"
+import type { ChatType, Conversation, ConversationStatus, SendChannel } from "@/types/chat"
 import { cn } from "@/lib/utils"
 
 interface ConversationListProps {
@@ -23,21 +22,56 @@ function StatusDot({ status }: { status: ConversationStatus }) {
         open: "bg-emerald-500 shadow-emerald-500/40",
         pending: "bg-amber-500 shadow-amber-500/40",
         solved: "bg-slate-400 shadow-slate-400/40",
+        archived: "bg-slate-300 shadow-slate-300/40",
     }
     return <span className={cn("inline-block w-2.5 h-2.5 rounded-full shadow-md", colors[status])} />
 }
 
-function IntentBadge({ intent }: { intent?: string }) {
-    if (!intent) return null
-    const styles: Record<string, string> = {
-        onboarding: "bg-blue-50 text-blue-700 border-blue-200",
-        technical: "bg-orange-50 text-orange-700 border-orange-200",
-        billing: "bg-purple-50 text-purple-700 border-purple-200",
-        general: "bg-slate-50 text-slate-600 border-slate-200",
-    }
+const CHAT_TYPE_COLORS: Record<ChatType, string> = {
+    general: "bg-slate-100 text-slate-600",
+    offer: "bg-blue-50 text-blue-700",
+    viewing: "bg-purple-50 text-purple-700",
+    callback: "bg-amber-50 text-amber-700",
+    question: "bg-teal-50 text-teal-700",
+    brochure: "bg-orange-50 text-orange-700",
+    seller: "bg-emerald-50 text-emerald-700",
+    buyer: "bg-rose-50 text-rose-700",
+}
+
+const CHAT_TYPE_LABELS_NL: Record<ChatType, string> = {
+    general: "Algemeen", offer: "Bod", viewing: "Bezichtiging",
+    callback: "Terugbellen", question: "Vraag", brochure: "Brochure",
+    seller: "Verkoper", buyer: "Koper",
+}
+
+function ChatTypeBadge({ type }: { type?: ChatType }) {
+    if (!type || type === "general") return null
     return (
-        <span className={cn("text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border", styles[intent] ?? styles.general)}>
-            {intent}
+        <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-md", CHAT_TYPE_COLORS[type])}>
+            {CHAT_TYPE_LABELS_NL[type]}
+        </span>
+    )
+}
+
+function ChannelIcon({ channel }: { channel?: SendChannel }) {
+    if (channel === "email") return <AtSign size={11} className="text-indigo-500" />
+    return null
+}
+
+function SlaTimer({ waitingSince }: { waitingSince?: Date }) {
+    if (!waitingSince) return null
+    const minutes = Math.floor((Date.now() - waitingSince.getTime()) / 60000)
+    const color = minutes < 30
+        ? "text-emerald-600 bg-emerald-50"
+        : minutes < 120
+            ? "text-amber-600 bg-amber-50"
+            : "text-rose-600 bg-rose-50"
+    const label = minutes < 60
+        ? `${minutes}m`
+        : `${Math.floor(minutes / 60)}u${minutes % 60 > 0 ? ` ${minutes % 60}m` : ""}`
+    return (
+        <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-md", color)}>
+            ⏱ {label}
         </span>
     )
 }
@@ -214,8 +248,16 @@ export function ConversationList({
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1.5 mt-1">
-                                    <IntentBadge intent={conv.intent} />
+                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                    <ChatTypeBadge type={conv.chat_type} />
+                                    <ChannelIcon channel={conv.send_channel} />
+                                    <SlaTimer waitingSince={conv.waiting_since} />
+                                    {conv.assigned_name && (
+                                        <span className="flex items-center gap-1 text-[10px] font-medium text-slate-500">
+                                            <User size={10} />
+                                            {conv.assigned_name}
+                                        </span>
+                                    )}
                                     {conv.source === "widget" && (
                                         <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
                                             {t("list.widgetSource")}
