@@ -357,3 +357,8 @@ export function useClientSession() {
   }
   return context;
 }
+
+/** Safe variant — returns null when called outside ClientSessionProvider. */
+export function useOptionalClientSession() {
+  return useContext(ClientSessionContext);
+}

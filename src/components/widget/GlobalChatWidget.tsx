@@ -2,14 +2,14 @@
 
 import { usePathname } from "next/navigation";
 import { ContextAwareChatWidget } from "@/components/widget/ContextAwareChatWidget";
-import { useClientSession } from "@/components/session/ClientSessionProvider";
+import { useOptionalClientSession } from "@/components/session/ClientSessionProvider";
 
 export function GlobalChatWidget() {
   const pathname = usePathname() ?? "";
   const segments = pathname.split("/").filter(Boolean);
   const pageRoot = segments[1] ?? "";
-  const { user } = useClientSession();
-  const role = user?.role ?? "";
+  const session = useOptionalClientSession();
+  const role = session?.user?.role ?? "";
 
   if (pageRoot === "widget") {
     return null;
