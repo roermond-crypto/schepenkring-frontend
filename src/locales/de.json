@@ -1391,6 +1391,9 @@
       "noPhone": "Noch keine Telefonnummer",
       "unknownLocation": "Unbekannter Standort",
       "noActivity": "Noch keine Aktivität erfasst.",
+      "normalized": "Normalisiert",
+      "boat": "Verknüpftes Boot",
+      "offer": "Verknüpftes Angebot",
       "placeholders": {
         "name": "John Visitor",
         "email": "john@example.com",
@@ -1407,6 +1410,33 @@
         "online": "Online",
         "offline": "Offline",
         "away": "Abwesend"
+      }
+    },
+    "composer": {
+      "alreadyOpen": "Komponist ist bereits geöffnet. Bitte ausfüllen oder zuerst schließen.",
+      "title": "Neuer Chat",
+      "subtitle": "Kontaktdaten ausfüllen und Eröffnungsnachricht senden",
+      "recipient": "Empfänger",
+      "context": "Kontext",
+      "chatType": "Chat-Typ",
+      "sendVia": "Senden über",
+      "openingMessage": "Eröffnungsnachricht",
+      "send": "Senden",
+      "sending": "Wird gesendet...",
+      "cancel": "Abbrechen",
+      "nameRequired": "Name ist erforderlich.",
+      "messageRequired": "Bitte eine Eröffnungsnachricht eingeben.",
+      "emailRequiredForEmail": "Bitte eine gültige E-Mail-Adresse eingeben.",
+      "failed": "Chat konnte nicht gestartet werden.",
+      "chatTypes": {
+        "general": "Allgemein",
+        "offer": "Angebot",
+        "viewing": "Besichtigung",
+        "callback": "Rückruf",
+        "question": "Frage",
+        "brochure": "Broschüre",
+        "seller": "Verkäufer",
+        "buyer": "Käufer"
       }
     }
   },
@@ -2389,6 +2419,7 @@
     },
     "blocking": "Blockiert",
     "blocksDetail": "⛔ Blockiert Deal",
+    "blocksDeal": "⛔ Blockiert Deal",
     "detail": {
       "backToList": "Zurück",
       "statusChange": "Status ändern",

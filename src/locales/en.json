@@ -1394,6 +1394,9 @@
       "noPhone": "No phone number yet",
       "unknownLocation": "Unknown location",
       "noActivity": "No activity recorded yet.",
+      "normalized": "Normalized",
+      "boat": "Linked boat",
+      "offer": "Linked offer",
       "placeholders": {
         "name": "John Visitor",
         "email": "john@example.com",
@@ -1410,6 +1413,33 @@
         "online": "Online",
         "offline": "Offline",
         "away": "Away"
+      }
+    },
+    "composer": {
+      "alreadyOpen": "Composer is already open. Fill it in or cancel it first.",
+      "title": "New chat",
+      "subtitle": "Fill in the contact details and send an opening message",
+      "recipient": "Recipient",
+      "context": "Context",
+      "chatType": "Chat type",
+      "sendVia": "Send via",
+      "openingMessage": "Opening message",
+      "send": "Send",
+      "sending": "Sending...",
+      "cancel": "Cancel",
+      "nameRequired": "Name is required.",
+      "messageRequired": "Please enter an opening message.",
+      "emailRequiredForEmail": "Please enter a valid email address to send via email.",
+      "failed": "Could not start chat.",
+      "chatTypes": {
+        "general": "General",
+        "offer": "Offer",
+        "viewing": "Viewing",
+        "callback": "Callback",
+        "question": "Question",
+        "brochure": "Brochure",
+        "seller": "Seller",
+        "buyer": "Buyer"
       }
     }
   },
