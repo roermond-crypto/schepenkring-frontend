@@ -521,7 +521,7 @@ export function AdminLocationsManagerPage({
       const impersonated = res.data?.impersonated;
       if (!token || !impersonated) throw new Error("Impersonation failed");
 
-      const roleMap: Record<string, string> = { ADMIN: "admin", EMPLOYEE: "employee", PARTNER: "partner", CLIENT: "client", SELLER: "seller", BUYER: "buyer" };
+      const roleMap: Record<string, "client" | "employee" | "location" | "admin" | "buyer" | "seller" | "partner"> = { ADMIN: "admin", EMPLOYEE: "employee", PARTNER: "partner", CLIENT: "client", SELLER: "seller", BUYER: "buyer" };
 
       setClientSession(token, {
         id: String(impersonated.id),
