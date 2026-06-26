@@ -200,7 +200,8 @@
       "videoTemplates": "Modèles vidéo",
       "emailTemplates": "Modèles d'e-mail",
       "contractTemplates": "Modèles de contrat",
-      "i18nQuality": "Qualité des traductions"
+      "i18nQuality": "Qualité des traductions",
+      "chatWidget": "Chat Widget"
     },
     "notifications": {
       "label": "Notifications",
@@ -2480,6 +2481,92 @@
       "maintenance": "Carnet d'entretien",
       "source_of_funds": "Origine des fonds",
       "other": "Autre"
+    }
+  },
+  "DashboardAdminLocationPerformance": {
+    "title": "Performances par agence",
+    "hero": {
+      "kicker": "Analyse des ventes",
+      "title": "Entonnoir de ventes",
+      "description": "Suivez les performances globales de l'entonnoir avec des insights par agence."
+    },
+    "actions": {
+      "refresh": "Actualiser"
+    },
+    "stats": {
+      "users": "Utilisateurs",
+      "impressions": "Impressions",
+      "clicks": "Clics",
+      "deals": "Ventes",
+      "commission": "Commission"
+    },
+    "filters": {
+      "range": {
+        "7d": "7 derniers jours",
+        "30d": "30 derniers jours",
+        "90d": "90 derniers jours"
+      },
+      "allCountries": "Tous les pays",
+      "allLocations": "Toutes les agences",
+      "allDevices": "Tous les appareils",
+      "allSources": "Toutes les sources",
+      "countries": {
+        "nl": "Pays-Bas (NL)",
+        "de": "Allemagne (DE)",
+        "be": "Belgique (BE)"
+      },
+      "devices": {
+        "mobile": "Mobile",
+        "desktop": "Ordinateur",
+        "tablet": "Tablette"
+      },
+      "sources": {
+        "googleOrganic": "Google organique",
+        "googleAds": "Google Ads",
+        "facebookPaid": "Facebook payant",
+        "instagramPaid": "Instagram payant",
+        "direct": "Direct"
+      }
+    },
+    "table": {
+      "location": "Agence",
+      "status": "Statut",
+      "activeUsers": "Utilisateurs",
+      "sessions": "Sessions",
+      "openLeads": "Leads",
+      "openConversations": "Chats",
+      "openTasks": "Tâches",
+      "clientsTotal": "Clients",
+      "boatsTotal": "Bateaux",
+      "yachtsTotal": "Annonces",
+      "leadsCreated": "Nouveaux leads",
+      "tasksCreated": "Nouvelles tâches",
+      "tasksCompleted": "Terminées",
+      "forms": "Formulaires",
+      "submitted": "Envoyés",
+      "deals": "Ventes",
+      "commission": "Commission",
+      "benchmark": "Référence",
+      "rank": "Rang",
+      "avgCtr": "CTR moy. {value}"
+    },
+    "states": {
+      "error": "Impossible de charger les performances de l'entonnoir.",
+      "empty": "Aucune donnée d'entonnoir disponible pour les filtres actuels."
+    },
+    "panels": {
+      "reach": {
+        "title": "Portée",
+        "description": "GA4 reste la source pour les utilisateurs, sessions et tendances d'engagement dans les campagnes par agence."
+      },
+      "funnel": {
+        "title": "Entonnoir",
+        "description": "Les statistiques d'entonnoir combinent les impressions et clics du widget avec les soumissions et ventes conclues dans la plateforme."
+      },
+      "revenue": {
+        "title": "Base de revenus",
+        "description": "Les classements de commission utilisent l'attribution des revenus de votre base de données, pas de GA4, pour que les comparaisons entre partenaires restent correctes."
+      }
     }
   }
 }

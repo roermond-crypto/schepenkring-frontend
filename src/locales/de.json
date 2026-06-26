@@ -200,7 +200,8 @@
       "videoTemplates": "Video-Vorlagen",
       "emailTemplates": "E-Mail-Vorlagen",
       "contractTemplates": "Vertragsvorlagen",
-      "i18nQuality": "Übersetzungsqualität"
+      "i18nQuality": "Übersetzungsqualität",
+      "chatWidget": "Chat-Widget"
     },
     "notifications": {
       "label": "Benachrichtigungen",

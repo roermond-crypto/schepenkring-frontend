@@ -199,7 +199,9 @@
       "videoTemplates": "Video Templates",
       "emailTemplates": "Email Templates",
       "contractTemplates": "Contract Templates",
-      "i18nQuality": "Translation Quality"
+      "i18nQuality": "Translation Quality",
+      "chatWidget": "Chat Widget",
+      "locations": "Locations"
     },
     "notifications": {
       "label": "Notifications",
