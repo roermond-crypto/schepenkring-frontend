@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Mail,
   Plus,
@@ -49,6 +49,7 @@ interface LocationOption {
 const LANG_LABELS: Record<string, string> = { nl: "NL", en: "EN", de: "DE", fr: "FR" };
 
 export default function EmailTemplatesPage() {
+  const t = useTranslations("EmailTemplates");
   const locale = useLocale();
   const params = useParams<{ role?: string }>();
   const role = params?.role ?? "admin";
@@ -84,7 +85,7 @@ export default function EmailTemplatesPage() {
       setTypes(typesRes.data?.types ?? []);
       setLocations(locRes.data?.data ?? []);
     } catch {
-      toast.error("Laden mislukt.");
+      toast.error(t("loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -94,24 +95,24 @@ export default function EmailTemplatesPage() {
     setDuplicating(template.id);
     try {
       await api.post(`/admin/email-templates/${template.id}/duplicate`);
-      toast.success("Sjabloon gedupliceerd.");
+      toast.success(t("duplicateSuccess"));
       await loadData();
     } catch {
-      toast.error("Dupliceren mislukt.");
+      toast.error(t("duplicateFailed"));
     } finally {
       setDuplicating(null);
     }
   };
 
   const handleArchive = async (template: EmailTemplate) => {
-    if (!confirm(`Sjabloon "${template.name}" archiveren?`)) return;
+    if (!confirm(t("archiveConfirm", { name: template.name }))) return;
     setArchiving(template.id);
     try {
       await api.delete(`/admin/email-templates/${template.id}`);
-      toast.success("Sjabloon gearchiveerd.");
+      toast.success(t("archiveSuccess"));
       await loadData();
     } catch {
-      toast.error("Archiveren mislukt.");
+      toast.error(t("archiveFailed"));
     } finally {
       setArchiving(null);
     }
@@ -138,7 +139,7 @@ export default function EmailTemplatesPage() {
         await loadData();
       }
     } catch {
-      toast.error("Aanmaken mislukt.");
+      toast.error(t("createFailed"));
     }
   };
 
@@ -156,10 +157,10 @@ export default function EmailTemplatesPage() {
   });
 
   const grouped: Record<string, EmailTemplate[]> = {};
-  filtered.forEach((t) => {
-    const key = t.is_global ? "🌐 Globale master-sjablonen" : (t.location?.name ?? "Locatie onbekend");
+  filtered.forEach((template) => {
+    const key = template.is_global ? t("globalMasterTemplates") : (template.location?.name ?? t("unknownLocation"));
     if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(t);
+    grouped[key].push(template);
   });
 
   const typeLabel = (type: string) =>
@@ -175,8 +176,8 @@ export default function EmailTemplatesPage() {
               <Mail size={20} />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white">E-mailsjablonen</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Drag-and-drop sjabloonbouwer</p>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-white">{t("title")}</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t("subtitle")}</p>
             </div>
           </div>
           <Button
@@ -184,7 +185,7 @@ export default function EmailTemplatesPage() {
             className="bg-[#003566] text-white hover:bg-blue-900 rounded-xl"
           >
             <Plus size={16} className="mr-2" />
-            Nieuw sjabloon
+            {t("newTemplate")}
           </Button>
         </div>
 
@@ -195,7 +196,7 @@ export default function EmailTemplatesPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Zoeken..."
+              placeholder={t("search")}
               className="h-9 pl-8 w-56 rounded-xl text-sm"
             />
           </div>
@@ -204,9 +205,9 @@ export default function EmailTemplatesPage() {
             onChange={(e) => setFilterType(e.target.value)}
             className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
-            <option value="all">Alle types</option>
-            {types.map((t) => (
-              <option key={t.type} value={t.type}>{t.name}</option>
+            <option value="all">{t("allTypes")}</option>
+            {types.map((type) => (
+              <option key={type.type} value={type.type}>{type.name}</option>
             ))}
           </select>
           <select
@@ -214,9 +215,9 @@ export default function EmailTemplatesPage() {
             onChange={(e) => setFilterScope(e.target.value)}
             className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
-            <option value="all">Globaal + locaties</option>
-            <option value="global">Alleen globaal</option>
-            <option value="location">Alleen locaties</option>
+            <option value="all">{t("scopeAll")}</option>
+            <option value="global">{t("scopeGlobal")}</option>
+            <option value="location">{t("scopeLocation")}</option>
           </select>
           {filterScope !== "global" && locations.length > 0 && (
             <select
@@ -224,7 +225,7 @@ export default function EmailTemplatesPage() {
               onChange={(e) => setFilterLocationId(e.target.value)}
               className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             >
-              <option value="">Alle locaties</option>
+              <option value="">{t("allLocations")}</option>
               {locations.map((l) => (
                 <option key={l.id} value={String(l.id)}>{l.name}</option>
               ))}
@@ -237,7 +238,7 @@ export default function EmailTemplatesPage() {
               onChange={(e) => setShowArchived(e.target.checked)}
               className="rounded"
             />
-            Gearchiveerd tonen
+            {t("showArchived")}
           </label>
         </div>
       </div>
@@ -250,9 +251,9 @@ export default function EmailTemplatesPage() {
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center dark:border-slate-700 dark:bg-slate-900">
             <Mail size={40} className="mx-auto mb-3 text-slate-300" />
-            <p className="text-slate-500">Geen sjablonen gevonden.</p>
+            <p className="text-slate-500">{t("emptyState")}</p>
             <Button onClick={() => void handleCreate()} className="mt-4 bg-[#003566] text-white hover:bg-blue-900 rounded-xl">
-              <Plus size={16} className="mr-2" /> Eerste sjabloon aanmaken
+              <Plus size={16} className="mr-2" /> {t("createFirst")}
             </Button>
           </div>
         ) : (
@@ -263,16 +264,17 @@ export default function EmailTemplatesPage() {
                   {group}
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {items.map((t) => (
+                  {items.map((template) => (
                     <TemplateCard
-                      key={t.id}
-                      template={t}
-                      typeLabel={typeLabel(t.type)}
+                      key={template.id}
+                      template={template}
+                      typeLabel={typeLabel(template.type)}
                       root={root}
-                      onDuplicate={() => void handleDuplicate(t)}
-                      onArchive={() => void handleArchive(t)}
-                      duplicating={duplicating === t.id}
-                      archiving={archiving === t.id}
+                      locale={locale}
+                      onDuplicate={() => void handleDuplicate(template)}
+                      onArchive={() => void handleArchive(template)}
+                      duplicating={duplicating === template.id}
+                      archiving={archiving === template.id}
                     />
                   ))}
                 </div>
@@ -289,6 +291,7 @@ function TemplateCard({
   template,
   typeLabel,
   root,
+  locale,
   onDuplicate,
   onArchive,
   duplicating,
@@ -297,12 +300,14 @@ function TemplateCard({
   template: EmailTemplate;
   typeLabel: string;
   root: string;
+  locale: string;
   onDuplicate: () => void;
   onArchive: () => void;
   duplicating: boolean;
   archiving: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations("EmailTemplates");
 
   return (
     <div
@@ -320,11 +325,11 @@ function TemplateCard({
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
         {template.is_global ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
-            <Globe2 size={9} /> Globaal
+            <Globe2 size={9} /> {t("global")}
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            <MapPin size={9} /> {template.location?.name ?? "Locatie"}
+            <MapPin size={9} /> {template.location?.name ?? t("locationFallback")}
           </span>
         )}
         <span className="inline-flex items-center rounded-full border border-slate-100 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-400">
@@ -332,7 +337,7 @@ function TemplateCard({
         </span>
         {template.is_archived && (
           <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-orange-700">
-            Gearchiveerd
+            {t("archived")}
           </span>
         )}
       </div>
@@ -347,13 +352,13 @@ function TemplateCard({
       {/* Footer */}
       <div className="mt-4 flex items-center justify-between gap-2">
         <span className="text-[10px] text-slate-400 dark:text-slate-500">
-          v{template.current_version} · {new Date(template.updated_at).toLocaleDateString("nl-NL")}
+          v{template.current_version} · {new Date(template.updated_at).toLocaleDateString(locale)}
         </span>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => { e.stopPropagation(); router.push(`${root}/email-templates/${template.id}`); }}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-            title="Bewerken"
+            title={t("edit")}
           >
             <Eye size={14} />
           </button>
@@ -361,7 +366,7 @@ function TemplateCard({
             onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
             disabled={duplicating}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 disabled:opacity-50"
-            title="Dupliceren"
+            title={t("duplicateTitle")}
           >
             {duplicating ? <Loader2 size={14} className="animate-spin" /> : <Copy size={14} />}
           </button>
@@ -370,7 +375,7 @@ function TemplateCard({
               onClick={(e) => { e.stopPropagation(); onArchive(); }}
               disabled={archiving}
               className="rounded-lg p-1.5 text-slate-400 hover:bg-orange-100 hover:text-orange-700 dark:hover:bg-orange-950/40 dark:hover:text-orange-300 disabled:opacity-50"
-              title="Archiveren"
+              title={t("archiveTitle")}
             >
               {archiving ? <Loader2 size={14} className="animate-spin" /> : <Archive size={14} />}
             </button>

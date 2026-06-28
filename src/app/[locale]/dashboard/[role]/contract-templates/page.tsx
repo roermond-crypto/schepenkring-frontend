@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   FileText,
   Plus,
@@ -61,6 +61,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export default function ContractTemplatesPage() {
+  const t = useTranslations("ContractTemplates");
   const locale = useLocale();
   const params = useParams<{ role?: string }>();
   const role = params?.role ?? "admin";
@@ -94,7 +95,7 @@ export default function ContractTemplatesPage() {
       setTypes(typesRes.data?.types ?? []);
       setLocations(locRes.data?.data ?? []);
     } catch {
-      toast.error("Laden mislukt.");
+      toast.error(t("loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -123,45 +124,45 @@ export default function ContractTemplatesPage() {
       if (t?.id) router.push(`${root}/contract-templates/${t.id}`);
       else await loadData();
     } catch {
-      toast.error("Aanmaken mislukt.");
+      toast.error(t("createFailed"));
     }
   };
 
-  const handleDuplicate = async (t: ContractTemplate) => {
-    setDuplicating(t.id);
+  const handleDuplicate = async (template: ContractTemplate) => {
+    setDuplicating(template.id);
     try {
-      await api.post(`/admin/contract-templates/${t.id}/duplicate`);
-      toast.success("Sjabloon gedupliceerd.");
+      await api.post(`/admin/contract-templates/${template.id}/duplicate`);
+      toast.success(t("duplicateSuccess"));
       await loadData();
     } catch {
-      toast.error("Dupliceren mislukt.");
+      toast.error(t("duplicateFailed"));
     } finally {
       setDuplicating(null);
     }
   };
 
-  const handleArchive = async (t: ContractTemplate) => {
-    if (!confirm(`Sjabloon "${t.name}" archiveren?`)) return;
-    setArchiving(t.id);
+  const handleArchive = async (template: ContractTemplate) => {
+    if (!confirm(t("archiveConfirm", { name: template.name }))) return;
+    setArchiving(template.id);
     try {
-      await api.delete(`/admin/contract-templates/${t.id}`);
-      toast.success("Gearchiveerd.");
+      await api.delete(`/admin/contract-templates/${template.id}`);
+      toast.success(t("archiveSuccess"));
       await loadData();
     } catch {
-      toast.error("Archiveren mislukt.");
+      toast.error(t("archiveFailed"));
     } finally {
       setArchiving(null);
     }
   };
 
-  const handleSetDefault = async (t: ContractTemplate) => {
-    setSettingDefault(t.id);
+  const handleSetDefault = async (template: ContractTemplate) => {
+    setSettingDefault(template.id);
     try {
-      await api.post(`/admin/contract-templates/${t.id}/set-default`);
-      toast.success("Als standaard ingesteld.");
+      await api.post(`/admin/contract-templates/${template.id}/set-default`);
+      toast.success(t("setDefaultSuccess"));
       await loadData();
     } catch {
-      toast.error("Instellen mislukt.");
+      toast.error(t("setDefaultFailed"));
     } finally {
       setSettingDefault(null);
     }
@@ -183,10 +184,10 @@ export default function ContractTemplatesPage() {
   });
 
   const grouped: Record<string, ContractTemplate[]> = {};
-  filtered.forEach((t) => {
-    const key = t.is_global ? "Globale master-sjablonen" : (t.location?.name ?? "Onbekende locatie");
+  filtered.forEach((template) => {
+    const key = template.is_global ? t("globalMasterTemplates") : (template.location?.name ?? t("unknownLocation"));
     if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(t);
+    grouped[key].push(template);
   });
 
   return (
@@ -199,13 +200,13 @@ export default function ContractTemplatesPage() {
               <FileText size={20} />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white">Contractsjablonen</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Word-achtige contracteditor per locatie</p>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-white">{t("title")}</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t("subtitle")}</p>
             </div>
           </div>
           <Button onClick={() => void handleCreate()} className="bg-[#003566] text-white hover:bg-blue-900 rounded-xl">
             <Plus size={16} className="mr-2" />
-            Nieuw sjabloon
+            {t("newTemplate")}
           </Button>
         </div>
 
@@ -213,26 +214,26 @@ export default function ContractTemplatesPage() {
         <div className="mt-4 flex flex-wrap gap-3">
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Zoeken..." className="h-9 pl-8 w-52 rounded-xl text-sm" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("search")} className="h-9 pl-8 w-52 rounded-xl text-sm" />
           </div>
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-            <option value="all">Alle types</option>
-            {types.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            <option value="all">{t("allTypes")}</option>
+            {types.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
           </select>
           <select value={filterScope} onChange={(e) => setFilterScope(e.target.value)} className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-            <option value="all">Globaal + locaties</option>
-            <option value="global">Alleen globaal</option>
-            <option value="location">Alleen locaties</option>
+            <option value="all">{t("scopeAll")}</option>
+            <option value="global">{t("scopeGlobal")}</option>
+            <option value="location">{t("scopeLocation")}</option>
           </select>
           {filterScope !== "global" && locations.length > 0 && (
             <select value={filterLocationId} onChange={(e) => setFilterLocationId(e.target.value)} className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-              <option value="">Alle locaties</option>
+              <option value="">{t("allLocations")}</option>
               {locations.map((l) => <option key={l.id} value={String(l.id)}>{l.name}</option>)}
             </select>
           )}
           <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer select-none">
             <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} className="rounded" />
-            Gearchiveerd tonen
+            {t("showArchived")}
           </label>
         </div>
       </div>
@@ -245,9 +246,9 @@ export default function ContractTemplatesPage() {
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center dark:border-slate-700 dark:bg-slate-900">
             <FileText size={40} className="mx-auto mb-3 text-slate-300" />
-            <p className="text-slate-500">Geen contractsjablonen gevonden.</p>
+            <p className="text-slate-500">{t("emptyState")}</p>
             <Button onClick={() => void handleCreate()} className="mt-4 bg-[#003566] text-white hover:bg-blue-900 rounded-xl">
-              <Plus size={16} className="mr-2" /> Eerste sjabloon aanmaken
+              <Plus size={16} className="mr-2" /> {t("createFirst")}
             </Button>
           </div>
         ) : (
@@ -256,76 +257,76 @@ export default function ContractTemplatesPage() {
               <div key={group}>
                 <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">{group}</p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {items.map((t) => (
+                  {items.map((template) => (
                     <div
-                      key={t.id}
+                      key={template.id}
                       className={cn(
                         "group relative rounded-2xl border bg-white p-5 transition hover:shadow-md cursor-pointer dark:bg-slate-900",
-                        t.is_archived ? "opacity-60 border-slate-200 dark:border-slate-700" : t.is_global ? "border-[#003566]/20 dark:border-blue-900/40" : "border-slate-200 dark:border-slate-700",
+                        template.is_archived ? "opacity-60 border-slate-200 dark:border-slate-700" : template.is_global ? "border-[#003566]/20 dark:border-blue-900/40" : "border-slate-200 dark:border-slate-700",
                       )}
-                      onClick={() => router.push(`${root}/contract-templates/${t.id}`)}
+                      onClick={() => router.push(`${root}/contract-templates/${template.id}`)}
                     >
                       {/* Type pill */}
                       <div className="mb-3 flex flex-wrap gap-1.5">
-                        <span className={cn("inline-block rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wider", TYPE_COLORS[t.type] ?? "bg-slate-50 border-slate-200 text-slate-600")}>
-                          {typeLabel(t.type)}
+                        <span className={cn("inline-block rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wider", TYPE_COLORS[template.type] ?? "bg-slate-50 border-slate-200 text-slate-600")}>
+                          {typeLabel(template.type)}
                         </span>
-                        {t.is_global ? (
+                        {template.is_global ? (
                           <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
-                            <Globe2 size={9} /> Globaal
+                            <Globe2 size={9} /> {t("global")}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-                            <MapPin size={9} /> {t.location?.name ?? "Locatie"}
+                            <MapPin size={9} /> {template.location?.name ?? t("locationFallback")}
                           </span>
                         )}
-                        {t.is_default && (
+                        {template.is_default && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
-                            <Star size={9} /> Standaard
+                            <Star size={9} /> {t("default")}
                           </span>
                         )}
-                        <span className="text-[10px] text-slate-400">{LANG_FLAG[t.language] ?? t.language}</span>
+                        <span className="text-[10px] text-slate-400">{LANG_FLAG[template.language] ?? template.language}</span>
                       </div>
 
-                      <p className="font-semibold text-slate-900 dark:text-slate-100 leading-tight">{t.name}</p>
-                      {t.description && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 line-clamp-2">{t.description}</p>}
+                      <p className="font-semibold text-slate-900 dark:text-slate-100 leading-tight">{template.name}</p>
+                      {template.description && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 line-clamp-2">{template.description}</p>}
 
                       <div className="mt-4 flex items-center justify-between gap-2">
-                        <span className="text-[10px] text-slate-400">v{t.current_version} · {new Date(t.updated_at).toLocaleDateString("nl-NL")}</span>
+                        <span className="text-[10px] text-slate-400">v{template.current_version} · {new Date(template.updated_at).toLocaleDateString(locale)}</span>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={(e) => { e.stopPropagation(); router.push(`${root}/contract-templates/${t.id}`); }}
+                            onClick={(e) => { e.stopPropagation(); router.push(`${root}/contract-templates/${template.id}`); }}
                             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                            title="Bewerken"
+                            title={t("edit")}
                           >
                             <Pencil size={13} />
                           </button>
-                          {!t.is_default && !t.is_global && (
+                          {!template.is_default && !template.is_global && (
                             <button
-                              onClick={(e) => { e.stopPropagation(); void handleSetDefault(t); }}
-                              disabled={settingDefault === t.id}
+                              onClick={(e) => { e.stopPropagation(); void handleSetDefault(template); }}
+                              disabled={settingDefault === template.id}
                               className="rounded-lg p-1.5 text-slate-400 hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-950/40 dark:hover:text-amber-300 disabled:opacity-50"
-                              title="Als standaard instellen"
+                              title={t("setDefaultTitle")}
                             >
-                              {settingDefault === t.id ? <Loader2 size={13} className="animate-spin" /> : <Star size={13} />}
+                              {settingDefault === template.id ? <Loader2 size={13} className="animate-spin" /> : <Star size={13} />}
                             </button>
                           )}
                           <button
-                            onClick={(e) => { e.stopPropagation(); void handleDuplicate(t); }}
-                            disabled={duplicating === t.id}
+                            onClick={(e) => { e.stopPropagation(); void handleDuplicate(template); }}
+                            disabled={duplicating === template.id}
                             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 disabled:opacity-50"
-                            title="Dupliceren"
+                            title={t("duplicateTitle")}
                           >
-                            {duplicating === t.id ? <Loader2 size={13} className="animate-spin" /> : <Copy size={13} />}
+                            {duplicating === template.id ? <Loader2 size={13} className="animate-spin" /> : <Copy size={13} />}
                           </button>
-                          {!t.is_archived && (
+                          {!template.is_archived && (
                             <button
-                              onClick={(e) => { e.stopPropagation(); void handleArchive(t); }}
-                              disabled={archiving === t.id}
+                              onClick={(e) => { e.stopPropagation(); void handleArchive(template); }}
+                              disabled={archiving === template.id}
                               className="rounded-lg p-1.5 text-slate-400 hover:bg-orange-100 hover:text-orange-700 dark:hover:bg-orange-950/40 disabled:opacity-50"
-                              title="Archiveren"
+                              title={t("archiveTitle")}
                             >
-                              {archiving === t.id ? <Loader2 size={13} className="animate-spin" /> : <Archive size={13} />}
+                              {archiving === template.id ? <Loader2 size={13} className="animate-spin" /> : <Archive size={13} />}
                             </button>
                           )}
                         </div>
