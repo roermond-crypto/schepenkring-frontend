@@ -64,8 +64,19 @@ export function middleware(request: NextRequest) {
   const isLoginRoute = subPath === "/login" || subPath.startsWith("/login/");
   const isSignupRoute = subPath === "/signup";
   const isAuthRoute = subPath === "/auth" || subPath.startsWith("/auth/");
+  const isBoatIntakeRoute =
+    subPath === "/boot-aanmelden" || subPath.startsWith("/boot-aanmelden/");
+  const isContractsRoute =
+    subPath === "/contracts" || subPath.startsWith("/contracts/");
+  const isWidgetRoute = subPath === "/widget" || subPath.startsWith("/widget/");
 
-  const isPublicRoute = isLoginRoute || isSignupRoute || isAuthRoute;
+  const isPublicRoute =
+    isLoginRoute ||
+    isSignupRoute ||
+    isAuthRoute ||
+    isBoatIntakeRoute ||
+    isContractsRoute ||
+    isWidgetRoute;
 
   if (!isAuthed && !isPublicRoute) {
     return NextResponse.redirect(
@@ -73,7 +84,9 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  if (isAuthed && isPublicRoute) {
+  const isAuthOnlyRoute = isLoginRoute || isSignupRoute || isAuthRoute;
+
+  if (isAuthed && isAuthOnlyRoute) {
     return NextResponse.redirect(
       new URL(`/${locale}/dashboard/${cookieRole}`, request.url),
     );
