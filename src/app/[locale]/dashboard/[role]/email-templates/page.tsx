@@ -37,8 +37,8 @@ interface EmailTemplate {
 }
 
 interface TemplateType {
-  value: string;
-  label: string;
+  type: string;
+  name: string;
 }
 
 interface LocationOption {
@@ -77,11 +77,11 @@ export default function EmailTemplatesPage() {
     try {
       const [tRes, typesRes, locRes] = await Promise.all([
         api.get<EmailTemplate[]>("/admin/email-templates"),
-        api.get<TemplateType[]>("/admin/email-templates/types"),
+        api.get<{ types: TemplateType[] }>("/admin/email-templates/types"),
         api.get<{ data: LocationOption[] }>("/admin/locations?per_page=200"),
       ]);
       setTemplates(Array.isArray(tRes.data) ? tRes.data : []);
-      setTypes(Array.isArray(typesRes.data) ? typesRes.data : []);
+      setTypes(typesRes.data?.types ?? []);
       setLocations(locRes.data?.data ?? []);
     } catch {
       toast.error("Laden mislukt.");
@@ -119,7 +119,7 @@ export default function EmailTemplatesPage() {
 
   const handleCreate = async () => {
     try {
-      const res = await api.post<{ data: EmailTemplate }>("/admin/email-templates", {
+      const res = await api.post<{ template: EmailTemplate }>("/admin/email-templates", {
         type: "offer_received_buyer",
         name: "Nieuw sjabloon",
         subject: { nl: "Onderwerp", en: "Subject", de: "Betreff", fr: "Sujet" },
@@ -131,7 +131,7 @@ export default function EmailTemplatesPage() {
           { id: "5", type: "footer", settings: { content: { nl: "{{location_name}} · {{location_email}}", en: "{{location_name}} · {{location_email}}", de: "{{location_name}} · {{location_email}}", fr: "{{location_name}} · {{location_email}}" } } },
         ],
       });
-      const newId = res.data?.data?.id ?? (res.data as unknown as EmailTemplate)?.id;
+      const newId = res.data?.template?.id;
       if (newId) {
         router.push(`${root}/email-templates/${newId}`);
       } else {
@@ -163,7 +163,7 @@ export default function EmailTemplatesPage() {
   });
 
   const typeLabel = (type: string) =>
-    types.find((t) => t.value === type)?.label ?? type;
+    types.find((t) => t.type === type)?.name ?? type;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -206,7 +206,7 @@ export default function EmailTemplatesPage() {
           >
             <option value="all">Alle types</option>
             {types.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+              <option key={t.type} value={t.type}>{t.name}</option>
             ))}
           </select>
           <select

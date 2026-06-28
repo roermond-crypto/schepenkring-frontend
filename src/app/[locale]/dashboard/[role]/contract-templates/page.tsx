@@ -87,11 +87,11 @@ export default function ContractTemplatesPage() {
     try {
       const [tRes, typesRes, locRes] = await Promise.all([
         api.get<ContractTemplate[]>("/admin/contract-templates"),
-        api.get<TemplateType[]>("/admin/contract-templates/types"),
+        api.get<{ types: TemplateType[] }>("/admin/contract-templates/types"),
         api.get<{ data: LocationOption[] }>("/admin/locations?per_page=200"),
       ]);
       setTemplates(Array.isArray(tRes.data) ? tRes.data : []);
-      setTypes(Array.isArray(typesRes.data) ? typesRes.data : []);
+      setTypes(typesRes.data?.types ?? []);
       setLocations(locRes.data?.data ?? []);
     } catch {
       toast.error("Laden mislukt.");
@@ -102,7 +102,7 @@ export default function ContractTemplatesPage() {
 
   const handleCreate = async () => {
     try {
-      const res = await api.post<{ data: ContractTemplate } | ContractTemplate>("/admin/contract-templates", {
+      const res = await api.post<{ template: ContractTemplate }>("/admin/contract-templates", {
         name: "Nieuw sjabloon",
         type: "purchase_contract",
         language: "nl",
@@ -119,7 +119,7 @@ export default function ContractTemplatesPage() {
 <p>Verkoper: _________________________ &nbsp;&nbsp; Koper: _________________________</p>
 <p>{{location_name}} · {{location_address}}</p>`,
       });
-      const t = (res.data as { data: ContractTemplate }).data ?? res.data as ContractTemplate;
+      const t = res.data?.template;
       if (t?.id) router.push(`${root}/contract-templates/${t.id}`);
       else await loadData();
     } catch {
