@@ -29,6 +29,7 @@ export function setClientSession(token: string, user: SessionUser) {
   Cookies.set(AUTH_SESSION_COOKIE, toBase64Url(JSON.stringify(user)), options);
 
   if (typeof window !== "undefined") {
+    localStorage.removeItem("impersonation_session");
     localStorage.setItem("auth_token", token);
     localStorage.setItem(
       "user_data",
@@ -62,6 +63,7 @@ export function clearClientSession() {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("admin_token");
     localStorage.removeItem("user_data");
+    localStorage.removeItem("impersonation_session");
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event(CLIENT_SESSION_UPDATED_EVENT));
   }

@@ -149,6 +149,15 @@ function DashboardShellInner({
       setImpersonatingName(null);
       router.push(`/${locale}/dashboard/${nextRole}`);
       router.refresh();
+    } catch {
+      // Backend has no matching active session (stale local flag, expired
+      // token, etc). Don't leave the user stuck behind the banner — clear
+      // the local flag and send them back to login to get a clean session.
+      localStorage.removeItem("impersonation_session");
+      setImpersonatingName(null);
+      clearClientSession();
+      router.push(`/${locale}/auth?mode=login`);
+      router.refresh();
     } finally {
       setStoppingImpersonation(false);
     }
