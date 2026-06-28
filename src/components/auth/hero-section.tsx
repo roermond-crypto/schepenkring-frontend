@@ -292,375 +292,329 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f0f4f8] dark:bg-[#020617] p-2 sm:p-4 font-sans overflow-hidden">
-      <div className="fixed right-6 top-6 z-50">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-950 p-4 font-sans">
+      <div className="fixed right-4 top-4 z-50">
         <LanguageSwitcher locale={locale} />
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="relative flex w-full max-w-5xl flex-col lg:flex-row overflow-hidden rounded-[40px] bg-white shadow-[0_40px_100px_-20px_rgba(11,31,58,0.15)] dark:bg-slate-900 dark:shadow-none border border-slate-100 dark:border-slate-800"
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-slate-900 lg:flex-row"
       >
         {/* Left Side: Brand Imagery */}
-        <div className="relative lg:w-[45%] bg-[#0B1F3A] p-10 lg:p-14 flex flex-col justify-between overflow-hidden">
-          {/* Background Image with Overlay */}
-          <div className="absolute inset-0 pointer-events-none">
-            <Image
-              alt=""
-              src={boatsHeroImage}
-              fill
-              className="object-cover opacity-40 mix-blend-overlay"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0B1F3A] via-[#0B1F3A]/95 to-[#050f1d]"></div>
-          </div>
+        <div className="relative lg:w-2/5 min-h-[240px] lg:min-h-0 flex flex-col items-center justify-center p-8 lg:p-10 overflow-hidden">
+          <Image
+            alt=""
+            src={boatsHeroImage}
+            fill
+            className="object-cover opacity-30"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#003566]/85 via-[#003566]/92 to-[#001d3d]" />
 
-          <div className="relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mb-16"
-            >
-              <div className="bg-white rounded-full px-8 py-5 inline-block border border-white/10 shadow-2xl">
-                <Image
-                  src={schepenkringLogo}
-                  alt="Schepenkring"
-                  width={180}
-                  height={50}
-                  className="object-contain"
-                />
-              </div>
-            </motion.div>
+          <div className="relative z-10 flex flex-col items-center text-center w-full">
+            <div className="bg-white rounded-full px-7 py-4 shadow-lg mb-8">
+              <Image
+                src={schepenkringLogo}
+                alt="Schepenkring"
+                width={170}
+                height={48}
+                className="object-contain"
+                priority
+              />
+            </div>
 
-            <div className="mt-8">
-              {mode === "register" && (
-              <div 
-                key={signupRole}
-                className="transition-all duration-500"
-              >
-                <div className="inline-flex rounded-full bg-sky-400/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-sky-400 border border-sky-400/20 mb-6">
-                  {signupRole === 'buyer' ? (copy.buyerSignup || "Buyer Signup") : (copy.sellerSignup || "Seller Signup")}
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold text-white leading-[1.15] mb-6 tracking-tight">
-                  {signupRole === 'buyer' 
-                    ? copy.buyerHeroTitle
-                    : copy.sellerHeroTitle
-                  }
+            {mode === "register" ? (
+              <div key={signupRole} className="text-left w-full max-w-xs">
+                <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-200 border border-white/15 mb-4">
+                  {signupRole === "buyer" ? (copy.buyerSignup || "Buyer signup") : (copy.sellerSignup || "Seller signup")}
+                </span>
+                <h1 className="text-2xl font-bold text-white leading-snug mb-6">
+                  {signupRole === "buyer" ? copy.buyerHeroTitle : copy.sellerHeroTitle}
                 </h1>
-                
-                <div className="h-1 w-20 bg-sky-500/50 rounded-full mb-8" />
-                
-                  <div className="space-y-6">
-                    {getBenefits(copy)[signupRole].map((benefit: BenefitItem, idx: number) => (
-                      <div 
-                        key={idx}
-                        className="flex items-start gap-5"
-                      >
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sky-300 border border-white/5 shadow-inner">
-                          <benefit.icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="text-base font-bold text-white">{benefit.title}</p>
-                          <p className="text-sm text-white/50 leading-relaxed mt-0.5">{benefit.desc}</p>
-                        </div>
+                <div className="space-y-5">
+                  {getBenefits(copy)[signupRole].map((benefit: BenefitItem, idx: number) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-sky-200">
+                        <benefit.icon className="h-4 w-4" />
                       </div>
-                    ))}
-                  </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">{benefit.title}</p>
+                        <p className="text-xs text-white/60 leading-relaxed mt-0.5">{benefit.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              )}
-            </div>
+            ) : (
+              <div className="max-w-xs">
+                <h1 className="text-xl font-bold text-white mb-2">{copy.loginHeroTitle}</h1>
+                <p className="text-sm text-white/70 leading-relaxed">{copy.loginHeroSubtitle}</p>
+              </div>
+            )}
           </div>
 
-          <div className="relative z-10 pt-10 mt-12 border-t border-white/5 hidden lg:block">
-            <div className="space-y-1">
-              <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] font-black leading-none">{copy.memberSupport}</p>
-              <p className="text-sm text-white/70 font-semibold">{copy.supportAddressLine1}</p>
-              <p className="text-sm text-white/70 font-semibold">{copy.supportAddressLine2}</p>
-              <p className="text-sm text-white/60 mt-2">
-                E-mail:{" "}
-                <a href={`mailto:${copy.supportEmail}`} className="text-sky-300 hover:text-sky-200">
-                  {copy.supportEmail}
-                </a>
-              </p>
-              <p className="text-sm text-white/60">
-                Telefoon:{" "}
-                <a href={`tel:${copy.supportPhone.replace(/\s/g, "")}`} className="text-sky-300 hover:text-sky-200">
-                  {copy.supportPhone}
-                </a>
-              </p>
-            </div>
+          <div className="relative z-10 mt-10 pt-6 border-t border-white/10 w-full hidden lg:block text-center">
+            <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold mb-1">{copy.memberSupport}</p>
+            <p className="text-xs text-white/70 font-semibold">{copy.supportAddressLine1}</p>
+            <p className="text-xs text-white/70 font-semibold mb-1">{copy.supportAddressLine2}</p>
+            <p className="text-xs text-white/60">
+              <a href={`mailto:${copy.supportEmail}`} className="hover:text-white">{copy.supportEmail}</a>
+              {" · "}
+              <a href={`tel:${copy.supportPhone.replace(/\s/g, "")}`} className="hover:text-white">{copy.supportPhone}</a>
+            </p>
           </div>
         </div>
 
         {/* Right Side: Auth Form */}
-        <div className="flex flex-col justify-center p-8 lg:p-20 lg:w-[55%] bg-white dark:bg-slate-900 relative">
-          <div className="max-w-md mx-auto w-full">
-            
-            <div className="mb-12 text-center lg:text-left">
-              <h2 className="text-3xl font-black text-[#0B1F3A] dark:text-white mb-3 tracking-tight">
-                {mode === "login" ? copy.welcomeBack : copy.createAccount}
-              </h2>
-              <p className="text-base text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                {mode === "login" ? copy.loginDescription : copy.registerDescription}
-              </p>
-            </div>
+        <div className="flex flex-col justify-center p-6 sm:p-10 lg:p-14 lg:w-3/5 bg-white dark:bg-slate-900">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100 mb-1">
+              {mode === "login" ? copy.welcomeBack : copy.createAccount}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              {mode === "login" ? copy.loginDescription : copy.registerDescription}
+            </p>
+          </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <AnimatePresence mode="wait">
-                {error && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="rounded-2xl border border-red-100 bg-red-50 p-4 flex gap-4 text-sm text-red-700 font-bold dark:bg-red-900/10 dark:border-red-900/20 shadow-sm"
-                  >
-                    <AlertCircle className="h-5 w-5 shrink-0" />
-                    <div className="space-y-3">
-                      <p>{error}</p>
-                      {showVerifyActions ? (
-                        <div className="flex flex-wrap gap-2">
-                          <Link
-                            href={verifyEmailHref}
-                            className="inline-flex items-center rounded-xl bg-red-700 px-3 py-2 text-xs font-semibold text-white hover:bg-red-800"
-                          >
-                            {copy.verifyEmail}
-                          </Link>
-                          <button
-                            type="button"
-                            disabled={resendingVerification || !normalizedFormEmail}
-                            onClick={async () => {
-                              if (!normalizedFormEmail) return;
-                              setResendingVerification(true);
-                              try {
-                                await resendVerification({ email: normalizedFormEmail, locale });
-                                setSuccess(copy.verificationCodeSent);
-                              } catch (resendErr: unknown) {
-                                setError(
-                                  resendErr instanceof Error
-                                    ? resendErr.message
-                                    : copy.authFailed,
-                                );
-                              } finally {
-                                setResendingVerification(false);
-                              }
-                            }}
-                            className="inline-flex items-center rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
-                          >
-                            {resendingVerification ? copy.processing : copy.resendVerificationLink}
-                          </button>
-                        </div>
-                      ) : null}
-                    </div>
-                  </motion.div>
-                )}
-
-                {success && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 flex gap-4 text-sm text-emerald-700 font-bold dark:bg-emerald-900/10 dark:border-emerald-900/20 shadow-sm"
-                  >
-                    <CheckCircle2 className="h-5 w-5 shrink-0" />
-                    <p>{success}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {mode === "register" && (
-                <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-100/80 rounded-2xl dark:bg-slate-800/80 mb-8 border border-slate-200/50 dark:border-slate-700/50 shadow-inner">
-                  <button
-                    type="button"
-                    onClick={() => setSignupRole('buyer')}
-                    className={`flex items-center justify-center gap-2 py-3 text-sm font-black rounded-xl transition-all duration-300 ${signupRole === 'buyer' ? 'bg-white shadow-md text-[#0B1F3A] dark:bg-slate-700 dark:text-white transform scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
-                  >
-                    <ShoppingBag size={16} />
-                    {copy.buyer}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSignupRole('seller')}
-                    className={`flex items-center justify-center gap-2 py-3 text-sm font-black rounded-xl transition-all duration-300 ${signupRole === 'seller' ? 'bg-white shadow-md text-[#0B1F3A] dark:bg-slate-700 dark:text-white transform scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
-                  >
-                    <Anchor size={16} />
-                    {copy.seller}
-                  </button>
-                </div>
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <AnimatePresence mode="wait">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-3 text-[13px] text-red-700 font-medium"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <p>{error}</p>
+                    {showVerifyActions ? (
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          href={verifyEmailHref}
+                          className="inline-flex items-center rounded-md bg-red-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-800"
+                        >
+                          {copy.verifyEmail}
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={resendingVerification || !normalizedFormEmail}
+                          onClick={async () => {
+                            if (!normalizedFormEmail) return;
+                            setResendingVerification(true);
+                            try {
+                              await resendVerification({ email: normalizedFormEmail, locale });
+                              setSuccess(copy.verificationCodeSent);
+                            } catch (resendErr: unknown) {
+                              setError(
+                                resendErr instanceof Error
+                                  ? resendErr.message
+                                  : copy.authFailed,
+                              );
+                            } finally {
+                              setResendingVerification(false);
+                            }
+                          }}
+                          className="inline-flex items-center rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {resendingVerification ? copy.processing : copy.resendVerificationLink}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                </motion.div>
               )}
 
-              <div className="space-y-4">
-                {mode !== "login" && (
-                  <InputGroup
-                    name="name"
-                    icon={FileText}
-                    placeholder={copy.fullName}
-                    value={formData.name}
-                    onChange={onInputChange}
-                    required
-                  />
-                )}
+              {success && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-lg border border-green-200 bg-green-50 p-3 flex gap-3 text-[13px] text-green-700 font-medium"
+                >
+                  <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+                  <p>{success}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-                {mode !== "login" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <InputGroup
-                      name="phone"
-                      type="tel"
-                      icon={LineChart}
-                      placeholder={copy.phone}
-                      value={formData.phone}
-                      onChange={onInputChange}
-                    />
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0B1F3A] transition-colors pointer-events-none">
-                        <Anchor size={18} />
-                      </div>
-                      <select
-                        name="location_id"
-                        value={formData.location_id}
-                        onChange={onInputChange}
-                        required
-                        className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 text-sm font-bold placeholder:text-slate-400 focus:ring-4 focus:ring-sky-500/10 focus:border-[#0B1F3A] outline-none transition-all appearance-none dark:bg-slate-800/50 dark:border-slate-700 dark:text-white shadow-sm"
-                      >
-                        <option value="" className="font-sans">{copy.selectLocation}</option>
-                        {locations.map((loc) => (
-                          <option key={loc.id} value={loc.id}>{loc.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                <InputGroup
-                  name="email"
-                  type="email"
-                  icon={Globe2}
-                  placeholder={copy.email}
-                  value={formData.email}
-                  onChange={onInputChange}
-                  required
-                />
-
-                <InputGroup
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  icon={ShieldCheck}
-                  placeholder={copy.password}
-                  value={formData.password}
-                  onChange={onInputChange}
-                  required
-                  showToggle
-                  onToggle={() => setShowPassword(!showPassword)}
-                  isToggled={showPassword}
-                />
-
-                {mode !== "login" && (
-                  <InputGroup
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    icon={ShieldCheck}
-                    placeholder={copy.confirmPassword}
-                    value={formData.confirmPassword}
-                    onChange={onInputChange}
-                    required
-                    showToggle
-                    onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
-                    isToggled={showConfirmPassword}
-                  />
-                )}
+            {mode === "register" && (
+              <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-lg dark:bg-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setSignupRole("buyer")}
+                  className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-md transition-colors ${signupRole === "buyer" ? "bg-white shadow-sm text-[#003566] dark:bg-slate-700 dark:text-white" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  <ShoppingBag size={14} />
+                  {copy.buyer}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSignupRole("seller")}
+                  className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-md transition-colors ${signupRole === "seller" ? "bg-white shadow-sm text-[#003566] dark:bg-slate-700 dark:text-white" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  <Anchor size={14} />
+                  {copy.seller}
+                </button>
               </div>
+            )}
 
-              {mode === "login" && (
-                <div className="flex items-center justify-between mt-4">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className={`h-5 w-5 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${rememberMe ? 'bg-[#0B1F3A] border-[#0B1F3A] shadow-md' : 'border-slate-200 bg-white group-hover:border-[#0B1F3A]'}`}>
-                      {rememberMe && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}><CheckCircle2 className="h-3.5 w-3.5 text-white" /></motion.div>}
-                      <input 
-                        type="checkbox" 
-                        className="hidden" 
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                      />
-                    </div>
-                    <span className="text-sm text-slate-500 font-bold group-hover:text-[#0B1F3A] transition-colors">{copy.rememberTerminal}</span>
-                  </label>
-                  <Link href={`/${locale}/auth/forgot-password`} className="text-sm font-black text-[#0B1F3A] hover:text-sky-600 transition-colors dark:text-sky-300">
-                    {copy.forgotPassword}
-                  </Link>
-                </div>
+            <div className="space-y-4">
+              {mode !== "login" && (
+                <UnderlineInput
+                  name="name"
+                  placeholder={copy.fullName}
+                  value={formData.name}
+                  onChange={onInputChange}
+                  required
+                />
               )}
 
               {mode !== "login" && (
-                <label className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer hover:border-[#0B1F3A] transition-all group dark:bg-slate-800/30 dark:border-slate-700 shadow-sm">
-                  <input
-                    type="checkbox"
-                    checked={acceptedTerms}
-                    onChange={(e) => setAcceptedTerms(e.target.checked)}
-                    className="mt-1 h-5 w-5 rounded-lg border-slate-300 text-[#0B1F3A] focus:ring-[#0B1F3A]"
-                    required
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <UnderlineInput
+                    name="phone"
+                    type="tel"
+                    placeholder={copy.phone}
+                    value={formData.phone}
+                    onChange={onInputChange}
                   />
-                  <span className="text-xs leading-5 text-slate-500 font-medium group-hover:text-slate-800 transition-colors">
-                    {copy.termsLabelBeforeLink} <Link href="/" className="font-black text-[#0B1F3A] underline decoration-sky-300 decoration-4 underline-offset-4 dark:text-sky-400">{copy.termsLinkLabel}</Link> {copy.termsLabelAfterLink}
-                  </span>
-                </label>
+                  <select
+                    name="location_id"
+                    value={formData.location_id}
+                    onChange={onInputChange}
+                    required
+                    className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
+                  >
+                    <option value="">{copy.selectLocation}</option>
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    ))}
+                  </select>
+                </div>
               )}
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-16 bg-[#0B1F3A] text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-[#051121] active:scale-[0.97] transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none mt-10 shadow-[0_20px_40px_-10px_rgba(11,31,58,0.35)] lg:shadow-[0_20px_40px_-10px_rgba(11,31,58,0.25)] ring-offset-2 focus:ring-4 focus:ring-[#0B1F3A]/20"
-              >
-                {isLoading ? (
-                  <div className="h-6 w-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-                ) : (
-                  <>
-                    {mode === 'login' ? copy.login : copy.register}
-                    <ChevronRight className="h-5 w-5" />
-                  </>
-                )}
-              </button>
+              <UnderlineInput
+                name="email"
+                type="email"
+                placeholder={copy.email}
+                value={formData.email}
+                onChange={onInputChange}
+                required
+              />
 
-              <div className="text-center mt-10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nextMode = mode === 'login' ? 'register' : 'login';
-                    setMode(nextMode);
-                    const params = new URLSearchParams(searchParams.toString());
-                    params.set("mode", nextMode);
-                    router.push(`${pathname}?${params.toString()}`);
-                  }}
-                  className="group relative inline-flex items-center gap-2 py-2 px-4 rounded-xl hover:bg-slate-50 transition-all dark:hover:bg-slate-800"
-                >
-                  <span className="text-sm font-black uppercase tracking-[0.2em] text-slate-400 transition-colors group-hover:text-[#0B1F3A]">
-                    {mode === 'login' ? copy.noAccountSignup : copy.alreadyHaveAccount}
-                  </span>
-                </button>
-              </div>
+              <UnderlineInput
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder={copy.password}
+                value={formData.password}
+                onChange={onInputChange}
+                required
+                showToggle
+                onToggle={() => setShowPassword(!showPassword)}
+                isToggled={showPassword}
+              />
 
-              {/* Boot aanmelden CTA */}
-              <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
-                <p className="text-xs text-slate-400 mb-3">{copy.intakeCtaSubtext}</p>
-                <Link
-                  href={`/${locale}/boot-aanmelden`}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-[#003566] text-[#003566] text-sm font-bold hover:bg-[#003566] hover:text-white transition-colors dark:border-sky-400 dark:text-sky-400 dark:hover:bg-sky-400 dark:hover:text-slate-900"
-                >
-                  {copy.intakeCtaLabel} →
+              {mode !== "login" && (
+                <UnderlineInput
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder={copy.confirmPassword}
+                  value={formData.confirmPassword}
+                  onChange={onInputChange}
+                  required
+                  showToggle
+                  onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+                  isToggled={showConfirmPassword}
+                />
+              )}
+            </div>
+
+            {mode === "login" && (
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-[#003566] focus:ring-[#003566]"
+                  />
+                  <span className="text-sm text-gray-500">{copy.rememberTerminal}</span>
+                </label>
+                <Link href={`/${locale}/auth/forgot-password`} className="text-sm font-semibold text-[#003566] hover:underline dark:text-sky-300">
+                  {copy.forgotPassword}
                 </Link>
               </div>
-            </form>
-          </div>
+            )}
+
+            {mode !== "login" && (
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-[#003566] transition-colors dark:border-slate-700">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#003566] focus:ring-[#003566]"
+                  required
+                />
+                <span className="text-xs leading-5 text-gray-500">
+                  {copy.termsLabelBeforeLink} <Link href="/" className="font-semibold text-[#003566] underline">{copy.termsLinkLabel}</Link> {copy.termsLabelAfterLink}
+                </span>
+              </label>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-lg bg-[#003566] py-3 text-sm font-semibold text-white transition-all hover:bg-[#001d3d] disabled:opacity-60 flex items-center justify-center gap-2 mt-2"
+            >
+              {isLoading ? (
+                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  {mode === "login" ? copy.login : copy.register}
+                  <ChevronRight className="h-4 w-4" />
+                </>
+              )}
+            </button>
+
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const nextMode = mode === "login" ? "register" : "login";
+                  setMode(nextMode);
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set("mode", nextMode);
+                  router.push(`${pathname}?${params.toString()}`);
+                }}
+                className="text-xs font-bold uppercase tracking-[0.15em] text-gray-400 hover:text-[#003566] transition-colors"
+              >
+                {mode === "login" ? copy.noAccountSignup : copy.alreadyHaveAccount}
+              </button>
+            </div>
+
+            {/* Boot aanmelden CTA */}
+            <div className="pt-5 mt-2 border-t border-gray-100 dark:border-slate-800 text-center">
+              <p className="text-xs text-gray-400 mb-2">{copy.intakeCtaSubtext}</p>
+              <Link
+                href={`/${locale}/boot-aanmelden`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-[#003566] text-[#003566] text-sm font-bold hover:bg-[#003566] hover:text-white transition-colors dark:border-sky-400 dark:text-sky-400 dark:hover:bg-sky-400 dark:hover:text-slate-900"
+              >
+                {copy.intakeCtaLabel} →
+              </Link>
+            </div>
+          </form>
         </div>
       </motion.div>
     </div>
   );
 }
 
-type InputGroupProps = {
+type UnderlineInputProps = {
   name: string;
   type?: string;
-  icon: LucideIcon;
   placeholder: string;
   value: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -670,23 +624,19 @@ type InputGroupProps = {
   isToggled?: boolean;
 };
 
-function InputGroup({
-  name, 
-  type = "text", 
-  icon: Icon, 
-  placeholder, 
-  value, 
-  onChange, 
+function UnderlineInput({
+  name,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
   required,
   showToggle,
   onToggle,
-  isToggled 
-}: InputGroupProps) {
+  isToggled,
+}: UnderlineInputProps) {
   return (
-    <div className="relative group">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0B1F3A] transition-colors pointer-events-none">
-        <Icon size={18} />
-      </div>
+    <div className="relative">
       <input
         name={name}
         type={type}
@@ -694,15 +644,15 @@ function InputGroup({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-12 text-sm font-bold placeholder:text-slate-400 focus:ring-4 focus:ring-sky-500/10 focus:border-[#0B1F3A] outline-none transition-all dark:bg-slate-800/50 dark:border-slate-700 dark:text-white shadow-sm"
+        className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-0 py-2 pr-8 text-sm text-gray-700 transition-colors focus:border-[#003566] focus:outline-none dark:border-slate-600 dark:text-slate-200"
       />
       {showToggle && (
         <button
           type="button"
           onClick={onToggle}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#0B1F3A] transition-colors"
+          className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#003566] transition-colors"
         >
-          {isToggled ? <EyeOff size={18} /> : <Eye size={18} />}
+          {isToggled ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       )}
     </div>
