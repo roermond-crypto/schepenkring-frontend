@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { X, ChevronLeft, Calendar, Euro, BookOpen, Phone, HelpCircle, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,8 @@ import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 // ── Types ───────────────────────────────────────────────────────
 
 type FlowType = "plan_viewing" | "offer" | "brochure" | "callback" | "question";
+
+type WidgetLocale = "nl" | "en" | "de" | "fr";
 
 type BoatContext = {
   id: number;
@@ -24,17 +26,385 @@ type LocationContext = {
   name: string;
 };
 
+type WidgetCopy = {
+  flows: Record<FlowType, string>;
+  success: Record<FlowType, { title: string; body: string }>;
+  close: string;
+  back: string;
+  welcomeTitle: string;
+  welcomeSubtitle: string;
+  helpSubtitle: string;
+  aboutBoat: string;
+  loadingBoatInfo: string;
+  footerTagline: string;
+  contactButton: string;
+  contactAria: string;
+  genericError: string;
+  defaultBoatName: string;
+  fields: {
+    date: string;
+    time: string;
+    chooseTime: string;
+    name: string;
+    namePlaceholder: string;
+    phone: string;
+    phonePlaceholder: string;
+    email: string;
+    emailOptionalLabel: string;
+    emailPlaceholder: string;
+    messageOptionalLabel: string;
+    messagePlaceholderViewing: string;
+    messagePlaceholderOffer: string;
+    messagePlaceholderCallback: string;
+    offerAmountLabel: string;
+    offerAmountPlaceholder: string;
+    phoneOptionalLabel: string;
+    preferredCallTime: string;
+    noPreference: string;
+    morning: string;
+    afternoon: string;
+    evening: string;
+    question: string;
+    questionPlaceholder: string;
+  };
+  submit: {
+    planViewing: string;
+    offer: string;
+    brochure: string;
+    callback: string;
+    question: string;
+  };
+};
+
 // ── Constants ───────────────────────────────────────────────────
 
 const ACCENT = "#C8102E"; // Schepenkring red
 
-const FLOWS: { type: FlowType; icon: typeof Calendar; label: string; emoji: string }[] = [
-  { type: "plan_viewing", icon: Calendar,    label: "Bezichtiging plannen",  emoji: "📅" },
-  { type: "offer",        icon: Euro,        label: "Bod uitbrengen",        emoji: "💰" },
-  { type: "brochure",     icon: BookOpen,    label: "Brochure ontvangen",    emoji: "📄" },
-  { type: "callback",     icon: Phone,       label: "Terugbellen",           emoji: "📞" },
-  { type: "question",     icon: HelpCircle,  label: "Stel een vraag",        emoji: "❓" },
+const FLOW_TYPES: { type: FlowType; icon: typeof Calendar; emoji: string }[] = [
+  { type: "plan_viewing", icon: Calendar, emoji: "📅" },
+  { type: "offer", icon: Euro, emoji: "💰" },
+  { type: "brochure", icon: BookOpen, emoji: "📄" },
+  { type: "callback", icon: Phone, emoji: "📞" },
+  { type: "question", icon: HelpCircle, emoji: "❓" },
 ];
+
+// ── Per-locale copy ─────────────────────────────────────────────
+
+const WIDGET_COPY: Record<WidgetLocale, WidgetCopy> = {
+  nl: {
+    flows: {
+      plan_viewing: "Bezichtiging plannen",
+      offer: "Bod uitbrengen",
+      brochure: "Brochure ontvangen",
+      callback: "Terugbellen",
+      question: "Stel een vraag",
+    },
+    success: {
+      plan_viewing: {
+        title: "Bezichtiging aangevraagd!",
+        body: "We nemen zo snel mogelijk contact met u op om een datum en tijd te bevestigen.",
+      },
+      offer: {
+        title: "Bod ontvangen!",
+        body: "Uw bod is doorgegeven aan de verkoper. We nemen spoedig contact met u op.",
+      },
+      brochure: {
+        title: "Brochure onderweg!",
+        body: "De brochure wordt zo snel mogelijk naar uw e-mailadres gestuurd.",
+      },
+      callback: {
+        title: "Terugbelverzoek ontvangen!",
+        body: "We bellen u zo snel mogelijk terug op het opgegeven nummer.",
+      },
+      question: {
+        title: "Vraag ontvangen!",
+        body: "Ons team beantwoordt uw vraag zo snel mogelijk.",
+      },
+    },
+    close: "Sluiten",
+    back: "Terug",
+    welcomeTitle: "Welkom bij Schepenkring",
+    welcomeSubtitle: "Wij helpen u graag met deze boot.",
+    helpSubtitle: "Wij helpen u graag",
+    aboutBoat: "Over deze boot",
+    loadingBoatInfo: "Bootinformatie laden…",
+    footerTagline: "Schepenkring · Jachthaven & Jachtmakelaar",
+    contactButton: "Contact opnemen",
+    contactAria: "Contact Schepenkring",
+    genericError: "Er is iets misgegaan. Probeer het opnieuw.",
+    defaultBoatName: "Boot",
+    fields: {
+      date: "Datum",
+      time: "Tijd",
+      chooseTime: "Kies tijd",
+      name: "Naam",
+      namePlaceholder: "Uw volledige naam",
+      phone: "Telefoonnummer",
+      phonePlaceholder: "+31 6 12345678",
+      email: "E-mailadres",
+      emailOptionalLabel: "E-mailadres (optioneel)",
+      emailPlaceholder: "uw@email.nl",
+      messageOptionalLabel: "Bericht (optioneel)",
+      messagePlaceholderViewing: "Extra informatie...",
+      messagePlaceholderOffer: "Toelichting op uw bod...",
+      messagePlaceholderCallback: "Eventuele opmerkingen...",
+      offerAmountLabel: "Bod (€)",
+      offerAmountPlaceholder: "bijv. 45000",
+      phoneOptionalLabel: "Telefoonnummer (optioneel)",
+      preferredCallTime: "Gewenste beltijd",
+      noPreference: "Geen voorkeur",
+      morning: "Ochtend (9:00–12:00)",
+      afternoon: "Middag (12:00–17:00)",
+      evening: "Avond (17:00–20:00)",
+      question: "Uw vraag",
+      questionPlaceholder: "Stel hier uw vraag over deze boot...",
+    },
+    submit: {
+      planViewing: "Bezichtiging aanvragen",
+      offer: "Bod uitbrengen",
+      brochure: "Brochure aanvragen",
+      callback: "Terugbelverzoek sturen",
+      question: "Vraag versturen",
+    },
+  },
+  en: {
+    flows: {
+      plan_viewing: "Schedule a viewing",
+      offer: "Make an offer",
+      brochure: "Receive brochure",
+      callback: "Request a callback",
+      question: "Ask a question",
+    },
+    success: {
+      plan_viewing: {
+        title: "Viewing requested!",
+        body: "We will contact you as soon as possible to confirm a date and time.",
+      },
+      offer: {
+        title: "Offer received!",
+        body: "Your offer has been forwarded to the seller. We will contact you shortly.",
+      },
+      brochure: {
+        title: "Brochure on its way!",
+        body: "The brochure will be sent to your email address as soon as possible.",
+      },
+      callback: {
+        title: "Callback request received!",
+        body: "We will call you back as soon as possible on the number provided.",
+      },
+      question: {
+        title: "Question received!",
+        body: "Our team will answer your question as soon as possible.",
+      },
+    },
+    close: "Close",
+    back: "Back",
+    welcomeTitle: "Welcome to Schepenkring",
+    welcomeSubtitle: "We're happy to help you with this boat.",
+    helpSubtitle: "We're happy to help",
+    aboutBoat: "About this boat",
+    loadingBoatInfo: "Loading boat information…",
+    footerTagline: "Schepenkring · Marina & Yacht Brokerage",
+    contactButton: "Contact us",
+    contactAria: "Contact Schepenkring",
+    genericError: "Something went wrong. Please try again.",
+    defaultBoatName: "Boat",
+    fields: {
+      date: "Date",
+      time: "Time",
+      chooseTime: "Choose time",
+      name: "Name",
+      namePlaceholder: "Your full name",
+      phone: "Phone number",
+      phonePlaceholder: "+31 6 12345678",
+      email: "Email address",
+      emailOptionalLabel: "Email address (optional)",
+      emailPlaceholder: "your@email.com",
+      messageOptionalLabel: "Message (optional)",
+      messagePlaceholderViewing: "Additional information...",
+      messagePlaceholderOffer: "Comments about your offer...",
+      messagePlaceholderCallback: "Any remarks...",
+      offerAmountLabel: "Offer (€)",
+      offerAmountPlaceholder: "e.g. 45000",
+      phoneOptionalLabel: "Phone number (optional)",
+      preferredCallTime: "Preferred call time",
+      noPreference: "No preference",
+      morning: "Morning (9:00–12:00)",
+      afternoon: "Afternoon (12:00–17:00)",
+      evening: "Evening (17:00–20:00)",
+      question: "Your question",
+      questionPlaceholder: "Ask your question about this boat...",
+    },
+    submit: {
+      planViewing: "Request viewing",
+      offer: "Submit offer",
+      brochure: "Request brochure",
+      callback: "Send callback request",
+      question: "Send question",
+    },
+  },
+  de: {
+    flows: {
+      plan_viewing: "Besichtigung planen",
+      offer: "Angebot machen",
+      brochure: "Broschüre erhalten",
+      callback: "Rückruf anfordern",
+      question: "Frage stellen",
+    },
+    success: {
+      plan_viewing: {
+        title: "Besichtigung angefragt!",
+        body: "Wir setzen uns so schnell wie möglich mit Ihnen in Verbindung, um Datum und Uhrzeit zu bestätigen.",
+      },
+      offer: {
+        title: "Angebot erhalten!",
+        body: "Ihr Angebot wurde an den Verkäufer weitergeleitet. Wir melden uns in Kürze bei Ihnen.",
+      },
+      brochure: {
+        title: "Broschüre ist unterwegs!",
+        body: "Die Broschüre wird so schnell wie möglich an Ihre E-Mail-Adresse gesendet.",
+      },
+      callback: {
+        title: "Rückrufanfrage erhalten!",
+        body: "Wir rufen Sie so schnell wie möglich unter der angegebenen Nummer zurück.",
+      },
+      question: {
+        title: "Frage erhalten!",
+        body: "Unser Team beantwortet Ihre Frage so schnell wie möglich.",
+      },
+    },
+    close: "Schließen",
+    back: "Zurück",
+    welcomeTitle: "Willkommen bei Schepenkring",
+    welcomeSubtitle: "Wir helfen Ihnen gerne bei diesem Boot.",
+    helpSubtitle: "Wir helfen Ihnen gerne",
+    aboutBoat: "Über dieses Boot",
+    loadingBoatInfo: "Bootsinformationen werden geladen…",
+    footerTagline: "Schepenkring · Yachthafen & Yachtmakler",
+    contactButton: "Kontakt aufnehmen",
+    contactAria: "Schepenkring kontaktieren",
+    genericError: "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+    defaultBoatName: "Boot",
+    fields: {
+      date: "Datum",
+      time: "Uhrzeit",
+      chooseTime: "Uhrzeit wählen",
+      name: "Name",
+      namePlaceholder: "Ihr vollständiger Name",
+      phone: "Telefonnummer",
+      phonePlaceholder: "+31 6 12345678",
+      email: "E-Mail-Adresse",
+      emailOptionalLabel: "E-Mail-Adresse (optional)",
+      emailPlaceholder: "ihre@email.de",
+      messageOptionalLabel: "Nachricht (optional)",
+      messagePlaceholderViewing: "Zusätzliche Informationen...",
+      messagePlaceholderOffer: "Anmerkungen zu Ihrem Angebot...",
+      messagePlaceholderCallback: "Eventuelle Anmerkungen...",
+      offerAmountLabel: "Angebot (€)",
+      offerAmountPlaceholder: "z. B. 45000",
+      phoneOptionalLabel: "Telefonnummer (optional)",
+      preferredCallTime: "Gewünschte Rückrufzeit",
+      noPreference: "Keine Präferenz",
+      morning: "Vormittag (9:00–12:00)",
+      afternoon: "Nachmittag (12:00–17:00)",
+      evening: "Abend (17:00–20:00)",
+      question: "Ihre Frage",
+      questionPlaceholder: "Stellen Sie hier Ihre Frage zu diesem Boot...",
+    },
+    submit: {
+      planViewing: "Besichtigung anfragen",
+      offer: "Angebot abgeben",
+      brochure: "Broschüre anfragen",
+      callback: "Rückrufanfrage senden",
+      question: "Frage senden",
+    },
+  },
+  fr: {
+    flows: {
+      plan_viewing: "Planifier une visite",
+      offer: "Faire une offre",
+      brochure: "Recevoir la brochure",
+      callback: "Demander un rappel",
+      question: "Poser une question",
+    },
+    success: {
+      plan_viewing: {
+        title: "Visite demandée !",
+        body: "Nous vous contacterons dès que possible pour confirmer une date et une heure.",
+      },
+      offer: {
+        title: "Offre reçue !",
+        body: "Votre offre a été transmise au vendeur. Nous vous contacterons rapidement.",
+      },
+      brochure: {
+        title: "Brochure en route !",
+        body: "La brochure sera envoyée à votre adresse e-mail dès que possible.",
+      },
+      callback: {
+        title: "Demande de rappel reçue !",
+        body: "Nous vous rappellerons dès que possible au numéro indiqué.",
+      },
+      question: {
+        title: "Question reçue !",
+        body: "Notre équipe répondra à votre question dès que possible.",
+      },
+    },
+    close: "Fermer",
+    back: "Retour",
+    welcomeTitle: "Bienvenue chez Schepenkring",
+    welcomeSubtitle: "Nous sommes ravis de vous aider avec ce bateau.",
+    helpSubtitle: "Nous sommes ravis de vous aider",
+    aboutBoat: "À propos de ce bateau",
+    loadingBoatInfo: "Chargement des informations du bateau…",
+    footerTagline: "Schepenkring · Port de plaisance & Courtage nautique",
+    contactButton: "Nous contacter",
+    contactAria: "Contacter Schepenkring",
+    genericError: "Une erreur s'est produite. Veuillez réessayer.",
+    defaultBoatName: "Bateau",
+    fields: {
+      date: "Date",
+      time: "Heure",
+      chooseTime: "Choisir l'heure",
+      name: "Nom",
+      namePlaceholder: "Votre nom complet",
+      phone: "Numéro de téléphone",
+      phonePlaceholder: "+31 6 12345678",
+      email: "Adresse e-mail",
+      emailOptionalLabel: "Adresse e-mail (facultatif)",
+      emailPlaceholder: "votre@email.fr",
+      messageOptionalLabel: "Message (facultatif)",
+      messagePlaceholderViewing: "Informations complémentaires...",
+      messagePlaceholderOffer: "Précisions sur votre offre...",
+      messagePlaceholderCallback: "Remarques éventuelles...",
+      offerAmountLabel: "Offre (€)",
+      offerAmountPlaceholder: "ex. 45000",
+      phoneOptionalLabel: "Numéro de téléphone (facultatif)",
+      preferredCallTime: "Heure de rappel souhaitée",
+      noPreference: "Aucune préférence",
+      morning: "Matin (9h00–12h00)",
+      afternoon: "Après-midi (12h00–17h00)",
+      evening: "Soir (17h00–20h00)",
+      question: "Votre question",
+      questionPlaceholder: "Posez ici votre question sur ce bateau...",
+    },
+    submit: {
+      planViewing: "Demander une visite",
+      offer: "Soumettre l'offre",
+      brochure: "Demander la brochure",
+      callback: "Envoyer la demande de rappel",
+      question: "Envoyer la question",
+    },
+  },
+};
+
+function resolveWidgetLocale(locale?: string): WidgetLocale {
+  const normalized = (locale || "nl").toLowerCase().split("-")[0];
+  if (normalized === "en" || normalized === "de" || normalized === "fr") return normalized;
+  return "nl";
+}
+
+const WidgetCopyContext = createContext<WidgetCopy>(WIDGET_COPY.nl);
+const useWidgetCopy = () => useContext(WidgetCopyContext);
 
 // ── GA4 helper (no-throw) ───────────────────────────────────────
 
@@ -110,29 +480,8 @@ const inputCls =
 // ── Success screen ──────────────────────────────────────────────
 
 function SuccessScreen({ flowType, onClose }: { flowType: FlowType; onClose: () => void }) {
-  const messages: Record<FlowType, { title: string; body: string }> = {
-    plan_viewing: {
-      title: "Bezichtiging aangevraagd!",
-      body:  "We nemen zo snel mogelijk contact met u op om een datum en tijd te bevestigen.",
-    },
-    offer: {
-      title: "Bod ontvangen!",
-      body:  "Uw bod is doorgegeven aan de verkoper. We nemen spoedig contact met u op.",
-    },
-    brochure: {
-      title: "Brochure onderweg!",
-      body:  "De brochure wordt zo snel mogelijk naar uw e-mailadres gestuurd.",
-    },
-    callback: {
-      title: "Terugbelverzoek ontvangen!",
-      body:  "We bellen u zo snel mogelijk terug op het opgegeven nummer.",
-    },
-    question: {
-      title: "Vraag ontvangen!",
-      body:  "Ons team beantwoordt uw vraag zo snel mogelijk.",
-    },
-  };
-  const msg = messages[flowType];
+  const copy = useWidgetCopy();
+  const msg = copy.success[flowType];
   return (
     <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
       <div
@@ -148,7 +497,7 @@ function SuccessScreen({ flowType, onClose }: { flowType: FlowType; onClose: () 
         className="mt-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         style={{ background: ACCENT }}
       >
-        Sluiten
+        {copy.close}
       </button>
     </div>
   );
@@ -167,6 +516,7 @@ function PlanViewingForm({
   sourceUrl: string;
   onSuccess: () => void;
 }) {
+  const copy = useWidgetCopy();
   const [form, setForm] = useState({
     preferred_date: "",
     preferred_time: "",
@@ -199,7 +549,7 @@ function PlanViewingForm({
       ga4("widget_plan_viewing_submitted", { boat_id: boat.id, location_id: location?.id });
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er is iets misgegaan. Probeer het opnieuw.");
+      setError(err instanceof Error ? err.message : copy.genericError);
     } finally {
       setLoading(false);
     }
@@ -208,7 +558,7 @@ function PlanViewingForm({
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Datum" required>
+        <Field label={copy.fields.date} required>
           <input
             type="date"
             min={today}
@@ -218,26 +568,26 @@ function PlanViewingForm({
             className={inputCls}
           />
         </Field>
-        <Field label="Tijd" required>
+        <Field label={copy.fields.time} required>
           <select required value={form.preferred_time} onChange={set("preferred_time")} className={inputCls}>
-            <option value="">Kies tijd</option>
+            <option value="">{copy.fields.chooseTime}</option>
             {times.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
         </Field>
       </div>
-      <Field label="Naam" required>
-        <input type="text" required placeholder="Uw volledige naam" value={form.name} onChange={set("name")} className={inputCls} />
+      <Field label={copy.fields.name} required>
+        <input type="text" required placeholder={copy.fields.namePlaceholder} value={form.name} onChange={set("name")} className={inputCls} />
       </Field>
-      <Field label="Telefoonnummer" required>
-        <input type="tel" required placeholder="+31 6 12345678" value={form.phone} onChange={set("phone")} className={inputCls} />
+      <Field label={copy.fields.phone} required>
+        <input type="tel" required placeholder={copy.fields.phonePlaceholder} value={form.phone} onChange={set("phone")} className={inputCls} />
       </Field>
-      <Field label="E-mailadres">
-        <input type="email" placeholder="uw@email.nl" value={form.email} onChange={set("email")} className={inputCls} />
+      <Field label={copy.fields.email}>
+        <input type="email" placeholder={copy.fields.emailPlaceholder} value={form.email} onChange={set("email")} className={inputCls} />
       </Field>
-      <Field label="Bericht (optioneel)">
-        <textarea rows={2} placeholder="Extra informatie..." value={form.message} onChange={set("message")} className={inputCls} />
+      <Field label={copy.fields.messageOptionalLabel}>
+        <textarea rows={2} placeholder={copy.fields.messagePlaceholderViewing} value={form.message} onChange={set("message")} className={inputCls} />
       </Field>
       {error && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -251,7 +601,7 @@ function PlanViewingForm({
         className="mt-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ background: ACCENT }}
       >
-        {loading ? <Loader2 size={16} className="animate-spin" /> : "Bezichtiging aanvragen"}
+        {loading ? <Loader2 size={16} className="animate-spin" /> : copy.submit.planViewing}
       </button>
     </form>
   );
@@ -268,6 +618,7 @@ function OfferForm({
   sourceUrl: string;
   onSuccess: () => void;
 }) {
+  const copy = useWidgetCopy();
   const [form, setForm] = useState({ offer_amount: "", name: "", phone: "", email: "", message: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -292,7 +643,7 @@ function OfferForm({
       ga4("widget_offer_submitted", { boat_id: boat.id });
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er is iets misgegaan. Probeer het opnieuw.");
+      setError(err instanceof Error ? err.message : copy.genericError);
     } finally {
       setLoading(false);
     }
@@ -300,29 +651,29 @@ function OfferForm({
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <Field label="Bod (€)" required>
+      <Field label={copy.fields.offerAmountLabel} required>
         <input
           type="number"
           required
           min="1"
           step="500"
-          placeholder="bijv. 45000"
+          placeholder={copy.fields.offerAmountPlaceholder}
           value={form.offer_amount}
           onChange={set("offer_amount")}
           className={inputCls}
         />
       </Field>
-      <Field label="Naam" required>
-        <input type="text" required placeholder="Uw volledige naam" value={form.name} onChange={set("name")} className={inputCls} />
+      <Field label={copy.fields.name} required>
+        <input type="text" required placeholder={copy.fields.namePlaceholder} value={form.name} onChange={set("name")} className={inputCls} />
       </Field>
-      <Field label="Telefoonnummer" required>
-        <input type="tel" required placeholder="+31 6 12345678" value={form.phone} onChange={set("phone")} className={inputCls} />
+      <Field label={copy.fields.phone} required>
+        <input type="tel" required placeholder={copy.fields.phonePlaceholder} value={form.phone} onChange={set("phone")} className={inputCls} />
       </Field>
-      <Field label="E-mailadres">
-        <input type="email" placeholder="uw@email.nl" value={form.email} onChange={set("email")} className={inputCls} />
+      <Field label={copy.fields.email}>
+        <input type="email" placeholder={copy.fields.emailPlaceholder} value={form.email} onChange={set("email")} className={inputCls} />
       </Field>
-      <Field label="Bericht (optioneel)">
-        <textarea rows={2} placeholder="Toelichting op uw bod..." value={form.message} onChange={set("message")} className={inputCls} />
+      <Field label={copy.fields.messageOptionalLabel}>
+        <textarea rows={2} placeholder={copy.fields.messagePlaceholderOffer} value={form.message} onChange={set("message")} className={inputCls} />
       </Field>
       {error && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -336,7 +687,7 @@ function OfferForm({
         className="mt-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ background: ACCENT }}
       >
-        {loading ? <Loader2 size={16} className="animate-spin" /> : "Bod uitbrengen"}
+        {loading ? <Loader2 size={16} className="animate-spin" /> : copy.submit.offer}
       </button>
     </form>
   );
@@ -353,6 +704,7 @@ function BrochureForm({
   sourceUrl: string;
   onSuccess: () => void;
 }) {
+  const copy = useWidgetCopy();
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -373,7 +725,7 @@ function BrochureForm({
       ga4("widget_brochure_requested", { boat_id: boat.id });
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er is iets misgegaan. Probeer het opnieuw.");
+      setError(err instanceof Error ? err.message : copy.genericError);
     } finally {
       setLoading(false);
     }
@@ -381,14 +733,14 @@ function BrochureForm({
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <Field label="Naam" required>
-        <input type="text" required placeholder="Uw volledige naam" value={form.name} onChange={set("name")} className={inputCls} />
+      <Field label={copy.fields.name} required>
+        <input type="text" required placeholder={copy.fields.namePlaceholder} value={form.name} onChange={set("name")} className={inputCls} />
       </Field>
-      <Field label="E-mailadres" required>
-        <input type="email" required placeholder="uw@email.nl" value={form.email} onChange={set("email")} className={inputCls} />
+      <Field label={copy.fields.email} required>
+        <input type="email" required placeholder={copy.fields.emailPlaceholder} value={form.email} onChange={set("email")} className={inputCls} />
       </Field>
-      <Field label="Telefoonnummer (optioneel)">
-        <input type="tel" placeholder="+31 6 12345678" value={form.phone} onChange={set("phone")} className={inputCls} />
+      <Field label={copy.fields.phoneOptionalLabel}>
+        <input type="tel" placeholder={copy.fields.phonePlaceholder} value={form.phone} onChange={set("phone")} className={inputCls} />
       </Field>
       {error && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -402,7 +754,7 @@ function BrochureForm({
         className="mt-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ background: ACCENT }}
       >
-        {loading ? <Loader2 size={16} className="animate-spin" /> : "Brochure aanvragen"}
+        {loading ? <Loader2 size={16} className="animate-spin" /> : copy.submit.brochure}
       </button>
     </form>
   );
@@ -419,6 +771,7 @@ function CallbackForm({
   sourceUrl: string;
   onSuccess: () => void;
 }) {
+  const copy = useWidgetCopy();
   const [form, setForm] = useState({ name: "", phone: "", email: "", preferred_call_time: "", message: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -443,7 +796,7 @@ function CallbackForm({
       ga4("widget_callback_requested", { boat_id: boat.id });
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er is iets misgegaan. Probeer het opnieuw.");
+      setError(err instanceof Error ? err.message : copy.genericError);
     } finally {
       setLoading(false);
     }
@@ -451,25 +804,25 @@ function CallbackForm({
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <Field label="Naam" required>
-        <input type="text" required placeholder="Uw volledige naam" value={form.name} onChange={set("name")} className={inputCls} />
+      <Field label={copy.fields.name} required>
+        <input type="text" required placeholder={copy.fields.namePlaceholder} value={form.name} onChange={set("name")} className={inputCls} />
       </Field>
-      <Field label="Telefoonnummer" required>
-        <input type="tel" required placeholder="+31 6 12345678" value={form.phone} onChange={set("phone")} className={inputCls} />
+      <Field label={copy.fields.phone} required>
+        <input type="tel" required placeholder={copy.fields.phonePlaceholder} value={form.phone} onChange={set("phone")} className={inputCls} />
       </Field>
-      <Field label="E-mailadres (optioneel)">
-        <input type="email" placeholder="uw@email.nl" value={form.email} onChange={set("email")} className={inputCls} />
+      <Field label={copy.fields.emailOptionalLabel}>
+        <input type="email" placeholder={copy.fields.emailPlaceholder} value={form.email} onChange={set("email")} className={inputCls} />
       </Field>
-      <Field label="Gewenste beltijd">
+      <Field label={copy.fields.preferredCallTime}>
         <select value={form.preferred_call_time} onChange={set("preferred_call_time")} className={inputCls}>
-          <option value="">Geen voorkeur</option>
-          <option value="ochtend (9:00–12:00)">Ochtend (9:00–12:00)</option>
-          <option value="middag (12:00–17:00)">Middag (12:00–17:00)</option>
-          <option value="avond (17:00–20:00)">Avond (17:00–20:00)</option>
+          <option value="">{copy.fields.noPreference}</option>
+          <option value="ochtend (9:00–12:00)">{copy.fields.morning}</option>
+          <option value="middag (12:00–17:00)">{copy.fields.afternoon}</option>
+          <option value="avond (17:00–20:00)">{copy.fields.evening}</option>
         </select>
       </Field>
-      <Field label="Bericht (optioneel)">
-        <textarea rows={2} placeholder="Eventuele opmerkingen..." value={form.message} onChange={set("message")} className={inputCls} />
+      <Field label={copy.fields.messageOptionalLabel}>
+        <textarea rows={2} placeholder={copy.fields.messagePlaceholderCallback} value={form.message} onChange={set("message")} className={inputCls} />
       </Field>
       {error && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -483,7 +836,7 @@ function CallbackForm({
         className="mt-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ background: ACCENT }}
       >
-        {loading ? <Loader2 size={16} className="animate-spin" /> : "Terugbelverzoek sturen"}
+        {loading ? <Loader2 size={16} className="animate-spin" /> : copy.submit.callback}
       </button>
     </form>
   );
@@ -500,6 +853,7 @@ function QuestionForm({
   sourceUrl: string;
   onSuccess: () => void;
 }) {
+  const copy = useWidgetCopy();
   const [form, setForm] = useState({ question: "", name: "", phone: "", email: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -523,7 +877,7 @@ function QuestionForm({
       ga4("widget_question_submitted", { boat_id: boat.id });
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er is iets misgegaan. Probeer het opnieuw.");
+      setError(err instanceof Error ? err.message : copy.genericError);
     } finally {
       setLoading(false);
     }
@@ -531,24 +885,24 @@ function QuestionForm({
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <Field label="Uw vraag" required>
+      <Field label={copy.fields.question} required>
         <textarea
           rows={3}
           required
-          placeholder="Stel hier uw vraag over deze boot..."
+          placeholder={copy.fields.questionPlaceholder}
           value={form.question}
           onChange={set("question")}
           className={inputCls}
         />
       </Field>
-      <Field label="Naam" required>
-        <input type="text" required placeholder="Uw volledige naam" value={form.name} onChange={set("name")} className={inputCls} />
+      <Field label={copy.fields.name} required>
+        <input type="text" required placeholder={copy.fields.namePlaceholder} value={form.name} onChange={set("name")} className={inputCls} />
       </Field>
-      <Field label="Telefoonnummer" required>
-        <input type="tel" required placeholder="+31 6 12345678" value={form.phone} onChange={set("phone")} className={inputCls} />
+      <Field label={copy.fields.phone} required>
+        <input type="tel" required placeholder={copy.fields.phonePlaceholder} value={form.phone} onChange={set("phone")} className={inputCls} />
       </Field>
-      <Field label="E-mailadres (optioneel)">
-        <input type="email" placeholder="uw@email.nl" value={form.email} onChange={set("email")} className={inputCls} />
+      <Field label={copy.fields.emailOptionalLabel}>
+        <input type="email" placeholder={copy.fields.emailPlaceholder} value={form.email} onChange={set("email")} className={inputCls} />
       </Field>
       {error && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -562,7 +916,7 @@ function QuestionForm({
         className="mt-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ background: ACCENT }}
       >
-        {loading ? <Loader2 size={16} className="animate-spin" /> : "Vraag versturen"}
+        {loading ? <Loader2 size={16} className="animate-spin" /> : copy.submit.question}
       </button>
     </form>
   );
@@ -575,9 +929,11 @@ export interface LeadCaptureWidgetProps {
   locationId?: number;
   sourceUrl?: string;
   isEmbedded?: boolean;
+  locale?: string;
 }
 
-export function LeadCaptureWidget({ boatId, locationId, sourceUrl, isEmbedded }: LeadCaptureWidgetProps) {
+export function LeadCaptureWidget({ boatId, locationId, sourceUrl, isEmbedded, locale }: LeadCaptureWidgetProps) {
+  const copy = WIDGET_COPY[resolveWidgetLocale(locale)];
   const [isOpen, setIsOpen]           = useState(false);
   const [activeFlow, setActiveFlow]   = useState<FlowType | null>(null);
   const [success, setSuccess]         = useState<FlowType | null>(null);
@@ -636,200 +992,194 @@ export function LeadCaptureWidget({ boatId, locationId, sourceUrl, isEmbedded }:
     return () => window.removeEventListener("resize", handler);
   }, []);
 
-  const flowTitle: Record<FlowType, string> = {
-    plan_viewing: "Bezichtiging plannen",
-    offer:        "Bod uitbrengen",
-    brochure:     "Brochure ontvangen",
-    callback:     "Terugbellen",
-    question:     "Stel een vraag",
-  };
-
   const resolvedSourceUrl = sourceUrl || (typeof window !== "undefined" ? window.location.href : "");
 
   return (
-    <div className={cn("flex h-full w-full flex-col items-end justify-end", isEmbedded && "bg-transparent")}>
-      {/* ── Open panel ── */}
-      {isOpen && (
-        <div
-          className="flex h-full w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
-          style={{ border: "1px solid #e5e7eb" }}
-        >
-          {/* Header */}
+    <WidgetCopyContext.Provider value={copy}>
+      <div className={cn("flex h-full w-full flex-col items-end justify-end", isEmbedded && "bg-transparent")}>
+        {/* ── Open panel ── */}
+        {isOpen && (
           <div
-            className="flex shrink-0 items-center justify-between px-4 py-3"
-            style={{ background: ACCENT }}
+            className="flex h-full w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+            style={{ border: "1px solid #e5e7eb" }}
           >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white p-1">
-                <Image
-                  src="/schepenkring-logo.png"
-                  alt="Schepenkring"
-                  width={28}
-                  height={28}
-                  className="object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
+            {/* Header */}
+            <div
+              className="flex shrink-0 items-center justify-between px-4 py-3"
+              style={{ background: ACCENT }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white p-1">
+                  <Image
+                    src="/schepenkring-logo.png"
+                    alt="Schepenkring"
+                    width={28}
+                    height={28}
+                    className="object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-bold leading-none text-white">Schepenkring</p>
+                  <p className="mt-0.5 text-[10px] leading-none text-red-100">
+                    {location ? location.name : copy.helpSubtitle}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={close}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Boat context strip */}
+            {boat && (
+              <div
+                className="shrink-0 border-b border-gray-100 px-4 py-2.5"
+                style={{ background: "#fff8f8" }}
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{copy.aboutBoat}</p>
+                <p className="mt-0.5 text-sm font-bold text-gray-800">{boat.name}</p>
+              </div>
+            )}
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {/* Success screen */}
+              {success && (
+                <SuccessScreen
+                  flowType={success}
+                  onClose={() => {
+                    setSuccess(null);
+                    setActiveFlow(null);
                   }}
                 />
-              </div>
-              <div>
-                <p className="text-xs font-bold leading-none text-white">Schepenkring</p>
-                <p className="mt-0.5 text-[10px] leading-none text-red-100">
-                  {location ? location.name : "Wij helpen u graag"}
-                </p>
-              </div>
+              )}
+
+              {/* Flow form */}
+              {!success && activeFlow && (
+                <div className="flex flex-col gap-4">
+                  <button
+                    onClick={() => setActiveFlow(null)}
+                    className="flex w-fit items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800"
+                  >
+                    <ChevronLeft size={14} />
+                    {copy.back}
+                  </button>
+                  <h3 className="text-base font-bold text-gray-800">{copy.flows[activeFlow]}</h3>
+
+                  {activeFlow === "plan_viewing" && (
+                    <PlanViewingForm
+                      boat={boat ?? { id: boatId!, name: copy.defaultBoatName }}
+                      location={location}
+                      sourceUrl={resolvedSourceUrl}
+                      onSuccess={() => setSuccess("plan_viewing")}
+                    />
+                  )}
+                  {activeFlow === "offer" && (
+                    <OfferForm
+                      boat={boat ?? { id: boatId!, name: copy.defaultBoatName }}
+                      location={location}
+                      sourceUrl={resolvedSourceUrl}
+                      onSuccess={() => setSuccess("offer")}
+                    />
+                  )}
+                  {activeFlow === "brochure" && (
+                    <BrochureForm
+                      boat={boat ?? { id: boatId!, name: copy.defaultBoatName }}
+                      location={location}
+                      sourceUrl={resolvedSourceUrl}
+                      onSuccess={() => setSuccess("brochure")}
+                    />
+                  )}
+                  {activeFlow === "callback" && (
+                    <CallbackForm
+                      boat={boat ?? { id: boatId!, name: copy.defaultBoatName }}
+                      location={location}
+                      sourceUrl={resolvedSourceUrl}
+                      onSuccess={() => setSuccess("callback")}
+                    />
+                  )}
+                  {activeFlow === "question" && (
+                    <QuestionForm
+                      boat={boat ?? { id: boatId!, name: copy.defaultBoatName }}
+                      location={location}
+                      sourceUrl={resolvedSourceUrl}
+                      onSuccess={() => setSuccess("question")}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Main menu */}
+              {!success && !activeFlow && (
+                <div className="flex flex-col gap-2">
+                  <div className="mb-2">
+                    <h2 className="text-base font-bold text-gray-800">{copy.welcomeTitle}</h2>
+                    <p className="mt-0.5 text-sm text-gray-500">{copy.welcomeSubtitle}</p>
+                  </div>
+
+                  {contextLoading && (
+                    <div className="flex items-center gap-2 py-2 text-xs text-gray-400">
+                      <Loader2 size={12} className="animate-spin" />
+                      {copy.loadingBoatInfo}
+                    </div>
+                  )}
+
+                  {FLOW_TYPES.map(({ type, emoji }) => (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        setActiveFlow(type);
+                        ga4("widget_flow_started", { flow: type, boat_id: boatId });
+                      }}
+                      className="flex w-full items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3.5 text-left text-sm font-semibold text-gray-800 transition-all hover:border-[#C8102E]/30 hover:bg-red-50 hover:text-[#C8102E]"
+                    >
+                      <span className="text-lg leading-none">{emoji}</span>
+                      <span>{copy.flows[type]}</span>
+                    </button>
+                  ))}
+
+                  <p className="mt-3 text-center text-[10px] text-gray-400">
+                    {copy.footerTagline}
+                  </p>
+                </div>
+              )}
             </div>
-            <button
-              onClick={close}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30"
-            >
-              <X size={14} />
-            </button>
           </div>
+        )}
 
-          {/* Boat context strip */}
-          {boat && (
-            <div
-              className="shrink-0 border-b border-gray-100 px-4 py-2.5"
-              style={{ background: "#fff8f8" }}
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Over deze boot</p>
-              <p className="mt-0.5 text-sm font-bold text-gray-800">{boat.name}</p>
-            </div>
-          )}
-
-          {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            {/* Success screen */}
-            {success && (
-              <SuccessScreen
-                flowType={success}
-                onClose={() => {
-                  setSuccess(null);
-                  setActiveFlow(null);
+        {/* ── Launcher button ── */}
+        {!isOpen && (
+          <button
+            onClick={open}
+            className="flex items-center gap-2.5 rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-xl transition-transform hover:scale-105 active:scale-100"
+            style={{
+              background: ACCENT,
+              boxShadow: "0 4px 24px rgba(200,16,46,0.35)",
+            }}
+            aria-label={copy.contactAria}
+          >
+            <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-white p-0.5">
+              <Image
+                src="/schepenkring-logo.png"
+                alt=""
+                width={20}
+                height={20}
+                className="object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
                 }}
               />
-            )}
-
-            {/* Flow form */}
-            {!success && activeFlow && (
-              <div className="flex flex-col gap-4">
-                <button
-                  onClick={() => setActiveFlow(null)}
-                  className="flex w-fit items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800"
-                >
-                  <ChevronLeft size={14} />
-                  Terug
-                </button>
-                <h3 className="text-base font-bold text-gray-800">{flowTitle[activeFlow]}</h3>
-
-                {activeFlow === "plan_viewing" && (
-                  <PlanViewingForm
-                    boat={boat ?? { id: boatId!, name: "Boot" }}
-                    location={location}
-                    sourceUrl={resolvedSourceUrl}
-                    onSuccess={() => setSuccess("plan_viewing")}
-                  />
-                )}
-                {activeFlow === "offer" && (
-                  <OfferForm
-                    boat={boat ?? { id: boatId!, name: "Boot" }}
-                    location={location}
-                    sourceUrl={resolvedSourceUrl}
-                    onSuccess={() => setSuccess("offer")}
-                  />
-                )}
-                {activeFlow === "brochure" && (
-                  <BrochureForm
-                    boat={boat ?? { id: boatId!, name: "Boot" }}
-                    location={location}
-                    sourceUrl={resolvedSourceUrl}
-                    onSuccess={() => setSuccess("brochure")}
-                  />
-                )}
-                {activeFlow === "callback" && (
-                  <CallbackForm
-                    boat={boat ?? { id: boatId!, name: "Boot" }}
-                    location={location}
-                    sourceUrl={resolvedSourceUrl}
-                    onSuccess={() => setSuccess("callback")}
-                  />
-                )}
-                {activeFlow === "question" && (
-                  <QuestionForm
-                    boat={boat ?? { id: boatId!, name: "Boot" }}
-                    location={location}
-                    sourceUrl={resolvedSourceUrl}
-                    onSuccess={() => setSuccess("question")}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Main menu */}
-            {!success && !activeFlow && (
-              <div className="flex flex-col gap-2">
-                <div className="mb-2">
-                  <h2 className="text-base font-bold text-gray-800">Welkom bij Schepenkring</h2>
-                  <p className="mt-0.5 text-sm text-gray-500">Wij helpen u graag met deze boot.</p>
-                </div>
-
-                {contextLoading && (
-                  <div className="flex items-center gap-2 py-2 text-xs text-gray-400">
-                    <Loader2 size={12} className="animate-spin" />
-                    Bootinformatie laden…
-                  </div>
-                )}
-
-                {FLOWS.map(({ type, label, emoji }) => (
-                  <button
-                    key={type}
-                    onClick={() => {
-                      setActiveFlow(type);
-                      ga4("widget_flow_started", { flow: type, boat_id: boatId });
-                    }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3.5 text-left text-sm font-semibold text-gray-800 transition-all hover:border-[#C8102E]/30 hover:bg-red-50 hover:text-[#C8102E]"
-                  >
-                    <span className="text-lg leading-none">{emoji}</span>
-                    <span>{label}</span>
-                  </button>
-                ))}
-
-                <p className="mt-3 text-center text-[10px] text-gray-400">
-                  Schepenkring · Jachthaven & Jachtmakelaar
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Launcher button ── */}
-      {!isOpen && (
-        <button
-          onClick={open}
-          className="flex items-center gap-2.5 rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-xl transition-transform hover:scale-105 active:scale-100"
-          style={{
-            background: ACCENT,
-            boxShadow: "0 4px 24px rgba(200,16,46,0.35)",
-          }}
-          aria-label="Contact Schepenkring"
-        >
-          <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-white p-0.5">
-            <Image
-              src="/schepenkring-logo.png"
-              alt=""
-              width={20}
-              height={20}
-              className="object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
-          <span>Contact opnemen</span>
-        </button>
-      )}
-    </div>
+            </div>
+            <span>{copy.contactButton}</span>
+          </button>
+        )}
+      </div>
+    </WidgetCopyContext.Provider>
   );
 }

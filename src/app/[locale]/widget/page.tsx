@@ -28,6 +28,7 @@ export default async function WidgetPage({
                     locationId={locationId}
                     sourceUrl={sourceUrl}
                     isEmbedded={true}
+                    locale={locale}
                 />
             </main>
         );
