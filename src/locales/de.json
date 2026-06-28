@@ -2572,5 +2572,31 @@
     "edit": "Bearbeiten",
     "duplicateTitle": "Duplizieren",
     "archiveTitle": "Archivieren"
+  },
+  "I18nQuality": {
+    "title": "Übersetzungsqualität",
+    "summary": "{count} Locales • {keys} Referenzschlüssel (NL)",
+    "scannedAt": " • Gescannt {time}",
+    "filterPlaceholder": "Schlüssel filtern…",
+    "rescan": "Erneut scannen",
+    "clean": "Sauber",
+    "issuesCount": "{count} Probleme",
+    "keys": "Schlüssel",
+    "badgeEncoding": "Kodierung",
+    "badgeMissing": "Fehlend",
+    "badgeDuplicates": "Duplikate",
+    "sectionEncoding": "Kodierungsprobleme (Mojibake)",
+    "sectionMissing": "Fehlende Schlüssel",
+    "sectionDuplicates": "Doppelte Werte",
+    "andMore": "… und {count} weitere",
+    "allCleanTitle": "Alle Übersetzungen sind sauber",
+    "allCleanBody": "Keine Kodierungsprobleme, fehlenden Schlüssel oder Duplikate gefunden.",
+    "issuesFoundTitle": "{count} Probleme in {files} Sprachdateien gefunden",
+    "issuesFoundBody": "Führen Sie {command}php artisan translations:scan --fix{/command} aus, um Kodierungsprobleme automatisch zu beheben.",
+    "cliTitle": "CLI-Befehle",
+    "cliScanAll": "# Alle Locales scannen",
+    "cliScanOne": "# Eine Locale scannen",
+    "cliFix": "# Kodierungsprobleme automatisch beheben",
+    "cliJson": "# JSON-Ausgabe (für CI)"
   }
 }

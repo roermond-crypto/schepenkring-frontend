@@ -2575,5 +2575,31 @@
     "edit": "Edit",
     "duplicateTitle": "Duplicate",
     "archiveTitle": "Archive"
+  },
+  "I18nQuality": {
+    "title": "Translation Quality",
+    "summary": "{count} locales • {keys} reference keys (NL)",
+    "scannedAt": " • Scanned {time}",
+    "filterPlaceholder": "Filter keys…",
+    "rescan": "Rescan",
+    "clean": "Clean",
+    "issuesCount": "{count} issues",
+    "keys": "keys",
+    "badgeEncoding": "Encoding",
+    "badgeMissing": "Missing",
+    "badgeDuplicates": "Duplicates",
+    "sectionEncoding": "Encoding issues (mojibake)",
+    "sectionMissing": "Missing keys",
+    "sectionDuplicates": "Duplicate values",
+    "andMore": "… and {count} more",
+    "allCleanTitle": "All translations clean",
+    "allCleanBody": "No encoding issues, missing keys, or duplicates found.",
+    "issuesFoundTitle": "{count} issues found across {files} locale files",
+    "issuesFoundBody": "Run {command}php artisan translations:scan --fix{/command} to auto-repair encoding issues.",
+    "cliTitle": "CLI Commands",
+    "cliScanAll": "# Scan all locales",
+    "cliScanOne": "# Scan one locale",
+    "cliFix": "# Auto-fix encoding issues",
+    "cliJson": "# JSON output (for CI)"
   }
 }

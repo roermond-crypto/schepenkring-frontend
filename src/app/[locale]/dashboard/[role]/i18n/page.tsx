@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   AlertCircle,
   AlertTriangle,
@@ -166,6 +167,7 @@ function LocaleCard({
   report: LocaleReport;
   search: string;
 }) {
+  const t = useTranslations("I18nQuality");
   const encCount = Object.keys(report.encodingIssues).length;
   const missCount = report.missingKeys.length;
   const dupCount = Object.keys(report.duplicateValues).length;
@@ -208,31 +210,31 @@ function LocaleCard({
           </div>
           <div>
             <h3 className="font-bold text-slate-800">{report.locale}.json</h3>
-            <p className="text-xs text-slate-400">{report.totalKeys} keys</p>
+            <p className="text-xs text-slate-400">{report.totalKeys} {t("keys")}</p>
           </div>
         </div>
         {report.issueCount === 0 ? (
           <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
             <ShieldCheck size={13} />
-            Clean
+            {t("clean")}
           </span>
         ) : (
           <span className="flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700">
             <AlertCircle size={13} />
-            {report.issueCount} issues
+            {t("issuesCount", { count: report.issueCount })}
           </span>
         )}
       </div>
 
       {/* Issue badges */}
       <div className="mb-4 flex flex-wrap gap-2">
-        <StatusBadge count={encCount} label="Encoding" />
-        <StatusBadge count={missCount} label="Missing" />
-        <StatusBadge count={dupCount} label="Duplicates" />
+        <StatusBadge count={encCount} label={t("badgeEncoding")} />
+        <StatusBadge count={missCount} label={t("badgeMissing")} />
+        <StatusBadge count={dupCount} label={t("badgeDuplicates")} />
       </div>
 
       {/* Encoding issues */}
-      <IssueSection title="Encoding issues (mojibake)" count={Object.keys(filteredEncoding).length} color="red">
+      <IssueSection title={t("sectionEncoding")} count={Object.keys(filteredEncoding).length} color="red">
         <div className="space-y-2 font-mono text-xs">
           {Object.entries(filteredEncoding)
             .slice(0, 50)
@@ -246,13 +248,13 @@ function LocaleCard({
               </div>
             ))}
           {Object.keys(filteredEncoding).length > 50 && (
-            <p className="text-rose-600">… and {Object.keys(filteredEncoding).length - 50} more</p>
+            <p className="text-rose-600">{t("andMore", { count: Object.keys(filteredEncoding).length - 50 })}</p>
           )}
         </div>
       </IssueSection>
 
       {/* Missing keys */}
-      <IssueSection title="Missing keys" count={filteredMissing.length} color="amber">
+      <IssueSection title={t("sectionMissing")} count={filteredMissing.length} color="amber">
         <div className="grid gap-1 font-mono text-xs">
           {filteredMissing.slice(0, 80).map((key) => (
             <div key={key} className="flex items-center rounded-lg bg-white/70 px-2 py-1 text-amber-800">
@@ -261,13 +263,13 @@ function LocaleCard({
             </div>
           ))}
           {filteredMissing.length > 80 && (
-            <p className="text-amber-700">… and {filteredMissing.length - 80} more</p>
+            <p className="text-amber-700">{t("andMore", { count: filteredMissing.length - 80 })}</p>
           )}
         </div>
       </IssueSection>
 
       {/* Duplicates */}
-      <IssueSection title="Duplicate values" count={dupCount} color="slate">
+      <IssueSection title={t("sectionDuplicates")} count={dupCount} color="slate">
         <div className="space-y-2 text-xs">
           {Object.entries(report.duplicateValues)
             .slice(0, 20)
@@ -292,6 +294,7 @@ function LocaleCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function I18nAdminPage() {
+  const t = useTranslations("I18nQuality");
   const [reports, setReports] = useState<LocaleReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -331,13 +334,11 @@ export default function I18nAdminPage() {
           </div>
           <div>
             <h1 className="text-2xl font-black tracking-tight text-slate-800">
-              Translation Quality
+              {t("title")}
             </h1>
             <p className="mt-0.5 text-sm text-slate-500">
-              {LOCALES.length} locales &bull; {totalKeys} reference keys (NL)
-              {lastScanned && (
-                <> &bull; Scanned {lastScanned.toLocaleTimeString()}</>
-              )}
+              {t("summary", { count: LOCALES.length, keys: totalKeys })}
+              {lastScanned && t("scannedAt", { time: lastScanned.toLocaleTimeString() })}
             </p>
           </div>
         </div>
@@ -347,7 +348,7 @@ export default function I18nAdminPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Filter keys…"
+              placeholder={t("filterPlaceholder")}
               className="w-56 rounded-2xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
             />
           </div>
@@ -358,7 +359,7 @@ export default function I18nAdminPage() {
             className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
           >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
-            Rescan
+            {t("rescan")}
           </button>
         </div>
       </div>
@@ -386,15 +387,15 @@ export default function I18nAdminPage() {
             >
               {r.issueCount === 0 ? (
                 <span className="flex items-center justify-center gap-1">
-                  <CheckCircle2 size={13} /> Clean
+                  <CheckCircle2 size={13} /> {t("clean")}
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-1">
-                  <AlertTriangle size={13} /> {r.issueCount} issues
+                  <AlertTriangle size={13} /> {t("issuesCount", { count: r.issueCount })}
                 </span>
               )}
             </p>
-            <p className="mt-1 text-xs text-slate-500">{r.totalKeys} keys</p>
+            <p className="mt-1 text-xs text-slate-500">{r.totalKeys} {t("keys")}</p>
           </div>
         ))}
       </div>
@@ -404,8 +405,8 @@ export default function I18nAdminPage() {
         <div className="mb-6 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-700">
           <ShieldCheck size={20} />
           <div>
-            <p className="font-bold">All translations clean</p>
-            <p className="text-sm">No encoding issues, missing keys, or duplicates found.</p>
+            <p className="font-bold">{t("allCleanTitle")}</p>
+            <p className="text-sm">{t("allCleanBody")}</p>
           </div>
         </div>
       )}
@@ -414,9 +415,15 @@ export default function I18nAdminPage() {
         <div className="mb-6 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-800">
           <AlertTriangle size={20} />
           <div>
-            <p className="font-bold">{totalIssues} issues found across {reports.filter((r) => r.issueCount > 0).length} locale files</p>
+            <p className="font-bold">{t("issuesFoundTitle", { count: totalIssues, files: reports.filter((r) => r.issueCount > 0).length })}</p>
             <p className="text-sm">
-              Run <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">php artisan translations:scan --fix</code> to auto-repair encoding issues.
+              {t.rich("issuesFoundBody", {
+                command: (chunks) => (
+                  <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">
+                    {chunks}
+                  </code>
+                ),
+              })}
             </p>
           </div>
         </div>
@@ -450,23 +457,23 @@ export default function I18nAdminPage() {
       <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
         <div className="mb-3 flex items-center gap-2 text-slate-700">
           <FileText size={16} />
-          <span className="text-sm font-bold">CLI Commands</span>
+          <span className="text-sm font-bold">{t("cliTitle")}</span>
         </div>
         <div className="space-y-2 font-mono text-xs text-slate-600">
           <div className="rounded-xl bg-slate-50 px-4 py-2">
-            <span className="text-slate-400"># Scan all locales</span>
+            <span className="text-slate-400">{t("cliScanAll")}</span>
             <div>php artisan translations:scan</div>
           </div>
           <div className="rounded-xl bg-slate-50 px-4 py-2">
-            <span className="text-slate-400"># Scan one locale</span>
+            <span className="text-slate-400">{t("cliScanOne")}</span>
             <div>php artisan translations:scan fr</div>
           </div>
           <div className="rounded-xl bg-slate-50 px-4 py-2">
-            <span className="text-slate-400"># Auto-fix encoding issues</span>
+            <span className="text-slate-400">{t("cliFix")}</span>
             <div>php artisan translations:scan --fix</div>
           </div>
           <div className="rounded-xl bg-slate-50 px-4 py-2">
-            <span className="text-slate-400"># JSON output (for CI)</span>
+            <span className="text-slate-400">{t("cliJson")}</span>
             <div>php artisan translations:scan --json</div>
           </div>
         </div>

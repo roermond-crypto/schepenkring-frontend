@@ -2648,5 +2648,31 @@
     "edit": "Modifier",
     "duplicateTitle": "Dupliquer",
     "archiveTitle": "Archiver"
+  },
+  "I18nQuality": {
+    "title": "Qualité des traductions",
+    "summary": "{count} locales • {keys} clés de référence (NL)",
+    "scannedAt": " • Analysé {time}",
+    "filterPlaceholder": "Filtrer les clés…",
+    "rescan": "Réanalyser",
+    "clean": "Propre",
+    "issuesCount": "{count} problèmes",
+    "keys": "clés",
+    "badgeEncoding": "Encodage",
+    "badgeMissing": "Manquant",
+    "badgeDuplicates": "Doublons",
+    "sectionEncoding": "Problèmes d'encodage (mojibake)",
+    "sectionMissing": "Clés manquantes",
+    "sectionDuplicates": "Valeurs en double",
+    "andMore": "… et {count} de plus",
+    "allCleanTitle": "Toutes les traductions sont propres",
+    "allCleanBody": "Aucun problème d'encodage, clé manquante ou doublon trouvé.",
+    "issuesFoundTitle": "{count} problèmes trouvés dans {files} fichiers de langue",
+    "issuesFoundBody": "Exécutez {command}php artisan translations:scan --fix{/command} pour réparer automatiquement les problèmes d'encodage.",
+    "cliTitle": "Commandes CLI",
+    "cliScanAll": "# Analyser toutes les locales",
+    "cliScanOne": "# Analyser une locale",
+    "cliFix": "# Réparer automatiquement les problèmes d'encodage",
+    "cliJson": "# Sortie JSON (pour CI)"
   }
 }

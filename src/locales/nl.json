@@ -2571,5 +2571,31 @@
     "edit": "Bewerken",
     "duplicateTitle": "Dupliceren",
     "archiveTitle": "Archiveren"
+  },
+  "I18nQuality": {
+    "title": "Vertalingskwaliteit",
+    "summary": "{count} locales • {keys} referentiesleutels (NL)",
+    "scannedAt": " • Gescand {time}",
+    "filterPlaceholder": "Filter sleutels…",
+    "rescan": "Opnieuw scannen",
+    "clean": "Schoon",
+    "issuesCount": "{count} problemen",
+    "keys": "sleutels",
+    "badgeEncoding": "Codering",
+    "badgeMissing": "Ontbrekend",
+    "badgeDuplicates": "Duplicaten",
+    "sectionEncoding": "Coderingsproblemen (mojibake)",
+    "sectionMissing": "Ontbrekende sleutels",
+    "sectionDuplicates": "Dubbele waarden",
+    "andMore": "… en {count} meer",
+    "allCleanTitle": "Alle vertalingen zijn schoon",
+    "allCleanBody": "Geen coderingsproblemen, ontbrekende sleutels of duplicaten gevonden.",
+    "issuesFoundTitle": "{count} problemen gevonden in {files} taalbestanden",
+    "issuesFoundBody": "Voer {command}php artisan translations:scan --fix{/command} uit om coderingsproblemen automatisch te herstellen.",
+    "cliTitle": "CLI-commando's",
+    "cliScanAll": "# Scan alle locales",
+    "cliScanOne": "# Scan één locale",
+    "cliFix": "# Coderingsproblemen automatisch herstellen",
+    "cliJson": "# JSON-uitvoer (voor CI)"
   }
 }
