@@ -378,7 +378,7 @@ function LogoBlockSettings({
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => void handleFileChange(e)} />
           </div>
-          {s.custom_url && (
+          {!!s.custom_url && (
             <img src={String(s.custom_url)} alt="Logo preview" className="mt-2 max-h-16 max-w-full rounded border border-slate-200 object-contain p-1" />
           )}
         </div>
@@ -435,7 +435,7 @@ function ImageBlockSettings({
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => void handleFileChange(e)} />
         </div>
-        {s.src && (
+        {!!s.src && (
           <img src={String(s.src)} alt="" className="mt-2 max-h-20 max-w-full rounded border border-slate-200 object-contain p-1" />
         )}
       </div>
