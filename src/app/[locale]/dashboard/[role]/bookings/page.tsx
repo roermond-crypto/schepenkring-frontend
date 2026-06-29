@@ -192,6 +192,7 @@ export default function DashboardBookingsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
   const [calendarDate, setCalendarDate] = useState(new Date());
+  const [locationOptions, setLocationOptions] = useState<{ id: number; name: string }[]>([]);
   const hasLoadedInitialData = useRef(false);
   const loadErrorText = t("errors.load");
   const detailErrorText = t("errors.detail");
@@ -201,6 +202,19 @@ export default function DashboardBookingsPage() {
       router.replace(`/${locale}/dashboard/${role}/tasks`);
     }
   }, [locale, role, router]);
+
+  useEffect(() => {
+    api.get<{ data: { id: number; meta?: { name?: string }; name?: string }[] }>("/admin/locations")
+      .then((res) => {
+        setLocationOptions(
+          (res.data.data ?? []).map((l) => ({
+            id: l.id,
+            name: l.meta?.name ?? l.name ?? String(l.id),
+          }))
+        );
+      })
+      .catch(() => {});
+  }, []);
 
   const loadBookings = useCallback(
     async (showRefreshState = false) => {
@@ -575,7 +589,7 @@ export default function DashboardBookingsPage() {
               <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
                 {t("filters.locationId")}
               </span>
-              <Input
+              <select
                 value={filters.locationId}
                 onChange={(event) =>
                   setFilters((current) => ({
@@ -583,10 +597,13 @@ export default function DashboardBookingsPage() {
                     locationId: event.target.value,
                   }))
                 }
-                placeholder={t("filters.locationPlaceholder")}
-                className="h-11 rounded-2xl border-slate-200 text-sm text-slate-700"
-                inputMode="numeric"
-              />
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566]"
+              >
+                <option value="">{t("filters.allLocations")}</option>
+                {locationOptions.map((l) => (
+                  <option key={l.id} value={String(l.id)}>{l.name}</option>
+                ))}
+              </select>
             </label>
 
             <Button
@@ -648,7 +665,9 @@ export default function DashboardBookingsPage() {
               ) : null}
               {appliedFilters.locationId ? (
                 <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
-                  {t("activeFilters.location", { value: appliedFilters.locationId })}
+                  {t("activeFilters.location", {
+                    value: locationOptions.find((l) => String(l.id) === appliedFilters.locationId)?.name ?? appliedFilters.locationId,
+                  })}
                 </span>
               ) : null}
             </div>

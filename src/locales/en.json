@@ -442,8 +442,8 @@
       "searchPlaceholder": "Search by guest, email, or boat",
       "status": "Status",
       "allStatuses": "All statuses",
-      "locationId": "Location ID",
-      "locationPlaceholder": "Filter by location ID",
+      "locationId": "Location",
+      "allLocations": "All locations",
       "reset": "Reset",
       "apply": "Refresh"
     },

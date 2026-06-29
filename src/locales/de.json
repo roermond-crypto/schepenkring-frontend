@@ -442,8 +442,8 @@
       "searchPlaceholder": "Nach Gast, E-Mail oder Boot suchen",
       "status": "Status",
       "allStatuses": "Alle Status",
-      "locationId": "Standort-ID",
-      "locationPlaceholder": "Nach Standort-ID filtern",
+      "locationId": "Standort",
+      "allLocations": "Alle Standorte",
       "reset": "Zurücksetzen",
       "apply": "Aktualisieren"
     },

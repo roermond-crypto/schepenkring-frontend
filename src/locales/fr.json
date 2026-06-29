@@ -442,8 +442,8 @@
       "searchPlaceholder": "Rechercher par client, e-mail ou bateau",
       "status": "Statut",
       "allStatuses": "Tous les statuts",
-      "locationId": "ID d'emplacement",
-      "locationPlaceholder": "Filtrer par ID d'emplacement",
+      "locationId": "Emplacement",
+      "allLocations": "Tous les emplacements",
       "reset": "Réinitialiser",
       "apply": "Actualiser"
     },

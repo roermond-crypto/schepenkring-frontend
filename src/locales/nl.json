@@ -442,8 +442,8 @@
       "searchPlaceholder": "Zoek op gast, e-mail of boot",
       "status": "Status",
       "allStatuses": "Alle statussen",
-      "locationId": "Locatie-ID",
-      "locationPlaceholder": "Filter op locatie-ID",
+      "locationId": "Locatie",
+      "allLocations": "Alle locaties",
       "reset": "Resetten",
       "apply": "Verversen"
     },
