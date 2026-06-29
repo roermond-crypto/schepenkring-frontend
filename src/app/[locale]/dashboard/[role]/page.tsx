@@ -349,7 +349,9 @@ export default function AdminDashboardHome() {
           : (isBuyerRole || isSellerRole)
             ? api.get("/owner-bids?page=1")
             : Promise.resolve({ data: { data: [] } }),
-        api.get("/audit?per_page=5&sort_by=created_at&sort_dir=desc"),
+        isAdminRole || isEmployeeRole
+          ? api.get("/audit?per_page=5&sort_by=created_at&sort_dir=desc")
+          : Promise.resolve({ data: { logs: [] } }),
         isSellerRole
           ? api.get("/dashboard/seller/summary")
           : Promise.resolve({ data: null }),
@@ -557,15 +559,16 @@ export default function AdminDashboardHome() {
           recentBids,
           recentRegistrations,
           auditLogs: auditLogs.slice(0, 5),
-          trends:
-            summaryRes.status === "fulfilled" && summaryRes.value.data
-              ? summaryRes.value.data
-              : {
-                  activeBids: { change: 0, sparkline: [] },
-                  pendingTasks: { change: 0, sparkline: [] },
-                  fleetIntake: { change: 0, sparkline: [] },
-                  completedSales: { change: 0, sparkline: [] },
-                },
+          trends: (() => {
+              const fallback = { change: 0, sparkline: [] };
+              const raw = summaryRes.status === "fulfilled" ? (summaryRes.value.data as Record<string, unknown> | null) : null;
+              return {
+                activeBids: (raw?.activeBids as typeof fallback) ?? fallback,
+                pendingTasks: (raw?.pendingTasks as typeof fallback) ?? fallback,
+                fleetIntake: (raw?.fleetIntake as typeof fallback) ?? fallback,
+                completedSales: (raw?.completedSales as typeof fallback) ?? fallback,
+              };
+            })(),
         });
       });
     } catch (error) {
