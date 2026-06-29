@@ -28,7 +28,7 @@ export function BidsManagementPage({ role }: { role: string }) {
     if (isInitial) setInitialLoading(true);
     else setRefreshing(true);
     try {
-      const result = await listDashboardBids();
+      const result = await listDashboardBids({ role });
       setBids(result.data);
     } catch {
       setBids([]);

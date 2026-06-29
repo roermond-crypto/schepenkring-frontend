@@ -20,8 +20,11 @@ export type DashboardBid = {
 export async function listDashboardBids(params?: {
   page?: number;
   status?: string;
+  role?: string;
 }): Promise<{ data: DashboardBid[]; meta?: { total?: number } }> {
-  const res = await api.get("/bids", { params: { page: 1, ...params } });
+  const { role, ...rest } = params ?? {};
+  const endpoint = role === "admin" || role === "employee" ? "/admin/owner-bids" : "/owner-bids";
+  const res = await api.get(endpoint, { params: { page: 1, ...rest } });
   const payload = res.data;
   if (Array.isArray(payload)) return { data: payload as DashboardBid[] };
   if (Array.isArray(payload?.data)) return { data: payload.data as DashboardBid[], meta: payload.meta };
@@ -29,16 +32,16 @@ export async function listDashboardBids(params?: {
 }
 
 export async function acceptBid(bidId: number, payload?: { message?: string }) {
-  const res = await api.post(`/bids/${bidId}/accept`, payload ?? {});
+  const res = await api.post(`/owner-bids/${bidId}/accept`, payload ?? {});
   return res.data;
 }
 
 export async function rejectBid(bidId: number, payload?: { reason?: string }) {
-  const res = await api.post(`/bids/${bidId}/reject`, payload ?? {});
+  const res = await api.post(`/owner-bids/${bidId}/reject`, payload ?? {});
   return res.data;
 }
 
 export async function counterBid(bidId: number, payload: { amount: number; message?: string }) {
-  const res = await api.post(`/bids/${bidId}/counter`, payload);
+  const res = await api.post(`/owner-bids/${bidId}/counter`, payload);
   return res.data;
 }

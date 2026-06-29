@@ -344,9 +344,15 @@ export default function AdminDashboardHome() {
       ] = await Promise.allSettled([
         api.get("/yachts"),
         api.get("/tasks"),
-        api.get("/bids?page=1"),
+        isAdminRole || isEmployeeRole
+          ? api.get("/admin/owner-bids?page=1")
+          : (isBuyerRole || isSellerRole)
+            ? api.get("/owner-bids?page=1")
+            : Promise.resolve({ data: { data: [] } }),
         api.get("/audit?per_page=5&sort_by=created_at&sort_dir=desc"),
-        api.get("/dashboard/summary"),
+        isSellerRole
+          ? api.get("/dashboard/seller/summary")
+          : Promise.resolve({ data: null }),
         api.get("/notifications/unread-count"),
       ]);
 
