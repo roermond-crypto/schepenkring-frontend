@@ -2190,7 +2190,7 @@ export default function AdminTaskBoardPage() {
       <main className="copied-admin-theme flex-1 p-4 sm:p-6 bg-white min-h-[calc(100vh-80px)] dark:bg-[#050b19]">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
               <h1 className="text-4xl font-serif italic text-[#003566]">
                 {t("title")}
@@ -2200,8 +2200,8 @@ export default function AdminTaskBoardPage() {
               </p>
             </div>
 
-            <div className="flex flex-col md:flex-row w-full md:w-auto gap-4">
-              <div className="relative w-full md:w-64">
+            <div className="flex flex-wrap items-center w-full md:w-auto gap-2">
+              <div className="relative w-full md:w-56">
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   size={14}
@@ -2209,7 +2209,7 @@ export default function AdminTaskBoardPage() {
                 <input
                   type="text"
                   placeholder={t("placeholders.searchTasks")}
-                  className="w-full bg-white border border-slate-200 pl-10 pr-4 py-3 text-[10px] font-bold tracking-widest uppercase focus:border-blue-400 outline-none"
+                  className="w-full h-12 bg-white border border-slate-200 pl-10 pr-4 text-[10px] font-bold tracking-widest uppercase focus:border-blue-400 outline-none"
                   value={filters.search}
                   onChange={(e) =>
                     setFilters((prev) => ({
@@ -2220,47 +2220,31 @@ export default function AdminTaskBoardPage() {
                 />
               </div>
 
-              <div className="flex gap-2">
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                onClick={() => setViewMode("list")}
+                className="rounded-none h-12 px-4 border text-xs"
+              >
+                <List size={16} className="mr-2" /> {t("views.list")}
+              </Button>
+              {canViewTaskBoard && (
                 <Button
-                  variant={viewMode === "list" ? "default" : "outline"}
-                  onClick={() => setViewMode("list")}
+                  variant={viewMode === "board" ? "default" : "outline"}
+                  onClick={() => setViewMode("board")}
                   className="rounded-none h-12 px-4 border text-xs"
                 >
-                  <List size={16} className="mr-2" /> {t("views.list")}
+                  <ClipboardList size={16} className="mr-2" />{" "}
+                  {t("views.board")}
                 </Button>
-                {canViewTaskBoard && (
-                  <Button
-                    variant={viewMode === "board" ? "default" : "outline"}
-                    onClick={() => setViewMode("board")}
-                    className="rounded-none h-12 px-4 border text-xs"
-                  >
-                    <ClipboardList size={16} className="mr-2" />{" "}
-                    {t("views.board")}
-                  </Button>
-                )}
-                <Button
-                  variant={viewMode === "calendar" ? "default" : "outline"}
-                  onClick={() => setViewMode("calendar")}
-                  className="rounded-none h-12 px-4 border text-xs"
-                >
-                  <CalendarDays size={16} className="mr-2" />{" "}
-                  {t("views.calendar")}
-                </Button>
-                {/* {viewMode === "board" && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsDarkMode(!isDarkMode)}
-                    className="rounded-none h-12 px-4 border text-xs"
-                  >
-                    {isDarkMode ? (
-                      <Sun size={16} className="mr-2 text-amber-500" />
-                    ) : (
-                      <Moon size={16} className="mr-2 text-slate-500" />
-                    )}
-                    {isDarkMode ? "Light" : "Dark"}
-                  </Button>
-                )} */}
-              </div>
+              )}
+              <Button
+                variant={viewMode === "calendar" ? "default" : "outline"}
+                onClick={() => setViewMode("calendar")}
+                className="rounded-none h-12 px-4 border text-xs"
+              >
+                <CalendarDays size={16} className="mr-2" />{" "}
+                {t("views.calendar")}
+              </Button>
 
               <button
                 onClick={() => {
@@ -2268,13 +2252,13 @@ export default function AdminTaskBoardPage() {
                   setPreSelectedColId(undefined);
                   setIsModalOpen(true);
                 }}
-                className="bg-[#003566] text-white rounded-none h-12 px-2 uppercase text-xs tracking-widest font-black shadow-lg hover:bg-[#003566]/90 flex items-center"
+                className="bg-[#003566] text-white rounded-none h-12 px-5 uppercase text-xs tracking-widest font-black shadow-lg hover:bg-[#003566]/90 flex items-center whitespace-nowrap"
               >
                 <Plus size={16} className="mr-2" /> {t("actions.newTask")}
               </button>
               {canConfigureAutomation && (
                 <Link href={`/dashboard/${role}/tasks/automation`}>
-                  <button className="rounded-none h-12 w-fit px-8 border text-xs uppercase tracking-widest font-black flex items-center">
+                  <button className="rounded-none h-12 px-5 border text-xs uppercase tracking-widest font-black flex items-center whitespace-nowrap hover:bg-slate-50">
                     <CalendarIcon size={16} className="mr-2" /> {t("actions.automationRules")}
                   </button>
                 </Link>
