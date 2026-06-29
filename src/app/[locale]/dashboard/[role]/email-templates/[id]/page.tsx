@@ -239,7 +239,12 @@ function BlockCanvasItem({
   const previewContent = () => {
     const s = block.settings;
     switch (block.type) {
-      case "logo": return <div className="h-8 w-20 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">LOGO</div>;
+      case "logo": {
+        const src = s.source === "custom_url" && s.custom_url ? String(s.custom_url) : null;
+        return src
+          ? <img src={src} alt="Logo" className="h-10 max-w-[120px] object-contain rounded" />
+          : <div className="h-8 w-20 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">LOGO (locatie)</div>;
+      }
       case "header": return <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{localStr(s.content, lang, "Koptekst...")}</p>;
       case "text": return <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">{localStr(s.content, lang, "Tekst...")}</p>;
       case "rich_text": return <p className="text-xs text-slate-500 dark:text-slate-400 italic">[Opgemaakte tekst]</p>;
@@ -248,7 +253,9 @@ function BlockCanvasItem({
           {localStr(s.label, lang, "Knop")}
         </div>
       );
-      case "image": return <div className="h-12 w-full rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">{String(s.src || "AFBEELDING")}</div>;
+      case "image": return s.src
+        ? <img src={String(s.src)} alt={String(s.alt || "")} className="max-h-24 w-full object-contain rounded" />
+        : <div className="h-12 w-full rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">AFBEELDING</div>;
       case "divider": return <hr className="border-slate-200 dark:border-slate-700" />;
       case "spacer": return <div className="h-3 text-[9px] text-slate-400 text-center">{Number(s.height ?? 24)}px ruimte</div>;
       case "footer": return <p className="text-[10px] text-slate-400 text-center line-clamp-2">{localStr(s.content, lang, "Voettekst...")}</p>;
@@ -301,6 +308,146 @@ function BlockCanvasItem({
         </div>
       )}
     </Draggable>
+  );
+}
+
+// ─── Logo block settings (with file upload) ───────────────────────────────────
+
+function LogoBlockSettings({
+  s,
+  setField,
+}: {
+  s: Record<string, unknown>;
+  setField: (key: string, value: unknown) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await api.post<{ url: string }>("/admin/email-templates/upload-media", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setField("source", "custom_url");
+      setField("custom_url", res.data.url);
+    } catch {
+      toast.error("Upload mislukt.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Bron</label>
+        <select
+          value={String(s.source ?? "location_logo")}
+          onChange={(e) => setField("source", e.target.value)}
+          className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        >
+          <option value="location_logo">Logo van locatie (automatisch)</option>
+          <option value="custom_url">Eigen logo (URL of upload)</option>
+        </select>
+      </div>
+      {String(s.source ?? "location_logo") === "custom_url" && (
+        <div className="space-y-2">
+          <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Logo URL</label>
+          <Input
+            value={String(s.custom_url ?? "")}
+            onChange={(e) => setField("custom_url", e.target.value)}
+            className="rounded-xl text-sm"
+            placeholder="https://..."
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-400">of</span>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+              {uploading ? "Uploaden..." : "Bestand uploaden"}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => void handleFileChange(e)} />
+          </div>
+          {s.custom_url && (
+            <img src={String(s.custom_url)} alt="Logo preview" className="mt-2 max-h-16 max-w-full rounded border border-slate-200 object-contain p-1" />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Image block settings (with file upload) ──────────────────────────────────
+
+function ImageBlockSettings({
+  s,
+  setField,
+}: {
+  s: Record<string, unknown>;
+  setField: (key: string, value: unknown) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await api.post<{ url: string }>("/admin/email-templates/upload-media", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setField("src", res.data.url);
+    } catch {
+      toast.error("Upload mislukt.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Afbeeldings-URL</label>
+        <Input value={String(s.src ?? "")} onChange={(e) => setField("src", e.target.value)} className="rounded-xl text-sm" placeholder="https://..." />
+        <div className="mt-2 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+            {uploading ? "Uploaden..." : "Bestand uploaden"}
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => void handleFileChange(e)} />
+        </div>
+        {s.src && (
+          <img src={String(s.src)} alt="" className="mt-2 max-h-20 max-w-full rounded border border-slate-200 object-contain p-1" />
+        )}
+      </div>
+      <div>
+        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Alt-tekst</label>
+        <Input value={String(s.alt ?? "")} onChange={(e) => setField("alt", e.target.value)} className="rounded-xl text-sm" />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Link (optioneel)</label>
+        <Input value={String(s.link ?? "")} onChange={(e) => setField("link", e.target.value)} className="rounded-xl text-sm" placeholder="https://..." />
+      </div>
+    </div>
   );
 }
 
@@ -380,25 +527,7 @@ function BlockSettings({
     switch (block.type) {
       case "logo":
         return (
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Bron</label>
-              <select
-                value={String(s.source ?? "location_logo")}
-                onChange={(e) => setField("source", e.target.value)}
-                className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-              >
-                <option value="location_logo">Logo van locatie</option>
-                <option value="custom_url">Aangepaste URL</option>
-              </select>
-            </div>
-            {String(s.source ?? "location_logo") === "custom_url" && (
-              <div>
-                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Afbeeldings-URL</label>
-                <Input value={String(s.custom_url ?? "")} onChange={(e) => setField("custom_url", e.target.value)} className="rounded-xl text-sm" placeholder="https://..." />
-              </div>
-            )}
-          </div>
+          <LogoBlockSettings s={s} setField={setField} />
         );
       case "header":
         return <LocalizedTextArea fieldKey="content" label="Tekst" rows={2} />;
@@ -432,20 +561,7 @@ function BlockSettings({
         );
       case "image":
         return (
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Afbeeldings-URL</label>
-              <Input value={String(s.src ?? "")} onChange={(e) => setField("src", e.target.value)} className="rounded-xl text-sm" placeholder="https://..." />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Alt-tekst</label>
-              <Input value={String(s.alt ?? "")} onChange={(e) => setField("alt", e.target.value)} className="rounded-xl text-sm" />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Link (optioneel)</label>
-              <Input value={String(s.link ?? "")} onChange={(e) => setField("link", e.target.value)} className="rounded-xl text-sm" placeholder="https://..." />
-            </div>
-          </div>
+          <ImageBlockSettings s={s} setField={setField} />
         );
       case "divider":
         return (
@@ -845,11 +961,13 @@ export default function EmailTemplateEditorPage() {
   const loadMeta = async () => {
     try {
       const [typesRes, tagsRes] = await Promise.all([
-        api.get<TemplateType[]>("/admin/email-templates/types"),
-        api.get<TagInfo[]>("/admin/email-templates/tags"),
+        api.get("/admin/email-templates/types"),
+        api.get("/admin/email-templates/tags"),
       ]);
-      setTypes(Array.isArray(typesRes.data) ? typesRes.data : []);
-      setTags(Array.isArray(tagsRes.data) ? tagsRes.data : []);
+      const rawTypes = typesRes.data;
+      setTypes(Array.isArray(rawTypes) ? rawTypes as TemplateType[] : []);
+      const rawTags = tagsRes.data;
+      setTags(Array.isArray(rawTags) ? rawTags as TagInfo[] : []);
     } catch {
       // non-fatal
     }
@@ -1142,6 +1260,7 @@ export default function EmailTemplateEditorPage() {
                   onChange={(e) => { setTemplateType(e.target.value); markDirty(); }}
                   className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 >
+                  {types.length === 0 && <option value={templateType}>{templateType || "— kies type —"}</option>}
                   {types.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
