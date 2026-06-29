@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Coins,
   Handshake,
@@ -13,8 +13,11 @@ import {
   Box,
   Anchor,
   Wind,
-  FileText
+  FileText,
+  Search,
+  X
 } from "lucide-react";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 
@@ -168,6 +171,39 @@ export function WizardStep2({
   isOptionalTriStateField,
   yachtFormText
 }: WizardStep2Props) {
+  // Seller search state
+  const [sellerQuery, setSellerQuery] = useState("");
+  const [sellerResults, setSellerResults] = useState<{ id: number; name: string; email: string }[]>([]);
+  const [sellerOpen, setSellerOpen] = useState(false);
+  const [sellerName, setSellerName] = useState<string>(() => {
+    const s = selectedYacht;
+    if (s?.seller_name) return s.seller_name;
+    if (s?.seller?.name) return s.seller.name;
+    if (s?.seller?.email) return s.seller.email;
+    return s?.seller_id ? `ID: ${s.seller_id}` : "";
+  });
+  const [sellerId, setSellerId] = useState<number | "">(selectedYacht?.seller_id ?? "");
+  const sellerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!sellerQuery.trim()) { setSellerResults([]); return; }
+    const t = setTimeout(async () => {
+      try {
+        const res = await api.get<{ data: { id: number; name: string; email: string }[] }>("/admin/users", { params: { search: sellerQuery, per_page: 8 } });
+        setSellerResults(Array.isArray(res.data?.data) ? res.data.data : []);
+      } catch { setSellerResults([]); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [sellerQuery]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (sellerRef.current && !sellerRef.current.contains(e.target as Node)) setSellerOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   return (
     <div
       key={`step2-${formKey}`}
@@ -301,37 +337,23 @@ export function WizardStep2({
               </div>
             ) : (
               <>
-                <LocationAutocomplete
-                  value={selectedYacht?.vessel_lying || selectedYacht?.where || ''}
-                  placeholder={commonText("searchLocation", "Search city or harbor name...")}
-                  onSelectPlace={(place) => {
-                    setSelectedYacht((prev: any) => ({
-                      ...prev,
-                      where: place.formattedAddress,
-                      vessel_lying: place.formattedAddress,
-                      location_city: place.city,
-                      location_lat: place.lat,
-                      location_lng: place.lng,
-                      location_id: null,
-                      location_location_id: null
-                    }));
-                    setSelectedLocationId(null);
+                <select
+                  name="location_id"
+                  value={selectedYacht?.location_id ?? ""}
+                  onChange={(e) => {
+                    const id = e.target.value ? Number(e.target.value) : null;
+                    setSelectedLocationId(id);
+                    setSelectedYacht((prev: any) => ({ ...prev, location_id: id }));
                   }}
-                />
-                {/* Managing branch selector removed per user request */}
-
-                {/* Hidden fields for geo-coordinates */}
-                <input type="hidden" name="where" value={selectedYacht?.where || ''} />
-                <input type="hidden" name="vessel_lying" value={selectedYacht?.vessel_lying || ''} />
-                <input type="hidden" name="location_city" value={selectedYacht?.location_city || ''} />
-                <input type="hidden" name="location_lat" value={selectedYacht?.location_lat || ''} />
-                <input type="hidden" name="location_lng" value={selectedYacht?.location_lng || ''} />
-                <input
-                  type="hidden"
-                  name="location_location_id"
-                  value={selectedLocationId?.toString() || ""}
-                  readOnly
-                />
+                  className="flex h-10 w-full rounded-xl border border-amber-300 bg-amber-50/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003566]/30"
+                >
+                  <option value="">{commonText("selectLocation", "Selecteer locatie...")}</option>
+                  {locations.map((loc: any) => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.meta?.name ?? loc.name ?? `Locatie ${loc.id}`}{loc.code ? ` (${loc.code})` : ""}
+                    </option>
+                  ))}
+                </select>
               </>
             )}
           </div>
@@ -617,15 +639,49 @@ export function WizardStep2({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Verkoper ID</label>
+              <label className="text-sm font-medium text-slate-700">Verkoper</label>
               <p className="text-xs text-slate-400">Koppel een verkoper (makelaar) aan deze boot.</p>
-              <input
-                name="seller_id"
-                type="number"
-                defaultValue={selectedYacht?.seller_id ?? ""}
-                className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003566]/30"
-                placeholder="User ID van verkoper"
-              />
+              <div ref={sellerRef} className="relative">
+                <div className="relative flex items-center">
+                  <Search size={14} className="pointer-events-none absolute left-3 text-slate-400" />
+                  <input
+                    type="text"
+                    value={sellerQuery || sellerName}
+                    onChange={(e) => { setSellerQuery(e.target.value); setSellerName(""); setSellerOpen(true); }}
+                    onFocus={() => setSellerOpen(true)}
+                    placeholder="Zoek op naam of e-mail..."
+                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-8 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003566]/30"
+                  />
+                  {(sellerName || sellerId) && (
+                    <button type="button" onClick={() => { setSellerName(""); setSellerQuery(""); setSellerId(""); setSelectedYacht((prev: any) => ({ ...prev, seller_id: null })); }} className="absolute right-2 text-slate-400 hover:text-slate-600">
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+                {sellerOpen && sellerResults.length > 0 && (
+                  <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                    {sellerResults.map((u) => (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setSellerId(u.id);
+                          setSellerName(`${u.name} (${u.email})`);
+                          setSellerQuery("");
+                          setSellerOpen(false);
+                          setSelectedYacht((prev: any) => ({ ...prev, seller_id: u.id }));
+                        }}
+                        className="flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-slate-50"
+                      >
+                        <span className="font-medium text-slate-800">{u.name}</span>
+                        <span className="text-xs text-slate-400">{u.email}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <input type="hidden" name="seller_id" value={sellerId} />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
