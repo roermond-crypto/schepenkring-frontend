@@ -2479,7 +2479,14 @@
       "statusFailed": "Status update failed.",
       "loadFailed": "Could not load KYC file.",
       "createFailed": "Could not create KYC file.",
-      "listLoadFailed": "Could not load KYC files."
+      "listLoadFailed": "Could not load KYC files.",
+      "edit": "Edit",
+      "savedOk": "Case updated",
+      "deleteOk": "Case deleted",
+      "deleteFailed": "Delete failed.",
+      "deleteConfirm": "Are you sure you want to delete this case?",
+      "notesLabel": "Notes",
+      "noDataYet": "No data yet. Click edit to get started."
     },
     "fields": {
       "buyer": "Buyer",

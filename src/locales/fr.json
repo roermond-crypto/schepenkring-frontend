@@ -2466,7 +2466,14 @@
       "statusFailed": "Échec de la mise à jour du statut.",
       "loadFailed": "Impossible de charger le dossier KYC.",
       "createFailed": "Impossible de créer le dossier KYC.",
-      "listLoadFailed": "Impossible de charger les dossiers KYC."
+      "listLoadFailed": "Impossible de charger les dossiers KYC.",
+      "edit": "Modifier",
+      "savedOk": "Dossier mis à jour",
+      "deleteOk": "Dossier supprimé",
+      "deleteFailed": "Échec de la suppression.",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce dossier ?",
+      "notesLabel": "Notes",
+      "noDataYet": "Aucune donnée. Cliquez sur modifier pour commencer."
     },
     "fields": {
       "buyer": "Acheteur",

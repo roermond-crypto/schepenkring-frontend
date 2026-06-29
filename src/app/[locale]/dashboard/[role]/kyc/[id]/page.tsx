@@ -10,9 +10,13 @@ import {
   CheckCircle2,
   FileText,
   Loader2,
+  Pencil,
   RefreshCw,
+  Save,
   ShieldCheck,
+  Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 
@@ -160,6 +164,10 @@ export default function KycCaseDetailPage() {
   const docInputRef = useRef<HTMLInputElement>(null);
   const [uploadParty, setUploadParty]     = useState<"buyer" | "seller" | "boat">("buyer");
   const [uploadDocType, setUploadDocType] = useState("passport");
+  const [editMode, setEditMode]       = useState(false);
+  const [editData, setEditData]       = useState<Record<string, string>>({});
+  const [savingCase, setSavingCase]   = useState(false);
+  const [deletingCase, setDeletingCase] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -267,6 +275,64 @@ export default function KycCaseDetailPage() {
     }
   }
 
+  function openEdit() {
+    if (!kycCase) return;
+    setEditData({
+      buyer_name:     kycCase.buyer_name     ?? "",
+      buyer_email:    kycCase.buyer_email    ?? "",
+      buyer_phone:    kycCase.buyer_phone    ?? "",
+      buyer_address:  kycCase.buyer_address  ?? "",
+      buyer_city:     kycCase.buyer_city     ?? "",
+      buyer_country:  kycCase.buyer_country  ?? "",
+      buyer_iban:     kycCase.buyer_iban     ?? "",
+      seller_name:    kycCase.seller_name    ?? "",
+      seller_email:   kycCase.seller_email   ?? "",
+      seller_phone:   kycCase.seller_phone   ?? "",
+      boat_name:      kycCase.boat_name      ?? "",
+      boat_type:      kycCase.boat_type      ?? "",
+      boat_value:     kycCase.boat_value     != null ? String(kycCase.boat_value) : "",
+      deal_value:     kycCase.deal_value     != null ? String(kycCase.deal_value) : "",
+      payment_method: kycCase.payment_method ?? "",
+      notes:          kycCase.notes          ?? "",
+    });
+    setEditMode(true);
+  }
+
+  async function saveCase() {
+    setSavingCase(true);
+    try {
+      const payload: Record<string, string | number | null> = {};
+      for (const [k, v] of Object.entries(editData)) {
+        if (["boat_value", "deal_value"].includes(k)) {
+          payload[k] = v === "" ? null : Number(v);
+        } else {
+          payload[k] = v === "" ? null : v;
+        }
+      }
+      const res = await api.patch<{ kyc_case: KycFullCase }>(`/admin/kyc-cases/${caseId}`, payload);
+      setKycCase((prev) => prev ? { ...prev, ...res.data.kyc_case, missing_documents: prev.missing_documents } : prev);
+      setEditMode(false);
+      toast.success(td.savedOk ?? "Opgeslagen");
+    } catch {
+      toast.error(td.saveFailed);
+    } finally {
+      setSavingCase(false);
+    }
+  }
+
+  async function deleteCase() {
+    if (!confirm(td.deleteConfirm ?? "Weet je zeker dat je dit dossier wilt verwijderen?")) return;
+    setDeletingCase(true);
+    try {
+      await api.delete(`/admin/kyc-cases/${caseId}`);
+      toast.success(td.deleteOk ?? "Dossier verwijderd");
+      router.push(`/${locale}/dashboard/${role}/kyc`);
+    } catch {
+      toast.error(td.deleteFailed ?? "Verwijderen mislukt.");
+      setDeletingCase(false);
+    }
+  }
+
   function isVisible(q: Question): boolean {
     if (!q.conditional_on_question_id) return true;
     const parentAnswer = answers[q.conditional_on_question_id]?.toLowerCase();
@@ -369,9 +435,13 @@ export default function KycCaseDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={() => load()} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-500">
             <RefreshCw className="w-4 h-4" />
+          </button>
+          <button onClick={deleteCase} disabled={deletingCase}
+            className="p-2 rounded-xl border border-red-200 hover:bg-red-50 transition-colors text-red-500 disabled:opacity-50">
+            {deletingCase ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
           </button>
           <a
             href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://app.schepen-kring.nl/api"}/admin/kyc-cases/${caseId}/pdf?print=1`}
@@ -507,28 +577,92 @@ export default function KycCaseDetailPage() {
 
           {/* Case data */}
           <div className="bg-white rounded-2xl border border-slate-200 p-4">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{td.caseData}</p>
-            <div className="space-y-2 text-sm">
-              {([
-                [fieldLabels.buyer,    kycCase.buyer_name],
-                [fieldLabels.email,    kycCase.buyer_email],
-                [fieldLabels.phone,    kycCase.buyer_phone],
-                [fieldLabels.address,  [kycCase.buyer_address, kycCase.buyer_city, kycCase.buyer_country].filter(Boolean).join(", ")],
-                [fieldLabels.iban,     kycCase.buyer_iban],
-                [fieldLabels.seller,   kycCase.seller_name],
-                [fieldLabels.boat,     kycCase.boat_name],
-                [fieldLabels.boatType, kycCase.boat_type],
-                [fieldLabels.value,    kycCase.deal_value ? `€ ${Number(kycCase.deal_value).toLocaleString("nl-NL")}` : null],
-                [fieldLabels.payment,  kycCase.payment_method],
-                [fieldLabels.broker,   kycCase.broker?.name],
-                [fieldLabels.location, kycCase.location?.name],
-              ] as [string, string | null | undefined][]).map(([label, value]) => value ? (
-                <div key={label} className="flex gap-2">
-                  <span className="text-slate-400 w-20 shrink-0">{label}</span>
-                  <span className="text-slate-700 font-medium break-all">{value}</span>
-                </div>
-              ) : null)}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{td.caseData}</p>
+              {!editMode ? (
+                <button onClick={openEdit}
+                  className="flex items-center gap-1 text-xs text-[#003566] hover:underline">
+                  <Pencil className="w-3 h-3" />
+                  {td.edit ?? "Bewerken"}
+                </button>
+              ) : null}
             </div>
+
+            {editMode ? (
+              <div className="space-y-3">
+                {([
+                  { label: fieldLabels.buyer,    key: "buyer_name",     type: "text" },
+                  { label: fieldLabels.email,    key: "buyer_email",    type: "email" },
+                  { label: fieldLabels.phone,    key: "buyer_phone",    type: "text" },
+                  { label: fieldLabels.address,  key: "buyer_address",  type: "text" },
+                  { label: fieldLabels.iban,     key: "buyer_iban",     type: "text" },
+                  { label: fieldLabels.seller,   key: "seller_name",    type: "text" },
+                  { label: fieldLabels.boat,     key: "boat_name",      type: "text" },
+                  { label: fieldLabels.boatType, key: "boat_type",      type: "text" },
+                  { label: fieldLabels.value,    key: "deal_value",     type: "number" },
+                  { label: fieldLabels.payment,  key: "payment_method", type: "text" },
+                ] as { label: string; key: string; type: string }[]).map(({ label, key, type }) => (
+                  <div key={key}>
+                    <label className="block text-xs text-slate-400 mb-0.5">{label}</label>
+                    <input
+                      type={type}
+                      value={editData[key] ?? ""}
+                      onChange={(e) => setEditData((prev) => ({ ...prev, [key]: e.target.value }))}
+                      className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white"
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-xs text-slate-400 mb-0.5">{td.notesLabel ?? "Notities"}</label>
+                  <textarea
+                    rows={2}
+                    value={editData.notes ?? ""}
+                    onChange={(e) => setEditData((prev) => ({ ...prev, notes: e.target.value }))}
+                    className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white resize-none"
+                  />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => setEditMode(false)}
+                    className="flex items-center gap-1 flex-1 justify-center py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                    {td.cancel}
+                  </button>
+                  <button onClick={saveCase} disabled={savingCase}
+                    className="flex items-center gap-1 flex-1 justify-center py-2 rounded-xl bg-[#003566] text-white text-sm font-semibold hover:bg-[#002a52] transition-colors disabled:opacity-60">
+                    {savingCase ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    {td.saveStatus}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2 text-sm">
+                {([
+                  [fieldLabels.buyer,    kycCase.buyer_name],
+                  [fieldLabels.email,    kycCase.buyer_email],
+                  [fieldLabels.phone,    kycCase.buyer_phone],
+                  [fieldLabels.address,  [kycCase.buyer_address, kycCase.buyer_city, kycCase.buyer_country].filter(Boolean).join(", ") || null],
+                  [fieldLabels.iban,     kycCase.buyer_iban],
+                  [fieldLabels.seller,   kycCase.seller_name],
+                  [fieldLabels.boat,     kycCase.boat_name],
+                  [fieldLabels.boatType, kycCase.boat_type],
+                  [fieldLabels.value,    kycCase.deal_value ? `€ ${Number(kycCase.deal_value).toLocaleString("nl-NL")}` : null],
+                  [fieldLabels.payment,  kycCase.payment_method],
+                  [fieldLabels.broker,   kycCase.broker?.name],
+                  [fieldLabels.location, kycCase.location?.name],
+                  [td.notesLabel ?? "Notities", kycCase.notes],
+                ] as [string, string | null | undefined][]).map(([label, value]) => value ? (
+                  <div key={label} className="flex gap-2">
+                    <span className="text-slate-400 w-20 shrink-0">{label}</span>
+                    <span className="text-slate-700 font-medium break-all">{value}</span>
+                  </div>
+                ) : null)}
+                {!kycCase.buyer_name && !kycCase.boat_name && !kycCase.deal_value && (
+                  <p className="text-xs text-slate-400 italic py-2">
+                    {td.noDataYet ?? "Nog geen gegevens. Klik op bewerken om te beginnen."}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Documents */}

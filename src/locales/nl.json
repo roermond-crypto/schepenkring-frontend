@@ -2475,7 +2475,14 @@
       "statusFailed": "Status update mislukt.",
       "loadFailed": "Kon KYC-dossier niet laden.",
       "createFailed": "Kon KYC-dossier niet aanmaken.",
-      "listLoadFailed": "Kon KYC-dossiers niet laden."
+      "listLoadFailed": "Kon KYC-dossiers niet laden.",
+      "edit": "Bewerken",
+      "savedOk": "Dossier bijgewerkt",
+      "deleteOk": "Dossier verwijderd",
+      "deleteFailed": "Verwijderen mislukt.",
+      "deleteConfirm": "Weet je zeker dat je dit dossier wilt verwijderen?",
+      "notesLabel": "Notities",
+      "noDataYet": "Nog geen gegevens. Klik op bewerken om te beginnen."
     },
     "fields": {
       "buyer": "Koper",

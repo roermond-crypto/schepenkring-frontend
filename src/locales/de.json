@@ -2476,7 +2476,14 @@
       "statusFailed": "Statusaktualisierung fehlgeschlagen.",
       "loadFailed": "KYC-Akte konnte nicht geladen werden.",
       "createFailed": "KYC-Akte konnte nicht erstellt werden.",
-      "listLoadFailed": "KYC-Akten konnten nicht geladen werden."
+      "listLoadFailed": "KYC-Akten konnten nicht geladen werden.",
+      "edit": "Bearbeiten",
+      "savedOk": "Fall aktualisiert",
+      "deleteOk": "Fall gelöscht",
+      "deleteFailed": "Löschen fehlgeschlagen.",
+      "deleteConfirm": "Möchten Sie diesen Fall wirklich löschen?",
+      "notesLabel": "Notizen",
+      "noDataYet": "Noch keine Daten. Klicken Sie auf Bearbeiten, um zu beginnen."
     },
     "fields": {
       "buyer": "Käufer",
