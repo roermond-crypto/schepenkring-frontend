@@ -2538,7 +2538,8 @@
       "deleteFailed": "Échec de la suppression.",
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce dossier ?",
       "notesLabel": "Notes",
-      "noDataYet": "Aucune donnée. Cliquez sur modifier pour commencer."
+      "noDataYet": "Aucune donnée. Cliquez sur modifier pour commencer.",
+      "searchCases": "Rechercher un dossier..."
     },
     "fields": {
       "buyer": "Acheteur",

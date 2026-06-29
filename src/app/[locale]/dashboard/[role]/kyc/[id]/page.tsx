@@ -148,6 +148,11 @@ export default function KycCaseDetailPage() {
   const partyLabels  = t.party         as Record<string, string>;
   const docLabels    = t.docTypes      as Record<string, string>;
 
+  const [caseSearch, setCaseSearch] = useState("");
+  const [caseSearchResults, setCaseSearchResults] = useState<{ id: number; case_number: string; buyer_name: string | null }[]>([]);
+  const [caseSearchOpen, setCaseSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
   const [kycCase, setKycCase]   = useState<KycFullCase | null>(null);
   const [sections, setSections] = useState<Record<string, Question[]>>({});
   const [progress, setProgress] = useState<Record<string, number>>({});
@@ -205,8 +210,8 @@ export default function KycCaseDetailPage() {
 
   useEffect(() => { void load(); }, [caseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function saveAnswer(questionId: number) {
-    const answer = answers[questionId];
+  async function saveAnswer(questionId: number, forcedValue?: string) {
+    const answer = forcedValue ?? answers[questionId];
     if (answer === undefined || answer === "") return;
     setSaving(questionId);
     try {
@@ -333,6 +338,16 @@ export default function KycCaseDetailPage() {
     }
   }
 
+  async function searchCases(q: string) {
+    if (q.length < 2) { setCaseSearchResults([]); return; }
+    try {
+      const res = await api.get<{ data: { id: number; case_number: string; buyer_name: string | null }[] }>(
+        `/admin/kyc-cases?search=${encodeURIComponent(q)}&per_page=8`
+      );
+      setCaseSearchResults(res.data.data ?? []);
+    } catch { /* ignore */ }
+  }
+
   function isVisible(q: Question): boolean {
     if (!q.conditional_on_question_id) return true;
     const parentAnswer = answers[q.conditional_on_question_id]?.toLowerCase();
@@ -349,7 +364,7 @@ export default function KycCaseDetailPage() {
       return (
         <div className="flex gap-3">
           {([["ja", td.yes], ["nee", td.no]] as [string, string][]).map(([v, label]) => (
-            <button key={v} onClick={() => { change(v); void saveAnswer(q.id); }} disabled={saving === q.id}
+            <button key={v} onClick={() => { change(v); void saveAnswer(q.id, v); }} disabled={saving === q.id}
               className={[
                 "flex-1 py-2 rounded-xl border text-sm font-semibold transition-all",
                 val === v
@@ -435,7 +450,40 @@ export default function KycCaseDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
+          {/* Case search */}
+          <div className="relative" ref={searchRef}>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <input
+                value={caseSearch}
+                onChange={(e) => { setCaseSearch(e.target.value); setCaseSearchOpen(true); void searchCases(e.target.value); }}
+                onFocus={() => { if (caseSearch.length >= 2) setCaseSearchOpen(true); }}
+                onBlur={() => setTimeout(() => setCaseSearchOpen(false), 150)}
+                placeholder={td.searchCases ?? "Zoek dossier..."}
+                className="w-52 pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-sm bg-white outline-none focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10"
+              />
+            </div>
+            {caseSearchOpen && caseSearchResults.length > 0 && (
+              <div className="absolute left-0 top-full mt-1 z-50 w-72 bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+                {caseSearchResults.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onMouseDown={() => {
+                      setCaseSearch("");
+                      setCaseSearchOpen(false);
+                      router.push(`/${locale}/dashboard/${role}/kyc/${c.id}`);
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
+                  >
+                    <span className="font-mono text-sm font-bold text-[#003566]">{c.case_number}</span>
+                    {c.buyer_name && <span className="ml-2 text-sm text-slate-500">{c.buyer_name}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button onClick={() => load()} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-500">
             <RefreshCw className="w-4 h-4" />
           </button>

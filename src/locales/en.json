@@ -2547,7 +2547,8 @@
       "deleteFailed": "Delete failed.",
       "deleteConfirm": "Are you sure you want to delete this case?",
       "notesLabel": "Notes",
-      "noDataYet": "No data yet. Click edit to get started."
+      "noDataYet": "No data yet. Click edit to get started.",
+      "searchCases": "Search case..."
     },
     "fields": {
       "buyer": "Buyer",

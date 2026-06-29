@@ -2548,7 +2548,8 @@
       "deleteFailed": "Löschen fehlgeschlagen.",
       "deleteConfirm": "Möchten Sie diesen Fall wirklich löschen?",
       "notesLabel": "Notizen",
-      "noDataYet": "Noch keine Daten. Klicken Sie auf Bearbeiten, um zu beginnen."
+      "noDataYet": "Noch keine Daten. Klicken Sie auf Bearbeiten, um zu beginnen.",
+      "searchCases": "Fall suchen..."
     },
     "fields": {
       "buyer": "Käufer",
