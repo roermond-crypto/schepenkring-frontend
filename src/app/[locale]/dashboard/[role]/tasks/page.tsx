@@ -1827,6 +1827,8 @@ export default function AdminTaskBoardPage() {
           headers,
         });
         toast.success(t("toasts.taskUpdated"));
+        setIsModalOpen(false);
+        setEditingTask(undefined);
 
         // Upload pending attachments sequentially
         if (
@@ -1858,6 +1860,8 @@ export default function AdminTaskBoardPage() {
           headers,
         });
         toast.success(t("toasts.taskCreated"));
+        setIsModalOpen(false);
+        setEditingTask(undefined);
 
         // Upload pending attachments sequentially
         const newTaskId = response.data?.id;
@@ -1888,8 +1892,6 @@ export default function AdminTaskBoardPage() {
         }
       }
       await fetchData();
-      setIsModalOpen(false);
-      setEditingTask(undefined);
     } catch (error: unknown) {
       console.error("Error saving task:", error);
       toast.error(resolveApiErrorMessage(error, t, "toasts.saveFailed"));
