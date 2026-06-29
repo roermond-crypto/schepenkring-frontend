@@ -319,7 +319,7 @@ export function AdminLocationsManagerPage({
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { void loadLocations(); }, [loadLocations]);
 
@@ -333,7 +333,7 @@ export function AdminLocationsManagerPage({
     } finally {
       setUsersLoading(false);
     }
-  }, [t]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load all users for "add user" dropdown
   useEffect(() => {
