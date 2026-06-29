@@ -341,9 +341,9 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             {[
-              { label: s(t, "nav.supply", "Aanbod"), href: `/${locale}/aanbod` },
-              { label: s(t, "nav.locations", "Vestigingen"), href: `/${locale}/vestigingen` },
-              { label: s(t, "nav.about", "Over ons"), href: `/${locale}/over-ons` },
+              { label: s(t, "nav.supply", "Aanbod"), href: "https://www.schepenkring.nl/aanbod-boten/" },
+              { label: s(t, "nav.locations", "Vestigingen"), href: "https://www.schepenkring.nl/vestigingen/" },
+              { label: s(t, "nav.about", "Over ons"), href: "https://www.schepenkring.nl/boot-verkopen/schip-verkopen/" },
             ].map(({ label, href }) => (
               <a key={href} href={href} className="text-slate-600 hover:text-[#003566] transition-colors">{label}</a>
             ))}
