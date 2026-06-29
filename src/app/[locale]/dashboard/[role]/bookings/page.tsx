@@ -575,7 +575,7 @@ export default function DashboardBookingsPage() {
                     status: event.target.value,
                   }))
                 }
-                className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
               >
                 <option value="">{t("filters.allStatuses")}</option>
                 <option value="pending">{t("statuses.pending")}</option>
