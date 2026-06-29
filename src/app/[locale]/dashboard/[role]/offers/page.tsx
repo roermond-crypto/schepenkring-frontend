@@ -21,6 +21,8 @@ import {
   Handshake,
   Loader2,
   MailCheck,
+  Pencil,
+  Plus,
   RefreshCw,
   Search,
   Ship,
@@ -70,7 +72,32 @@ type OfferRecord = {
   seller?: { id: number; name?: string | null; email?: string | null } | null;
 };
 
+type LocationOption = { id: number; name: string };
+type YachtOption   = { id: number; label: string };
+
 type Filters = { search: string; status: string; location_id: string };
+
+type FormState = {
+  yacht_id: string;
+  buyer_name: string;
+  buyer_email: string;
+  buyer_phone: string;
+  amount: string;
+  message: string;
+  status: string;
+  source: string;
+};
+
+const EMPTY_FORM: FormState = {
+  yacht_id: "",
+  buyer_name: "",
+  buyer_email: "",
+  buyer_phone: "",
+  amount: "",
+  message: "",
+  status: "new",
+  source: "admin",
+};
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -111,6 +138,242 @@ function StatusBadge({ status }: { status: OfferStatus }) {
   );
 }
 
+// ── Create / Edit form dialog ─────────────────────────────────
+
+function OfferFormDialog({
+  open,
+  editOffer,
+  locations,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  editOffer: OfferRecord | null;
+  locations: LocationOption[];
+  onClose: () => void;
+  onSaved: (o: OfferRecord) => void;
+}) {
+  const isEdit = !!editOffer;
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+
+  // Yacht search state
+  const [yachtQuery, setYachtQuery] = useState("");
+  const [yachtResults, setYachtResults] = useState<YachtOption[]>([]);
+  const [yachtOpen, setYachtOpen] = useState(false);
+  const [yachtLabel, setYachtLabel] = useState("");
+  const yachtSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    if (editOffer) {
+      setForm({
+        yacht_id: String(editOffer.yacht_id),
+        buyer_name: editOffer.buyer_name ?? "",
+        buyer_email: editOffer.buyer_email ?? "",
+        buyer_phone: editOffer.buyer_phone ?? "",
+        amount: editOffer.amount != null ? String(editOffer.amount) : "",
+        message: editOffer.message ?? "",
+        status: editOffer.status,
+        source: editOffer.source ?? "admin",
+      });
+      setYachtLabel(boatLabel(editOffer));
+      setYachtQuery("");
+    } else {
+      setForm(EMPTY_FORM);
+      setYachtLabel("");
+      setYachtQuery("");
+    }
+    setYachtResults([]);
+    setYachtOpen(false);
+  }, [open, editOffer]);
+
+  useEffect(() => {
+    if (!yachtQuery || yachtQuery.length < 2) { setYachtResults([]); setYachtOpen(false); return; }
+    if (yachtSearchTimer.current) clearTimeout(yachtSearchTimer.current);
+    yachtSearchTimer.current = setTimeout(async () => {
+      try {
+        const res = await api.get("/admin/yachts", { params: { search: yachtQuery, per_page: 8 } });
+        const items = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
+        setYachtResults(items.map((y: { id: number; boat_name?: string; manufacturer?: string; model?: string }) => ({
+          id: y.id,
+          label: [y.manufacturer, y.model, y.boat_name].filter(Boolean).join(" ") || `Boot #${y.id}`,
+        })));
+        setYachtOpen(true);
+      } catch { /* ignore */ }
+    }, 300);
+  }, [yachtQuery]);
+
+  const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.buyer_name.trim()) { toast.error("Naam koper is verplicht."); return; }
+    if (!form.amount || isNaN(Number(form.amount))) { toast.error("Voer een geldig bedrag in."); return; }
+    if (!isEdit && !form.yacht_id) { toast.error("Selecteer een boot."); return; }
+
+    setSaving(true);
+    try {
+      let res;
+      if (isEdit) {
+        res = await api.patch(`/admin/offers/${editOffer!.id}`, {
+          buyer_name: form.buyer_name,
+          buyer_email: form.buyer_email || null,
+          buyer_phone: form.buyer_phone || null,
+          amount: Number(form.amount),
+          message: form.message || null,
+          status: form.status,
+        });
+        toast.success("Bod bijgewerkt.");
+      } else {
+        res = await api.post("/admin/offers", {
+          yacht_id: Number(form.yacht_id),
+          buyer_name: form.buyer_name,
+          buyer_email: form.buyer_email || null,
+          buyer_phone: form.buyer_phone || null,
+          amount: Number(form.amount),
+          message: form.message || null,
+          source: form.source || "admin",
+        });
+        toast.success("Bod aangemaakt.");
+      }
+      const saved = (res.data as { offer: OfferRecord }).offer;
+      onSaved(saved);
+      onClose();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? "Opslaan mislukt.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-xl rounded-[2rem] border-slate-200 p-0">
+        <DialogHeader className="border-b border-slate-200 px-6 py-5">
+          <DialogTitle className="text-xl font-semibold text-[#0B1F3A]">
+            {isEdit ? `Bod #${editOffer!.id} bewerken` : "Nieuw bod aanmaken"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-500">
+            {isEdit ? "Pas de gegevens van dit bod aan." : "Registreer een bod namens een koper."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={(e) => void handleSubmit(e)} className="max-h-[70vh] overflow-y-auto px-6 py-5 space-y-5">
+          {/* Yacht search — create only */}
+          {!isEdit && (
+            <div className="space-y-1 relative">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Boot *</label>
+              <Input
+                value={yachtQuery || yachtLabel}
+                onChange={(e) => { setYachtQuery(e.target.value); setYachtLabel(""); set("yacht_id", ""); }}
+                placeholder="Zoek op merk, model of naam…"
+                className="h-11 rounded-2xl border-slate-200"
+                autoComplete="off"
+              />
+              {yachtOpen && yachtResults.length > 0 && (
+                <div className="absolute z-50 mt-1 w-full rounded-2xl border border-slate-200 bg-white shadow-lg max-h-48 overflow-y-auto">
+                  {yachtResults.map((y) => (
+                    <button
+                      key={y.id}
+                      type="button"
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-[#0B1F3A]"
+                      onClick={() => { set("yacht_id", String(y.id)); setYachtLabel(y.label); setYachtQuery(""); setYachtOpen(false); }}
+                    >
+                      {y.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {form.yacht_id && (
+                <p className="text-xs text-emerald-600 font-medium">✓ {yachtLabel}</p>
+              )}
+            </div>
+          )}
+
+          {/* Buyer info */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Naam koper *</label>
+              <Input value={form.buyer_name} onChange={(e) => set("buyer_name", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder="Voor- en achternaam" required />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">E-mail</label>
+              <Input type="email" value={form.buyer_email} onChange={(e) => set("buyer_email", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder="koper@voorbeeld.nl" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Telefoon</label>
+              <Input value={form.buyer_phone} onChange={(e) => set("buyer_phone", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder="+31 6 12345678" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Bod bedrag (€) *</label>
+              <Input type="number" min={1} value={form.amount} onChange={(e) => set("amount", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder="bijv. 45000" required />
+            </div>
+          </div>
+
+          {/* Status — edit only */}
+          {isEdit && (
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Status</label>
+              <select
+                value={form.status}
+                onChange={(e) => set("status", e.target.value)}
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
+              >
+                <option value="new">Nieuw</option>
+                <option value="sent_to_seller">Verstuurd naar verkoper</option>
+                <option value="seller_accepted">Geaccepteerd door verkoper</option>
+                <option value="seller_rejected">Afgewezen door verkoper</option>
+                <option value="seller_countered">Tegenbod</option>
+                <option value="withdrawn">Ingetrokken</option>
+                <option value="completed">Afgerond</option>
+              </select>
+            </div>
+          )}
+
+          {/* Source — create only */}
+          {!isEdit && (
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Bron</label>
+              <select
+                value={form.source}
+                onChange={(e) => set("source", e.target.value)}
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
+              >
+                <option value="admin">Admin</option>
+                <option value="phone">Telefoon</option>
+                <option value="email">E-mail</option>
+                <option value="widget">Widget</option>
+              </select>
+            </div>
+          )}
+
+          {/* Message */}
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Bericht van koper</label>
+            <textarea
+              value={form.message}
+              onChange={(e) => set("message", e.target.value)}
+              rows={3}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-[#003566] resize-none"
+              placeholder="Optioneel bericht…"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+            <Button type="button" variant="outline" className="h-10 rounded-2xl" onClick={onClose}>Annuleren</Button>
+            <Button type="submit" disabled={saving} className="h-10 rounded-2xl bg-[#003566] px-6 text-[10px] font-black uppercase tracking-[0.22em] hover:bg-[#00284d]">
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isEdit ? "Opslaan" : "Bod aanmaken"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────
 
 export default function AdminOffersPage() {
@@ -128,15 +391,33 @@ export default function AdminOffersPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locations, setLocations] = useState<LocationOption[]>([]);
+
+  // Detail
   const [selected, setSelected] = useState<OfferRecord | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [notifying, setNotifying] = useState(false);
+
+  // Create / Edit form
+  const [formOpen, setFormOpen] = useState(false);
+  const [editOffer, setEditOffer] = useState<OfferRecord | null>(null);
+
   const initialized = useRef(false);
 
   useEffect(() => {
     if (role !== "admin") router.replace(`/${locale}/dashboard/${role}`);
   }, [locale, role, router]);
+
+  useEffect(() => {
+    api.get("/admin/locations").then((res) => {
+      const items = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+      setLocations(items.map((l: { id: number; name?: string; meta?: { name?: string } }) => ({
+        id: l.id,
+        name: l.meta?.name ?? l.name ?? `Locatie ${l.id}`,
+      })));
+    }).catch(() => {/* ignore */});
+  }, []);
 
   const loadOffers = useCallback(async (showRefresh = false, targetPage = page) => {
     if (showRefresh) setRefreshing(true);
@@ -211,6 +492,18 @@ export default function AdminOffersPage() {
     }
   }, [loadOffers, selected?.id]);
 
+  const openCreate = () => { setEditOffer(null); setFormOpen(true); };
+  const openEdit   = (o: OfferRecord) => { setEditOffer(o); setDetailOpen(false); setFormOpen(true); };
+
+  const handleSaved = (saved: OfferRecord) => {
+    setOffers((prev) => {
+      const idx = prev.findIndex((o) => o.id === saved.id);
+      if (idx >= 0) { const next = [...prev]; next[idx] = saved; return next; }
+      return [saved, ...prev];
+    });
+    setTotal((t) => t + (offers.find((o) => o.id === saved.id) ? 0 : 1));
+  };
+
   const stats = useMemo(() => ({
     total,
     new_count:      offers.filter((o) => o.status === "new").length,
@@ -234,15 +527,26 @@ export default function AdminOffersPage() {
               Beheer alle ontvangen boden — bekijk status, notificeer verkopers en volg het tegenbodproces.
             </p>
           </div>
-          <Button
-            type="button"
-            onClick={() => void loadOffers(true)}
-            disabled={refreshing}
-            className="h-12 rounded-2xl bg-[#003566] px-6 text-[10px] font-black uppercase tracking-[0.26em] text-white hover:bg-[#00284d]"
-          >
-            {refreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            Verversen
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              onClick={() => void loadOffers(true)}
+              disabled={refreshing}
+              variant="outline"
+              className="h-12 rounded-2xl border-slate-200 px-5 text-[10px] font-black uppercase tracking-[0.26em]"
+            >
+              {refreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              Verversen
+            </Button>
+            <Button
+              type="button"
+              onClick={openCreate}
+              className="h-12 rounded-2xl bg-[#003566] px-6 text-[10px] font-black uppercase tracking-[0.26em] text-white hover:bg-[#00284d]"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nieuw bod
+            </Button>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -300,14 +604,17 @@ export default function AdminOffersPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Locatie ID</span>
-            <Input
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Locatie</span>
+            <select
               value={filters.location_id}
               onChange={(e) => setFilters((f) => ({ ...f, location_id: e.target.value }))}
-              placeholder="bv. 3"
-              inputMode="numeric"
-              className="h-11 rounded-2xl border-slate-200 text-sm"
-            />
+              className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
+            >
+              <option value="">Alle locaties</option>
+              {locations.map((l) => (
+                <option key={l.id} value={String(l.id)}>{l.name}</option>
+              ))}
+            </select>
           </label>
 
           <Button
@@ -331,14 +638,14 @@ export default function AdminOffersPage() {
 
         {/* ── Table ──────────────────────────────────────────── */}
         <div className="mt-6 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
-          <div className="hidden grid-cols-[80px_minmax(0,1fr)_minmax(0,1fr)_140px_140px_110px_100px] gap-4 border-b border-[#E5EEFB] bg-[#F8FBFF] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#7C94B8] lg:grid">
+          <div className="hidden grid-cols-[80px_minmax(0,1fr)_minmax(0,1fr)_140px_140px_110px_120px] gap-4 border-b border-[#E5EEFB] bg-[#F8FBFF] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#7C94B8] lg:grid">
             <span>#</span>
             <span>Koper</span>
             <span>Boot</span>
             <span>Bedrag</span>
             <span>Status</span>
             <span>Datum</span>
-            <span>Actie</span>
+            <span>Acties</span>
           </div>
 
           {loading ? (
@@ -367,7 +674,7 @@ export default function AdminOffersPage() {
               {offers.map((offer) => (
                 <div
                   key={offer.id}
-                  className="grid items-center gap-4 px-5 py-4 text-sm text-slate-600 lg:grid-cols-[80px_minmax(0,1fr)_minmax(0,1fr)_140px_140px_110px_100px]"
+                  className="grid items-center gap-4 px-5 py-4 text-sm text-slate-600 lg:grid-cols-[80px_minmax(0,1fr)_minmax(0,1fr)_140px_140px_110px_120px]"
                 >
                   <span className="font-mono text-xs text-slate-400">#{offer.id}</span>
 
@@ -399,14 +706,25 @@ export default function AdminOffersPage() {
 
                   <span className="text-xs text-slate-400">{fmtDate(offer.created_at)}</span>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-9 rounded-2xl border-slate-200 text-xs"
-                    onClick={() => void openDetail(offer.id)}
-                  >
-                    Bekijken
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 rounded-2xl border-slate-200 text-xs px-3"
+                      onClick={() => void openDetail(offer.id)}
+                    >
+                      Bekijken
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 w-9 rounded-2xl border-slate-200 p-0 flex items-center justify-center"
+                      title="Bewerken"
+                      onClick={() => openEdit(offer)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -584,52 +902,73 @@ export default function AdminOffersPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end gap-3 border-t border-slate-200 pt-4">
-                  {selected.conversation_id && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-10 rounded-2xl border-slate-200"
-                      onClick={() => { setDetailOpen(false); router.push(`/${locale}/dashboard/${role}/chat?conversation=${selected.conversation_id}`); }}
-                    >
-                      Chat bekijken
-                    </Button>
-                  )}
-                  {selected.status === "new" && selected.seller && !selected.seller_notified && (
-                    <Button
-                      type="button"
-                      className="h-10 rounded-2xl bg-[#003566] px-5 text-[10px] font-black uppercase tracking-[0.22em] hover:bg-[#00284d]"
-                      disabled={notifying}
-                      onClick={() => void notifySeller(selected.id)}
-                    >
-                      {notifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MailCheck className="mr-2 h-4 w-4" />}
-                      Verkoper mailen
-                    </Button>
-                  )}
-                  {(selected.status === "seller_accepted" || selected.status === "completed") && (
-                    <div className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Geaccepteerd
-                    </div>
-                  )}
-                  {selected.status === "seller_rejected" && (
-                    <div className="flex items-center gap-1.5 text-sm font-semibold text-rose-600">
-                      <XCircle className="h-4 w-4" />
-                      Afgewezen
-                    </div>
-                  )}
-                  {selected.status === "withdrawn" && (
-                    <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-500">
-                      <Ban className="h-4 w-4" />
-                      Ingetrokken
-                    </div>
-                  )}
+                <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 rounded-2xl border-slate-200 gap-2"
+                    onClick={() => openEdit(selected)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Bewerken
+                  </Button>
+
+                  <div className="flex items-center gap-3">
+                    {selected.conversation_id && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-2xl border-slate-200"
+                        onClick={() => { setDetailOpen(false); router.push(`/${locale}/dashboard/${role}/chat?conversation=${selected.conversation_id}`); }}
+                      >
+                        Chat bekijken
+                      </Button>
+                    )}
+                    {selected.status === "new" && selected.seller && !selected.seller_notified && (
+                      <Button
+                        type="button"
+                        className="h-10 rounded-2xl bg-[#003566] px-5 text-[10px] font-black uppercase tracking-[0.22em] hover:bg-[#00284d]"
+                        disabled={notifying}
+                        onClick={() => void notifySeller(selected.id)}
+                      >
+                        {notifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MailCheck className="mr-2 h-4 w-4" />}
+                        Verkoper mailen
+                      </Button>
+                    )}
+                    {(selected.status === "seller_accepted" || selected.status === "completed") && (
+                      <div className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Geaccepteerd
+                      </div>
+                    )}
+                    {selected.status === "seller_rejected" && (
+                      <div className="flex items-center gap-1.5 text-sm font-semibold text-rose-600">
+                        <XCircle className="h-4 w-4" />
+                        Afgewezen
+                      </div>
+                    )}
+                    {selected.status === "withdrawn" && (
+                      <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-500">
+                        <Ban className="h-4 w-4" />
+                        Ingetrokken
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Create / Edit form dialog ─────────────────────────── */}
+      <OfferFormDialog
+        open={formOpen}
+        editOffer={editOffer}
+        locations={locations}
+        onClose={() => setFormOpen(false)}
+        onSaved={handleSaved}
+      />
     </div>
   );
 }
