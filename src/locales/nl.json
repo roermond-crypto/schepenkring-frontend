@@ -758,6 +758,11 @@
       "previousPage": "Vorige pagina",
       "nextPage": "Volgende pagina",
       "lastPage": "Laatste pagina"
+    },
+    "description": {
+      "actionOn": "{action} op {entityName}",
+      "actionOnId": "{action} op {entityName} #{id}",
+      "actionWithReason": "{action} - {reason}"
     }
   },
   "DashboardAdminLocationPerformance": {
@@ -1156,10 +1161,26 @@
       "commentFailed": "Opmerking toevoegen mislukt",
       "fileUploaded": "Bestand geüpload",
       "uploadFailed": "Uploaden mislukt",
-      "fileDeleted": "Bestand verwijderd"
+      "fileDeleted": "Bestand verwijderd",
+      "fileAdded": "Bijlage klaargezet",
+      "scheduleUpdated": "Taakplanning bijgewerkt",
+      "rescheduleFailed": "Opnieuw plannen mislukt",
+      "reminderScheduled": "Herinnering gepland",
+      "reminderCleared": "Herinnering gewist",
+      "reminderFailed": "Bijwerken van herinnering mislukt",
+      "reminderSent": "Herinnering verzonden",
+      "reminderSendFailed": "Herinnering verzenden mislukt",
+      "columnAdded": "Kolom toegevoegd",
+      "columnAddFailed": "Kolom toevoegen mislukt",
+      "columnRenameFailed": "Kolom hernoemen mislukt",
+      "columnDeleted": "Kolom verwijderd",
+      "columnDeleteFailed": "Kolom verwijderen mislukt",
+      "columnReorderFailed": "Kolommen herschikken mislukt",
+      "taskMoveFailed": "Taak verplaatsen mislukt"
     },
     "confirm": {
-      "deleteTask": "Deze taak verwijderen?"
+      "deleteTask": "Deze taak verwijderen?",
+      "deleteColumn": "Deze kolom verwijderen?"
     },
     "prompts": {
       "deleteAttachment": "Bijlage verwijderen?"
@@ -1190,7 +1211,10 @@
       "status": "Status",
       "personalAutoAssign": "Persoonlijke taken worden automatisch aan jou toegewezen",
       "attachments": "Bijlagen",
-      "activityLog": "Activiteitenlog"
+      "activityLog": "Activiteitenlog",
+      "labels": "Labels",
+      "commentsAndActivity": "Opmerkingen en activiteit",
+      "columnDefault": "Kolom: Standaard"
     },
     "validation": {
       "titleRequired": "Titel is verplicht",
@@ -1256,7 +1280,13 @@
       "done": "Gedaan",
       "reopen": "Opnieuw openen",
       "addFile": "Bestand toevoegen",
-      "post": "Plaatsen"
+      "post": "Plaatsen",
+      "saveReminder": "Herinnering opslaan",
+      "clearReminder": "Herinnering wissen",
+      "reschedule": "Opnieuw plannen",
+      "remindNow": "Nu herinneren",
+      "save": "Opslaan",
+      "automationRules": "Automatiseringsregels"
     },
     "board": {
       "dropHere": "Sleep taken hierheen"
@@ -1274,6 +1304,21 @@
       "me": "Ik",
       "due": "Vervalt",
       "overdue": "TE LAAT"
+    },
+    "attachments": {
+      "files": "Bestanden",
+      "added": "Toegevoegd",
+      "addedBy": "door",
+      "pendingUpload": "In afwachting van upload bij opslaan...",
+      "none": "Nog geen bijlagen. Klik op 'Bijlagen' hierboven of plak afbeeldingen om bestanden toe te voegen.",
+      "paste": "Plak afbeeldingen hier (Ctrl+V / ⌘V)",
+      "pasteShort": "Plak afbeeldingen (⌘V)"
+    },
+    "activity": {
+      "noActivity": "Nog geen activiteit",
+      "activityAfterCreation": "Activiteit verschijnt na aanmaken",
+      "system": "Systeem",
+      "save": "Opslaan"
     }
   },
   "lockscreen": {

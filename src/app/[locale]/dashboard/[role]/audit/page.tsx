@@ -240,8 +240,10 @@ export default function SystemAuditPage() {
           ? { before: item.snapshot_before || null, after: item.snapshot_after || null }
           : null,
       description: reason
-        ? `${action} - ${reason}`
-        : `${action} on ${entityName}${item.entity_id ? ` #${item.entity_id}` : ""}`,
+        ? t("description.actionWithReason", { action, reason })
+        : item.entity_id
+          ? t("description.actionOnId", { action, entityName, id: item.entity_id })
+          : t("description.actionOn", { action, entityName }),
       ip_address: item.ip_address ?? null,
       user_agent: item.user_agent ?? null,
       created_at: item.created_at,

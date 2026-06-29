@@ -758,6 +758,11 @@
       "previousPage": "Previous page",
       "nextPage": "Next page",
       "lastPage": "Last page"
+    },
+    "description": {
+      "actionOn": "{action} on {entityName}",
+      "actionOnId": "{action} on {entityName} #{id}",
+      "actionWithReason": "{action} - {reason}"
     }
   },
   "DashboardAdminLocationPerformance": {
@@ -1156,10 +1161,26 @@
       "commentFailed": "Failed to add comment",
       "fileUploaded": "File uploaded",
       "uploadFailed": "Upload failed",
-      "fileDeleted": "File deleted"
+      "fileDeleted": "File deleted",
+      "fileAdded": "Attachment staged",
+      "scheduleUpdated": "Task schedule updated",
+      "rescheduleFailed": "Failed to reschedule task",
+      "reminderScheduled": "Reminder scheduled",
+      "reminderCleared": "Reminder cleared",
+      "reminderFailed": "Failed to update reminder",
+      "reminderSent": "Reminder sent",
+      "reminderSendFailed": "Failed to send reminder",
+      "columnAdded": "Column added",
+      "columnAddFailed": "Failed to add column",
+      "columnRenameFailed": "Failed to rename column",
+      "columnDeleted": "Column deleted",
+      "columnDeleteFailed": "Failed to delete column",
+      "columnReorderFailed": "Failed to reorder columns",
+      "taskMoveFailed": "Failed to move task"
     },
     "confirm": {
-      "deleteTask": "Delete this task?"
+      "deleteTask": "Delete this task?",
+      "deleteColumn": "Delete this column?"
     },
     "prompts": {
       "deleteAttachment": "Delete this attachment?"
@@ -1190,7 +1211,10 @@
       "status": "Status",
       "personalAutoAssign": "Personal tasks will be assigned to you automatically",
       "attachments": "Attachments",
-      "activityLog": "Activity Log"
+      "activityLog": "Activity Log",
+      "labels": "Labels",
+      "commentsAndActivity": "Comments and activity",
+      "columnDefault": "Column: Default"
     },
     "validation": {
       "titleRequired": "Title is required",
@@ -1256,7 +1280,13 @@
       "done": "Done",
       "reopen": "Re-open",
       "addFile": "Add File",
-      "post": "Post"
+      "post": "Post",
+      "saveReminder": "Save reminder",
+      "clearReminder": "Clear reminder",
+      "reschedule": "Reschedule",
+      "remindNow": "Remind now",
+      "save": "Save",
+      "automationRules": "Automation Rules"
     },
     "board": {
       "dropHere": "Drop tasks here"
@@ -1274,6 +1304,21 @@
       "me": "Me",
       "due": "Due",
       "overdue": "OVERDUE"
+    },
+    "attachments": {
+      "files": "Files",
+      "added": "Added",
+      "addedBy": "by",
+      "pendingUpload": "Pending upload on save...",
+      "none": "No attachments yet. Click 'Attachment' above or paste images to add files.",
+      "paste": "Paste images here (Ctrl+V / ⌘V)",
+      "pasteShort": "Paste images (⌘V)"
+    },
+    "activity": {
+      "noActivity": "No activity yet",
+      "activityAfterCreation": "Activity will appear after creation",
+      "system": "System",
+      "save": "Save"
     }
   },
   "lockscreen": {

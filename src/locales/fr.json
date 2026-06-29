@@ -758,6 +758,11 @@
       "previousPage": "Page précédente",
       "nextPage": "Page suivante",
       "lastPage": "Dernière page"
+    },
+    "description": {
+      "actionOn": "{action} sur {entityName}",
+      "actionOnId": "{action} sur {entityName} #{id}",
+      "actionWithReason": "{action} - {reason}"
     }
   },
   "DashboardAdminHarborPerformance": {
@@ -1146,10 +1151,26 @@
       "commentFailed": "Échec de l'ajout du commentaire.",
       "fileUploaded": "Fichier téléversé.",
       "uploadFailed": "Échec du téléversement.",
-      "fileDeleted": "Fichier supprimé."
+      "fileDeleted": "Fichier supprimé.",
+      "fileAdded": "Pièce jointe mise en attente",
+      "scheduleUpdated": "Planification de tâche mise à jour",
+      "rescheduleFailed": "Échec de la replanification",
+      "reminderScheduled": "Rappel planifié",
+      "reminderCleared": "Rappel effacé",
+      "reminderFailed": "Échec de la mise à jour du rappel",
+      "reminderSent": "Rappel envoyé",
+      "reminderSendFailed": "Échec de l'envoi du rappel",
+      "columnAdded": "Colonne ajoutée",
+      "columnAddFailed": "Échec de l'ajout de colonne",
+      "columnRenameFailed": "Échec du renommage de colonne",
+      "columnDeleted": "Colonne supprimée",
+      "columnDeleteFailed": "Échec de la suppression de colonne",
+      "columnReorderFailed": "Échec du réordonnancement des colonnes",
+      "taskMoveFailed": "Échec du déplacement de la tâche"
     },
     "confirm": {
-      "deleteTask": "Supprimer cette tâche ?"
+      "deleteTask": "Supprimer cette tâche ?",
+      "deleteColumn": "Supprimer cette colonne ?"
     },
     "prompts": {
       "deleteAttachment": "Supprimer cette pièce jointe ?"
@@ -1180,7 +1201,10 @@
       "status": "Statut",
       "personalAutoAssign": "Les tâches personnelles vous seront automatiquement attribuées.",
       "attachments": "Pièces jointes.",
-      "activityLog": "Journal d'activité"
+      "activityLog": "Journal d'activité",
+      "labels": "Étiquettes",
+      "commentsAndActivity": "Commentaires et activité",
+      "columnDefault": "Colonne : Défaut"
     },
     "validation": {
       "titleRequired": "Le titre est requis",
@@ -1246,7 +1270,13 @@
       "done": "Terminé",
       "reopen": "Rouvrir",
       "addFile": "Ajouter un fichier",
-      "post": "Publier"
+      "post": "Publier",
+      "saveReminder": "Enregistrer le rappel",
+      "clearReminder": "Effacer le rappel",
+      "reschedule": "Replanifier",
+      "remindNow": "Rappeler maintenant",
+      "save": "Enregistrer",
+      "automationRules": "Règles d'automatisation"
     },
     "board": {
       "dropHere": "Déposez les tâches ici"
@@ -1264,6 +1294,21 @@
       "me": "Moi",
       "due": "Échéance",
       "overdue": "EN RETARD"
+    },
+    "attachments": {
+      "files": "Fichiers",
+      "added": "Ajouté",
+      "addedBy": "par",
+      "pendingUpload": "En attente de téléversement à l'enregistrement...",
+      "none": "Aucune pièce jointe. Cliquez sur 'Pièce jointe' ci-dessus ou collez des images.",
+      "paste": "Coller des images ici (Ctrl+V / ⌘V)",
+      "pasteShort": "Coller des images (⌘V)"
+    },
+    "activity": {
+      "noActivity": "Aucune activité pour l'instant",
+      "activityAfterCreation": "L'activité apparaîtra après la création",
+      "system": "Système",
+      "save": "Enregistrer"
     }
   },
   "lockscreen": {

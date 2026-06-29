@@ -881,9 +881,9 @@ function TaskModal({
           ? new Date(res.data.reminder_at).toISOString().slice(0, 16)
           : "",
       );
-      toast.success("Task schedule updated");
+      toast.success(t("toasts.scheduleUpdated"));
     } catch (error) {
-      toast.error("Failed to reschedule task");
+      toast.error(t("toasts.rescheduleFailed"));
     } finally {
       setSavingReminder(false);
     }
@@ -907,9 +907,9 @@ function TaskModal({
           ? new Date(res.data.reminder_at).toISOString().slice(0, 16)
           : "",
       );
-      toast.success(reminderAt ? "Reminder scheduled" : "Reminder cleared");
+      toast.success(reminderAt ? t("toasts.reminderScheduled") : t("toasts.reminderCleared"));
     } catch (error) {
-      toast.error("Failed to update reminder");
+      toast.error(t("toasts.reminderFailed"));
     } finally {
       setSavingReminder(false);
     }
@@ -928,9 +928,9 @@ function TaskModal({
         },
         getHeaders(),
       );
-      toast.success("Reminder sent");
+      toast.success(t("toasts.reminderSent"));
     } catch (error) {
-      toast.error("Failed to send reminder");
+      toast.error(t("toasts.reminderSendFailed"));
     } finally {
       setSendingReminder(false);
     }
@@ -1080,7 +1080,7 @@ function TaskModal({
                   ) : (
                     <Bell size={14} />
                   )}
-                  {reminderAt ? "Save reminder" : "Clear reminder"}
+                  {reminderAt ? t("actions.saveReminder") : t("actions.clearReminder")}
                 </button>
                 <button
                   type="button"
@@ -1093,7 +1093,7 @@ function TaskModal({
                   ) : (
                     <CalendarIcon size={14} />
                   )}
-                  Reschedule
+                  {t("actions.reschedule")}
                 </button>
                 <button
                   type="button"
@@ -1106,7 +1106,7 @@ function TaskModal({
                   ) : (
                     <Bell size={14} />
                   )}
-                  Remind now
+                  {t("actions.remindNow")}
                 </button>
               </>
             )}
@@ -1167,7 +1167,7 @@ function TaskModal({
                 }
                 className="pl-3 pr-8 py-1.5 text-xs font-semibold bg-white dark:bg-[#282e33] border border-slate-200 dark:border-slate-700 rounded-md shadow-sm hover:bg-slate-50 dark:hover:bg-[#333b44] transition-colors text-slate-700 dark:text-slate-300 outline-none appearance-none"
               >
-                <option value="">Column: Default</option>
+                <option value="">{t("modal.columnDefault")}</option>
                 {columns.map((col) => (
                   <option key={col.id} value={col.id}>
                     {getBoardColumnDisplayName(col.name, t)}
@@ -1184,7 +1184,7 @@ function TaskModal({
               {/* Labels / Priority */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                  Labels
+                  {t("modal.labels")}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {(["Low", "Medium", "High"] as const).map((priority) => (
@@ -1274,7 +1274,7 @@ function TaskModal({
                     rows={5}
                   />
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
-                    <ImageIcon size={10} /> Paste images here (Ctrl+V / ⌘V)
+                    <ImageIcon size={10} /> {t("attachments.paste")}
                   </p>
                 </div>
                 {errors.description && (
@@ -1290,7 +1290,7 @@ function TaskModal({
                   <Paperclip size={14} /> {t("modal.attachments")}
                 </h4>
                 <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">
-                  Files
+                  {t("attachments.files")}
                 </p>
                 {attachments.length > 0 || pendingAttachments.length > 0 ? (
                   <div className="space-y-2.5">
@@ -1320,7 +1320,7 @@ function TaskModal({
                             {att.file_name}
                           </p>
                           <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                            Added{" "}
+                            {t("attachments.added")}{" "}
                             {new Date(att.created_at).toLocaleString(
                               undefined,
                               {
@@ -1331,7 +1331,7 @@ function TaskModal({
                                 minute: "2-digit",
                               },
                             )}
-                            {att.user?.name ? ` by ${att.user.name}` : ""}
+                            {att.user?.name ? ` ${t("attachments.addedBy")} ${att.user.name}` : ""}
                           </p>
                         </div>
                         {/* Actions */}
@@ -1378,7 +1378,7 @@ function TaskModal({
                             {att.name}
                           </p>
                           <p className="text-[11px] text-amber-500 font-medium">
-                            Pending Upload upon saving...
+                            {t("attachments.pendingUpload")}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1401,8 +1401,7 @@ function TaskModal({
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400 dark:text-slate-500 italic py-2">
-                    No attachments yet. Click &quot;Attachment&quot; above or
-                    paste images to add files.
+                    {t("attachments.none")}
                   </p>
                 )}
               </div>
@@ -1412,7 +1411,7 @@ function TaskModal({
             <div className="w-full md:w-[320px] shrink-0 p-6 flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-[12px] font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                  <MessageSquare size={15} /> Comments and activity
+                  <MessageSquare size={15} /> {t("modal.commentsAndActivity")}
                 </h4>
               </div>
 
@@ -1440,7 +1439,7 @@ function TaskModal({
                       />
                       <div className="flex items-center justify-between mt-1.5">
                         <p className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                          <ImageIcon size={10} /> Paste images (⌘V)
+                          <ImageIcon size={10} /> {t("attachments.pasteShort")}
                         </p>
                         {newComment.trim() && (
                           <button
@@ -1448,7 +1447,7 @@ function TaskModal({
                             onClick={handleAddComment}
                             className="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded transition-colors"
                           >
-                            Save
+                            {t("activity.save")}
                           </button>
                         )}
                       </div>
@@ -1475,7 +1474,7 @@ function TaskModal({
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] text-slate-700 dark:text-slate-200">
                           <span className="font-bold">
-                            {act.user?.name || "System"}
+                            {act.user?.name || t("activity.system")}
                           </span>
                           {act.action === "commented" ? (
                             ""
@@ -1511,8 +1510,8 @@ function TaskModal({
                     />
                     <p className="text-xs text-slate-400 dark:text-slate-500">
                       {task
-                        ? "No activity yet"
-                        : "Activity will appear after creation"}
+                        ? t("activity.noActivity")
+                        : t("activity.activityAfterCreation")}
                     </p>
                   </div>
                 )}
@@ -1989,9 +1988,9 @@ export default function AdminTaskBoardPage() {
         getHeaders(),
       );
       setColumns((prev) => [...prev, res.data]);
-      toast.success("Column added");
+      toast.success(t("toasts.columnAdded"));
     } catch (err) {
-      toast.error("Failed to add column");
+      toast.error(t("toasts.columnAddFailed"));
     }
   };
 
@@ -2004,18 +2003,18 @@ export default function AdminTaskBoardPage() {
       );
       setColumns((prev) => prev.map((c) => (c.id === id ? res.data : c)));
     } catch (err) {
-      toast.error("Failed to rename column");
+      toast.error(t("toasts.columnRenameFailed"));
     }
   };
 
   const handleDeleteColumn = async (id: number) => {
-    if (!confirm("Delete this column?")) return;
+    if (!confirm(t("confirm.deleteColumn"))) return;
     try {
       await axios.delete(`${API_BASE}/columns/${id}`, getHeaders());
       setColumns((prev) => prev.filter((c) => c.id !== id));
-      toast.success("Column deleted");
+      toast.success(t("toasts.columnDeleted"));
     } catch (err) {
-      toast.error("Failed to delete column");
+      toast.error(t("toasts.columnDeleteFailed"));
     }
   };
 
@@ -2032,7 +2031,7 @@ export default function AdminTaskBoardPage() {
         getHeaders(),
       );
     } catch (err) {
-      toast.error("Failed to reorder columns");
+      toast.error(t("toasts.columnReorderFailed"));
     }
   };
 
@@ -2093,7 +2092,7 @@ export default function AdminTaskBoardPage() {
         );
       }
     } catch (err) {
-      toast.error("Failed to move task");
+      toast.error(t("toasts.taskMoveFailed"));
       await fetchData();
     }
   };
@@ -2274,7 +2273,7 @@ export default function AdminTaskBoardPage() {
               {canConfigureAutomation && (
                 <Link href={`/dashboard/${role}/tasks/automation`}>
                   <button className="rounded-none h-12 w-fit px-8 border text-xs uppercase tracking-widest font-black flex items-center">
-                    <CalendarIcon size={16} className="mr-2" /> Automation Rules
+                    <CalendarIcon size={16} className="mr-2" /> {t("actions.automationRules")}
                   </button>
                 </Link>
               )}

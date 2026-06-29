@@ -758,6 +758,11 @@
       "previousPage": "Vorherige Seite",
       "nextPage": "Nächste Seite",
       "lastPage": "Letzte Seite"
+    },
+    "description": {
+      "actionOn": "{action} bei {entityName}",
+      "actionOnId": "{action} bei {entityName} #{id}",
+      "actionWithReason": "{action} - {reason}"
     }
   },
   "DashboardAdminLocationPerformance": {
@@ -1156,10 +1161,26 @@
       "commentFailed": "Kommentar konnte nicht hinzugefügt werden",
       "fileUploaded": "Datei hochgeladen",
       "uploadFailed": "Hochladen fehlgeschlagen",
-      "fileDeleted": "Datei gelöscht"
+      "fileDeleted": "Datei gelöscht",
+      "fileAdded": "Anhang bereitgestellt",
+      "scheduleUpdated": "Aufgabenplanung aktualisiert",
+      "rescheduleFailed": "Neuplanung fehlgeschlagen",
+      "reminderScheduled": "Erinnerung geplant",
+      "reminderCleared": "Erinnerung gelöscht",
+      "reminderFailed": "Erinnerung konnte nicht aktualisiert werden",
+      "reminderSent": "Erinnerung gesendet",
+      "reminderSendFailed": "Erinnerung konnte nicht gesendet werden",
+      "columnAdded": "Spalte hinzugefügt",
+      "columnAddFailed": "Spalte hinzufügen fehlgeschlagen",
+      "columnRenameFailed": "Spalte umbenennen fehlgeschlagen",
+      "columnDeleted": "Spalte gelöscht",
+      "columnDeleteFailed": "Spalte löschen fehlgeschlagen",
+      "columnReorderFailed": "Spalten neu anordnen fehlgeschlagen",
+      "taskMoveFailed": "Aufgabe verschieben fehlgeschlagen"
     },
     "confirm": {
-      "deleteTask": "Diese Aufgabe löschen?"
+      "deleteTask": "Diese Aufgabe löschen?",
+      "deleteColumn": "Diese Spalte löschen?"
     },
     "prompts": {
       "deleteAttachment": "Anhang löschen?"
@@ -1190,7 +1211,10 @@
       "status": "Status",
       "personalAutoAssign": "Persönliche Aufgaben werden automatisch Ihnen zugewiesen",
       "attachments": "Anhänge",
-      "activityLog": "Aktivitätsprotokoll"
+      "activityLog": "Aktivitätsprotokoll",
+      "labels": "Beschriftungen",
+      "commentsAndActivity": "Kommentare und Aktivität",
+      "columnDefault": "Spalte: Standard"
     },
     "validation": {
       "titleRequired": "Überschrift ist erforderlich",
@@ -1256,7 +1280,13 @@
       "done": "Erledigt",
       "reopen": "Wieder öffnen",
       "addFile": "Datei hinzufügen",
-      "post": "Posten"
+      "post": "Posten",
+      "saveReminder": "Erinnerung speichern",
+      "clearReminder": "Erinnerung löschen",
+      "reschedule": "Neu planen",
+      "remindNow": "Jetzt erinnern",
+      "save": "Speichern",
+      "automationRules": "Automatisierungsregeln"
     },
     "board": {
       "dropHere": "Ziehen Sie Aufgaben hierher"
@@ -1274,6 +1304,21 @@
       "me": "Ich",
       "due": "Fällig",
       "overdue": "ÜBERFÄLLIG"
+    },
+    "attachments": {
+      "files": "Dateien",
+      "added": "Hinzugefügt",
+      "addedBy": "von",
+      "pendingUpload": "Ausstehender Upload beim Speichern...",
+      "none": "Noch keine Anhänge. Klicken Sie oben auf 'Anhang' oder fügen Sie Bilder ein.",
+      "paste": "Bilder hier einfügen (Ctrl+V / ⌘V)",
+      "pasteShort": "Bilder einfügen (⌘V)"
+    },
+    "activity": {
+      "noActivity": "Noch keine Aktivität",
+      "activityAfterCreation": "Aktivität erscheint nach der Erstellung",
+      "system": "System",
+      "save": "Speichern"
     }
   },
   "lockscreen": {
