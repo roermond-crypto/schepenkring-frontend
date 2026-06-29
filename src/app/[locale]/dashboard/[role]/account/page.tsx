@@ -136,7 +136,7 @@ export default function DashboardAccountPage() {
   const locale = params?.locale ?? "en";
   const normalizedRouteLocale = normalizeLocaleValue(locale, "nl");
   const selectedUserId = searchParams.get("userId");
-  const isAdminSelectedUserView = role === "admin" && Boolean(selectedUserId);
+  const isAdminSelectedUserView = (role === "admin" || role === "employee") && Boolean(selectedUserId);
 
   const placeInputRef = useRef<HTMLInputElement>(null);
 
@@ -221,7 +221,7 @@ export default function DashboardAccountPage() {
 
   const [profile, setProfile] = useState({
     name: "",
-    timezone: "",
+    timezone: "Europe/Amsterdam",
     locale: "en",
   });
   const [personal, setPersonal] = useState({
@@ -301,7 +301,7 @@ export default function DashboardAccountPage() {
         }
         setProfile({
           name: nextUser.name || "",
-          timezone: nextUser.timezone || "",
+          timezone: "Europe/Amsterdam",
           locale: normalizeLocaleValue(nextUser.locale, normalizedRouteLocale),
         });
         setPersonal({
@@ -489,7 +489,6 @@ export default function DashboardAccountPage() {
       address.address_line1,
       address.city,
       address.country,
-      profile.timezone,
     ];
     return Math.round((fields.filter(Boolean).length / fields.length) * 100);
   }, [profile, personal, address]);
@@ -989,22 +988,6 @@ export default function DashboardAccountPage() {
                             </option>
                           ))}
                         </select>
-                      </label>
-                      <label className="space-y-2 sm:col-span-2">
-                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
-                          <Globe size={12} /> {t("fields.timezone")}
-                        </span>
-                        <input
-                          disabled={isAdminSelectedUserView}
-                          className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                          value={profile.timezone}
-                          onChange={(e) =>
-                            setProfile((p) => ({
-                              ...p,
-                              timezone: e.target.value,
-                            }))
-                          }
-                        />
                       </label>
                     </div>
                   </div>

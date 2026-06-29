@@ -187,7 +187,7 @@ function useGooglePlaces(
   onPlace: (data: { address: string; city: string; postal: string; country: string; lat: number; lng: number }) => void,
 ) {
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
     if (!apiKey || !inputRef.current) return;
 
     const init = () => {
