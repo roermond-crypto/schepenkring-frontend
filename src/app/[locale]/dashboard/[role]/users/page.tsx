@@ -487,7 +487,7 @@ export default function RoleManagementPage() {
         email: impersonated.email,
         role: mapTypeToRole(impersonated.type as UserType),
         type: impersonated.type as UserType,
-        status: impersonated.status as UserStatus,
+        status: impersonated.status as "ACTIVE" | "DISABLED" | "BLOCKED",
         phone: impersonated.phone ?? null,
         location_id: impersonated.location_id ?? null,
         location_role: impersonated.location_role ?? null,
