@@ -14,6 +14,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Settings2,
   ShieldCheck,
   ShieldX,
   XCircle,
@@ -152,6 +153,11 @@ export default function KycCasesPage() {
         <div className="flex gap-2">
           <button onClick={() => fetchCases()} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm hover:bg-slate-50 transition-colors">
             <RefreshCw className="w-4 h-4" />
+          </button>
+          <button onClick={() => router.push(`/${locale}/dashboard/${role}/kyc/questions`)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors">
+            <Settings2 className="w-4 h-4" />
+            Vragenlijst
           </button>
           <button onClick={createManual} disabled={creating}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003566] text-white text-sm font-semibold hover:bg-[#002a52] transition-colors disabled:opacity-60">
