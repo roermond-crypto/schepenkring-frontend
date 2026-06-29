@@ -593,6 +593,10 @@
       "integrations": {
         "title": "Intégrations",
         "description": "Gérez les outils connectés, flux et connexions plateforme côté admin."
+      },
+      "knowledgeLibrary": {
+        "title": "Bibliothèque de connaissances",
+        "description": "Créez et gérez des articles de marque ou de modèle pour la génération de descriptions IA."
       }
     },
     "schedule": {

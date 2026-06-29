@@ -593,6 +593,10 @@
       "integrations": {
         "title": "Integrationen",
         "description": "Verwalten Sie verbundene Tools, Feeds und Admin-Plattformanbindungen."
+      },
+      "knowledgeLibrary": {
+        "title": "Wissensbibliothek",
+        "description": "Erstellen und verwalten Sie Marken- oder Modellartikel für die KI-Beschreibungsgenerierung."
       }
     },
     "schedule": {

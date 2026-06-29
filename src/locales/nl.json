@@ -593,6 +593,10 @@
       "integrations": {
         "title": "Integraties",
         "description": "Beheer gekoppelde tools, feeds en admin-koppelingen zonder omweg."
+      },
+      "knowledgeLibrary": {
+        "title": "Kennisbibliotheek",
+        "description": "Maak en beheer merk- of modelartikelen voor AI-beschrijvingsgeneratie."
       }
     },
     "schedule": {
