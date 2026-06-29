@@ -273,7 +273,7 @@ export default function KycCasesPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-400">
-                        {new Date(c.created_at).toLocaleDateString(locale)}
+                        {new Date(c.created_at).toLocaleString(locale, { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </td>
                     </tr>
                   );

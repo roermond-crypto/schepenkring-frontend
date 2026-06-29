@@ -88,6 +88,9 @@ interface KycFullCase {
   rejection_reason: string | null;
   approved_by: { id: number; name: string } | null;
   approved_at: string | null;
+  buyer: { id: number; name: string; email: string | null; phone: string | null } | null;
+  seller: { id: number; name: string; email: string | null; phone: string | null } | null;
+  yacht: { id: number; boat_name: string | null; boat_type: string | null; price: number | null } | null;
   location: { id: number; name: string } | null;
   broker: { id: number; name: string } | null;
   answers: { question_id: number; answer: string; note: string | null; risk_points_awarded: number; answered_by: string | null }[];
@@ -172,6 +175,12 @@ export default function KycCaseDetailPage() {
   const [uploadDocType, setUploadDocType] = useState("passport");
   const [editMode, setEditMode]       = useState(false);
   const [editData, setEditData]       = useState<Record<string, string>>({});
+  const [editIds, setEditIds]         = useState<{ buyer_id?: number; seller_id?: number; yacht_id?: number; location_id?: number }>({});
+  const [userSearch, setUserSearch]   = useState<{ buyer: string; seller: string }>({ buyer: "", seller: "" });
+  const [userResults, setUserResults] = useState<{ buyer: { id: number; name: string; email: string | null; phone: string | null }[]; seller: typeof [] }>({ buyer: [], seller: [] });
+  const [yachtSearch, setYachtSearch] = useState("");
+  const [yachtResults, setYachtResults] = useState<{ id: number; boat_name: string | null; boat_type: string | null; price: number | null }[]>([]);
+  const [locations, setLocations]     = useState<{ id: number; meta: { name: string } }[]>([]);
   const [savingCase, setSavingCase]   = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [deletingCase, setDeletingCase] = useState(false);
@@ -302,7 +311,41 @@ export default function KycCaseDetailPage() {
       payment_method: kycCase.payment_method ?? "",
       notes:          kycCase.notes          ?? "",
     });
+    setEditIds({
+      buyer_id:    kycCase.buyer?.id    ?? undefined,
+      seller_id:   kycCase.seller?.id   ?? undefined,
+      yacht_id:    kycCase.yacht?.id    ?? undefined,
+      location_id: kycCase.location?.id ?? undefined,
+    });
+    setUserSearch({ buyer: "", seller: "" });
+    setYachtSearch("");
+    // Load locations once when opening the form
+    if (locations.length === 0) {
+      api.get<{ data: { id: number; meta: { name: string } }[] }>("/admin/locations")
+        .then((r) => setLocations(r.data.data ?? []))
+        .catch(() => { /* non-critical */ });
+    }
     setEditMode(true);
+  }
+
+  async function searchUsers(role: "buyer" | "seller", q: string) {
+    if (q.length < 2) { setUserResults((prev) => ({ ...prev, [role]: [] })); return; }
+    try {
+      const res = await api.get<{ data: { id: number; name: string; email: string | null; phone: string | null }[] }>(
+        `/admin/users?search=${encodeURIComponent(q)}&per_page=8`
+      );
+      setUserResults((prev) => ({ ...prev, [role]: res.data.data ?? [] }));
+    } catch { /* ignore */ }
+  }
+
+  async function searchYachts(q: string) {
+    if (q.length < 2) { setYachtResults([]); return; }
+    try {
+      const res = await api.get<{ data: { id: number; boat_name: string | null; boat_type: string | null; price: number | null }[] }>(
+        `/yachts?search=${encodeURIComponent(q)}&per_page=8`
+      );
+      setYachtResults(res.data.data ?? []);
+    } catch { /* ignore */ }
   }
 
   async function saveCase() {
@@ -316,6 +359,11 @@ export default function KycCaseDetailPage() {
           payload[k] = v === "" ? null : v;
         }
       }
+      // Include FK IDs
+      payload.buyer_id    = editIds.buyer_id    ?? null;
+      payload.seller_id   = editIds.seller_id   ?? null;
+      payload.yacht_id    = editIds.yacht_id    ?? null;
+      payload.location_id = editIds.location_id ?? null;
       const res = await api.patch<{ kyc_case: KycFullCase }>(`/admin/kyc-cases/${caseId}`, payload);
       setKycCase((prev) => prev ? { ...prev, ...res.data.kyc_case, missing_documents: prev.missing_documents } : prev);
       setEditMode(false);
@@ -656,37 +704,190 @@ export default function KycCaseDetailPage() {
 
             {editMode ? (
               <div className="space-y-3">
-                {([
-                  { label: fieldLabels.buyer,    key: "buyer_name",     type: "text" },
-                  { label: fieldLabels.email,    key: "buyer_email",    type: "email" },
-                  { label: fieldLabels.phone,    key: "buyer_phone",    type: "text" },
-                  { label: fieldLabels.address,  key: "buyer_address",  type: "text" },
-                  { label: fieldLabels.iban,     key: "buyer_iban",     type: "text" },
-                  { label: fieldLabels.seller,   key: "seller_name",    type: "text" },
-                  { label: fieldLabels.boat,     key: "boat_name",      type: "text" },
-                  { label: fieldLabels.boatType, key: "boat_type",      type: "text" },
-                  { label: fieldLabels.value,    key: "deal_value",     type: "number" },
-                  { label: fieldLabels.payment,  key: "payment_method", type: "text" },
-                ] as { label: string; key: string; type: string }[]).map(({ label, key, type }) => (
+
+                {/* ── Koper ── */}
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{fieldLabels.buyer ?? "Koper"}</p>
+                <div className="relative">
+                  <label className="block text-xs text-slate-400 mb-0.5">Zoek gebruiker…</label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                    <input
+                      value={userSearch.buyer}
+                      onChange={(e) => { setUserSearch((p) => ({ ...p, buyer: e.target.value })); void searchUsers("buyer", e.target.value); }}
+                      placeholder="Naam of e-mail…"
+                      className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none focus:border-[#003566] bg-white"
+                    />
+                  </div>
+                  {userResults.buyer.length > 0 && (
+                    <div className="absolute z-30 left-0 top-full mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+                      {userResults.buyer.map((u) => (
+                        <button key={u.id} type="button"
+                          onMouseDown={() => {
+                            setEditIds((p) => ({ ...p, buyer_id: u.id }));
+                            setEditData((p) => ({ ...p, buyer_name: u.name, buyer_email: u.email ?? "", buyer_phone: u.phone ?? "" }));
+                            setUserSearch((p) => ({ ...p, buyer: "" }));
+                            setUserResults((p) => ({ ...p, buyer: [] }));
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                          <span className="text-sm font-medium text-slate-800">{u.name}</span>
+                          {u.email && <span className="ml-2 text-xs text-slate-400">{u.email}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {editIds.buyer_id && (
+                  <p className="text-[11px] text-emerald-600 font-medium -mt-1">✓ Gekoppeld aan gebruiker #{editIds.buyer_id}
+                    <button type="button" className="ml-2 text-slate-400 hover:text-red-500" onClick={() => setEditIds((p) => ({ ...p, buyer_id: undefined }))}>×</button>
+                  </p>
+                )}
+                {[
+                  { label: fieldLabels.buyer ?? "Naam", key: "buyer_name", type: "text" },
+                  { label: fieldLabels.email ?? "E-mail", key: "buyer_email", type: "email" },
+                  { label: fieldLabels.phone ?? "Telefoon", key: "buyer_phone", type: "text" },
+                  { label: fieldLabels.address ?? "Adres", key: "buyer_address", type: "text" },
+                  { label: "IBAN", key: "buyer_iban", type: "text" },
+                ].map(({ label, key, type }) => (
                   <div key={key}>
                     <label className="block text-xs text-slate-400 mb-0.5">{label}</label>
+                    <input type={type} value={editData[key] ?? ""}
+                      onChange={(e) => setEditData((p) => ({ ...p, [key]: e.target.value }))}
+                      className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white" />
+                  </div>
+                ))}
+
+                {/* ── Verkoper ── */}
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{fieldLabels.seller ?? "Verkoper"}</p>
+                <div className="relative">
+                  <label className="block text-xs text-slate-400 mb-0.5">Zoek gebruiker…</label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                     <input
-                      type={type}
-                      value={editData[key] ?? ""}
-                      onChange={(e) => setEditData((prev) => ({ ...prev, [key]: e.target.value }))}
-                      className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white"
+                      value={userSearch.seller}
+                      onChange={(e) => { setUserSearch((p) => ({ ...p, seller: e.target.value })); void searchUsers("seller", e.target.value); }}
+                      placeholder="Naam of e-mail…"
+                      className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none focus:border-[#003566] bg-white"
                     />
+                  </div>
+                  {userResults.seller.length > 0 && (
+                    <div className="absolute z-30 left-0 top-full mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+                      {(userResults.seller as { id: number; name: string; email: string | null; phone: string | null }[]).map((u) => (
+                        <button key={u.id} type="button"
+                          onMouseDown={() => {
+                            setEditIds((p) => ({ ...p, seller_id: u.id }));
+                            setEditData((p) => ({ ...p, seller_name: u.name, seller_email: u.email ?? "", seller_phone: u.phone ?? "" }));
+                            setUserSearch((p) => ({ ...p, seller: "" }));
+                            setUserResults((p) => ({ ...p, seller: [] }));
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                          <span className="text-sm font-medium text-slate-800">{u.name}</span>
+                          {u.email && <span className="ml-2 text-xs text-slate-400">{u.email}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {editIds.seller_id && (
+                  <p className="text-[11px] text-emerald-600 font-medium -mt-1">✓ Gekoppeld aan gebruiker #{editIds.seller_id}
+                    <button type="button" className="ml-2 text-slate-400 hover:text-red-500" onClick={() => setEditIds((p) => ({ ...p, seller_id: undefined }))}>×</button>
+                  </p>
+                )}
+                {[
+                  { label: fieldLabels.seller ?? "Naam", key: "seller_name", type: "text" },
+                  { label: fieldLabels.email ?? "E-mail", key: "seller_email", type: "email" },
+                  { label: fieldLabels.phone ?? "Telefoon", key: "seller_phone", type: "text" },
+                ].map(({ label, key, type }) => (
+                  <div key={key}>
+                    <label className="block text-xs text-slate-400 mb-0.5">{label}</label>
+                    <input type={type} value={editData[key] ?? ""}
+                      onChange={(e) => setEditData((p) => ({ ...p, [key]: e.target.value }))}
+                      className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white" />
+                  </div>
+                ))}
+
+                {/* ── Boot ── */}
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{fieldLabels.boat ?? "Boot"}</p>
+                <div className="relative">
+                  <label className="block text-xs text-slate-400 mb-0.5">Zoek boot…</label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                    <input
+                      value={yachtSearch}
+                      onChange={(e) => { setYachtSearch(e.target.value); void searchYachts(e.target.value); }}
+                      placeholder="Bootnaam…"
+                      className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none focus:border-[#003566] bg-white"
+                    />
+                  </div>
+                  {yachtResults.length > 0 && (
+                    <div className="absolute z-30 left-0 top-full mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+                      {yachtResults.map((y) => (
+                        <button key={y.id} type="button"
+                          onMouseDown={() => {
+                            setEditIds((p) => ({ ...p, yacht_id: y.id }));
+                            setEditData((p) => ({ ...p, boat_name: y.boat_name ?? "", boat_type: y.boat_type ?? "", boat_value: y.price != null ? String(y.price) : "" }));
+                            setYachtSearch("");
+                            setYachtResults([]);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                          <span className="text-sm font-medium text-slate-800">{y.boat_name ?? `#${y.id}`}</span>
+                          {y.boat_type && <span className="ml-2 text-xs text-slate-400">{y.boat_type}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {editIds.yacht_id && (
+                  <p className="text-[11px] text-emerald-600 font-medium -mt-1">✓ Gekoppeld aan boot #{editIds.yacht_id}
+                    <button type="button" className="ml-2 text-slate-400 hover:text-red-500" onClick={() => setEditIds((p) => ({ ...p, yacht_id: undefined }))}>×</button>
+                  </p>
+                )}
+                {[
+                  { label: fieldLabels.boat ?? "Naam", key: "boat_name", type: "text" },
+                  { label: fieldLabels.boatType ?? "Type", key: "boat_type", type: "text" },
+                  { label: fieldLabels.boatValue ?? "Waarde boot", key: "boat_value", type: "number" },
+                ].map(({ label, key, type }) => (
+                  <div key={key}>
+                    <label className="block text-xs text-slate-400 mb-0.5">{label}</label>
+                    <input type={type} value={editData[key] ?? ""}
+                      onChange={(e) => setEditData((p) => ({ ...p, [key]: e.target.value }))}
+                      className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white" />
+                  </div>
+                ))}
+
+                {/* ── Deal / Locatie ── */}
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">Deal</p>
+                {[
+                  { label: fieldLabels.value ?? "Waarde", key: "deal_value", type: "number" },
+                  { label: fieldLabels.payment ?? "Betaalmethode", key: "payment_method", type: "text" },
+                ].map(({ label, key, type }) => (
+                  <div key={key}>
+                    <label className="block text-xs text-slate-400 mb-0.5">{label}</label>
+                    <input type={type} value={editData[key] ?? ""}
+                      onChange={(e) => setEditData((p) => ({ ...p, [key]: e.target.value }))}
+                      className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white" />
                   </div>
                 ))}
                 <div>
-                  <label className="block text-xs text-slate-400 mb-0.5">{td.notesLabel ?? "Notities"}</label>
-                  <textarea
-                    rows={2}
-                    value={editData.notes ?? ""}
-                    onChange={(e) => setEditData((prev) => ({ ...prev, notes: e.target.value }))}
-                    className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white resize-none"
-                  />
+                  <label className="block text-xs text-slate-400 mb-0.5">{fieldLabels.location ?? "Locatie"}</label>
+                  <select
+                    value={editIds.location_id ?? ""}
+                    onChange={(e) => setEditIds((p) => ({ ...p, location_id: e.target.value ? Number(e.target.value) : undefined }))}
+                    className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white">
+                    <option value="">— geen —</option>
+                    {locations.map((l) => (
+                      <option key={l.id} value={l.id}>{l.meta?.name ?? `#${l.id}`}</option>
+                    ))}
+                  </select>
                 </div>
+
+                {/* ── Notities ── */}
+                <div>
+                  <label className="block text-xs text-slate-400 mb-0.5">{td.notesLabel ?? "Notities"}</label>
+                  <textarea rows={2} value={editData.notes ?? ""}
+                    onChange={(e) => setEditData((p) => ({ ...p, notes: e.target.value }))}
+                    className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white resize-none" />
+                </div>
+
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => setEditMode(false)}
                     className="flex items-center gap-1 flex-1 justify-center py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
