@@ -9,7 +9,7 @@ import {
   Volume2,
 } from "lucide-react";
 
-const STEP3_TEXT: Record<string, Record<string, string>> = {
+const STEP3_TEXT: Record<string, Record<string, string | Record<string, string>>> = {
   nl: {
     aiTone: "AI Toon",
     minWords: "Min. woorden",
