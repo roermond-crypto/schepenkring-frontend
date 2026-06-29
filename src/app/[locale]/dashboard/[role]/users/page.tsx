@@ -305,7 +305,7 @@ export default function RoleManagementPage() {
       const { data } = await api.get(endpoint, {
         params: isEmployeeView
           ? { search: searchQuery || undefined, per_page: 25 }
-          : { per_page: 200 },
+          : { per_page: 100 },
       });
       const list = Array.isArray(data?.data)
         ? data.data
