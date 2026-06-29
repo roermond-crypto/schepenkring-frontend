@@ -1,12 +1,68 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  Globe, 
-  Sparkles, 
-  Loader2, 
-  Volume2, 
+import { useLocale } from "next-intl";
+import {
+  Globe,
+  Sparkles,
+  Loader2,
+  Volume2,
 } from "lucide-react";
+
+const STEP3_TEXT: Record<string, Record<string, string>> = {
+  nl: {
+    aiTone: "AI Toon",
+    minWords: "Min. woorden",
+    maxWords: "Max. woorden",
+    regenerate: "Opnieuw genereren",
+    stopRecording: "Opname stoppen",
+    startDictation: "Dicteren starten",
+    defaultVoice: "Standaardstem",
+    stopAudio: "Audio stoppen",
+    playAudio: "Audio afspelen",
+    editorPlaceholder: "Bekijk en bewerk de door AI gegenereerde beschrijving hier...",
+    tones: { professional: "Professioneel", enthusiastic: "Enthousiast", luxurious: "Luxueus", concise: "Beknopt & Direct", storytelling: "Verhaalvertelling" },
+  },
+  en: {
+    aiTone: "AI Tone",
+    minWords: "Min Words",
+    maxWords: "Max Words",
+    regenerate: "Regenerate",
+    stopRecording: "Stop recording",
+    startDictation: "Start dictation",
+    defaultVoice: "Default Voice",
+    stopAudio: "Stop Audio",
+    playAudio: "Play Audio",
+    editorPlaceholder: "Review and edit the AI-generated description here...",
+    tones: { professional: "Professional", enthusiastic: "Enthusiastic", luxurious: "Luxurious", concise: "Concise & Direct", storytelling: "Storytelling" },
+  },
+  de: {
+    aiTone: "KI-Ton",
+    minWords: "Min. Wörter",
+    maxWords: "Max. Wörter",
+    regenerate: "Neu generieren",
+    stopRecording: "Aufnahme stoppen",
+    startDictation: "Diktat starten",
+    defaultVoice: "Standardstimme",
+    stopAudio: "Audio stoppen",
+    playAudio: "Audio abspielen",
+    editorPlaceholder: "KI-generierte Beschreibung hier überprüfen und bearbeiten...",
+    tones: { professional: "Professionell", enthusiastic: "Enthusiastisch", luxurious: "Luxuriös", concise: "Prägnant & Direkt", storytelling: "Storytelling" },
+  },
+  fr: {
+    aiTone: "Ton IA",
+    minWords: "Min. mots",
+    maxWords: "Max. mots",
+    regenerate: "Régénérer",
+    stopRecording: "Arrêter l'enregistrement",
+    startDictation: "Démarrer la dictée",
+    defaultVoice: "Voix par défaut",
+    stopAudio: "Arrêter l'audio",
+    playAudio: "Lire l'audio",
+    editorPlaceholder: "Examinez et modifiez la description générée par l'IA ici...",
+    tones: { professional: "Professionnel", enthusiastic: "Enthousiaste", luxurious: "Luxueux", concise: "Concis & Direct", storytelling: "Narration" },
+  },
+};
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { WizardInput as Input } from "./WizardHelpers";
@@ -66,6 +122,10 @@ export function WizardStep3({
   voices,
   labelText,
 }: WizardStep3Props) {
+  const locale = useLocale();
+  const tx = STEP3_TEXT[locale] ?? STEP3_TEXT.en;
+  const tones = (STEP3_TEXT[locale] ?? STEP3_TEXT.en).tones as Record<string, string>;
+
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-8 space-y-8">
       <div className="flex justify-between items-center border-b border-slate-100 pb-4">
@@ -98,23 +158,23 @@ export function WizardStep3({
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-wrap items-end gap-5">
           <div className="flex-1 min-w-[150px]">
             <label className="text-xs font-bold text-slate-500 uppercase block">
-              AI Tone
+              {tx.aiTone}
             </label>
             <select
               className="w-full bg-white border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800 shadow-sm mt-1 focus:border-blue-500 focus:outline-none"
               value={aiTone}
               onChange={(e) => setAiTone(e.target.value)}
             >
-              <option value="professional">Professional</option>
-              <option value="enthusiastic">Enthusiastic</option>
-              <option value="luxurious">Luxurious</option>
-              <option value="concise">Concise & Direct</option>
-              <option value="storytelling">Storytelling</option>
+              <option value="professional">{tones.professional}</option>
+              <option value="enthusiastic">{tones.enthusiastic}</option>
+              <option value="luxurious">{tones.luxurious}</option>
+              <option value="concise">{tones.concise}</option>
+              <option value="storytelling">{tones.storytelling}</option>
             </select>
           </div>
           <div className="w-24">
             <label className="text-xs font-bold text-slate-500 uppercase block">
-              Min Words
+              {tx.minWords}
             </label>
             <Input
               type="number"
@@ -127,7 +187,7 @@ export function WizardStep3({
           </div>
           <div className="w-24">
             <label className="text-xs font-bold text-slate-500 uppercase block">
-              Max Words
+              {tx.maxWords}
             </label>
             <Input
               type="number"
@@ -149,7 +209,7 @@ export function WizardStep3({
             ) : (
               <Sparkles size={16} />
             )}
-            Regenerate
+            {tx.regenerate}
           </Button>
         </div>
 
@@ -167,9 +227,7 @@ export function WizardStep3({
                   ? "bg-red-100 text-red-600 animate-pulse"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200",
               )}
-              title={
-                isDictating ? "Stop recording" : "Start dictation"
-              }
+              title={isDictating ? tx.stopRecording : tx.startDictation}
             >
               <div
                 className={cn(
@@ -185,7 +243,7 @@ export function WizardStep3({
                 value={selectedVoice}
                 onChange={(e) => setSelectedVoice(e.target.value)}
               >
-                <option value="">Default Voice</option>
+                <option value="">{tx.defaultVoice}</option>
                 {voices.map((v) => (
                   <option key={v.name} value={v.name}>
                     {v.name} ({v.lang})
@@ -237,11 +295,11 @@ export function WizardStep3({
                 {isPlayingAudio ? (
                   <>
                     <div className="w-2 h-2 bg-red-600 rounded-sm animate-pulse" />{" "}
-                    Stop Audio
+                    {tx.stopAudio}
                   </>
                 ) : (
                   <>
-                    <Volume2 size={12} /> Play Audio
+                    <Volume2 size={12} /> {tx.playAudio}
                   </>
                 )}
               </button>
@@ -253,7 +311,7 @@ export function WizardStep3({
           onChange={(html) =>
             setAiTexts((prev) => ({ ...prev, [selectedLang]: html }))
           }
-          placeholder="Review and edit the AI-generated description here..."
+          placeholder={tx.editorPlaceholder}
         />
       </div>
     </div>

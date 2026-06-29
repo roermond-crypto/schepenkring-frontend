@@ -137,11 +137,11 @@ export function WizardStep5({
             {/* Checklist Requirements Preview */}
             <div className="space-y-3">
               <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-                Benodigde Documenten
+                {labelText("requiredDocuments", "Benodigde Documenten")}
               </h5>
               {fetchingChecklist ? (
                 <div className="flex items-center gap-2 text-sm text-slate-400 py-4">
-                  <Loader2 size={16} className="animate-spin" /> Laden...
+                  <Loader2 size={16} className="animate-spin" /> {labelText("loading", "Laden...")}
                 </div>
               ) : checklistTemplates.length > 0 ? (
                 <div className="space-y-2">

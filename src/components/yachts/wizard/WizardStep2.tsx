@@ -622,12 +622,12 @@ export function WizardStep2({
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-8">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
             <Handshake size={20} className="text-emerald-600" />
-            <h3 className="text-lg font-semibold text-slate-900">Bod &amp; verkopersinstellingen</h3>
+            <h3 className="text-lg font-semibold text-slate-900">{labelText("bidAndSellerSettings", "Bod & verkopersinstellingen")}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Minimumbod (€)</label>
-              <p className="text-xs text-slate-400">Boden onder dit bedrag krijgen een waarschuwing. Laat leeg voor geen minimum.</p>
+              <label className="text-sm font-medium text-slate-700">{labelText("minimumBid", "Minimumbod (€)")}</label>
+              <p className="text-xs text-slate-400">{labelText("minimumBidHelp", "Boden onder dit bedrag krijgen een waarschuwing. Laat leeg voor geen minimum.")}</p>
               <input
                 name="minimum_offer_amount"
                 type="number"
@@ -639,8 +639,8 @@ export function WizardStep2({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Verkoper</label>
-              <p className="text-xs text-slate-400">Koppel een verkoper (makelaar) aan deze boot.</p>
+              <label className="text-sm font-medium text-slate-700">{labelText("seller", "Verkoper")}</label>
+              <p className="text-xs text-slate-400">{labelText("sellerHelp", "Koppel een verkoper (makelaar) aan deze boot.")}</p>
               <div ref={sellerRef} className="relative">
                 <div className="relative flex items-center">
                   <Search size={14} className="pointer-events-none absolute left-3 text-slate-400" />
@@ -649,7 +649,7 @@ export function WizardStep2({
                     value={sellerQuery || sellerName}
                     onChange={(e) => { setSellerQuery(e.target.value); setSellerName(""); setSellerOpen(true); }}
                     onFocus={() => setSellerOpen(true)}
-                    placeholder="Zoek op naam of e-mail..."
+                    placeholder={placeholderText("sellerSearch", "Zoek op naam of e-mail...")}
                     className="flex h-10 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-8 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003566]/30"
                   />
                   {(sellerName || sellerId) && (
@@ -686,11 +686,11 @@ export function WizardStep2({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { name: "seller_email_notifications", label: "E-mailnotificaties voor verkoper", desc: "Verkoper ontvangt e-mail bij nieuw bod", default: true },
-              { name: "seller_counter_offer_enabled", label: "Tegenbod toestaan", desc: "Verkoper kan een tegenbod doen via e-mail link", default: true },
-              { name: "seller_login_enabled", label: "Verkoper login inschakelen", desc: "Verkoper heeft een account en kan inloggen op dashboard", default: false },
-              { name: "seller_invite_enabled", label: "Uitnodiging sturen naar verkoper", desc: "Stuur een uitnodigingse-mail naar de verkoper om een account aan te maken", default: false },
-            ].map(({ name, label, desc, default: def }) => (
+              { name: "seller_email_notifications", labelKey: "sellerEmailNotifications", descKey: "sellerEmailNotificationsDesc", labelFb: "E-mailnotificaties voor verkoper", descFb: "Verkoper ontvangt e-mail bij nieuw bod", default: true },
+              { name: "seller_counter_offer_enabled", labelKey: "sellerCounterOfferEnabled", descKey: "sellerCounterOfferEnabledDesc", labelFb: "Tegenbod toestaan", descFb: "Verkoper kan een tegenbod doen via e-mail link", default: true },
+              { name: "seller_login_enabled", labelKey: "sellerLoginEnabled", descKey: "sellerLoginEnabledDesc", labelFb: "Verkoper login inschakelen", descFb: "Verkoper heeft een account en kan inloggen op dashboard", default: false },
+              { name: "seller_invite_enabled", labelKey: "sellerInviteEnabled", descKey: "sellerInviteEnabledDesc", labelFb: "Uitnodiging sturen naar verkoper", descFb: "Stuur een uitnodigingse-mail naar de verkoper om een account aan te maken", default: false },
+            ].map(({ name, labelKey, descKey, labelFb, descFb, default: def }) => (
               <label key={name} className="flex items-start gap-3 rounded-xl border border-slate-200 p-4 cursor-pointer hover:bg-slate-50">
                 <input
                   type="checkbox"
@@ -699,8 +699,8 @@ export function WizardStep2({
                   className="mt-0.5 h-4 w-4 rounded accent-[#003566]"
                 />
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{label}</p>
-                  <p className="text-xs text-slate-400">{desc}</p>
+                  <p className="text-sm font-medium text-slate-800">{labelText(labelKey, labelFb)}</p>
+                  <p className="text-xs text-slate-400">{labelText(descKey, descFb)}</p>
                 </div>
               </label>
             ))}

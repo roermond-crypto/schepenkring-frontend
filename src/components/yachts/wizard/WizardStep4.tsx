@@ -47,6 +47,93 @@ interface WizardStep4Props {
   t: any; // i18next dictionary
 }
 
+const STEP4_TEXT: Record<string, Record<string, string>> = {
+  nl: {
+    heading: "04. PLANNING",
+    subheading: "Laat klanten eenvoudig een bezichtiging inplannen. Geef aan op welke dagen en tijden u beschikbaar bent.",
+    subheadingNote: "De belangrijkste standaardinstellingen staan al goed, en extra opties blijven netjes onder geavanceerde instellingen.",
+    basicSettings: "Basisinstellingen planning",
+    minNotice: "Min. dagen voor boeken",
+    maxAhead: "Max. dagen vooruit boeken",
+    duration: "Duur afspraak",
+    maxPerDay: "Maximaal aantal afspraken per dag",
+    advancedTitle: "Geavanceerde instellingen",
+    advancedDesc: "Gebruik deze opties als u meer controle wilt over goedkeuring, e-mail, verplaatsen en annuleren.",
+    advancedButton: "GEAVANCEERDE INSTELLINGEN",
+    preview: "Preview voor klant",
+    previewNote: "Deze preview volgt de bootinstellingen hieronder. Bestaande boekingen kunnen bezette tijden nog blokkeren.",
+    extraSlots: "extra slots",
+    daysOfWeek: "Dagen van de week",
+    available: "Beschikbaar",
+    startTime: "Starttijd",
+    endTime: "Eindtijd",
+    autoSaved: "Planning wordt automatisch opgeslagen",
+  },
+  en: {
+    heading: "04. SCHEDULING",
+    subheading: "Allow customers to easily schedule a viewing. Specify the days and times you are available.",
+    subheadingNote: "The most important default settings are already correct, and extra options remain neatly under advanced settings.",
+    basicSettings: "Basic scheduling settings",
+    minNotice: "Min. days before booking",
+    maxAhead: "Max. days ahead",
+    duration: "Appointment duration",
+    maxPerDay: "Max appointments per day",
+    advancedTitle: "Advanced settings",
+    advancedDesc: "Use these options if you want more control over approval, email, rescheduling and cancellations.",
+    advancedButton: "ADVANCED SETTINGS",
+    preview: "Customer preview",
+    previewNote: "This preview follows the boat settings below. Existing bookings may still block occupied time slots.",
+    extraSlots: "extra slots",
+    daysOfWeek: "Days of the week",
+    available: "Available",
+    startTime: "Start time",
+    endTime: "End time",
+    autoSaved: "Schedule is automatically saved",
+  },
+  de: {
+    heading: "04. TERMINPLANUNG",
+    subheading: "Ermöglichen Sie Kunden einfach eine Besichtigung zu planen. Geben Sie an, an welchen Tagen und zu welchen Zeiten Sie verfügbar sind.",
+    subheadingNote: "Die wichtigsten Standardeinstellungen sind bereits korrekt, und zusätzliche Optionen bleiben ordentlich unter den erweiterten Einstellungen.",
+    basicSettings: "Grundlegende Planungseinstellungen",
+    minNotice: "Mindest-Vorlaufzeit (Tage)",
+    maxAhead: "Max. Tage im Voraus",
+    duration: "Termindauer",
+    maxPerDay: "Max. Termine pro Tag",
+    advancedTitle: "Erweiterte Einstellungen",
+    advancedDesc: "Verwenden Sie diese Optionen für mehr Kontrolle über Genehmigung, E-Mail, Umbuchung und Stornierungen.",
+    advancedButton: "ERWEITERTE EINSTELLUNGEN",
+    preview: "Kundenvorschau",
+    previewNote: "Diese Vorschau folgt den Boot-Einstellungen unten. Bestehende Buchungen können belegte Zeitfenster noch blockieren.",
+    extraSlots: "zusätzliche Slots",
+    daysOfWeek: "Wochentage",
+    available: "Verfügbar",
+    startTime: "Startzeit",
+    endTime: "Endzeit",
+    autoSaved: "Zeitplan wird automatisch gespeichert",
+  },
+  fr: {
+    heading: "04. PLANNING",
+    subheading: "Permettez aux clients de planifier facilement une visite. Indiquez les jours et heures où vous êtes disponible.",
+    subheadingNote: "Les paramètres par défaut les plus importants sont déjà corrects, et les options supplémentaires restent sous les paramètres avancés.",
+    basicSettings: "Paramètres de planification de base",
+    minNotice: "Jours min. avant réservation",
+    maxAhead: "Jours max. à l'avance",
+    duration: "Durée du rendez-vous",
+    maxPerDay: "Max. rendez-vous par jour",
+    advancedTitle: "Paramètres avancés",
+    advancedDesc: "Utilisez ces options pour plus de contrôle sur l'approbation, l'e-mail, le report et les annulations.",
+    advancedButton: "PARAMÈTRES AVANCÉS",
+    preview: "Aperçu client",
+    previewNote: "Cet aperçu suit les paramètres du bateau ci-dessous. Les réservations existantes peuvent encore bloquer les créneaux occupés.",
+    extraSlots: "créneaux supplémentaires",
+    daysOfWeek: "Jours de la semaine",
+    available: "Disponible",
+    startTime: "Heure de début",
+    endTime: "Heure de fin",
+    autoSaved: "Le planning est automatiquement enregistré",
+  },
+};
+
 const MIN_NOTICE_OPTIONS = [
   { value: "0", labels: { en: "Same day", nl: "Dezelfde dag", de: "Am selben Tag" } },
   { value: "1", labels: { en: "1 day", nl: "1 dag", de: "1 Tag" } },
@@ -109,9 +196,12 @@ export function WizardStep4({
   }, []);
 
   
+  const tx = STEP4_TEXT[locale] ?? STEP4_TEXT.en;
+
   const getLabel = (option: any) => {
     if (locale === "nl") return option.labels.nl;
     if (locale === "de") return option.labels.de;
+    if (locale === "fr") return option.labels.fr ?? option.labels.en;
     return option.labels.en;
   };
 
@@ -134,24 +224,24 @@ export function WizardStep4({
       {/* ── HEADER ── */}
       <div className="space-y-2">
         <h3 className="text-[13px] font-black uppercase text-[#003566] tracking-[0.3em] flex items-center gap-3 italic">
-          <Calendar size={22} className="text-blue-600" /> 04. PLANNING
+          <Calendar size={22} className="text-blue-600" /> {tx.heading}
         </h3>
         <p className="text-xs text-slate-500 leading-relaxed max-w-3xl">
-          Laat klanten eenvoudig een bezichtiging inplannen. Geef aan op welke dagen en tijden u beschikbaar bent.
+          {tx.subheading}
           <br />
-          <span className="opacity-70 italic text-[11px]">De belangrijkste standaardinstellingen staan al goed, en extra opties blijven netjes onder geavanceerde instellingen.</span>
+          <span className="opacity-70 italic text-[11px]">{tx.subheadingNote}</span>
         </p>
       </div>
 
       {/* ── SECTION 1: BASISINSTELLINGEN ── */}
       <div className="space-y-6">
-        <h4 className="text-sm font-bold text-slate-800">Basisinstellingen planning</h4>
+        <h4 className="text-sm font-bold text-slate-800">{tx.basicSettings}</h4>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { label: "Min. dagen voor boeken", field: "booking_min_notice_days", options: MIN_NOTICE_OPTIONS },
-            { label: "Max. dagen vooruit boeken", field: "booking_max_days_ahead", options: MAX_AHEAD_OPTIONS },
-            { label: "Duur afspraak", field: "booking_duration_minutes", options: APPOINTMENT_DURATION_OPTIONS },
-            { label: "Maximaal aantal afspraken per dag", field: "booking_max_appointments_per_day", options: MAX_APPOINTMENTS_OPTIONS },
+            { label: tx.minNotice, field: "booking_min_notice_days", options: MIN_NOTICE_OPTIONS },
+            { label: tx.maxAhead, field: "booking_max_days_ahead", options: MAX_AHEAD_OPTIONS },
+            { label: tx.duration, field: "booking_duration_minutes", options: APPOINTMENT_DURATION_OPTIONS },
+            { label: tx.maxPerDay, field: "booking_max_appointments_per_day", options: MAX_APPOINTMENTS_OPTIONS },
           ].map((item) => (
             <div key={item.field} className="bg-white border border-slate-200 p-4 shadow-sm space-y-3">
               <Label className="text-[11px] font-bold text-slate-600">{item.label}</Label>
@@ -172,23 +262,23 @@ export function WizardStep4({
       {/* ── SECTION 2: GEAVANCEERDE INSTELLINGEN ── */}
       <div className="bg-white border border-slate-200 p-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="space-y-1">
-          <p className="text-sm font-bold text-slate-800 uppercase tracking-wide">Geavanceerde instellingen</p>
-          <p className="text-xs text-slate-500">Gebruik deze opties als u meer controle wilt over goedkeuring, e-mail, verplaatsen en annuleren.</p>
+          <p className="text-sm font-bold text-slate-800 uppercase tracking-wide">{tx.advancedTitle}</p>
+          <p className="text-xs text-slate-500">{tx.advancedDesc}</p>
         </div>
-        <button 
+        <button
           type="button"
           onClick={() => {}} // Toggle advanced visibility
           className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-[#003566] transition-colors border-b-2 border-slate-200 pb-1"
         >
-          GEAVANCEERDE INSTELLINGEN
+          {tx.advancedButton}
         </button>
       </div>
 
       {/* ── SECTION 3: PREVIEW ── */}
       <div className="space-y-6">
-        <h4 className="text-sm font-bold text-slate-800">Preview voor klant</h4>
+        <h4 className="text-sm font-bold text-slate-800">{tx.preview}</h4>
         <div className="bg-white border border-slate-200 p-8 shadow-sm">
-          <p className="text-xs text-slate-400 mb-6 italic">Deze preview volgt de bootinstellingen hieronder. Bestaande boekingen kunnen bezette tijden nog blokkeren.</p>
+          <p className="text-xs text-slate-400 mb-6 italic">{tx.previewNote}</p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {isMounted && schedulingPreview.map((day, dIdx) => (
@@ -211,7 +301,7 @@ export function WizardStep4({
                 </div>
                 {day.totalSlots > 4 && (
                   <p className="text-[10px] font-bold text-slate-400 italic">
-                    + {day.totalSlots - 4} extra slots
+                    + {day.totalSlots - 4} {tx.extraSlots}
                   </p>
                 )}
               </div>
@@ -236,7 +326,7 @@ export function WizardStep4({
             )}
           >
             <div className="w-40 space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-slate-400">Dagen van de week</Label>
+              <Label className="text-[10px] font-bold uppercase text-slate-400">{tx.daysOfWeek}</Label>
               <p className="text-sm font-black text-[#003566]">{getDayName(rule.day_of_week)}</p>
             </div>
 
@@ -249,12 +339,12 @@ export function WizardStep4({
                 className="w-5 h-5 accent-blue-600 rounded"
               />
               <Label htmlFor={`day-${rule.day_of_week}`} className="text-xs font-bold text-slate-600 cursor-pointer">
-                Beschikbaar
+                {tx.available}
               </Label>
             </div>
 
             <div className="flex-1 min-w-[150px] space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-slate-400">Starttijd</Label>
+              <Label className="text-[10px] font-bold uppercase text-slate-400">{tx.startTime}</Label>
               <div className="flex items-center gap-2 border-b-2 border-slate-100 py-1 focus-within:border-blue-500 transition-colors">
                 <Clock size={14} className="text-slate-300" />
                 <input
@@ -269,7 +359,7 @@ export function WizardStep4({
             </div>
 
             <div className="flex-1 min-w-[150px] space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-slate-400">Eindtijd</Label>
+              <Label className="text-[10px] font-bold uppercase text-slate-400">{tx.endTime}</Label>
               <div className="flex items-center gap-2 border-b-2 border-slate-100 py-1 focus-within:border-blue-500 transition-colors">
                 <Clock size={14} className="text-slate-300" />
                 <input
@@ -290,7 +380,7 @@ export function WizardStep4({
       <div className="flex items-center justify-center gap-4 py-4">
         <CheckCircle2 size={20} className="text-green-500" />
         <span className="text-[11px] font-black uppercase tracking-widest text-slate-400 italic">
-          Planning wordt automatisch opgeslagen
+          {tx.autoSaved}
         </span>
       </div>
     </div>
