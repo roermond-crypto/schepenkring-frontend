@@ -9,7 +9,13 @@ import {
   Volume2,
 } from "lucide-react";
 
-const STEP3_TEXT: Record<string, Record<string, string | Record<string, string>>> = {
+interface Step3Locale {
+  aiTone: string; minWords: string; maxWords: string; regenerate: string;
+  stopRecording: string; startDictation: string; defaultVoice: string;
+  stopAudio: string; playAudio: string; editorPlaceholder: string;
+  tones: Record<string, string>;
+}
+const STEP3_TEXT: Record<string, Step3Locale> = {
   nl: {
     aiTone: "AI Toon",
     minWords: "Min. woorden",
@@ -124,7 +130,7 @@ export function WizardStep3({
 }: WizardStep3Props) {
   const locale = useLocale();
   const tx = STEP3_TEXT[locale] ?? STEP3_TEXT.en;
-  const tones = (STEP3_TEXT[locale] ?? STEP3_TEXT.en).tones as Record<string, string>;
+  const tones = (STEP3_TEXT[locale] ?? STEP3_TEXT.en).tones;
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-8 space-y-8">
