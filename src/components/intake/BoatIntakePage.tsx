@@ -374,21 +374,43 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
       <div className="max-w-3xl mx-auto px-4 sm:px-5 -mt-10 pb-20">
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
 
-          {/* Step bar */}
-          <div className="border-b border-slate-100 px-4 sm:px-6 py-4 sm:py-5 overflow-x-auto">
-            <div className="flex items-center justify-between min-w-[260px]">
+          {/* Step bar — horizontal progress stepper */}
+          <div className="border-b border-slate-100 px-4 sm:px-8 pt-5 pb-4 bg-slate-50/60">
+            <div className="flex items-start">
               {STEPS.map((label, i) => (
-                <div key={i} className="flex items-center">
+                <div key={i} className="relative flex-1 flex flex-col items-center">
+                  {/* Left connecting line */}
+                  {i > 0 && (
+                    <div className={[
+                      "absolute top-[13px] right-1/2 left-0 h-0.5",
+                      i <= step ? "bg-[#003566]" : "bg-slate-200",
+                    ].join(" ")} />
+                  )}
+                  {/* Right connecting line */}
+                  {i < STEPS.length - 1 && (
+                    <div className={[
+                      "absolute top-[13px] left-1/2 right-0 h-0.5",
+                      i < step ? "bg-[#003566]" : "bg-slate-200",
+                    ].join(" ")} />
+                  )}
+                  {/* Circle */}
                   <div className={[
-                    "flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-bold shrink-0 transition-all",
-                    i < step ? "bg-green-500 text-white" : i === step ? "bg-[#003566] text-white" : "bg-slate-100 text-slate-400",
+                    "relative z-10 flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold border-2 transition-all shrink-0",
+                    i < step
+                      ? "bg-green-500 border-green-500 text-white"
+                      : i === step
+                        ? "bg-[#003566] border-[#003566] text-white ring-4 ring-[#003566]/10"
+                        : "bg-white border-slate-300 text-slate-400",
                   ].join(" ")}>
-                    {i < step ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : i + 1}
+                    {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
                   </div>
-                  <span className={["ml-1.5 sm:ml-2 text-xs font-medium hidden sm:block", i === step ? "text-[#003566]" : "text-slate-400"].join(" ")}>
+                  {/* Label */}
+                  <span className={[
+                    "mt-2 text-[10px] sm:text-xs font-semibold text-center leading-tight",
+                    i < step ? "text-green-600" : i === step ? "text-[#003566]" : "text-slate-400",
+                  ].join(" ")}>
                     {label}
                   </span>
-                  {i < STEPS.length - 1 && <ChevronRight className="w-4 h-4 text-slate-300 ml-1.5 sm:ml-4" />}
                 </div>
               ))}
             </div>
