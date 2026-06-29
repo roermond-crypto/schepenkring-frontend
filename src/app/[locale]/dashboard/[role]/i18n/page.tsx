@@ -417,13 +417,11 @@ export default function I18nAdminPage() {
           <div>
             <p className="font-bold">{t("issuesFoundTitle", { count: totalIssues, files: reports.filter((r) => r.issueCount > 0).length })}</p>
             <p className="text-sm">
-              {t.rich("issuesFoundBody", {
-                command: (chunks) => (
-                  <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">
-                    {chunks}
-                  </code>
-                ),
-              })}
+              {t("issuesFoundBodyPre")}{" "}
+              <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">
+                php artisan translations:scan --fix
+              </code>{" "}
+              {t("issuesFoundBodyPost")}
             </p>
           </div>
         </div>

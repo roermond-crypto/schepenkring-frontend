@@ -2595,12 +2595,13 @@
     "allCleanTitle": "All translations clean",
     "allCleanBody": "No encoding issues, missing keys, or duplicates found.",
     "issuesFoundTitle": "{count} issues found across {files} locale files",
-    "issuesFoundBody": "Run {command}php artisan translations:scan --fix{/command} to auto-repair encoding issues.",
     "cliTitle": "CLI Commands",
     "cliScanAll": "# Scan all locales",
     "cliScanOne": "# Scan one locale",
     "cliFix": "# Auto-fix encoding issues",
-    "cliJson": "# JSON output (for CI)"
+    "cliJson": "# JSON output (for CI)",
+    "issuesFoundBodyPre": "Run",
+    "issuesFoundBodyPost": "to automatically fix encoding issues."
   },
   "AdminLocations": {
     "loadLocationsFailed": "Failed to load locations.",

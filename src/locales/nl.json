@@ -2591,12 +2591,13 @@
     "allCleanTitle": "Alle vertalingen zijn schoon",
     "allCleanBody": "Geen coderingsproblemen, ontbrekende sleutels of duplicaten gevonden.",
     "issuesFoundTitle": "{count} problemen gevonden in {files} taalbestanden",
-    "issuesFoundBody": "Voer {command}php artisan translations:scan --fix{/command} uit om coderingsproblemen automatisch te herstellen.",
     "cliTitle": "CLI-commando's",
     "cliScanAll": "# Scan alle locales",
     "cliScanOne": "# Scan één locale",
     "cliFix": "# Coderingsproblemen automatisch herstellen",
-    "cliJson": "# JSON-uitvoer (voor CI)"
+    "cliJson": "# JSON-uitvoer (voor CI)",
+    "issuesFoundBodyPre": "Voer",
+    "issuesFoundBodyPost": "uit om coderingsproblemen automatisch te herstellen."
   },
   "AdminLocations": {
     "loadLocationsFailed": "Locaties laden mislukt.",

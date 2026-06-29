@@ -2592,12 +2592,13 @@
     "allCleanTitle": "Alle Übersetzungen sind sauber",
     "allCleanBody": "Keine Kodierungsprobleme, fehlenden Schlüssel oder Duplikate gefunden.",
     "issuesFoundTitle": "{count} Probleme in {files} Sprachdateien gefunden",
-    "issuesFoundBody": "Führen Sie {command}php artisan translations:scan --fix{/command} aus, um Kodierungsprobleme automatisch zu beheben.",
     "cliTitle": "CLI-Befehle",
     "cliScanAll": "# Alle Locales scannen",
     "cliScanOne": "# Eine Locale scannen",
     "cliFix": "# Kodierungsprobleme automatisch beheben",
-    "cliJson": "# JSON-Ausgabe (für CI)"
+    "cliJson": "# JSON-Ausgabe (für CI)",
+    "issuesFoundBodyPre": "Führen Sie",
+    "issuesFoundBodyPost": "aus, um Kodierungsprobleme automatisch zu beheben."
   },
   "AdminLocations": {
     "loadLocationsFailed": "Standorte konnten nicht geladen werden.",
