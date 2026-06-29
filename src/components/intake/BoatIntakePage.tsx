@@ -14,6 +14,7 @@ import {
   Phone,
   ShieldCheck,
   MapPin,
+  X,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────
@@ -109,7 +110,7 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [score, setScore] = useState<ScoreData | null>(null);
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<{ id: number; url: string }[]>([]);
   const [photoCount, setPhotoCount] = useState(0);
   const [documents, setDocuments] = useState<{ name: string; type: string }[]>([]);
   const [resumeToken, setResumeToken] = useState<string | null>(null);
@@ -248,7 +249,17 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
           source_url: window.location.href,
         };
         const res = await fetch(`${API}/boat-intake`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-        if (!res.ok) { const j = await res.json(); if (j.errors) setErrors(j.errors); return; }
+        if (!res.ok) {
+          const j = await res.json();
+          if (j.errors) {
+            const normalized: Record<string, string> = {};
+            for (const [key, val] of Object.entries(j.errors)) {
+              normalized[key] = Array.isArray(val) ? (val[0] as string) : String(val);
+            }
+            setErrors(normalized);
+          }
+          return;
+        }
         const json: SubmitResponse = await res.json();
         setScore(json.intake.score);
         setResumeToken(json.resume_token);
@@ -272,11 +283,24 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
       const res = await fetch(`${API}/boat-intake/${resumeToken}/photos`, { method: "POST", body: fd });
       const json = await res.json();
       if (json.uploaded) {
-        setPhotos((prev) => [...prev, ...json.uploaded.map((u: { url: string }) => u.url)]);
+        setPhotos((prev) => [...prev, ...json.uploaded.map((u: { id: number; url: string }) => ({ id: u.id, url: u.url }))]);
         setPhotoCount(json.photo_count as number);
         if (json.score) setScore(json.score as ScoreData);
       }
     } catch { /* silent */ } finally { setUploadingPhotos(false); }
+  }
+
+  async function handleDeletePhoto(photoId: number) {
+    if (!resumeToken) return;
+    try {
+      const res = await fetch(`${API}/boat-intake/${resumeToken}/photos/${photoId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.deleted) {
+        setPhotos((prev) => prev.filter((p) => p.id !== photoId));
+        setPhotoCount(json.photo_count as number);
+        if (json.score) setScore(json.score as ScoreData);
+      }
+    } catch { /* silent */ }
   }
 
   async function handleDocFile(file: File, docType: string) {
@@ -597,10 +621,17 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
 
                   {photos.length > 0 ? (
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {photos.map((url, i) => (
-                        <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100">
+                      {photos.map((photo) => (
+                        <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => handleDeletePhoto(photo.id)}
+                            className="absolute top-1 right-1 flex items-center justify-center w-6 h-6 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                            aria-label="Verwijder foto"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       ))}
                     </div>
