@@ -13,6 +13,7 @@ import {
   Pencil,
   RefreshCw,
   Save,
+  Search,
   ShieldCheck,
   Trash2,
   Upload,
