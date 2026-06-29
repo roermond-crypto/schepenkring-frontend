@@ -173,6 +173,7 @@ export default function KycCaseDetailPage() {
   const [editMode, setEditMode]       = useState(false);
   const [editData, setEditData]       = useState<Record<string, string>>({});
   const [savingCase, setSavingCase]   = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [deletingCase, setDeletingCase] = useState(false);
 
   const load = useCallback(async () => {
@@ -339,6 +340,26 @@ export default function KycCaseDetailPage() {
     }
   }
 
+  async function openPdf() {
+    setExportingPdf(true);
+    try {
+      const res = await api.get<string>(`/admin/kyc-cases/${caseId}/pdf?print=1`, { responseType: "text" });
+      const blob = new Blob([res.data], { type: "text/html; charset=UTF-8" });
+      const url  = URL.createObjectURL(blob);
+      const win  = window.open(url, "_blank");
+      if (win) {
+        win.addEventListener("load", () => {
+          win.print();
+          URL.revokeObjectURL(url);
+        });
+      }
+    } catch {
+      toast.error(td.pdfFailed ?? "PDF kon niet worden geopend");
+    } finally {
+      setExportingPdf(false);
+    }
+  }
+
   async function searchCases(q: string) {
     if (q.length < 2) { setCaseSearchResults([]); return; }
     try {
@@ -492,15 +513,11 @@ export default function KycCaseDetailPage() {
             className="p-2 rounded-xl border border-red-200 hover:bg-red-50 transition-colors text-red-500 disabled:opacity-50">
             {deletingCase ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
           </button>
-          <a
-            href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://app.schepen-kring.nl/api"}/admin/kyc-cases/${caseId}/pdf?print=1`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors"
-          >
-            <FileText className="w-4 h-4" />
+          <button onClick={() => void openPdf()} disabled={exportingPdf}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-60">
+            {exportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
             PDF
-          </a>
+          </button>
           <button onClick={() => { setNewStatus(kycCase.status); setStatusModal(true); }}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003566] text-white text-sm font-semibold hover:bg-[#002a52] transition-colors">
             <ShieldCheck className="w-4 h-4" />
