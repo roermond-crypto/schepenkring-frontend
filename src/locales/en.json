@@ -909,7 +909,9 @@
       "employee": "Internal Staff",
       "admin": "Admin",
       "partner": "Location Staff",
-      "customer": "Customer"
+      "customer": "Customer",
+      "buyer": "Buyers",
+      "seller": "Sellers"
     },
     "fields": {
       "fullName": "Full Name",

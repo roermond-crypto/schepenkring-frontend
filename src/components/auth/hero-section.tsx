@@ -613,7 +613,17 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                   required
                 />
                 <span className="text-xs leading-5 text-gray-500">
-                  {copy.termsLabelBeforeLink} <Link href="/" className="font-semibold text-[#003566] underline">{copy.termsLinkLabel}</Link> {copy.termsLabelAfterLink}
+                  {copy.termsLabelBeforeLink}{" "}
+                  <a
+                    href="https://www.schepenkring.nl/privacy-cookies/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="font-semibold text-[#003566] underline"
+                  >
+                    {copy.termsLinkLabel}
+                  </a>
+                  {" "}{copy.termsLabelAfterLink}
                 </span>
               </label>
             )}

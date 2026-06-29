@@ -905,7 +905,9 @@
       "employee": "Mitarbeiter",
       "admin": "Admin",
       "partner": "Partner",
-      "customer": "Kunde"
+      "customer": "Kunde",
+      "buyer": "Käufer",
+      "seller": "Verkäufer"
     },
     "fields": {
       "fullName": "Vollstandiger Name",

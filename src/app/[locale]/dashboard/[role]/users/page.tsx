@@ -22,6 +22,7 @@ import {
   Clock,
   UsersRound,
   ShieldCheck,
+  ShoppingBag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,8 +53,8 @@ import {
 } from "@/components/ui/dialog";
 
 type UserType = "ADMIN" | "EMPLOYEE" | "CLIENT" | "PARTNER" | "BUYER" | "SELLER";
-type UserStatus = "ACTIVE" | "DISABLED" | "BLOCKED";
-type UserCategory = "Employee" | "Admin" | "Partner" | "Customer";
+type UserStatus = "ACTIVE" | "DISABLED" | "BLOCKED" | "PENDING" | "VERIFYING" | "EMAIL_PENDING" | "PENDING_APPROVAL";
+type UserCategory = "Employee" | "Admin" | "Partner" | "Buyer" | "Seller";
 
 type UserRecord = {
   id: number;
@@ -105,7 +106,8 @@ const avatarColors: Record<UserCategory, string> = {
   Employee: "bg-blue-500",
   Admin: "bg-indigo-600",
   Partner: "bg-teal-500",
-  Customer: "bg-amber-500",
+  Buyer: "bg-amber-500",
+  Seller: "bg-orange-600",
 };
 
 const statusConfig: Record<
@@ -133,15 +135,16 @@ const tabConfig: { id: UserCategory; icon: LucideIcon }[] = [
   { id: "Employee", icon: Briefcase },
   { id: "Admin", icon: ShieldCheck },
   { id: "Partner", icon: Anchor },
-  { id: "Customer", icon: UserCircle },
+  { id: "Buyer", icon: UserCircle },
+  { id: "Seller", icon: ShoppingBag },
 ];
 
 function mapTypeToCategory(type: UserType): UserCategory {
   if (type === "ADMIN") return "Admin";
   if (type === "EMPLOYEE") return "Employee";
-  if (type === "PARTNER") return "Partner";
-  if (type === "CLIENT") return "Partner"; // CLIENT with location pivot = partner
-  return "Customer";
+  if (type === "PARTNER" || type === "CLIENT") return "Partner";
+  if (type === "SELLER") return "Seller";
+  return "Buyer"; // BUYER and any unknown → Buyer
 }
 
 function mapCategoryToType(
@@ -151,14 +154,15 @@ function mapCategoryToType(
   if (category === "Admin") return "ADMIN";
   if (category === "Employee") return "EMPLOYEE";
   if (category === "Partner") return "PARTNER";
-  if (category === "Customer") return clientRole === "seller" ? "SELLER" : "BUYER";
-  return "CLIENT";
+  if (category === "Seller") return "SELLER";
+  if (category === "Buyer") return "BUYER";
+  return clientRole === "seller" ? "SELLER" : "BUYER";
 }
 
 function mapStatusToUi(status: UserStatus): StatusUi {
   if (status === "ACTIVE") return "Active";
-  if (status === "BLOCKED") return "Pending";
-  return "Inactive";
+  if (status === "PENDING" || status === "VERIFYING" || status === "EMAIL_PENDING" || status === "PENDING_APPROVAL") return "Pending";
+  return "Inactive"; // BLOCKED, DISABLED
 }
 
 function mapUiToStatus(status: StatusUi): UserStatus {
@@ -254,7 +258,7 @@ export default function RoleManagementPage() {
   const [locations, setLocations] = useState<LocationOption[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<UserCategory>(
-    isEmployeeView ? "Customer" : "Employee",
+    isEmployeeView ? "Buyer" : "Employee",
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -290,7 +294,7 @@ export default function RoleManagementPage() {
 
   useEffect(() => {
     if (isEmployeeView) {
-      setActiveTab("Customer");
+      setActiveTab("Buyer");
     }
   }, [isEmployeeView]);
 
@@ -300,11 +304,8 @@ export default function RoleManagementPage() {
       const endpoint = isEmployeeView ? "/employee/users" : "/admin/users";
       const { data } = await api.get(endpoint, {
         params: isEmployeeView
-          ? {
-              search: searchQuery || undefined,
-              per_page: 25,
-            }
-          : undefined,
+          ? { search: searchQuery || undefined, per_page: 25 }
+          : { per_page: 200 },
       });
       const list = Array.isArray(data?.data)
         ? data.data
@@ -375,7 +376,7 @@ export default function RoleManagementPage() {
 
     try {
       toast.loading(t("toasts.enrolling"), { id: "enroll" });
-      const isClientAccount = newUser.role === "Customer";
+      const isClientAccount = newUser.role === "Buyer" || newUser.role === "Seller";
       const payload = {
         type: mapCategoryToType(newUser.role, newUser.client_role),
         name: newUser.name,
@@ -535,7 +536,7 @@ export default function RoleManagementPage() {
         return false;
       }
       const category = mapTypeToCategory(u.type);
-      if (!isEmployeeView && category !== activeTab) return false;
+      if (!isEmployeeView && !searchQuery && category !== activeTab) return false;
       const q = searchQuery.toLowerCase();
       return (
         u.name.toLowerCase().includes(q) ||
@@ -550,7 +551,8 @@ export default function RoleManagementPage() {
       Employee: 0,
       Admin: 0,
       Partner: 0,
-      Customer: 0,
+      Buyer: 0,
+      Seller: 0,
     };
     users.forEach((u) => {
       if (isEmployeeView && (u.role === "employee" || u.role === "admin")) {
@@ -617,7 +619,7 @@ export default function RoleManagementPage() {
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {(isEmployeeView
-          ? tabConfig.filter(({ id }) => id === "Customer")
+          ? tabConfig.filter(({ id }) => id === "Buyer" || id === "Seller")
           : tabConfig
         ).map(({ id, icon: Icon }) => {
           const count = roleCounts[id];
@@ -1018,7 +1020,7 @@ export default function RoleManagementPage() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className={newUser.role === "Customer" ? "sm:col-span-1" : ""}>
+                  <div>
                     <label className="mb-1.5 block text-xs font-semibold text-slate-500">
                       {t("fields.assignment")}
                     </label>
@@ -1029,60 +1031,37 @@ export default function RoleManagementPage() {
                         setNewUser({
                           ...newUser,
                           role: e.target.value as UserCategory,
-                          client_role:
-                            e.target.value === "Customer"
-                              ? newUser.client_role
-                              : "buyer",
                         })
                       }
                     >
                       <option value="Employee">{t("tabs.employee")}</option>
                       <option value="Admin">{t("tabs.admin")}</option>
-                      <option value="Customer">{t("tabs.customer")}</option>
                       <option value="Partner">{t("tabs.partner")}</option>
+                      <option value="Buyer">{t("tabs.buyer")}</option>
+                      <option value="Seller">{t("tabs.seller")}</option>
                     </select>
                   </div>
-                  {newUser.role === "Customer" ? (
-                    <>
-                      <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-500">
-                          {t("fields.clientType")}
-                        </label>
-                        <select
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
-                          value={newUser.client_role}
-                          onChange={(e) =>
-                            setNewUser({
-                              ...newUser,
-                              client_role: e.target.value as "buyer" | "seller",
-                            })
-                          }
-                        >
-                          <option value="buyer">{t("options.buyer")}</option>
-                          <option value="seller">{t("options.seller")}</option>
-                        </select>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-500">
-                          {t("fields.onboarding")}
-                        </label>
-                        <select
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
-                          value={newUser.needs_onboarding ? "required" : "finished"}
-                          onChange={(e) =>
-                            setNewUser({
-                              ...newUser,
-                              needs_onboarding: e.target.value === "required",
-                            })
-                          }
-                        >
-                          <option value="required">{t("options.onboardingRequired")}</option>
-                          <option value="finished">{t("options.directlyFinished")}</option>
-                        </select>
-                      </div>
-                    </>
+                  {(newUser.role === "Buyer" || newUser.role === "Seller") ? (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                        {t("fields.onboarding")}
+                      </label>
+                      <select
+                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
+                        value={newUser.needs_onboarding ? "required" : "finished"}
+                        onChange={(e) =>
+                          setNewUser({
+                            ...newUser,
+                            needs_onboarding: e.target.value === "required",
+                          })
+                        }
+                      >
+                        <option value="required">{t("options.onboardingRequired")}</option>
+                        <option value="finished">{t("options.directlyFinished")}</option>
+                      </select>
+                    </div>
                   ) : null}
-                  <div className={newUser.role === "Customer" ? "sm:col-span-2" : ""}>
+                  <div className={(newUser.role === "Buyer" || newUser.role === "Seller") ? "sm:col-span-2" : ""}>
                     <label className="mb-1.5 block text-xs font-semibold text-slate-500">
                       {t("fields.location")}
                     </label>

@@ -905,7 +905,9 @@
       "employee": "Medewerker (intern)",
       "admin": "Admin",
       "partner": "Locatiemedewerkers",
-      "customer": "Klant"
+      "customer": "Klant",
+      "buyer": "Kopers",
+      "seller": "Verkopers"
     },
     "fields": {
       "fullName": "Volledige naam",
