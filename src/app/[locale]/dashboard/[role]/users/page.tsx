@@ -82,6 +82,7 @@ type UserRecord = {
     code?: string;
     role?: string;
   }>;
+  yachts?: Array<{ id: number; boat_name?: string | null; manufacturer?: string | null; model?: string | null }>;
   created_at?: string;
   updated_at?: string;
 };
@@ -678,7 +679,7 @@ export default function RoleManagementPage() {
       </div>
 
       <div className="overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="hidden grid-cols-[1fr_1.25fr_190px_120px_80px] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 md:grid dark:border-slate-700 dark:bg-slate-800/70">
+        <div className="hidden grid-cols-[1fr_1.25fr_190px_180px_120px_80px] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 md:grid dark:border-slate-700 dark:bg-slate-800/70">
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {t("fields.fullName")}
           </p>
@@ -687,6 +688,9 @@ export default function RoleManagementPage() {
           </p>
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {isEmployeeView ? t("fields.location") : t("fields.clearance")}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Boot
           </p>
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {t("labels.status")}
@@ -735,7 +739,7 @@ export default function RoleManagementPage() {
                   transition={{ delay: i * 0.03 }}
                   className="group"
                 >
-                  <div className="hidden grid-cols-[1fr_1.25fr_190px_120px_80px] items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/80 md:grid dark:hover:bg-slate-800/40">
+                  <div className="hidden grid-cols-[1fr_1.25fr_190px_180px_120px_80px] items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/80 md:grid dark:hover:bg-slate-800/40">
                     <div className="flex min-w-0 items-center gap-3">
                       <div
                         className={cn(
@@ -791,6 +795,29 @@ export default function RoleManagementPage() {
                             {user.two_factor_enabled ? "2FA On" : "2FA Off"}
                           </span>
                         </>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-1 min-w-0">
+                      {user.yachts && user.yachts.length > 0 ? (
+                        user.yachts.slice(0, 2).map((y) => {
+                          const label = [y.manufacturer, y.model].filter(Boolean).join(" ") || y.boat_name || `Boot #${y.id}`;
+                          return (
+                            <a
+                              key={y.id}
+                              href={`/${locale}/dashboard/${routeRole}/yachts/${y.id}`}
+                              className="truncate text-[11px] font-semibold text-[#003566] underline underline-offset-2 hover:text-[#00284d]"
+                              title={label}
+                            >
+                              {label}
+                            </a>
+                          );
+                        })
+                      ) : (
+                        <span className="text-[11px] text-slate-400">—</span>
+                      )}
+                      {user.yachts && user.yachts.length > 2 && (
+                        <span className="text-[10px] text-slate-400">+{user.yachts.length - 2} meer</span>
                       )}
                     </div>
 
