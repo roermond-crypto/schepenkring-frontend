@@ -44,10 +44,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${inter.variable} ${playfair.variable} antialiased`}
         suppressHydrationWarning
       >
-        <Script
-          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&libraries=places&loading=async`}
-          strategy="afterInteractive"
-        />
+        {process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY && (
+          <Script
+            src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&libraries=places&loading=async`}
+            strategy="afterInteractive"
+          />
+        )}
         <ServiceWorkerRegister />
         <ThemeProvider>{children}</ThemeProvider>
       </body>

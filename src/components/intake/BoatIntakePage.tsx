@@ -139,63 +139,66 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
     }
   }, []);
 
-  // Google Places address autocomplete
+  // Google Places address autocomplete — only initialises if the Maps script
+  // loaded successfully (key present + domain authorised). If not, address
+  // fields remain plain text inputs with no error shown to the visitor.
   useEffect(() => {
     const setup = () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const g = (window as any).google;
       if (!g?.maps?.places?.Autocomplete || !addressInputRef.current) return;
-
-      const ac = new g.maps.places.Autocomplete(addressInputRef.current, {
-        fields: ["address_components"],
-        types: ["address"],
-        componentRestrictions: { country: [] }, // no restriction
-      });
-
-      ac.addListener("place_changed", () => {
-        const place = ac.getPlace();
-        if (!place.address_components) return;
-
-        let streetNumber = "";
-        let route = "";
-        let city = "";
-        let postal = "";
-        let country = "";
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (place.address_components as any[]).forEach((c) => {
-          if (c.types.includes("street_number")) streetNumber = c.long_name;
-          if (c.types.includes("route")) route = c.short_name;
-          if (c.types.includes("locality")) city = c.long_name;
-          if (c.types.includes("postal_code")) postal = c.long_name;
-          if (c.types.includes("country")) country = c.short_name;
+      try {
+        const ac = new g.maps.places.Autocomplete(addressInputRef.current, {
+          fields: ["address_components"],
+          types: ["address"],
         });
-
-        const street = [route, streetNumber].filter(Boolean).join(" ");
-
-        setForm((prev) => ({
-          ...prev,
-          ...(street && { seller_address: street }),
-          ...(city && { seller_city: city }),
-          ...(postal && { seller_postal_code: postal }),
-          ...(country && { seller_country: country }),
-        }));
-      });
+        ac.addListener("place_changed", () => {
+          const place = ac.getPlace();
+          if (!place.address_components) return;
+          let streetNumber = "";
+          let route = "";
+          let city = "";
+          let postal = "";
+          let country = "";
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (place.address_components as any[]).forEach((c) => {
+            if (c.types.includes("street_number")) streetNumber = c.long_name;
+            if (c.types.includes("route")) route = c.short_name;
+            if (c.types.includes("locality")) city = c.long_name;
+            if (c.types.includes("postal_code")) postal = c.long_name;
+            if (c.types.includes("country")) country = c.short_name;
+          });
+          const street = [route, streetNumber].filter(Boolean).join(" ");
+          setForm((prev) => ({
+            ...prev,
+            ...(street && { seller_address: street }),
+            ...(city && { seller_city: city }),
+            ...(postal && { seller_postal_code: postal }),
+            ...(country && { seller_country: country }),
+          }));
+        });
+      } catch {
+        // Places unavailable — input stays as plain text, no error shown
+      }
     };
+
+    // Only attempt autocomplete if the Maps script was loaded with a key
+    if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY) return;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).google?.maps?.places?.Autocomplete) {
       setup();
     } else {
-      // Maps script is already in layout.tsx — poll until it's ready
       const timer = setInterval(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((window as any).google?.maps?.places) {
           clearInterval(timer);
           setup();
         }
-      }, 300);
-      return () => clearInterval(timer);
+      }, 500);
+      // Stop polling after 10 s — Maps script may never load
+      const abort = setTimeout(() => clearInterval(timer), 10_000);
+      return () => { clearInterval(timer); clearTimeout(abort); };
     }
   }, []);
 
