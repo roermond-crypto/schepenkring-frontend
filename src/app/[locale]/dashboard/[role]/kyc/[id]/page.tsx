@@ -177,7 +177,7 @@ export default function KycCaseDetailPage() {
   const [editData, setEditData]       = useState<Record<string, string>>({});
   const [editIds, setEditIds]         = useState<{ buyer_id?: number; seller_id?: number; yacht_id?: number; location_id?: number }>({});
   const [userSearch, setUserSearch]   = useState<{ buyer: string; seller: string }>({ buyer: "", seller: "" });
-  const [userResults, setUserResults] = useState<{ buyer: { id: number; name: string; email: string | null; phone: string | null }[]; seller: typeof [] }>({ buyer: [], seller: [] });
+  const [userResults, setUserResults] = useState<{ buyer: { id: number; name: string; email: string | null; phone: string | null }[]; seller: { id: number; name: string; email: string | null; phone: string | null }[] }>({ buyer: [], seller: [] });
   const [yachtSearch, setYachtSearch] = useState("");
   const [yachtResults, setYachtResults] = useState<{ id: number; boat_name: string | null; boat_type: string | null; price: number | null }[]>([]);
   const [locations, setLocations]     = useState<{ id: number; meta: { name: string } }[]>([]);
@@ -771,7 +771,7 @@ export default function KycCaseDetailPage() {
                   </div>
                   {userResults.seller.length > 0 && (
                     <div className="absolute z-30 left-0 top-full mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
-                      {(userResults.seller as { id: number; name: string; email: string | null; phone: string | null }[]).map((u) => (
+                      {userResults.seller.map((u) => (
                         <button key={u.id} type="button"
                           onMouseDown={() => {
                             setEditIds((p) => ({ ...p, seller_id: u.id }));
