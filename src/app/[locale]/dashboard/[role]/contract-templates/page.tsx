@@ -91,7 +91,7 @@ export default function ContractTemplatesPage() {
         api.get<{ types: TemplateType[] }>("/admin/contract-templates/types"),
         api.get<{ data: LocationOption[] }>("/admin/locations?per_page=200"),
       ]);
-      setTemplates(Array.isArray(tRes.data) ? tRes.data : []);
+      setTemplates(Array.isArray(tRes.data) ? tRes.data : (Array.isArray((tRes.data as { data?: unknown })?.data) ? (tRes.data as { data: ContractTemplate[] }).data : []));
       setTypes(typesRes.data?.types ?? []);
       setLocations(locRes.data?.data ?? []);
     } catch {

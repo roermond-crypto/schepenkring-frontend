@@ -635,6 +635,7 @@ export default function ContractTemplateEditorPage() {
       toast.success("Opgeslagen.");
       setIsDirty(false);
       setChangeNote("");
+      setShowSaveModal(false);
       await loadTemplate();
     } catch {
       toast.error("Opslaan mislukt.");
