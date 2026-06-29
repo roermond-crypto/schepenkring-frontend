@@ -291,85 +291,139 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     }
   }
 
+  function switchMode(next: AuthMode) {
+    setMode(next);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("mode", next);
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-950 p-4 font-sans">
-      <div className="fixed right-4 top-4 z-50">
-        <LanguageSwitcher locale={locale} />
-      </div>
+    <div className="min-h-screen flex flex-col bg-[#edf3f7] dark:bg-slate-950 font-sans">
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="relative flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-slate-900 lg:flex-row"
-      >
-        {/* Left Side: Brand Imagery */}
-        <div className="relative lg:w-2/5 min-h-[240px] lg:min-h-0 flex flex-col items-center justify-center p-8 lg:p-10 overflow-hidden">
-          <Image
-            alt=""
-            src={boatsHeroImage}
-            fill
-            className="object-cover opacity-30"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#003566]/85 via-[#003566]/92 to-[#001d3d]" />
+      {/* ── White top header ── */}
+      <nav className="bg-white border-b border-slate-200 shadow-sm shrink-0">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
+          {/* Logo */}
+          <Link href={`/${locale}`} className="flex items-center shrink-0">
+            <Image
+              src={schepenkringLogo}
+              alt="Schepenkring"
+              width={150}
+              height={42}
+              className="h-10 w-auto object-contain"
+              priority
+            />
+          </Link>
 
-          <div className="relative z-10 flex flex-col items-center text-center w-full">
-            <div className="bg-white rounded-full px-7 py-4 shadow-lg mb-8">
-              <Image
-                src={schepenkringLogo}
-                alt="Schepenkring"
-                width={170}
-                height={48}
-                className="object-contain"
-                priority
-              />
+          {/* Right-side nav */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Login / Register toggle tabs */}
+            <div className="flex bg-slate-100 rounded-lg p-0.5 gap-0.5">
+              <button
+                type="button"
+                onClick={() => switchMode("login")}
+                className={[
+                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
+                  mode === "login"
+                    ? "bg-white text-[#003566] shadow-sm"
+                    : "text-slate-500 hover:text-slate-700",
+                ].join(" ")}
+              >
+                {copy.login || "Inloggen"}
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMode("register")}
+                className={[
+                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
+                  mode === "register"
+                    ? "bg-white text-[#003566] shadow-sm"
+                    : "text-slate-500 hover:text-slate-700",
+                ].join(" ")}
+              >
+                {copy.register || "Registreren"}
+              </button>
             </div>
 
-            {mode === "register" ? (
-              <div key={signupRole} className="text-left w-full max-w-xs">
-                <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-200 border border-white/15 mb-4">
-                  {signupRole === "buyer" ? (copy.buyerSignup || "Buyer signup") : (copy.sellerSignup || "Seller signup")}
-                </span>
-                <h1 className="text-2xl font-bold text-white leading-snug mb-6">
-                  {signupRole === "buyer" ? copy.buyerHeroTitle : copy.sellerHeroTitle}
-                </h1>
-                <div className="space-y-5">
-                  {getBenefits(copy)[signupRole].map((benefit: BenefitItem, idx: number) => (
-                    <div key={idx} className="flex items-start gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-sky-200">
-                        <benefit.icon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white">{benefit.title}</p>
-                        <p className="text-xs text-white/60 leading-relaxed mt-0.5">{benefit.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="max-w-xs">
-                <h1 className="text-xl font-bold text-white mb-2">{copy.loginHeroTitle}</h1>
-                <p className="text-sm text-white/70 leading-relaxed">{copy.loginHeroSubtitle}</p>
-              </div>
-            )}
-          </div>
+            {/* Boot aanmelden CTA */}
+            <Link
+              href={`/${locale}/boot-aanmelden`}
+              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#C8102E] hover:bg-[#a50d25] text-white text-xs font-bold transition-colors"
+            >
+              {copy.intakeCtaLabel || "Boot aanmelden"}
+            </Link>
 
-          <div className="relative z-10 mt-10 pt-6 border-t border-white/10 w-full hidden lg:block text-center">
-            <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold mb-1">{copy.memberSupport}</p>
-            <p className="text-xs text-white/70 font-semibold">{copy.supportAddressLine1}</p>
-            <p className="text-xs text-white/70 font-semibold mb-1">{copy.supportAddressLine2}</p>
-            <p className="text-xs text-white/60">
-              <a href={`mailto:${copy.supportEmail}`} className="hover:text-white">{copy.supportEmail}</a>
-              {" · "}
-              <a href={`tel:${copy.supportPhone.replace(/\s/g, "")}`} className="hover:text-white">{copy.supportPhone}</a>
-            </p>
+            {/* Language switcher */}
+            <LanguageSwitcher locale={locale} />
           </div>
         </div>
+      </nav>
 
-        {/* Right Side: Auth Form */}
-        <div className="flex flex-col justify-center p-6 sm:p-10 lg:p-14 lg:w-3/5 bg-white dark:bg-slate-900">
+      {/* ── Auth card ── */}
+      <div className="flex-1 flex items-center justify-center p-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-slate-900 lg:flex-row"
+        >
+          {/* Left Side: Brand Imagery (no logo — it's in the header now) */}
+          <div className="relative lg:w-2/5 min-h-[220px] lg:min-h-0 flex flex-col items-center justify-center p-8 lg:p-10 overflow-hidden">
+            <Image
+              alt=""
+              src={boatsHeroImage}
+              fill
+              className="object-cover opacity-30"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#003566]/85 via-[#003566]/92 to-[#001d3d]" />
+
+            <div className="relative z-10 flex flex-col items-center text-center w-full">
+              {mode === "register" ? (
+                <div key={signupRole} className="text-left w-full max-w-xs">
+                  <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-200 border border-white/15 mb-4">
+                    {signupRole === "buyer" ? (copy.buyerSignup || "Buyer signup") : (copy.sellerSignup || "Seller signup")}
+                  </span>
+                  <h2 className="text-2xl font-bold text-white leading-snug mb-6">
+                    {signupRole === "buyer" ? copy.buyerHeroTitle : copy.sellerHeroTitle}
+                  </h2>
+                  <div className="space-y-5">
+                    {getBenefits(copy)[signupRole].map((benefit: BenefitItem, idx: number) => (
+                      <div key={idx} className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-sky-200">
+                          <benefit.icon className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-white">{benefit.title}</p>
+                          <p className="text-xs text-white/60 leading-relaxed mt-0.5">{benefit.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="max-w-xs">
+                  <h2 className="text-xl font-bold text-white mb-2">{copy.loginHeroTitle}</h2>
+                  <p className="text-sm text-white/70 leading-relaxed">{copy.loginHeroSubtitle}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="relative z-10 mt-10 pt-6 border-t border-white/10 w-full hidden lg:block text-center">
+              <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold mb-1">{copy.memberSupport}</p>
+              <p className="text-xs text-white/70 font-semibold">{copy.supportAddressLine1}</p>
+              <p className="text-xs text-white/70 font-semibold mb-1">{copy.supportAddressLine2}</p>
+              <p className="text-xs text-white/60">
+                <a href={`mailto:${copy.supportEmail}`} className="hover:text-white">{copy.supportEmail}</a>
+                {" · "}
+                <a href={`tel:${copy.supportPhone.replace(/\s/g, "")}`} className="hover:text-white">{copy.supportPhone}</a>
+              </p>
+            </div>
+          </div>
+
+          {/* Right Side: Auth Form */}
+          <div className="flex flex-col justify-center p-6 sm:p-10 lg:p-14 lg:w-3/5 bg-white dark:bg-slate-900">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100 mb-1">
               {mode === "login" ? copy.welcomeBack : copy.createAccount}
@@ -595,19 +649,19 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
               </button>
             </div>
 
-            {/* Boot aanmelden CTA */}
-            <div className="pt-5 mt-2 border-t border-gray-100 dark:border-slate-800 text-center">
-              <p className="text-xs text-gray-400 mb-2">{copy.intakeCtaSubtext}</p>
+            {/* Boot aanmelden CTA — shown in mobile only (desktop has it in the nav) */}
+            <div className="sm:hidden pt-5 mt-2 border-t border-gray-100 dark:border-slate-800 text-center">
               <Link
                 href={`/${locale}/boot-aanmelden`}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-[#003566] text-[#003566] text-sm font-bold hover:bg-[#003566] hover:text-white transition-colors dark:border-sky-400 dark:text-sky-400 dark:hover:bg-sky-400 dark:hover:text-slate-900"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#C8102E] text-white text-xs font-bold hover:bg-[#a50d25] transition-colors"
               >
                 {copy.intakeCtaLabel} →
               </Link>
             </div>
           </form>
         </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }
