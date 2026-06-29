@@ -47,22 +47,35 @@ const FLAG_COLORS: Record<string, string> = {
   critical: "bg-red-200 text-red-900 font-bold",
 };
 
-const EMPTY_FORM = {
+type FormState = {
+  section: string;
+  question: string;
+  action: string;
+  field_type: string;
+  options: string;
+  risk_points: number;
+  risk_flag: "none" | "warning" | "blocking" | "critical";
+  required: boolean;
+  conditional_on_question_id: string;
+  conditional_show_when: string;
+  sort_order: number;
+  active: boolean;
+};
+
+const EMPTY_FORM: FormState = {
   section: "",
   question: "",
   action: "",
   field_type: "yes_no",
   options: "",
   risk_points: 0,
-  risk_flag: "none" as const,
+  risk_flag: "none",
   required: true,
   conditional_on_question_id: "",
   conditional_show_when: "",
   sort_order: 0,
   active: true,
 };
-
-type FormState = typeof EMPTY_FORM;
 
 export default function KycQuestionsPage() {
   const params = useParams();
