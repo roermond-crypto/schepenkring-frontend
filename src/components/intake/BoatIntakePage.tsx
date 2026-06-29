@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Phone,
   ShieldCheck,
+  MapPin,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────
@@ -108,20 +109,26 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [score, setScore] = useState<ScoreData | null>(null);
-  const [photos, setPhotos] = useState<string[]>([]); // uploaded URLs
+  const [photos, setPhotos] = useState<string[]>([]);
   const [photoCount, setPhotoCount] = useState(0);
   const [documents, setDocuments] = useState<{ name: string; type: string }[]>([]);
   const [resumeToken, setResumeToken] = useState<string | null>(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
 
   const STEPS = arr(t, "steps").length > 0 ? arr(t, "steps") : ["Uw gegevens", "Boot details", "Foto's & docs", "Overzicht"];
 
+  // Load locations from the correct public endpoint
   useEffect(() => {
-    fetch(`${API}/locations`).then((r) => r.json()).then((d) => setLocations(d.data ?? d)).catch(() => {});
+    fetch(`${API}/public/locations`)
+      .then((r) => r.json())
+      .then((d) => setLocations(Array.isArray(d) ? d : (d.data ?? [])))
+      .catch(() => {});
   }, []);
 
+  // Resume from token in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
@@ -129,6 +136,66 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
       fetch(`${API}/boat-intake/${token}`).then((r) => r.json()).then((d) => {
         if (d.intake) { setResumeToken(token); setStep(2); }
       }).catch(() => {});
+    }
+  }, []);
+
+  // Google Places address autocomplete
+  useEffect(() => {
+    const setup = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const g = (window as any).google;
+      if (!g?.maps?.places?.Autocomplete || !addressInputRef.current) return;
+
+      const ac = new g.maps.places.Autocomplete(addressInputRef.current, {
+        fields: ["address_components"],
+        types: ["address"],
+        componentRestrictions: { country: [] }, // no restriction
+      });
+
+      ac.addListener("place_changed", () => {
+        const place = ac.getPlace();
+        if (!place.address_components) return;
+
+        let streetNumber = "";
+        let route = "";
+        let city = "";
+        let postal = "";
+        let country = "";
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (place.address_components as any[]).forEach((c) => {
+          if (c.types.includes("street_number")) streetNumber = c.long_name;
+          if (c.types.includes("route")) route = c.short_name;
+          if (c.types.includes("locality")) city = c.long_name;
+          if (c.types.includes("postal_code")) postal = c.long_name;
+          if (c.types.includes("country")) country = c.short_name;
+        });
+
+        const street = [route, streetNumber].filter(Boolean).join(" ");
+
+        setForm((prev) => ({
+          ...prev,
+          ...(street && { seller_address: street }),
+          ...(city && { seller_city: city }),
+          ...(postal && { seller_postal_code: postal }),
+          ...(country && { seller_country: country }),
+        }));
+      });
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).google?.maps?.places?.Autocomplete) {
+      setup();
+    } else {
+      // Maps script is already in layout.tsx — poll until it's ready
+      const timer = setInterval(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((window as any).google?.maps?.places) {
+          clearInterval(timer);
+          setup();
+        }
+      }, 300);
+      return () => clearInterval(timer);
     }
   }, []);
 
@@ -238,11 +305,12 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
   return (
     <div className="min-h-screen bg-[#edf3f7]">
 
-      {/* ── Nav ── */}
-      <nav className="bg-[#003566] text-white">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-5 py-4">
-          <Link href="/" className="text-lg font-black tracking-[0.2em] uppercase select-none">
-            Schepenkring
+      {/* ── Nav — white header with logo ── */}
+      <nav className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-5 py-3">
+          <Link href="/" className="flex items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/schepenkring-logo.png" alt="Schepenkring" className="h-10 w-auto" />
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             {[
@@ -250,33 +318,40 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
               { label: s(t, "nav.locations", "Vestigingen"), href: `/${locale}/vestigingen` },
               { label: s(t, "nav.about", "Over ons"), href: `/${locale}/over-ons` },
             ].map(({ label, href }) => (
-              <a key={href} href={href} className="opacity-80 hover:opacity-100 transition-opacity">{label}</a>
+              <a key={href} href={href} className="text-slate-600 hover:text-[#003566] transition-colors">{label}</a>
             ))}
             <Link href={`/${locale}/auth?mode=login`}
-              className="bg-[#C8102E] hover:bg-[#a50d25] px-4 py-2 rounded-full text-sm font-bold transition-colors">
+              className="bg-[#C8102E] hover:bg-[#a50d25] px-4 py-2 rounded-full text-sm font-bold text-white transition-colors">
               {s(t, "nav.login", "Inloggen")}
             </Link>
           </div>
-          {/* Mobile: just login button */}
+          {/* Mobile: logo + login */}
           <div className="flex md:hidden">
             <Link href={`/${locale}/auth?mode=login`}
-              className="bg-[#C8102E] hover:bg-[#a50d25] px-3 py-1.5 rounded-full text-xs font-bold transition-colors">
+              className="bg-[#C8102E] hover:bg-[#a50d25] px-3 py-1.5 rounded-full text-xs font-bold text-white transition-colors">
               {s(t, "nav.login", "Inloggen")}
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ── */}
-      <div className="bg-[#003566] text-white pb-20 pt-10 sm:pt-12">
-        <div className="max-w-3xl mx-auto px-5 text-center">
+      {/* ── Hero — boat image with dark overlay ── */}
+      <div className="relative bg-[#003566] text-white pb-20 pt-12 sm:pt-16 overflow-hidden">
+        {/* Background image */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hero-image-two.jpg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-25 select-none pointer-events-none"
+        />
+        <div className="relative z-10 max-w-3xl mx-auto px-5 text-center">
           <div className="inline-block mb-4 px-4 py-1.5 rounded-full bg-white/10 text-xs font-bold tracking-widest uppercase">
             {s(t, "hero.badge", "Gratis aanmelden")}
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight mb-4">
             {s(t, "hero.title", "Verkoop uw boot via Schepenkring")}
           </h1>
-          <p className="text-base sm:text-lg text-white/75 max-w-xl mx-auto">
+          <p className="text-base sm:text-lg text-white/80 max-w-xl mx-auto">
             {s(t, "hero.subtitle")}
           </p>
           <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
@@ -352,29 +427,41 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
                     onChange={(e) => setField("seller_phone", e.target.value)} placeholder="+31 6 12345678" />
                 </Field>
 
-                {/* Address: full-width on mobile, 2/3 + 1/3 on sm+ */}
+                {/* Address with Google Places autocomplete */}
+                <Field label={s(t, "contact.streetAddress")} hint={s(t, "contact.addressHint", "Typ uw adres en selecteer uit de suggesties")}>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <input
+                      ref={addressInputRef}
+                      className={inputCls(false) + " pl-9"}
+                      value={form.seller_address}
+                      onChange={(e) => setField("seller_address", e.target.value)}
+                      placeholder="Keizersgracht 1"
+                      autoComplete="off"
+                    />
+                  </div>
+                </Field>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Field label={s(t, "contact.streetAddress")} className="sm:col-span-2">
-                    <input className={inputCls(false)} value={form.seller_address}
-                      onChange={(e) => setField("seller_address", e.target.value)} placeholder="Keizersgracht 1" />
-                  </Field>
                   <Field label={s(t, "contact.postalCode")}>
                     <input className={inputCls(false)} value={form.seller_postal_code}
                       onChange={(e) => setField("seller_postal_code", e.target.value)} placeholder="1234 AB" />
                   </Field>
+                  <Field label={s(t, "contact.city")} className="sm:col-span-2">
+                    <input className={inputCls(false)} value={form.seller_city}
+                      onChange={(e) => setField("seller_city", e.target.value)} placeholder="Amsterdam" />
+                  </Field>
                 </div>
-
-                <Field label={s(t, "contact.city")}>
-                  <input className={inputCls(false)} value={form.seller_city}
-                    onChange={(e) => setField("seller_city", e.target.value)} placeholder="Amsterdam" />
-                </Field>
 
                 <Field label={`${s(t, "contact.location")} *`} error={errors.location_id}>
                   <select className={inputCls(!!errors.location_id)} value={form.location_id}
                     onChange={(e) => setField("location_id", Number(e.target.value))}>
-                    <option value="">{s(t, "contact.locationPlaceholder")}</option>
-                    {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    <option value="">{s(t, "contact.locationPlaceholder", "— Selecteer een vestiging —")}</option>
+                    {locations.map((l) => <option key={l.id} value={l.id}>{l.name}{l.city ? ` — ${l.city}` : ""}</option>)}
                   </select>
+                  {locations.length === 0 && (
+                    <p className="mt-1 text-xs text-slate-400">Vestigingen worden geladen…</p>
+                  )}
                 </Field>
               </div>
             )}
@@ -411,7 +498,6 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
                   </Field>
                 </div>
 
-                {/* Dimensions: stack to 3 cols on sm+ */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Field label={s(t, "boat.length")}>
                     <input type="number" step="0.01" className={inputCls(false)} value={form.length_m}
@@ -649,13 +735,14 @@ function inputCls(hasError: boolean) {
   ].join(" ");
 }
 
-function Field({ label, error, children, className = "" }: {
-  label: string; error?: string; children: React.ReactNode; className?: string;
+function Field({ label, error, hint, children, className = "" }: {
+  label: string; error?: string; hint?: string; children: React.ReactNode; className?: string;
 }) {
   return (
     <div className={className}>
       <label className="block text-xs font-semibold text-slate-600 mb-1">{label}</label>
       {children}
+      {hint && !error && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
