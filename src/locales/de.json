@@ -507,6 +507,20 @@
       "cancelled": "Storniert",
       "completed": "Abgeschlossen",
       "rescheduled": "Verschoben"
+    },
+    "views": {
+      "list": "Liste",
+      "calendar": "Kalender",
+      "today": "Heute",
+      "sun": "So",
+      "mon": "Mo",
+      "tue": "Di",
+      "wed": "Mi",
+      "thu": "Do",
+      "fri": "Fr",
+      "sat": "Sa",
+      "more": "mehr",
+      "noBookings": "Keine Buchungen"
     }
   },
   "DashboardAdminOverview": {

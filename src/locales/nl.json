@@ -507,6 +507,20 @@
       "cancelled": "Geannuleerd",
       "completed": "Voltooid",
       "rescheduled": "Verplaatst"
+    },
+    "views": {
+      "list": "Lijst",
+      "calendar": "Kalender",
+      "today": "Vandaag",
+      "sun": "Zo",
+      "mon": "Ma",
+      "tue": "Di",
+      "wed": "Wo",
+      "thu": "Do",
+      "fri": "Vr",
+      "sat": "Za",
+      "more": "meer",
+      "noBookings": "Geen boekingen"
     }
   },
   "DashboardAdminOverview": {

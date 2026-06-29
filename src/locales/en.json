@@ -507,6 +507,20 @@
       "cancelled": "Cancelled",
       "completed": "Completed",
       "rescheduled": "Rescheduled"
+    },
+    "views": {
+      "list": "List",
+      "calendar": "Calendar",
+      "today": "Today",
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "more": "more",
+      "noBookings": "No bookings"
     }
   },
   "DashboardAdminOverview": {

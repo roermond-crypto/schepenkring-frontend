@@ -16,7 +16,10 @@ import {
 import {
   AlertCircle,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
+  List,
   Loader2,
   MapPin,
   RefreshCw,
@@ -187,6 +190,8 @@ export default function DashboardBookingsPage() {
   );
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
+  const [calendarDate, setCalendarDate] = useState(new Date());
   const hasLoadedInitialData = useRef(false);
   const loadErrorText = t("errors.load");
   const detailErrorText = t("errors.detail");
@@ -362,6 +367,166 @@ export default function DashboardBookingsPage() {
         </div>
       ) : null}
 
+      {/* View toggle */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setViewMode("calendar")}
+          className={`flex items-center gap-2 rounded-2xl border px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition-all ${
+            viewMode === "calendar"
+              ? "border-[#003566] bg-[#003566] text-white shadow-lg"
+              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+          }`}
+        >
+          <CalendarDays size={15} />
+          {t("views.calendar")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode("list")}
+          className={`flex items-center gap-2 rounded-2xl border px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition-all ${
+            viewMode === "list"
+              ? "border-[#003566] bg-[#003566] text-white shadow-lg"
+              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+          }`}
+        >
+          <List size={15} />
+          {t("views.list")}
+        </button>
+      </div>
+
+      {/* Calendar view */}
+      {viewMode === "calendar" && (
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          {/* Calendar header */}
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-[#003566]">
+              {calendarDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCalendarDate(new Date())}
+                className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                {t("views.today")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalendarDate(d => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}
+                className="rounded-xl border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalendarDate(d => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })}
+                className="rounded-xl border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Weekday headers */}
+          <div className="mb-1 grid grid-cols-7">
+            {([t("views.sun"), t("views.mon"), t("views.tue"), t("views.wed"), t("views.thu"), t("views.fri"), t("views.sat")] as string[]).map((day) => (
+              <div key={day} className="py-2 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar grid */}
+          {loading ? (
+            <div className="flex min-h-[400px] items-center justify-center gap-3 text-sm text-slate-500">
+              <Loader2 className="h-5 w-5 animate-spin text-[#003566]" />
+              <span>{t("table.loading")}</span>
+            </div>
+          ) : (() => {
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const cells: Array<{ day: number; current: boolean; date: Date }> = [];
+
+            for (let i = 0; i < firstDay; i++) {
+              cells.push({ day: prevMonthDays - firstDay + i + 1, current: false, date: new Date(year, month - 1, prevMonthDays - firstDay + i + 1) });
+            }
+            for (let i = 1; i <= daysInMonth; i++) {
+              cells.push({ day: i, current: true, date: new Date(year, month, i) });
+            }
+            while (cells.length < 42) {
+              cells.push({ day: cells.length - firstDay - daysInMonth + 1, current: false, date: new Date(year, month + 1, cells.length - firstDay - daysInMonth + 1) });
+            }
+
+            const bookingsByDate = bookings.reduce<Record<string, BookingRecord[]>>((acc, b) => {
+              if (b.date) { (acc[b.date] ||= []).push(b); }
+              return acc;
+            }, {});
+
+            return (
+              <div className="grid grid-cols-7 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200">
+                {cells.map(({ day, current, date }, idx) => {
+                  const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+                  const dayBookings = bookingsByDate[dateStr] ?? [];
+                  const isToday = dateStr === todayStr;
+                  return (
+                    <div
+                      key={idx}
+                      className={`min-h-[110px] bg-white p-2 transition-colors hover:bg-blue-50/40 ${!current ? "opacity-40" : ""}`}
+                    >
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${isToday ? "bg-[#003566] text-white" : "text-slate-600"}`}>
+                          {day}
+                        </span>
+                        {dayBookings.length > 0 && (
+                          <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                            {dayBookings.length}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-0.5">
+                        {dayBookings.slice(0, 3).map((b) => (
+                          <button
+                            key={b.id}
+                            type="button"
+                            onClick={() => void openBooking(b.id)}
+                            className={`w-full truncate rounded-md px-1.5 py-0.5 text-left text-[11px] font-semibold transition-opacity hover:opacity-80 ${
+                              (b.status || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "completed"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : (b.status || "").toLowerCase() === "cancelled"
+                                  ? "bg-rose-100 text-rose-800"
+                                  : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {b.name || b.boat?.boat_name || `#${b.id}`}
+                          </button>
+                        ))}
+                        {dayBookings.length > 3 && (
+                          <p className="px-1 text-[10px] text-slate-400">+{dayBookings.length - 3} {t("views.more")}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* Legend */}
+          <div className="mt-4 flex flex-wrap gap-4 border-t border-slate-100 pt-4">
+            <div className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-emerald-100" /><span className="text-xs text-slate-500">{t("statuses.confirmed")} / {t("statuses.completed")}</span></div>
+            <div className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-amber-100" /><span className="text-xs text-slate-500">{t("statuses.pending")}</span></div>
+            <div className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-rose-100" /><span className="text-xs text-slate-500">{t("statuses.cancelled")}</span></div>
+          </div>
+        </section>
+      )}
+
+      {/* List view */}
+      {viewMode === "list" && (
       <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_220px_220px_auto_auto]">
             <label className="space-y-2">
@@ -644,6 +809,7 @@ export default function DashboardBookingsPage() {
           )}
         </div>
       </section>
+      )}
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-2xl rounded-[2rem] border-slate-200 p-0">
