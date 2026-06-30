@@ -193,7 +193,7 @@ export default function KycCaseDetailPage() {
         sections: Record<string, Question[]>;
         progress: Record<string, number>;
         missing_documents: { party: string; type: string }[];
-      }>(`/admin/kyc-cases/${caseId}`);
+      }>(`/admin/kyc-cases/${caseId}?locale=${locale}`);
 
       const caseWithMissing = { ...res.data.kyc_case, missing_documents: res.data.missing_documents ?? [] };
       setKycCase(caseWithMissing);
