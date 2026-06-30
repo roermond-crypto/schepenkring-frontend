@@ -2561,7 +2561,17 @@
       "deleteConfirm": "Are you sure you want to delete this case?",
       "notesLabel": "Notes",
       "noDataYet": "No data yet. Click edit to get started.",
-      "searchCases": "Search case..."
+      "searchCases": "Search case...",
+      "searchUser": "Search user...",
+      "searchUserPlaceholder": "Name or email...",
+      "linkedUser": "✓ Linked to user #",
+      "searchBoat": "Search boat...",
+      "searchBoatPlaceholder": "Boat name...",
+      "linkedBoat": "✓ Linked to boat #",
+      "dealSection": "Deal",
+      "noLocation": "— none —",
+      "missingDocsTitle": "Required documents missing:",
+      "unlinkAction": "×"
     },
     "fields": {
       "buyer": "Buyer",

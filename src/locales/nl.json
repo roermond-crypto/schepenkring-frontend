@@ -2561,7 +2561,17 @@
       "deleteConfirm": "Weet je zeker dat je dit dossier wilt verwijderen?",
       "notesLabel": "Notities",
       "noDataYet": "Nog geen gegevens. Klik op bewerken om te beginnen.",
-      "searchCases": "Zoek dossier..."
+      "searchCases": "Zoek dossier...",
+      "searchUser": "Zoek gebruiker...",
+      "searchUserPlaceholder": "Naam of e-mail...",
+      "linkedUser": "✓ Gekoppeld aan gebruiker #",
+      "searchBoat": "Zoek boot...",
+      "searchBoatPlaceholder": "Bootnaam...",
+      "linkedBoat": "✓ Gekoppeld aan boot #",
+      "dealSection": "Deal",
+      "noLocation": "— geen —",
+      "missingDocsTitle": "Vereiste documenten ontbreken:",
+      "unlinkAction": "×"
     },
     "fields": {
       "buyer": "Koper",

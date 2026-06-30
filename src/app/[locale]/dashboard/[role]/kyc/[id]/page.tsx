@@ -367,7 +367,7 @@ export default function KycCaseDetailPage() {
       const res = await api.patch<{ kyc_case: KycFullCase }>(`/admin/kyc-cases/${caseId}`, payload);
       setKycCase((prev) => prev ? { ...prev, ...res.data.kyc_case, missing_documents: prev.missing_documents } : prev);
       setEditMode(false);
-      toast.success(td.savedOk ?? "Opgeslagen");
+      toast.success(td.savedOk);
     } catch {
       toast.error(td.saveFailed);
     } finally {
@@ -376,14 +376,14 @@ export default function KycCaseDetailPage() {
   }
 
   async function deleteCase() {
-    if (!confirm(td.deleteConfirm ?? "Weet je zeker dat je dit dossier wilt verwijderen?")) return;
+    if (!confirm(td.deleteConfirm)) return;
     setDeletingCase(true);
     try {
       await api.delete(`/admin/kyc-cases/${caseId}`);
-      toast.success(td.deleteOk ?? "Dossier verwijderd");
+      toast.success(td.deleteOk);
       router.push(`/${locale}/dashboard/${role}/kyc`);
     } catch {
-      toast.error(td.deleteFailed ?? "Verwijderen mislukt.");
+      toast.error(td.deleteFailed);
       setDeletingCase(false);
     }
   }
@@ -402,7 +402,7 @@ export default function KycCaseDetailPage() {
         });
       }
     } catch {
-      toast.error(td.pdfFailed ?? "PDF kon niet worden geopend");
+      toast.error(td.pdfFailed);
     } finally {
       setExportingPdf(false);
     }
@@ -516,7 +516,7 @@ export default function KycCaseDetailPage() {
             </div>
             <p className="text-sm text-slate-500 mt-0.5">
               {kycCase.buyer_name ?? "—"} · {kycCase.boat_name ?? "—"}
-              {kycCase.deal_value ? ` · € ${Number(kycCase.deal_value).toLocaleString("nl-NL")}` : ""}
+              {kycCase.deal_value ? ` · € ${Number(kycCase.deal_value).toLocaleString(locale)}` : ""}
             </p>
           </div>
         </div>
@@ -530,7 +530,7 @@ export default function KycCaseDetailPage() {
                 onChange={(e) => { setCaseSearch(e.target.value); setCaseSearchOpen(true); void searchCases(e.target.value); }}
                 onFocus={() => { if (caseSearch.length >= 2) setCaseSearchOpen(true); }}
                 onBlur={() => setTimeout(() => setCaseSearchOpen(false), 150)}
-                placeholder={td.searchCases ?? "Zoek dossier..."}
+                placeholder={td.searchCases}
                 className="w-52 pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-sm bg-white outline-none focus:border-[#003566] focus:ring-2 focus:ring-[#003566]/10"
               />
             </div>
@@ -697,7 +697,7 @@ export default function KycCaseDetailPage() {
                 <button onClick={openEdit}
                   className="flex items-center gap-1 text-xs text-[#003566] hover:underline">
                   <Pencil className="w-3 h-3" />
-                  {td.edit ?? "Bewerken"}
+                  {td.edit}
                 </button>
               ) : null}
             </div>
@@ -706,15 +706,15 @@ export default function KycCaseDetailPage() {
               <div className="space-y-3">
 
                 {/* ── Koper ── */}
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{fieldLabels.buyer ?? "Koper"}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{fieldLabels.buyer}</p>
                 <div className="relative">
-                  <label className="block text-xs text-slate-400 mb-0.5">Zoek gebruiker…</label>
+                  <label className="block text-xs text-slate-400 mb-0.5">{td.searchUser}</label>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                     <input
                       value={userSearch.buyer}
                       onChange={(e) => { setUserSearch((p) => ({ ...p, buyer: e.target.value })); void searchUsers("buyer", e.target.value); }}
-                      placeholder="Naam of e-mail…"
+                      placeholder={td.searchUserPlaceholder}
                       className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none focus:border-[#003566] bg-white"
                     />
                   </div>
@@ -737,16 +737,16 @@ export default function KycCaseDetailPage() {
                   )}
                 </div>
                 {editIds.buyer_id && (
-                  <p className="text-[11px] text-emerald-600 font-medium -mt-1">✓ Gekoppeld aan gebruiker #{editIds.buyer_id}
-                    <button type="button" className="ml-2 text-slate-400 hover:text-red-500" onClick={() => setEditIds((p) => ({ ...p, buyer_id: undefined }))}>×</button>
+                  <p className="text-[11px] text-emerald-600 font-medium -mt-1">{td.linkedUser}{editIds.buyer_id}
+                    <button type="button" className="ml-2 text-slate-400 hover:text-red-500" onClick={() => setEditIds((p) => ({ ...p, buyer_id: undefined }))}>{td.unlinkAction}</button>
                   </p>
                 )}
                 {[
-                  { label: fieldLabels.buyer ?? "Naam", key: "buyer_name", type: "text" },
-                  { label: fieldLabels.email ?? "E-mail", key: "buyer_email", type: "email" },
-                  { label: fieldLabels.phone ?? "Telefoon", key: "buyer_phone", type: "text" },
-                  { label: fieldLabels.address ?? "Adres", key: "buyer_address", type: "text" },
-                  { label: "IBAN", key: "buyer_iban", type: "text" },
+                  { label: fieldLabels.buyer, key: "buyer_name", type: "text" },
+                  { label: fieldLabels.email, key: "buyer_email", type: "email" },
+                  { label: fieldLabels.phone, key: "buyer_phone", type: "text" },
+                  { label: fieldLabels.address, key: "buyer_address", type: "text" },
+                  { label: fieldLabels.iban, key: "buyer_iban", type: "text" },
                 ].map(({ label, key, type }) => (
                   <div key={key}>
                     <label className="block text-xs text-slate-400 mb-0.5">{label}</label>
@@ -757,15 +757,15 @@ export default function KycCaseDetailPage() {
                 ))}
 
                 {/* ── Verkoper ── */}
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{fieldLabels.seller ?? "Verkoper"}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{fieldLabels.seller}</p>
                 <div className="relative">
-                  <label className="block text-xs text-slate-400 mb-0.5">Zoek gebruiker…</label>
+                  <label className="block text-xs text-slate-400 mb-0.5">{td.searchUser}</label>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                     <input
                       value={userSearch.seller}
                       onChange={(e) => { setUserSearch((p) => ({ ...p, seller: e.target.value })); void searchUsers("seller", e.target.value); }}
-                      placeholder="Naam of e-mail…"
+                      placeholder={td.searchUserPlaceholder}
                       className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none focus:border-[#003566] bg-white"
                     />
                   </div>
@@ -788,14 +788,14 @@ export default function KycCaseDetailPage() {
                   )}
                 </div>
                 {editIds.seller_id && (
-                  <p className="text-[11px] text-emerald-600 font-medium -mt-1">✓ Gekoppeld aan gebruiker #{editIds.seller_id}
-                    <button type="button" className="ml-2 text-slate-400 hover:text-red-500" onClick={() => setEditIds((p) => ({ ...p, seller_id: undefined }))}>×</button>
+                  <p className="text-[11px] text-emerald-600 font-medium -mt-1">{td.linkedUser}{editIds.seller_id}
+                    <button type="button" className="ml-2 text-slate-400 hover:text-red-500" onClick={() => setEditIds((p) => ({ ...p, seller_id: undefined }))}>{td.unlinkAction}</button>
                   </p>
                 )}
                 {[
-                  { label: fieldLabels.seller ?? "Naam", key: "seller_name", type: "text" },
-                  { label: fieldLabels.email ?? "E-mail", key: "seller_email", type: "email" },
-                  { label: fieldLabels.phone ?? "Telefoon", key: "seller_phone", type: "text" },
+                  { label: fieldLabels.seller, key: "seller_name", type: "text" },
+                  { label: fieldLabels.email, key: "seller_email", type: "email" },
+                  { label: fieldLabels.phone, key: "seller_phone", type: "text" },
                 ].map(({ label, key, type }) => (
                   <div key={key}>
                     <label className="block text-xs text-slate-400 mb-0.5">{label}</label>
@@ -806,15 +806,15 @@ export default function KycCaseDetailPage() {
                 ))}
 
                 {/* ── Boot ── */}
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{fieldLabels.boat ?? "Boot"}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{fieldLabels.boat}</p>
                 <div className="relative">
-                  <label className="block text-xs text-slate-400 mb-0.5">Zoek boot…</label>
+                  <label className="block text-xs text-slate-400 mb-0.5">{td.searchBoat}</label>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                     <input
                       value={yachtSearch}
                       onChange={(e) => { setYachtSearch(e.target.value); void searchYachts(e.target.value); }}
-                      placeholder="Bootnaam…"
+                      placeholder={td.searchBoatPlaceholder}
                       className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none focus:border-[#003566] bg-white"
                     />
                   </div>
@@ -837,14 +837,14 @@ export default function KycCaseDetailPage() {
                   )}
                 </div>
                 {editIds.yacht_id && (
-                  <p className="text-[11px] text-emerald-600 font-medium -mt-1">✓ Gekoppeld aan boot #{editIds.yacht_id}
-                    <button type="button" className="ml-2 text-slate-400 hover:text-red-500" onClick={() => setEditIds((p) => ({ ...p, yacht_id: undefined }))}>×</button>
+                  <p className="text-[11px] text-emerald-600 font-medium -mt-1">{td.linkedBoat}{editIds.yacht_id}
+                    <button type="button" className="ml-2 text-slate-400 hover:text-red-500" onClick={() => setEditIds((p) => ({ ...p, yacht_id: undefined }))}>{td.unlinkAction}</button>
                   </p>
                 )}
                 {[
-                  { label: fieldLabels.boat ?? "Naam", key: "boat_name", type: "text" },
-                  { label: fieldLabels.boatType ?? "Type", key: "boat_type", type: "text" },
-                  { label: fieldLabels.boatValue ?? "Waarde boot", key: "boat_value", type: "number" },
+                  { label: fieldLabels.boat, key: "boat_name", type: "text" },
+                  { label: fieldLabels.boatType, key: "boat_type", type: "text" },
+                  { label: fieldLabels.boatValue, key: "boat_value", type: "number" },
                 ].map(({ label, key, type }) => (
                   <div key={key}>
                     <label className="block text-xs text-slate-400 mb-0.5">{label}</label>
@@ -855,10 +855,10 @@ export default function KycCaseDetailPage() {
                 ))}
 
                 {/* ── Deal / Locatie ── */}
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">Deal</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{td.dealSection}</p>
                 {[
-                  { label: fieldLabels.value ?? "Waarde", key: "deal_value", type: "number" },
-                  { label: fieldLabels.payment ?? "Betaalmethode", key: "payment_method", type: "text" },
+                  { label: fieldLabels.value, key: "deal_value", type: "number" },
+                  { label: fieldLabels.payment, key: "payment_method", type: "text" },
                 ].map(({ label, key, type }) => (
                   <div key={key}>
                     <label className="block text-xs text-slate-400 mb-0.5">{label}</label>
@@ -868,12 +868,12 @@ export default function KycCaseDetailPage() {
                   </div>
                 ))}
                 <div>
-                  <label className="block text-xs text-slate-400 mb-0.5">{fieldLabels.location ?? "Locatie"}</label>
+                  <label className="block text-xs text-slate-400 mb-0.5">{fieldLabels.location}</label>
                   <select
                     value={editIds.location_id ?? ""}
                     onChange={(e) => setEditIds((p) => ({ ...p, location_id: e.target.value ? Number(e.target.value) : undefined }))}
                     className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white">
-                    <option value="">— geen —</option>
+                    <option value="">{td.noLocation}</option>
                     {locations.map((l) => (
                       <option key={l.id} value={l.id}>{l.meta?.name ?? `#${l.id}`}</option>
                     ))}
@@ -882,7 +882,7 @@ export default function KycCaseDetailPage() {
 
                 {/* ── Notities ── */}
                 <div>
-                  <label className="block text-xs text-slate-400 mb-0.5">{td.notesLabel ?? "Notities"}</label>
+                  <label className="block text-xs text-slate-400 mb-0.5">{td.notesLabel}</label>
                   <textarea rows={2} value={editData.notes ?? ""}
                     onChange={(e) => setEditData((p) => ({ ...p, notes: e.target.value }))}
                     className="w-full text-sm rounded-lg border border-slate-200 px-2.5 py-1.5 outline-none focus:border-[#003566] bg-white resize-none" />
@@ -912,11 +912,11 @@ export default function KycCaseDetailPage() {
                   [fieldLabels.seller,   kycCase.seller_name],
                   [fieldLabels.boat,     kycCase.boat_name],
                   [fieldLabels.boatType, kycCase.boat_type],
-                  [fieldLabels.value,    kycCase.deal_value ? `€ ${Number(kycCase.deal_value).toLocaleString("nl-NL")}` : null],
+                  [fieldLabels.value,    kycCase.deal_value ? `€ ${Number(kycCase.deal_value).toLocaleString(locale)}` : null],
                   [fieldLabels.payment,  kycCase.payment_method],
                   [fieldLabels.broker,   kycCase.broker?.name],
                   [fieldLabels.location, kycCase.location?.name],
-                  [td.notesLabel ?? "Notities", kycCase.notes],
+                  [td.notesLabel, kycCase.notes],
                 ] as [string, string | null | undefined][]).map(([label, value]) => value ? (
                   <div key={label} className="flex gap-2">
                     <span className="text-slate-400 w-20 shrink-0">{label}</span>
@@ -925,7 +925,7 @@ export default function KycCaseDetailPage() {
                 ) : null)}
                 {!kycCase.buyer_name && !kycCase.boat_name && !kycCase.deal_value && (
                   <p className="text-xs text-slate-400 italic py-2">
-                    {td.noDataYet ?? "Nog geen gegevens. Klik op bewerken om te beginnen."}
+                    {td.noDataYet}
                   </p>
                 )}
               </div>
@@ -939,7 +939,7 @@ export default function KycCaseDetailPage() {
             {/* Missing documents checklist */}
             {kycCase.missing_documents && kycCase.missing_documents.length > 0 && (
               <div className="mb-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200">
-                <p className="text-xs font-bold text-amber-800 mb-1.5">Vereiste documenten ontbreken:</p>
+                <p className="text-xs font-bold text-amber-800 mb-1.5">{td.missingDocsTitle}</p>
                 {kycCase.missing_documents.map((m, i) => (
                   <div key={i} className="flex items-center gap-1.5 text-xs text-amber-700 mb-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />

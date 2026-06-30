@@ -2552,7 +2552,17 @@
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce dossier ?",
       "notesLabel": "Notes",
       "noDataYet": "Aucune donnée. Cliquez sur modifier pour commencer.",
-      "searchCases": "Rechercher un dossier..."
+      "searchCases": "Rechercher un dossier...",
+      "searchUser": "Rechercher un utilisateur...",
+      "searchUserPlaceholder": "Nom ou e-mail...",
+      "linkedUser": "✓ Lié à l'utilisateur #",
+      "searchBoat": "Rechercher un bateau...",
+      "searchBoatPlaceholder": "Nom du bateau...",
+      "linkedBoat": "✓ Lié au bateau #",
+      "dealSection": "Deal",
+      "noLocation": "— aucun —",
+      "missingDocsTitle": "Documents obligatoires manquants :",
+      "unlinkAction": "×"
     },
     "fields": {
       "buyer": "Acheteur",

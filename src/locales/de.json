@@ -2562,7 +2562,17 @@
       "deleteConfirm": "Möchten Sie diesen Fall wirklich löschen?",
       "notesLabel": "Notizen",
       "noDataYet": "Noch keine Daten. Klicken Sie auf Bearbeiten, um zu beginnen.",
-      "searchCases": "Fall suchen..."
+      "searchCases": "Fall suchen...",
+      "searchUser": "Benutzer suchen...",
+      "searchUserPlaceholder": "Name oder E-Mail...",
+      "linkedUser": "✓ Verknüpft mit Benutzer #",
+      "searchBoat": "Boot suchen...",
+      "searchBoatPlaceholder": "Bootname...",
+      "linkedBoat": "✓ Verknüpft mit Boot #",
+      "dealSection": "Deal",
+      "noLocation": "— keine —",
+      "missingDocsTitle": "Fehlende Pflichtdokumente:",
+      "unlinkAction": "×"
     },
     "fields": {
       "buyer": "Käufer",
