@@ -2451,7 +2451,15 @@
       "documents": "Documenten",
       "missingTitle": "Nog te verbeteren:",
       "outro": "Onze makelaar neemt binnen één werkdag contact met u op.",
-      "viewSupply": "Bekijk ons aanbod"
+      "viewSupply": "Bekijk ons aanbod",
+      "missing": {
+        "more_photos": "Meer foto's ({n}/12)",
+        "description": "Langere beschrijving ({n}/500 tekens)",
+        "vat_status": "BTW-status ontbreekt",
+        "ce_category": "CE-categorie ontbreekt",
+        "ce_certificate": "CE-certificaat ontbreekt",
+        "vat_document": "BTW-document ontbreekt"
+      }
     },
     "nav_buttons": {
       "prev": "← Vorige",

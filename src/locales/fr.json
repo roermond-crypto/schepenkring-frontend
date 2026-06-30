@@ -2441,7 +2441,15 @@
       "documents": "Documents",
       "missingTitle": "Encore à améliorer :",
       "outro": "Notre courtier vous contactera dans un jour ouvrable.",
-      "viewSupply": "Voir nos offres"
+      "viewSupply": "Voir nos offres",
+      "missing": {
+        "more_photos": "Plus de photos ({n}/12)",
+        "description": "Description plus longue ({n}/500 caractères)",
+        "vat_status": "Statut TVA manquant",
+        "ce_category": "Catégorie CE manquante",
+        "ce_certificate": "Certificat CE manquant",
+        "vat_document": "Document TVA manquant"
+      }
     },
     "nav_buttons": {
       "prev": "← Précédent",

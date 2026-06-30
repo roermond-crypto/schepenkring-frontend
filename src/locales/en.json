@@ -2451,7 +2451,15 @@
       "documents": "Documents",
       "missingTitle": "Still to improve:",
       "outro": "Our broker will contact you within one business day.",
-      "viewSupply": "View our listings"
+      "viewSupply": "View our listings",
+      "missing": {
+        "more_photos": "More photos ({n}/12)",
+        "description": "Longer description ({n}/500 characters)",
+        "vat_status": "VAT status missing",
+        "ce_category": "CE category missing",
+        "ce_certificate": "CE certificate missing",
+        "vat_document": "VAT document missing"
+      }
     },
     "nav_buttons": {
       "prev": "← Back",

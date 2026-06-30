@@ -2451,7 +2451,15 @@
       "documents": "Dokumente",
       "missingTitle": "Noch zu verbessern:",
       "outro": "Unser Makler meldet sich innerhalb eines Werktages.",
-      "viewSupply": "Unser Angebot ansehen"
+      "viewSupply": "Unser Angebot ansehen",
+      "missing": {
+        "more_photos": "Mehr Fotos ({n}/12)",
+        "description": "Längere Beschreibung ({n}/500 Zeichen)",
+        "vat_status": "MwSt.-Status fehlt",
+        "ce_category": "CE-Kategorie fehlt",
+        "ce_certificate": "CE-Zertifikat fehlt",
+        "vat_document": "MwSt.-Dokument fehlt"
+      }
     },
     "nav_buttons": {
       "prev": "← Zurück",

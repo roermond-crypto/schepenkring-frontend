@@ -737,9 +737,12 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
                     {score.missing.length > 0 && (
                       <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
                         <p className="text-xs font-bold text-amber-700 mb-2">{s(t, "review.missingTitle")}</p>
-                        {score.missing.map((m) => (
-                          <p key={m.key} className="text-xs text-amber-700">• {m.label}</p>
-                        ))}
+                        {score.missing.map((m) => {
+                          const tpl = s(t, `review.missing.${m.key}`, m.label);
+                          const nums = m.label.match(/\d+/g) ?? [];
+                          const label = tpl.replace("{n}", nums[0] ?? "");
+                          return <p key={m.key} className="text-xs text-amber-700">• {label}</p>;
+                        })}
                       </div>
                     )}
                   </div>
