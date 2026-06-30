@@ -1,5 +1,5 @@
 import { type Metadata } from "next";
-import { getDictionary } from "@/lib/i18n";
+import { getDictionary, getLocaleOrDefault } from "@/lib/i18n";
 import { BoatIntakePage } from "@/components/intake/BoatIntakePage";
 
 export const metadata: Metadata = {
@@ -10,7 +10,8 @@ export const metadata: Metadata = {
 type Props = { params: Promise<{ locale: string }> };
 
 export default async function BootAanmeldenPage({ params }: Props) {
-  const { locale } = await params;
+  const { locale: rawLocale } = await params;
+  const locale = getLocaleOrDefault(rawLocale);
   const dict = getDictionary(locale);
   const t = (dict as Record<string, unknown>).BoatIntake as Record<string, unknown>;
 

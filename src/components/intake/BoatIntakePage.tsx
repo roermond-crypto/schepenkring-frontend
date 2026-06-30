@@ -16,6 +16,8 @@ import {
   MapPin,
   X,
 } from "lucide-react";
+import { LanguageSwitcher } from "@/components/common/language-switcher";
+import type { AppLocale } from "@/lib/i18n";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -103,7 +105,7 @@ const emptyForm: IntakeForm = {
 
 // ── Main component ───────────────────────────────────────────
 
-export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
+export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<IntakeForm>(emptyForm);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -347,13 +349,15 @@ export function BoatIntakePage({ locale, t }: { locale: string; t: T }) {
             ].map(({ label, href }) => (
               <a key={href} href={href} className="text-slate-600 hover:text-[#003566] transition-colors">{label}</a>
             ))}
+            <LanguageSwitcher locale={locale} />
             <Link href={`/${locale}/auth?mode=login`}
               className="bg-[#C8102E] hover:bg-[#a50d25] px-4 py-2 rounded-full text-sm font-bold text-white transition-colors">
               {s(t, "nav.login", "Inloggen")}
             </Link>
           </div>
-          {/* Mobile: logo + login */}
-          <div className="flex md:hidden">
+          {/* Mobile: language switcher + login */}
+          <div className="flex md:hidden items-center gap-2">
+            <LanguageSwitcher locale={locale} />
             <Link href={`/${locale}/auth?mode=login`}
               className="bg-[#C8102E] hover:bg-[#a50d25] px-3 py-1.5 rounded-full text-xs font-bold text-white transition-colors">
               {s(t, "nav.login", "Inloggen")}
