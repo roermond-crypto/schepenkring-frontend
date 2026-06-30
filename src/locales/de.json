@@ -1813,8 +1813,11 @@
     "perfNoData": "Keine Daten verfügbar"
   },
   "SellerOnboardingPanel": {
-    "eyebrow": "Seller Onboarding",
-    "title": "Complete seller onboarding",
+    "eyebrow": "Verkäufer-Onboarding",
+    "title": "Verkäufer-Onboarding abschließen",
+    "subtitle": "Schalten Sie den globalen Schepenkring-Marktplatz frei. Schließen Sie diese Schritte ab, um Ihr Schiff zu inserieren.",
+    "currentProgress": "Aktueller Fortschritt",
+    "createFirstBoat": "Erstes Boot erstellen",
     "description": "iDIN, iDEAL 0.01, and seller KYC answers create a reusable profile verification that stays valid for 90 days. Boats can stay in draft while verification is in progress, but publication remains blocked until the backend marks the seller verification as approved and still current.",
     "steps": {
       "profile": "Profile",
@@ -2513,6 +2516,7 @@
     },
     "blocking": "Blockiert",
     "blocksDetail": "⛔ Blockiert Deal",
+    "questionnaire": "Fragebogen",
     "blocksDeal": "⛔ Blockiert Deal",
     "detail": {
       "backToList": "Zurück",
@@ -2550,6 +2554,7 @@
       "loadFailed": "KYC-Akte konnte nicht geladen werden.",
       "createFailed": "KYC-Akte konnte nicht erstellt werden.",
       "listLoadFailed": "KYC-Akten konnten nicht geladen werden.",
+      "pdfFailed": "PDF konnte nicht geöffnet werden.",
       "edit": "Bearbeiten",
       "savedOk": "Fall aktualisiert",
       "deleteOk": "Fall gelöscht",
@@ -2568,6 +2573,7 @@
       "seller": "Verkäufer",
       "boat": "Boot",
       "boatType": "Typ",
+      "boatValue": "Bootwert",
       "value": "Wert",
       "payment": "Zahlung",
       "broker": "Makler",

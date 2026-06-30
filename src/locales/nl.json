@@ -1815,6 +1815,9 @@
   "SellerOnboardingPanel": {
     "eyebrow": "Verkoper Onboarding",
     "title": "Voltooi verkoper onboarding",
+    "subtitle": "Ontgrendel de Schepenkring-marktplaats. Voltooi deze stappen om je schip te plaatsen.",
+    "currentProgress": "Huidige voortgang",
+    "createFirstBoat": "Maak je eerste boot aan",
     "description": "iDIN, iDEAL 0.01 en verkoper KYC antwoorden creëren een herbruikbare profielverificatie die 90 dagen geldig blijft. Boten kunnen in concept blijven terwijl de verificatie gaande is, maar publicatie blijft geblokkeerd totdat de backend de verkoperverificatie markeert als goedgekeurd.",
     "steps": {
       "profile": "Profiel",
@@ -2511,6 +2514,7 @@
       "status": "Status",
       "date": "Datum"
     },
+    "questionnaire": "Vragenlijst",
     "blocking": "Blokkeert",
     "blocksDeal": "⛔ Blokkeert deal",
     "detail": {
@@ -2549,6 +2553,7 @@
       "loadFailed": "Kon KYC-dossier niet laden.",
       "createFailed": "Kon KYC-dossier niet aanmaken.",
       "listLoadFailed": "Kon KYC-dossiers niet laden.",
+      "pdfFailed": "PDF kon niet worden geopend.",
       "edit": "Bewerken",
       "savedOk": "Dossier bijgewerkt",
       "deleteOk": "Dossier verwijderd",
@@ -2567,6 +2572,7 @@
       "seller": "Verkoper",
       "boat": "Boot",
       "boatType": "Type",
+      "boatValue": "Waarde boot",
       "value": "Waarde",
       "payment": "Betaling",
       "broker": "Makelaar",

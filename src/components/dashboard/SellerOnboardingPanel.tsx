@@ -441,11 +441,11 @@ export function SellerOnboardingPanel({
             </div>
             <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white tracking-tight">{t.title}</h2>
             <p className="mt-3 text-blue-100/70 text-sm max-w-xl font-medium leading-relaxed">
-              Unlock the Schepenkring global marketplace. Complete these steps to list your vessel.
+              {t.subtitle}
             </p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-6 py-4 text-center ring-1 ring-white/10 shadow-2xl">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-300/80 mb-1">Current Progress</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-300/80 mb-1">{t.currentProgress}</p>
             <div className="text-2xl font-black text-white">
               {t.flow.stepCounter.replace("{current}", (currentStepIndex + 1).toString()).replace("{total}", stepConfig.length.toString())}
             </div>
@@ -543,7 +543,7 @@ export function SellerOnboardingPanel({
                href={`/${locale}/dashboard/seller/yachts/new?fresh=true`}
                className="mt-6 inline-flex rounded-2xl bg-emerald-600 px-8 py-4 text-white font-bold"
              >
-               Create your first boat
+               {t.createFirstBoat}
              </Link>
           </div>
         )}

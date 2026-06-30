@@ -1803,8 +1803,11 @@
     "perfNoData": "Aucune donnée disponible"
   },
   "SellerOnboardingPanel": {
-    "eyebrow": "Verkoper Onboarding",
-    "title": "Voltooi verkoper onboarding",
+    "eyebrow": "Intégration vendeur",
+    "title": "Terminer l'intégration vendeur",
+    "subtitle": "Débloquez la marketplace mondiale Schepenkring. Complétez ces étapes pour mettre votre bateau en vente.",
+    "currentProgress": "Progression actuelle",
+    "createFirstBoat": "Créer votre premier bateau",
     "description": "iDIN, iDEAL 0.01 en verkoper KYC antwoorden creëren een herbruikbare profielverificatie die 90 dagen geldig blijft. Boten kunnen in concept blijven terwijl de verificatie gaande is, maar publicatie blijft geblokkeerd totdat de backend de verkoperverificatie markeert als goedgekeurd.",
     "steps": {
       "profile": "Profiel",
@@ -2503,6 +2506,7 @@
     },
     "blocking": "Bloque",
     "blocksDetail": "⛔ Bloque le deal",
+    "questionnaire": "Questionnaire",
     "blocksDeal": "⛔ Bloque le deal",
     "detail": {
       "backToList": "Retour",
@@ -2540,6 +2544,7 @@
       "loadFailed": "Impossible de charger le dossier KYC.",
       "createFailed": "Impossible de créer le dossier KYC.",
       "listLoadFailed": "Impossible de charger les dossiers KYC.",
+      "pdfFailed": "Impossible d'ouvrir le PDF.",
       "edit": "Modifier",
       "savedOk": "Dossier mis à jour",
       "deleteOk": "Dossier supprimé",
@@ -2558,6 +2563,7 @@
       "seller": "Vendeur",
       "boat": "Bateau",
       "boatType": "Type",
+      "boatValue": "Valeur du bateau",
       "value": "Valeur",
       "payment": "Paiement",
       "broker": "Courtier",

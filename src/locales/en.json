@@ -1815,6 +1815,9 @@
   "SellerOnboardingPanel": {
     "eyebrow": "Seller Onboarding",
     "title": "Complete seller onboarding",
+    "subtitle": "Unlock the Schepenkring global marketplace. Complete these steps to list your vessel.",
+    "currentProgress": "Current Progress",
+    "createFirstBoat": "Create your first boat",
     "description": "iDIN, iDEAL 0.01, and seller KYC answers create a reusable profile verification that stays valid for 90 days. Boats can stay in draft while verification is in progress, but publication remains blocked until the backend marks the seller verification as approved and still current.",
     "steps": {
       "profile": "Profile",
@@ -2511,6 +2514,7 @@
       "status": "Status",
       "date": "Date"
     },
+    "questionnaire": "Questionnaire",
     "blocking": "Blocks",
     "blocksDeal": "⛔ Blocks deal",
     "detail": {
@@ -2549,6 +2553,7 @@
       "loadFailed": "Could not load KYC file.",
       "createFailed": "Could not create KYC file.",
       "listLoadFailed": "Could not load KYC files.",
+      "pdfFailed": "Could not open PDF.",
       "edit": "Edit",
       "savedOk": "Case updated",
       "deleteOk": "Case deleted",
@@ -2567,6 +2572,7 @@
       "seller": "Seller",
       "boat": "Boat",
       "boatType": "Type",
+      "boatValue": "Boat value",
       "value": "Value",
       "payment": "Payment",
       "broker": "Broker",
