@@ -24,6 +24,7 @@ import {
 
 import { Link } from "@/i18n/navigation";
 import { getProfileSetupStatus } from "@/lib/api/profile-setup";
+import { LanguageSwitcher } from "@/components/common/language-switcher";
 
 type DashboardShellProps = {
   locale: AppLocale;
@@ -178,12 +179,15 @@ function DashboardShellInner({
                 <div className="flex items-center">
                    <img src="/schepenkring-logo.png" alt="Schepenkring" className="h-9 w-auto object-contain" />
                 </div>
-                <button 
-                  onClick={handleLogout}
-                  className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all text-sm"
-                >
-                  Logout
-                </button>
+                <div className="flex items-center gap-3">
+                  <LanguageSwitcher locale={locale} />
+                  <button
+                    onClick={handleLogout}
+                    className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all text-sm"
+                  >
+                    {{ nl: "Uitloggen", en: "Logout", de: "Abmelden", fr: "Déconnexion" }[locale] ?? "Logout"}
+                  </button>
+                </div>
              </header>
              <main className="flex-1 p-4 sm:p-6 lg:p-12 max-w-7xl mx-auto w-full">
                 {children}
