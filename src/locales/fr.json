@@ -1894,6 +1894,14 @@
         "title": "Contract ondertekenen",
         "description": "Je verificatie is voltooid. Onderteken nu het contract om je onboarding af te ronden.",
         "action": "Ondertekenen in Signhost"
+      },
+      "manualReview": {
+        "title": "Demande en cours d'examen",
+        "description": "Votre demande est en cours d'examen manuel par notre équipe. Vous serez notifié une fois l'examen terminé. Cela prend généralement 1 à 2 jours ouvrables."
+      },
+      "rejected": {
+        "title": "Demande rejetée",
+        "description": "Malheureusement, votre demande n'a pas été approuvée. Veuillez contacter notre service client pour plus d'informations."
       }
     }
   },

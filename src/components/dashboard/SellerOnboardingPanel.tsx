@@ -553,10 +553,8 @@ export function SellerOnboardingPanel({
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
               <AlertTriangle className="h-8 w-8 text-amber-500" />
             </div>
-            <h3 className="mt-4 text-xl font-bold text-slate-800">Aanvraag in behandeling</h3>
-            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
-              Uw aanvraag wordt momenteel handmatig beoordeeld door ons team. U ontvangt bericht zodra de beoordeling is afgerond. Dit duurt doorgaans 1–2 werkdagen.
-            </p>
+            <h3 className="mt-4 text-xl font-bold text-slate-800">{t.sections.manualReview.title}</h3>
+            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">{t.sections.manualReview.description}</p>
           </div>
         )}
 
@@ -565,10 +563,8 @@ export function SellerOnboardingPanel({
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
               <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
-            <h3 className="mt-4 text-xl font-bold text-slate-800">Aanvraag afgewezen</h3>
-            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
-              Uw aanvraag is helaas niet goedgekeurd. Neem contact op met onze klantenservice voor meer informatie.
-            </p>
+            <h3 className="mt-4 text-xl font-bold text-slate-800">{t.sections.rejected.title}</h3>
+            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">{t.sections.rejected.description}</p>
           </div>
         )}
       </div>

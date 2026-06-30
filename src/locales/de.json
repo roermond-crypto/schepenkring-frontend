@@ -1904,6 +1904,14 @@
         "title": "Sign contract",
         "description": "Your verification is complete. Now sign the contract to finalize your onboarding.",
         "action": "Sign in Signhost"
+      },
+      "manualReview": {
+        "title": "Antrag wird geprüft",
+        "description": "Ihr Antrag wird derzeit manuell von unserem Team geprüft. Sie erhalten eine Benachrichtigung, sobald die Prüfung abgeschlossen ist. Dies dauert in der Regel 1–2 Werktage."
+      },
+      "rejected": {
+        "title": "Antrag abgelehnt",
+        "description": "Leider wurde Ihr Antrag nicht genehmigt. Bitte wenden Sie sich an unseren Kundendienst für weitere Informationen."
       }
     }
   },

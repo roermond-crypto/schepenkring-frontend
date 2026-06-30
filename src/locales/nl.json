@@ -1904,6 +1904,14 @@
         "title": "Contract ondertekenen",
         "description": "Je verificatie is voltooid. Onderteken nu het contract om je onboarding af te ronden.",
         "action": "Ondertekenen in Signhost"
+      },
+      "manualReview": {
+        "title": "Aanvraag in behandeling",
+        "description": "Uw aanvraag wordt momenteel handmatig beoordeeld door ons team. U ontvangt bericht zodra de beoordeling is afgerond. Dit duurt doorgaans 1–2 werkdagen."
+      },
+      "rejected": {
+        "title": "Aanvraag afgewezen",
+        "description": "Helaas is uw aanvraag niet goedgekeurd. Neem contact op met onze klantenservice voor meer informatie."
       }
     }
   },

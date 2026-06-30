@@ -1904,6 +1904,14 @@
         "title": "Sign contract",
         "description": "Your verification is complete. Now sign the contract to finalize your onboarding.",
         "action": "Sign in Signhost"
+      },
+      "manualReview": {
+        "title": "Application under review",
+        "description": "Your application is being manually reviewed by our team. You will be notified once the review is complete. This typically takes 1–2 business days."
+      },
+      "rejected": {
+        "title": "Application rejected",
+        "description": "Unfortunately your application was not approved. Please contact our customer service for more information."
       }
     }
   },

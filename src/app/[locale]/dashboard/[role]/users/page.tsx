@@ -83,6 +83,7 @@ type UserRecord = {
     role?: string;
   }>;
   yachts?: Array<{ id: number; boat_name?: string | null; manufacturer?: string | null; model?: string | null }>;
+  seller_onboarding?: { id: number; status: string; can_publish_boat: boolean; submitted_at?: string | null } | null;
   created_at?: string;
   updated_at?: string;
 };
@@ -821,16 +822,24 @@ export default function RoleManagementPage() {
                       )}
                     </div>
 
-                    <span
-                      className={cn(
-                        "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
-                        status.bg,
-                        status.color,
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className={cn(
+                          "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+                          status.bg,
+                          status.color,
+                        )}
+                      >
+                        <StatusIcon size={11} />
+                        {mapStatusToUi(user.status)}
+                      </span>
+                      {user.seller_onboarding?.status === "MANUAL_REVIEW" && (
+                        <span className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                          <Clock size={9} />
+                          Wacht op goedkeuring
+                        </span>
                       )}
-                    >
-                      <StatusIcon size={11} />
-                      {mapStatusToUi(user.status)}
-                    </span>
+                    </div>
 
                     <div className="relative flex justify-end">
                       {canManageUsers ? (
@@ -901,6 +910,30 @@ export default function RoleManagementPage() {
                                     {t("actions.assumeIdentity")}
                                   </span>
                                 </button>
+                                {user.seller_onboarding?.status === "MANUAL_REVIEW" && (
+                                  <button
+                                    onClick={async () => {
+                                      setOpenActionId(null);
+                                      const tid = toast.loading("Seller goedkeuren...");
+                                      try {
+                                        await api.post(`/admin/seller-onboarding-reviews/${user.seller_onboarding!.id}/approve`);
+                                        setUsers(prev => prev.map(u => u.id === user.id
+                                          ? { ...u, seller_onboarding: { ...u.seller_onboarding!, status: "APPROVED", can_publish_boat: true } }
+                                          : u
+                                        ));
+                                        toast.success("Seller goedgekeurd. Ze kunnen nu inloggen op hun dashboard.", { id: tid });
+                                      } catch {
+                                        toast.error("Goedkeuren mislukt.", { id: tid });
+                                      }
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm text-emerald-700 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                                  >
+                                    <span className="inline-flex items-center gap-3">
+                                      <ShieldCheck size={15} className="text-emerald-600" />
+                                      Seller goedkeuren
+                                    </span>
+                                  </button>
+                                )}
                                 <div className="my-1 h-px bg-slate-100 dark:bg-slate-700" />
                                 <button
                                   onClick={() => {
