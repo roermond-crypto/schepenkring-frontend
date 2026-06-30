@@ -966,11 +966,22 @@
       "assumeIdentity": "Identiteit overnemen",
       "terminate": "Beeindigen",
       "finalizeEnrollment": "Gebruiker aanmaken",
-      "refresh": "Vernieuwen"
+      "refresh": "Vernieuwen",
+      "approveSeller": "Verkoper goedkeuren",
+      "rejectSeller": "Verkoper afwijzen"
     },
     "labels": {
       "status": "Status",
-      "loadingUsers": "Gebruikers laden..."
+      "loadingUsers": "Gebruikers laden...",
+      "waitingApproval": "Wacht op goedkeuring"
+    },
+    "toastsSeller": {
+      "approving": "Verkoper goedkeuren...",
+      "approved": "Verkoper goedgekeurd. Ze kunnen nu inloggen op hun dashboard.",
+      "approveFailed": "Goedkeuren mislukt.",
+      "rejecting": "Verkoper afwijzen...",
+      "rejected": "Verkoper afgewezen.",
+      "rejectFailed": "Afwijzen mislukt."
     },
     "prompts": {
       "confirmAdminPassword": "Bevestig admin wachtwoord:",

@@ -966,11 +966,22 @@
       "assumeIdentity": "Assume identity",
       "terminate": "Terminate",
       "finalizeEnrollment": "Finalize Enrollment",
-      "refresh": "Refresh"
+      "refresh": "Refresh",
+      "approveSeller": "Approve seller",
+      "rejectSeller": "Reject seller"
     },
     "labels": {
       "status": "Status",
-      "loadingUsers": "Loading users..."
+      "loadingUsers": "Loading users...",
+      "waitingApproval": "Waiting for approval"
+    },
+    "toastsSeller": {
+      "approving": "Approving seller...",
+      "approved": "Seller approved. They can now log in to their dashboard.",
+      "approveFailed": "Approval failed.",
+      "rejecting": "Rejecting seller...",
+      "rejected": "Seller rejected.",
+      "rejectFailed": "Rejection failed."
     },
     "prompts": {
       "confirmAdminPassword": "Confirm admin password:",

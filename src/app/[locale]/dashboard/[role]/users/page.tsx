@@ -836,7 +836,7 @@ export default function RoleManagementPage() {
                       {user.seller_onboarding?.status === "MANUAL_REVIEW" && (
                         <span className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
                           <Clock size={9} />
-                          Wacht op goedkeuring
+                          {t("labels.waitingApproval")}
                         </span>
                       )}
                     </div>
@@ -914,23 +914,23 @@ export default function RoleManagementPage() {
                                   <button
                                     onClick={async () => {
                                       setOpenActionId(null);
-                                      const tid = toast.loading("Seller goedkeuren...");
+                                      const tid = toast.loading(t("toastsSeller.approving"));
                                       try {
                                         await api.post(`/admin/seller-onboarding-reviews/${user.seller_onboarding!.id}/approve`);
                                         setUsers(prev => prev.map(u => u.id === user.id
                                           ? { ...u, seller_onboarding: { ...u.seller_onboarding!, status: "APPROVED", can_publish_boat: true } }
                                           : u
                                         ));
-                                        toast.success("Seller goedgekeurd. Ze kunnen nu inloggen op hun dashboard.", { id: tid });
+                                        toast.success(t("toastsSeller.approved"), { id: tid });
                                       } catch {
-                                        toast.error("Goedkeuren mislukt.", { id: tid });
+                                        toast.error(t("toastsSeller.approveFailed"), { id: tid });
                                       }
                                     }}
                                     className="w-full px-4 py-2.5 text-left text-sm text-emerald-700 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
                                   >
                                     <span className="inline-flex items-center gap-3">
                                       <ShieldCheck size={15} className="text-emerald-600" />
-                                      Seller goedkeuren
+                                      {t("actions.approveSeller")}
                                     </span>
                                   </button>
                                 )}

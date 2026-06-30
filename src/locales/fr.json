@@ -956,11 +956,22 @@
       "assumeIdentity": "Assumer l'identité",
       "terminate": "Terminer",
       "finalizeEnrollment": "Finaliser l'inscription",
-      "refresh": "Actualiser"
+      "refresh": "Actualiser",
+      "approveSeller": "Approuver le vendeur",
+      "rejectSeller": "Rejeter le vendeur"
     },
     "labels": {
       "status": "Statut",
-      "loadingUsers": "Chargement des utilisateurs..."
+      "loadingUsers": "Chargement des utilisateurs...",
+      "waitingApproval": "En attente d'approbation"
+    },
+    "toastsSeller": {
+      "approving": "Approbation du vendeur...",
+      "approved": "Vendeur approuvé. Il peut maintenant se connecter à son tableau de bord.",
+      "approveFailed": "Échec de l'approbation.",
+      "rejecting": "Rejet du vendeur...",
+      "rejected": "Vendeur rejeté.",
+      "rejectFailed": "Échec du rejet."
     },
     "prompts": {
       "confirmAdminPassword": "Confirmer le mot de passe administrateur :",

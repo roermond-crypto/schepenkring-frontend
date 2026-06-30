@@ -966,11 +966,22 @@
       "assumeIdentity": "Identitat ubernehmen",
       "terminate": "Beenden",
       "finalizeEnrollment": "Benutzer anlegen",
-      "refresh": "Aktualisieren"
+      "refresh": "Aktualisieren",
+      "approveSeller": "Verkäufer genehmigen",
+      "rejectSeller": "Verkäufer ablehnen"
     },
     "labels": {
       "status": "Status",
-      "loadingUsers": "Benutzer werden geladen..."
+      "loadingUsers": "Benutzer werden geladen...",
+      "waitingApproval": "Wartet auf Genehmigung"
+    },
+    "toastsSeller": {
+      "approving": "Verkäufer wird genehmigt...",
+      "approved": "Verkäufer genehmigt. Er kann sich jetzt im Dashboard anmelden.",
+      "approveFailed": "Genehmigung fehlgeschlagen.",
+      "rejecting": "Verkäufer wird abgelehnt...",
+      "rejected": "Verkäufer abgelehnt.",
+      "rejectFailed": "Ablehnung fehlgeschlagen."
     },
     "prompts": {
       "confirmAdminPassword": "Admin-Passwort bestatigen:",
