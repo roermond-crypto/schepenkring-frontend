@@ -3590,6 +3590,13 @@ function YachtEditorInner() {
   const yachtId = params.id;
   const { isOnline } = useNetworkStatus();
   const { user } = useClientSession();
+
+  // Sellers and buyers always already have a boat; block manual access to /yachts/new
+  useEffect(() => {
+    if (isNewMode && (role === "seller" || role === "buyer")) {
+      router.replace(`/${locale}/dashboard/${role}`);
+    }
+  }, [isNewMode, role, locale, router]);
   const draftStorageScope = useMemo(
     () => `${role}_${String(user?.id || "guest")}`,
     [role, user?.id],
@@ -8791,6 +8798,10 @@ function YachtEditorInner() {
       setIsSubmitting(false);
     }
   };
+
+  if (isNewMode && (role === "seller" || role === "buyer")) {
+    return null;
+  }
 
   if (loading) {
     return (

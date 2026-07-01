@@ -116,7 +116,9 @@ export function Sidebar({
             ? t.overview_employee
             : role === "partner"
               ? t.overview_partner
-              : t.overview_location;
+              : role === "seller" || role === "buyer"
+                ? t.overview
+                : t.overview_location;
 
     const items: MenuItem[] = [
       {
@@ -177,6 +179,9 @@ export function Sidebar({
         icon: MessageSquare,
       });
     } else if (role === "client" || role === "buyer" || role === "seller") {
+      if (role === "seller") {
+        items.push({ title: t.interaction, href: `${root}/chat`, icon: MessageSquare });
+      }
       if (bidsPageEnabled) {
         items.push({
           title: t.bids ?? "Bids",
