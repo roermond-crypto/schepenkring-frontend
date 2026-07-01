@@ -69,6 +69,8 @@ export function middleware(request: NextRequest) {
   const isContractsRoute =
     subPath === "/contracts" || subPath.startsWith("/contracts/");
   const isWidgetRoute = subPath === "/widget" || subPath.startsWith("/widget/");
+  const isBoatDetailRoute =
+    subPath === "/aanbod-boten" || subPath.startsWith("/aanbod-boten/");
 
   const isPublicRoute =
     isLoginRoute ||
@@ -76,7 +78,8 @@ export function middleware(request: NextRequest) {
     isAuthRoute ||
     isBoatIntakeRoute ||
     isContractsRoute ||
-    isWidgetRoute;
+    isWidgetRoute ||
+    isBoatDetailRoute;
 
   if (!isAuthed && !isPublicRoute) {
     return NextResponse.redirect(
