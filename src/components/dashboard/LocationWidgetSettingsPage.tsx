@@ -535,12 +535,40 @@ export function LocationWidgetSettingsPage() {
             )}
           </div>
 
+          {/* ── Universal embed (auto-detects boat + location) ── */}
+          <div className="flex flex-col overflow-hidden rounded-xl border border-emerald-800 bg-[#061410] shadow-xl">
+            <div className="flex items-center justify-between border-b border-emerald-900/60 bg-[#07180f] px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Globe size={16} className="text-emerald-400" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+                  Universele embed — boot­pagina&apos;s
+                </span>
+              </div>
+            </div>
+            <div className="overflow-x-auto p-4">
+              <pre className="text-sm font-mono text-slate-300">
+                <code>{`<!-- Schepenkring Widget — voeg toe aan ALLE bootpagina's -->\n<script\n  src="${domain}/api/widget/chat.js"\n  data-widget-type="${widgetType}"\n  data-tenant="${tenant}"\n  data-locale="${locale}"\n  defer\n></script>`}</code>
+              </pre>
+            </div>
+            <div className="flex items-start gap-3 border-t border-emerald-900/60 bg-[#07180f] px-4 py-3">
+              <div className="mt-0.5 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
+              <p className="text-[11px] leading-relaxed text-emerald-300/80">
+                Voeg dit ene script-tag toe aan alle openbare bootpagina&apos;s (bijv.
+                schepenkring.nl/aanbod-boten/*). Het script detecteert automatisch
+                het boot-ID uit de URL, zoekt op welke vestiging die boot beheert en
+                laadt de bijbehorende widgetinstellingen (kleur, welkomsttekst, thema).
+                Geen locatie-ID nodig — alles wordt automatisch bepaald.
+              </p>
+            </div>
+          </div>
+
+          {/* ── Location-specific embed (hardcoded location) ── */}
           <div className="flex flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0a0f1c] shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-800/60 bg-[#0d1323] px-4 py-3">
               <div className="flex items-center gap-2">
                 <LayoutTemplate size={16} className="text-blue-400" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  {t.embedCode}
+                  {t.embedCode} — {locationName || t.selectLocation}
                 </span>
               </div>
               <button
