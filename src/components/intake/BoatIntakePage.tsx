@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   MapPin,
   X,
+  MessageCircle,
+  LogIn,
 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/common/language-switcher";
 import type { AppLocale } from "@/lib/i18n";
@@ -265,6 +267,19 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
         const json: SubmitResponse = await res.json();
         setScore(json.intake.score);
         setResumeToken(json.resume_token);
+        // Store intake data so onboarding step 1 can be pre-filled
+        try {
+          localStorage.setItem("boat_intake_prefill", JSON.stringify({
+            full_name: `${form.seller_first_name} ${form.seller_last_name}`.trim(),
+            email: form.seller_email,
+            phone: form.seller_phone,
+            address_line_1: form.seller_address,
+            city: form.seller_city,
+            postal_code: form.seller_postal_code,
+            country: form.seller_country || "NL",
+            resume_token: json.resume_token,
+          }));
+        } catch { /* ignore storage errors */ }
         setStep(2);
       } catch {
         setErrors({ _global: s(t, "errors.globalError") });
@@ -365,6 +380,25 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
           </div>
         </div>
       </nav>
+
+      {/* ── WhatsApp-style contact bar ── */}
+      <div className="bg-[#25D366] text-white">
+        <div className="max-w-7xl mx-auto px-5 py-2.5 flex items-center gap-3">
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 shrink-0">
+            <MessageCircle className="w-4 h-4 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold leading-none">Schepenkring</p>
+            <p className="text-[10px] text-white/80 mt-0.5">{s(t, "whatsapp.status", "Online — wij reageren binnen 1 werkdag")}</p>
+          </div>
+          <a
+            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "31853033940"}`}
+            target="_blank" rel="noopener noreferrer"
+            className="shrink-0 text-[11px] font-bold bg-white/20 hover:bg-white/30 transition-colors px-3 py-1.5 rounded-full">
+            {s(t, "whatsapp.cta", "Chat met ons")}
+          </a>
+        </div>
+      </div>
 
       {/* ── Hero — boat image with dark overlay ── */}
       <div className="relative bg-[#003566] text-white pb-20 pt-12 sm:pt-16 overflow-hidden">
@@ -748,12 +782,42 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
                   </div>
                 )}
 
-                <div className="text-center pt-2">
-                  <p className="text-sm text-slate-500 mb-4">{s(t, "review.outro")}</p>
-                  <Link href={`/${locale}/aanbod`}
-                    className="inline-block px-6 py-3 rounded-full bg-[#003566] text-white text-sm font-bold hover:bg-[#002a52] transition-colors">
+                {/* ── Next steps ── */}
+                <div className="border border-[#003566]/20 rounded-2xl p-4 sm:p-5 bg-[#003566]/5">
+                  <p className="text-xs font-bold text-[#003566] uppercase tracking-wider mb-3">{s(t, "review.nextStepTitle")}</p>
+                  <p className="text-sm text-slate-600 mb-4">{s(t, "review.nextStepRegister")}</p>
+                  <div className="flex flex-col gap-3">
+                    <Link
+                      href={`/${locale}/auth?mode=register`}
+                      className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full bg-[#C8102E] text-white text-sm font-bold hover:bg-[#a50d25] transition-colors">
+                      <LogIn className="w-4 h-4" />
+                      {s(t, "review.registerBtn")}
+                    </Link>
+                    <Link
+                      href={`/${locale}/auth?mode=login`}
+                      className="text-center text-sm text-[#003566] font-semibold hover:underline">
+                      {s(t, "review.loginBtn")}
+                    </Link>
+                  </div>
+                </div>
+
+                {resumeToken && (
+                  <div className="text-center">
+                    <a
+                      href={`/${locale}/boot-aanmelden/aanvullen?token=${resumeToken}`}
+                      className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#003566] transition-colors">
+                      <Upload className="w-4 h-4" />
+                      {s(t, "review.addDetailsBtn")}
+                    </a>
+                  </div>
+                )}
+
+                <div className="text-center border-t border-slate-100 pt-4">
+                  <p className="text-sm text-slate-500 mb-3">{s(t, "review.outro")}</p>
+                  <a href="https://www.schepenkring.nl/aanbod-boten/"
+                    className="text-sm text-[#003566] font-semibold hover:underline">
                     {s(t, "review.viewSupply")}
-                  </Link>
+                  </a>
                 </div>
               </div>
             )}

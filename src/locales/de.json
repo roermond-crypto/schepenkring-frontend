@@ -2459,7 +2459,12 @@
         "ce_category": "CE-Kategorie fehlt",
         "ce_certificate": "CE-Zertifikat fehlt",
         "vat_document": "MwSt.-Dokument fehlt"
-      }
+      },
+      "nextStepTitle": "Was sind die nächsten Schritte?",
+      "nextStepRegister": "Erstellen Sie ein Konto und Ihr Profil wird automatisch mit den soeben eingegebenen Daten ausgefüllt.",
+      "registerBtn": "Konto erstellen & fortfahren",
+      "loginBtn": "Bereits ein Konto? Einloggen",
+      "addDetailsBtn": "Mehr Fotos & Dokumente hinzufügen"
     },
     "nav_buttons": {
       "prev": "← Zurück",
@@ -2476,7 +2481,11 @@
       "globalError": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
     },
     "footer": "Schepenkring — Der Spezialist für Bootsverkauf",
-    "newBoatCta": "Neues Boot anmelden"
+    "newBoatCta": "Neues Boot anmelden",
+    "whatsapp": {
+      "status": "Online — wir antworten innerhalb 1 Werktag",
+      "cta": "Schreiben Sie uns"
+    }
   },
   "KycQuestions": {
     "title": "KYC Fragebogen-Verwaltung",

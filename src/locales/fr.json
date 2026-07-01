@@ -2449,7 +2449,12 @@
         "ce_category": "Catégorie CE manquante",
         "ce_certificate": "Certificat CE manquant",
         "vat_document": "Document TVA manquant"
-      }
+      },
+      "nextStepTitle": "Quelles sont les prochaines étapes ?",
+      "nextStepRegister": "Créez un compte et votre profil sera pré-rempli avec les données que vous venez de saisir.",
+      "registerBtn": "Créer un compte et continuer",
+      "loginBtn": "Déjà un compte ? Se connecter",
+      "addDetailsBtn": "Ajouter plus de photos et de documents"
     },
     "nav_buttons": {
       "prev": "← Précédent",
@@ -2466,7 +2471,11 @@
       "globalError": "Une erreur est survenue. Veuillez réessayer."
     },
     "footer": "Schepenkring — Le spécialiste de la vente de bateaux",
-    "newBoatCta": "Inscrire un nouveau bateau"
+    "newBoatCta": "Inscrire un nouveau bateau",
+    "whatsapp": {
+      "status": "En ligne — nous répondons dans 1 jour ouvrable",
+      "cta": "Discuter avec nous"
+    }
   },
   "KycQuestions": {
     "title": "Gestion du questionnaire KYC",

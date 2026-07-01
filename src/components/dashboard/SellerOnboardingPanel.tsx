@@ -236,6 +236,25 @@ export function SellerOnboardingPanel({
   useEffect(() => {
     if (!status?.profile) {
       try {
+        // Pre-fill from boat intake if the user just came from boot-aanmelden
+        const intakeRaw = localStorage.getItem("boat_intake_prefill");
+        if (intakeRaw) {
+          const intake = JSON.parse(intakeRaw) as {
+            full_name?: string; email?: string; phone?: string;
+            address_line_1?: string; city?: string; postal_code?: string; country?: string;
+          };
+          setProfile((curr) => ({
+            ...curr,
+            full_name: curr.full_name || String(intake.full_name ?? ""),
+            email: curr.email || String(intake.email ?? ""),
+            phone: curr.phone || String(intake.phone ?? ""),
+            address_line_1: curr.address_line_1 || String(intake.address_line_1 ?? ""),
+            city: curr.city || String(intake.city ?? ""),
+            postal_code: curr.postal_code || String(intake.postal_code ?? ""),
+            country: curr.country || String(intake.country ?? "NL"),
+          }));
+          return;
+        }
         const raw = localStorage.getItem("user_data");
         if (raw) {
           const parsed = JSON.parse(raw) as { email?: string; name?: string; phone?: string };

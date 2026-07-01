@@ -2459,7 +2459,12 @@
         "ce_category": "CE-categorie ontbreekt",
         "ce_certificate": "CE-certificaat ontbreekt",
         "vat_document": "BTW-document ontbreekt"
-      }
+      },
+      "nextStepTitle": "Wat zijn de volgende stappen?",
+      "nextStepRegister": "Maak een account aan en uw profiel wordt automatisch ingevuld met de gegevens die u zojuist heeft ingevoerd.",
+      "registerBtn": "Account aanmaken & doorgaan",
+      "loginBtn": "Al een account? Inloggen",
+      "addDetailsBtn": "Meer foto's & documenten toevoegen"
     },
     "nav_buttons": {
       "prev": "← Vorige",
@@ -2476,7 +2481,11 @@
       "globalError": "Er is een fout opgetreden. Probeer opnieuw."
     },
     "footer": "Schepenkring — De specialist in scheepsverkoop",
-    "newBoatCta": "Nieuwe boot aanmelden"
+    "newBoatCta": "Nieuwe boot aanmelden",
+    "whatsapp": {
+      "status": "Online — wij reageren binnen 1 werkdag",
+      "cta": "Chat met ons"
+    }
   },
   "KycQuestions": {
     "title": "KYC Vragenlijst beheer",

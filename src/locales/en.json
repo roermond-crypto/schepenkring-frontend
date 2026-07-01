@@ -2459,7 +2459,12 @@
         "ce_category": "CE category missing",
         "ce_certificate": "CE certificate missing",
         "vat_document": "VAT document missing"
-      }
+      },
+      "nextStepTitle": "What happens next?",
+      "nextStepRegister": "Create your account and your profile will be pre-filled with the details you just entered.",
+      "registerBtn": "Create account & continue",
+      "loginBtn": "Already have an account? Log in",
+      "addDetailsBtn": "Add more photos & documents"
     },
     "nav_buttons": {
       "prev": "← Back",
@@ -2476,7 +2481,11 @@
       "globalError": "An error occurred. Please try again."
     },
     "footer": "Schepenkring — The specialist in boat sales",
-    "newBoatCta": "Register new boat"
+    "newBoatCta": "Register new boat",
+    "whatsapp": {
+      "status": "Online — we respond within 1 business day",
+      "cta": "Chat with us"
+    }
   },
   "KycQuestions": {
     "title": "KYC Questionnaire management",
