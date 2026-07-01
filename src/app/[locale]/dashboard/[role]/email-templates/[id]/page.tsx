@@ -42,6 +42,7 @@ import {
   Building2,
   CreditCard,
   Sparkles,
+  Search,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -822,8 +823,9 @@ function VersionsPanel({
   useEffect(() => {
     void (async () => {
       try {
-        const res = await api.get<TemplateVersion[]>(`/admin/email-templates/${templateId}/versions`);
-        setVersions(Array.isArray(res.data) ? res.data : []);
+        const res = await api.get(`/admin/email-templates/${templateId}/versions`);
+        const raw = res.data as { versions?: TemplateVersion[] } | TemplateVersion[];
+        setVersions(Array.isArray(raw) ? raw : (raw as { versions?: TemplateVersion[] })?.versions ?? []);
       } catch {
         toast.error("Versies laden mislukt.");
       } finally {
@@ -888,6 +890,87 @@ function VersionsPanel({
   );
 }
 
+// ─── Tags panel ───────────────────────────────────────────────────────────────
+
+const CATEGORY_LABELS: Record<string, string> = {
+  general: "Algemeen",
+  user: "Gebruiker",
+  boat: "Boot",
+  location: "Vestiging",
+  offer: "Bod",
+  contract: "Contract",
+};
+const CATEGORY_ORDER = ["general", "user", "boat", "location", "offer", "contract"];
+
+function TagsPanel({ tags }: { tags: TagInfo[] }) {
+  const [search, setSearch] = useState("");
+
+  const filtered = search
+    ? tags.filter((t) => t.key.toLowerCase().includes(search.toLowerCase()) || t.description.toLowerCase().includes(search.toLowerCase()))
+    : tags;
+
+  const grouped = CATEGORY_ORDER.reduce<Record<string, TagInfo[]>>((acc, cat) => {
+    const items = filtered.filter((t) => t.category === cat);
+    if (items.length > 0) acc[cat] = items;
+    return acc;
+  }, {});
+  const remaining = filtered.filter((t) => !CATEGORY_ORDER.includes(t.category));
+  if (remaining.length > 0) grouped["other"] = remaining;
+
+  const handleTagInsert = (e: React.MouseEvent, tagKey: string) => {
+    e.preventDefault();
+    const tagText = `{{${tagKey}}}`;
+    const active = document.activeElement;
+    if (active instanceof HTMLTextAreaElement || active instanceof HTMLInputElement) {
+      document.execCommand("insertText", false, tagText);
+    } else {
+      void navigator.clipboard.writeText(tagText).then(() => toast.success(`${tagText} gekopieerd`));
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Tags invoegen</p>
+        <div className="relative">
+          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Zoek tags..."
+            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 pl-7 pr-3 py-1.5 text-xs outline-none focus:border-[#003566] dark:text-slate-100"
+          />
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <p className="text-[10px] text-slate-400 leading-relaxed">Klik op een tag om in te voegen op de cursorpositie, of kopieer naar klembord.</p>
+        {Object.entries(grouped).map(([cat, items]) => (
+          <div key={cat}>
+            <p className="mb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+              {CATEGORY_LABELS[cat] ?? cat}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {items.map((tag) => (
+                <button
+                  key={tag.key}
+                  onMouseDown={(e) => handleTagInsert(e, tag.key)}
+                  title={tag.description}
+                  className="inline-flex items-center rounded-md border border-[#003566]/20 bg-[#003566]/5 px-2 py-0.5 text-[10px] font-mono font-semibold text-[#003566] hover:bg-[#003566]/10 hover:border-[#003566]/40 transition dark:border-blue-900/30 dark:bg-blue-950/20 dark:text-blue-300 dark:hover:bg-blue-950/40"
+                >
+                  {`{{${tag.key}}}`}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        {Object.keys(grouped).length === 0 && (
+          <p className="text-xs text-slate-400">Geen tags gevonden.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main editor page ─────────────────────────────────────────────────────────
 
 export default function EmailTemplateEditorPage() {
@@ -913,7 +996,7 @@ export default function EmailTemplateEditorPage() {
 
   const [activeLang, setActiveLang] = useState<Lang>("nl");
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [rightPanel, setRightPanel] = useState<"settings" | "preview" | "versions" | "meta">("preview");
+  const [rightPanel, setRightPanel] = useState<"settings" | "preview" | "versions" | "meta" | "tags">("preview");
 
   const [types, setTypes] = useState<TemplateType[]>([]);
   const [tags, setTags] = useState<TagInfo[]>([]);
@@ -936,8 +1019,8 @@ export default function EmailTemplateEditorPage() {
   const loadTemplate = async () => {
     setLoading(true);
     try {
-      const res = await api.get<EmailTemplate>(`/admin/email-templates/${templateId}`);
-      const t = res.data;
+      const res = await api.get(`/admin/email-templates/${templateId}`);
+      const t = (res.data as { template?: EmailTemplate })?.template ?? res.data as EmailTemplate;
       setTemplate(t);
       setBlocks(Array.isArray(t.blocks) ? t.blocks : []);
       setSubject(t.subject ?? { nl: "", en: "", de: "", fr: "" });
@@ -1121,6 +1204,9 @@ export default function EmailTemplateEditorPage() {
           <button onClick={() => setRightPanel("meta")} className={cn("rounded-lg p-1.5 transition", rightPanel === "meta" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title="Instellingen">
             <Settings2 size={14} />
           </button>
+          <button onClick={() => setRightPanel("tags")} className={cn("rounded-lg p-1.5 transition", rightPanel === "tags" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title="Tags invoegen">
+            <Tag size={14} />
+          </button>
         </div>
 
         <button
@@ -1249,6 +1335,8 @@ export default function EmailTemplateEditorPage() {
                 onRestore={() => { void loadTemplate(); }}
               />
             </div>
+          ) : rightPanel === "tags" ? (
+            <TagsPanel tags={tags} />
           ) : (
             // Meta settings
             <div className="flex-1 overflow-y-auto p-5 space-y-5">

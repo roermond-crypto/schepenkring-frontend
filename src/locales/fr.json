@@ -641,7 +641,8 @@
       "operatorAction": "Action de l'opérateur",
       "autoSystemEvent": "Événement automatique du système",
       "on": "activé",
-      "globalFleet": "Flotte mondiale"
+      "globalFleet": "Flotte mondiale",
+      "seeAll": "Voir l'audit"
     },
     "empty": {
       "noRecentBiddingTitle": "Aucune activité d'enchères récente",

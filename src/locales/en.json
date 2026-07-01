@@ -641,7 +641,8 @@
       "operatorAction": "Operator action",
       "autoSystemEvent": "Auto-system event",
       "on": "on",
-      "globalFleet": "Global Fleet"
+      "globalFleet": "Global Fleet",
+      "seeAll": "View audit"
     },
     "empty": {
       "noRecentBiddingTitle": "No recent bidding activity",

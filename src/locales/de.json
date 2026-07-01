@@ -641,7 +641,8 @@
       "operatorAction": "Operatoraktion",
       "autoSystemEvent": "Auto-Systemereignis",
       "on": "Ein",
-      "globalFleet": "Globale Flotte"
+      "globalFleet": "Globale Flotte",
+      "seeAll": "Audit anzeigen"
     },
     "empty": {
       "noRecentBiddingTitle": "Keine kürzliche Gebotsaktivität",

@@ -641,7 +641,8 @@
       "operatorAction": "Operatoractie",
       "autoSystemEvent": "Automatische systeemgebeurtenis",
       "on": "op",
-      "globalFleet": "Wereldwijde vloot"
+      "globalFleet": "Wereldwijde vloot",
+      "seeAll": "Bekijk audit"
     },
     "empty": {
       "noRecentBiddingTitle": "Geen recente biedactiviteit",

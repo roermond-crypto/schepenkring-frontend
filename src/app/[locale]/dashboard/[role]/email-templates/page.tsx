@@ -37,8 +37,8 @@ interface EmailTemplate {
 }
 
 interface TemplateType {
-  type: string;
-  name: string;
+  value: string;
+  label: string;
 }
 
 interface LocationOption {
@@ -77,12 +77,14 @@ export default function EmailTemplatesPage() {
     setLoading(true);
     try {
       const [tRes, typesRes, locRes] = await Promise.all([
-        api.get<EmailTemplate[]>("/admin/email-templates"),
-        api.get<{ types: TemplateType[] }>("/admin/email-templates/types"),
+        api.get("/admin/email-templates"),
+        api.get("/admin/email-templates/types"),
         api.get<{ data: LocationOption[] }>("/admin/locations?per_page=200"),
       ]);
-      setTemplates(Array.isArray(tRes.data) ? tRes.data : []);
-      setTypes(typesRes.data?.types ?? []);
+      const rawTemplates = tRes.data as { data?: EmailTemplate[] } | EmailTemplate[];
+      setTemplates(Array.isArray(rawTemplates) ? rawTemplates : (rawTemplates as { data?: EmailTemplate[] })?.data ?? []);
+      const rawTypes = typesRes.data;
+      setTypes(Array.isArray(rawTypes) ? rawTypes as TemplateType[] : []);
       setLocations(locRes.data?.data ?? []);
     } catch {
       toast.error(t("loadFailed"));
@@ -164,7 +166,7 @@ export default function EmailTemplatesPage() {
   });
 
   const typeLabel = (type: string) =>
-    types.find((t) => t.type === type)?.name ?? type;
+    types.find((tp) => tp.value === type)?.label ?? type;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -207,7 +209,7 @@ export default function EmailTemplatesPage() {
           >
             <option value="all">{t("allTypes")}</option>
             {types.map((type) => (
-              <option key={type.type} value={type.type}>{type.name}</option>
+              <option key={type.value} value={type.value}>{type.label}</option>
             ))}
           </select>
           <select

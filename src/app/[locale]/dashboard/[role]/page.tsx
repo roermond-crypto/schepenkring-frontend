@@ -286,6 +286,7 @@ export default function AdminDashboardHome() {
   const defaultUserName = t("defaults.userName");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [bidAuditTab, setBidAuditTab] = useState<"bids" | "audit">("bids");
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
   const [welcomeName, setWelcomeName] = useState(defaultUserName);
@@ -1212,89 +1213,195 @@ export default function AdminDashboardHome() {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   {t("sections.marketPulse")}
                 </p>
-                <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
-                  {t("sections.recentBiddingActivity")}
-                </h2>
+                {isAdminRole ? (
+                  <div className="mt-2 flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 p-0.5 w-fit">
+                    <button
+                      onClick={() => setBidAuditTab("bids")}
+                      className={cn(
+                        "rounded-lg px-4 py-1.5 text-sm font-bold transition",
+                        bidAuditTab === "bids"
+                          ? "bg-[#0B1F3A] text-white"
+                          : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200",
+                      )}
+                    >
+                      {t("sections.recentBiddingActivity")}
+                    </button>
+                    <button
+                      onClick={() => setBidAuditTab("audit")}
+                      className={cn(
+                        "rounded-lg px-4 py-1.5 text-sm font-bold transition",
+                        bidAuditTab === "audit"
+                          ? "bg-[#0B1F3A] text-white"
+                          : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200",
+                      )}
+                    >
+                      {t("sections.systemAudit")}
+                    </button>
+                  </div>
+                ) : (
+                  <h2 className="text-2xl font-black text-[#0B1F3A] dark:text-slate-100">
+                    {t("sections.recentBiddingActivity")}
+                  </h2>
+                )}
               </div>
               <Link
-                href={`${dashboardBase}/yachts`}
+                href={isAdminRole && bidAuditTab === "audit" ? `${dashboardBase}/audit` : `${dashboardBase}/bids`}
                 className="inline-flex items-center gap-1 rounded-lg border border-[#BED0EE] bg-[#EFF4FF] px-3 py-2 text-sm font-semibold text-[#1E3A8A] transition hover:bg-[#dfe9ff] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
-                {t("actions.viewBiddings")}
+                {isAdminRole && bidAuditTab === "audit" ? t("audit.seeAll") : t("actions.viewBiddings")}
                 <ArrowRight size={14} />
               </Link>
             </div>
 
-            <div className="space-y-3">
-              {loading &&
-                Array.from({ length: 3 }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className="animate-pulse rounded-xl border border-slate-200 p-4 dark:border-slate-700"
-                  >
-                    <div className="h-4 w-40 rounded bg-slate-200 dark:bg-slate-700" />
-                    <div className="mt-2 h-3 w-28 rounded bg-slate-100 dark:bg-slate-800" />
-                  </div>
-                ))}
-
-              {!loading &&
-                data.recentBids.map((yacht, idx) => (
-                  <motion.div
-                    key={yacht.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.06 }}
-                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-4 transition hover:border-[#BBD0F2] hover:shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800 dark:hover:border-slate-600"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0B1F3A] text-sm font-bold text-white">
-                        {idx + 1}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-[#0B1F3A] dark:text-slate-100">
-                          {yacht.name}
-                        </p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          {t("labels.registry")}:{" "}
-                          {yacht.vessel_id || t("labels.unknown")}
-                        </p>
-                      </div>
+            {/* Bids tab */}
+            {(!isAdminRole || bidAuditTab === "bids") && (
+              <div className="space-y-3">
+                {loading &&
+                  Array.from({ length: 3 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="animate-pulse rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+                    >
+                      <div className="h-4 w-40 rounded bg-slate-200 dark:bg-slate-700" />
+                      <div className="mt-2 h-3 w-28 rounded bg-slate-100 dark:bg-slate-800" />
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-black text-[#1E3A8A]">
-                        €
-                        {toNumericValue(yacht.current_bid).toLocaleString(
-                          "de-DE",
-                        )}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {t("labels.currentBid")}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+                  ))}
 
-              {!loading && data.recentBids.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-[#C6D6F2] bg-gradient-to-b from-[#F8FBFF] to-white p-10 text-center dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#0B1F3A]/10">
-                    <Sailboat className="text-[#1E3A8A]" size={26} />
+                {!loading &&
+                  data.recentBids.map((yacht, idx) => (
+                    <motion.div
+                      key={yacht.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.06 }}
+                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-4 transition hover:border-[#BBD0F2] hover:shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800 dark:hover:border-slate-600"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0B1F3A] text-sm font-bold text-white">
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[#0B1F3A] dark:text-slate-100">
+                            {yacht.name}
+                          </p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400">
+                            {t("labels.registry")}:{" "}
+                            {yacht.vessel_id || t("labels.unknown")}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-black text-[#1E3A8A]">
+                          €
+                          {toNumericValue(yacht.current_bid).toLocaleString(
+                            "de-DE",
+                          )}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {t("labels.currentBid")}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+
+                {!loading && data.recentBids.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-[#C6D6F2] bg-gradient-to-b from-[#F8FBFF] to-white p-10 text-center dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#0B1F3A]/10">
+                      <Sailboat className="text-[#1E3A8A]" size={26} />
+                    </div>
+                    <p className="text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
+                      {t("empty.noRecentBiddingTitle")}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      {t("empty.noRecentBiddingSubtitle")}
+                    </p>
+                    <Link
+                      href={`${dashboardBase}/bids`}
+                      className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
+                    >
+                      {t("actions.viewBiddings")}
+                      <ArrowRight size={14} />
+                    </Link>
                   </div>
-                  <p className="text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
-                    {t("empty.noRecentBiddingTitle")}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    {t("empty.noRecentBiddingSubtitle")}
-                  </p>
-                  <Link
-                    href={`${dashboardBase}/yachts`}
-                    className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
-                  >
-                    {t("actions.viewBiddings")}
-                    <ArrowRight size={14} />
-                  </Link>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
+
+            {/* Audit tab (admin only) */}
+            {isAdminRole && bidAuditTab === "audit" && (
+              <div className="space-y-3">
+                {loading &&
+                  Array.from({ length: 5 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="animate-pulse rounded-lg border border-slate-100 p-3 dark:border-slate-700"
+                    >
+                      <div className="h-3 w-4/5 rounded bg-slate-200 dark:bg-slate-700" />
+                      <div className="mt-2 h-2.5 w-1/3 rounded bg-slate-100 dark:bg-slate-800" />
+                    </div>
+                  ))}
+
+                {!loading &&
+                  data.auditLogs.slice(0, 5).map((task: DashboardAuditItem) => {
+                    const status = auditStatus(task);
+                    const auditHref = `${dashboardBase}/audit?logId=${task.id}`;
+                    const StatusIcon = status.icon;
+                    return (
+                      <Link
+                        key={task.id}
+                        href={auditHref}
+                        className="block rounded-xl border border-slate-200 p-3 transition hover:border-[#BBD0F2] hover:bg-slate-50 dark:border-slate-700 dark:hover:border-slate-600"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={cn(
+                              "mt-0.5 rounded-full p-1.5 text-white",
+                              status.dot,
+                            )}
+                          >
+                            <StatusIcon size={12} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">
+                              {task.description ||
+                                task.title ||
+                                task.event_type ||
+                                task.action ||
+                                t("audit.taskUpdate")}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                              {task.entity_type ||
+                                (task.assigned_to
+                                  ? t("audit.operatorAction")
+                                  : t("audit.autoSystemEvent"))}{" "}
+                              {task.entity_id
+                                ? `#${task.entity_id}`
+                                : `${t("audit.on")} ${t("audit.globalFleet")}`}
+                            </p>
+                            <div className="mt-2 flex items-center justify-between">
+                              <span className={cn("text-xs font-semibold", status.text)}>
+                                {status.label}
+                              </span>
+                              <span className="text-xs text-slate-400 dark:text-slate-500">
+                                {formatDistanceToNow(
+                                  new Date(task.created_at || task.updated_at || Date.now()),
+                                  { addSuffix: true },
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+
+                {!loading && data.auditLogs.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                    {t("empty.noSystemLogs")}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
