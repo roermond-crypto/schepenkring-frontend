@@ -1819,7 +1819,7 @@
     "subtitle": "Débloquez la marketplace mondiale Schepenkring. Complétez ces étapes pour mettre votre bateau en vente.",
     "currentProgress": "Progression actuelle",
     "createFirstBoat": "Créer votre premier bateau",
-    "description": "iDIN, iDEAL 0.01 en verkoper KYC antwoorden creëren een herbruikbare profielverificatie die 90 dagen geldig blijft. Boten kunnen in concept blijven terwijl de verificatie gaande is, maar publicatie blijft geblokkeerd totdat de backend de verkoperverificatie markeert als goedgekeurd.",
+    "description": "Les réponses iDIN, iDEAL 0.01 et KYC du vendeur créent une vérification de profil réutilisable valable 90 jours.",
     "steps": {
       "profile": "Profiel",
       "payment": "Betaling",
@@ -1829,12 +1829,12 @@
       "signing": "Ondertekening"
     },
     "flow": {
-      "stepCounter": "Stap {current} van {total}"
+      "stepCounter": "Étape {current} sur {total}"
     },
     "summary": {
-      "currentStatus": "Huidige status: {value}",
+      "currentStatus": "Statut actuel : {value}",
       "nextStep": "Volgende stap: {value}",
-      "canPublish": "Kan boot publiceren: {value}",
+      "canPublish": "Publication du bateau possible : {value}",
       "validUntil": "Geldig tot: {value}",
       "complete": "Voltooid",
       "inProgress": "In behandeling",
@@ -1842,7 +1842,7 @@
       "yes": "Ja",
       "no": "Nee"
     },
-    "blockersTitle": "Blokkerende compliance vlaggen",
+    "blockersTitle": "Indicateurs de conformité bloquants",
     "sellerTypes": {
       "private": "Particulier",
       "business": "Zakelijk"
@@ -1855,7 +1855,7 @@
       "addressLine1": "Adresregel 1",
       "addressLine2": "Adresregel 2",
       "city": "Stad",
-      "state": "Provincie",
+      "state": "État / province",
       "postalCode": "Postcode",
       "country": "Landcode",
       "birthDate": "Geboortedatum",
@@ -1864,7 +1864,7 @@
       "kvkNumber": "KvK nummer"
     },
     "actions": {
-      "saveProfile": "Huidig profiel opslaan en doorgaan",
+      "saveProfile": "Sauvegarder le profil et continuer",
       "saving": "Opslaan...",
       "opening": "Openen...",
       "submitting": "Versturen...",
@@ -1884,30 +1884,30 @@
       "kycSubmitted": "KYC antwoorden verstuurd.",
       "kycError": "Kon KYC antwoorden niet versturen."
     },
-    "loading": "Laden verkoper onboarding...",
+    "loading": "Chargement de l'intégration du vendeur...",
     "sections": {
       "profile": {
-        "addressLabel": "Google Maps adres",
-        "addressPlaceholder": "Begin met het typen van je straat of stad"
+        "addressLabel": "Adresse Google Maps",
+        "addressPlaceholder": "Commencez à saisir votre rue ou votre ville"
       },
       "contract": {
-        "title": "Betaling ontvangen",
-        "description": "Je betaling is succesvol verwerkt. We kunnen nu je contract genereren.",
+        "title": "Paiement reçu",
+        "description": "Votre paiement a été traité avec succès. Nous pouvons maintenant générer votre contrat.",
         "generating": "Genereren...",
-        "action": "Contract genereren"
+        "action": "Générer le contrat"
       },
       "verification": {
-        "title": "Identiteitsverificatie",
-        "description": "Klik op de knop hieronder om de verificatie via Signhost te starten (iDIN en iDEAL 0.01).",
-        "action": "Start verificatie in Signhost"
+        "title": "Vérification d'identité",
+        "description": "Cliquez sur le bouton ci-dessous pour démarrer la vérification via Signhost (iDIN et iDEAL 0.01).",
+        "action": "Démarrer la vérification dans Signhost"
       },
       "kyc": {
         "action": "Antwoorden versturen"
       },
       "signing": {
         "title": "Contract ondertekenen",
-        "description": "Je verificatie is voltooid. Onderteken nu het contract om je onboarding af te ronden.",
-        "action": "Ondertekenen in Signhost"
+        "description": "Votre vérification est terminée. Signez maintenant le contrat pour finaliser votre intégration.",
+        "action": "Signer dans Signhost"
       },
       "manualReview": {
         "title": "Demande en cours d'examen",
@@ -1920,23 +1920,23 @@
     }
   },
   "BuyerVerificationPanel": {
-    "eyebrow": "Koper Verificatie",
-    "title": "Voltooi koper verificatie",
-    "description": "iDIN, iDEAL 0.01 en koper KYC antwoorden worden opgeslagen op je profiel en kunnen worden hergebruikt voor toekomstige proefvaarten en deals totdat de geldigheidstermijn van 90 dagen verloopt.",
+    "eyebrow": "Vérification de l'acheteur",
+    "title": "Finaliser la vérification de l'acheteur",
+    "description": "Les réponses iDIN, iDEAL 0.01 et KYC de l'acheteur sont stockées sur votre profil et peuvent être réutilisées pour de futurs essais et transactions jusqu'à l'expiration de la fenêtre de validité de 90 jours.",
     "steps": {
       "profile": "Profiel",
       "verification": "Verificatie",
       "kyc": "KYC"
     },
     "flow": {
-      "stepCounter": "Stap {current} van {total}"
+      "stepCounter": "Étape {current} sur {total}"
     },
     "statusValues": {
       "created": "Aangemaakt",
-      "profileCompleted": "Profiel voltooid",
-      "signhostVerificationStarted": "Verificatie gestart",
+      "profileCompleted": "Profil complété",
+      "signhostVerificationStarted": "Vérification démarrée",
       "idinCompleted": "iDIN voltooid",
-      "idealCompleted": "iDEAL 0.01 voltooid",
+      "idealCompleted": "iDEAL 0.01 complété",
       "kycPending": "KYC in afwachting",
       "kycCompleted": "KYC voltooid",
       "manualReview": "Handmatige beoordeling",
@@ -1958,7 +1958,7 @@
       "addressLine1": "Adresregel 1",
       "addressLine2": "Adresregel 2",
       "city": "Stad",
-      "state": "Provincie",
+      "state": "État / province",
       "postalCode": "Postcode",
       "country": "Landcode",
       "birthDate": "Geboortedatum",
@@ -1982,28 +1982,28 @@
         "addressPlaceholder": "Commencez à taper pour rechercher votre adresse..."
       },
       "verification": {
-        "title": "Ga verder met identiteits- en bankverificatie",
-        "description": "Ga verder met de Signhost-flow voor koper identiteitsverificatie en de €0,01 bankverificatie.",
-        "reverification": "Je vorige koperverificatie is verlopen. Voltooi de Signhost-flow opnieuw om de volgende geldigheidsperiode van 90 dagen te verversen.",
-        "action": "Doorgaan in Signhost"
+        "title": "Poursuivre la vérification d'identité et bancaire",
+        "description": "Poursuivez le processus Signhost hébergé pour la vérification d'identité de l'acheteur et la vérification bancaire à 0,01 EUR.",
+        "reverification": "Votre vérification d'acheteur précédente a expiré. Effectuez à nouveau le processus Signhost hébergé pour renouveler la prochaine fenêtre de validité de 90 jours.",
+        "action": "Continuer dans Signhost"
       },
       "kyc": {
-        "title": "Beantwoord de KYC-vragen voor kopers",
-        "description": "Rond de risico- en compliancevragen af zodat je herbruikbare koperverificatie ter goedkeuring kan worden ingediend.",
-        "action": "Koper KYC antwoorden versturen"
+        "title": "Répondre aux questions KYC de l'acheteur",
+        "description": "Répondez aux questions de risque et de conformité afin que votre vérification d'acheteur réutilisable puisse être soumise pour approbation.",
+        "action": "Soumettre les réponses KYC de l'acheteur"
       }
     },
     "toasts": {
-      "load": "Kon koper verificatie niet laden.",
-      "questionsLoad": "Kon koper KYC vragen niet laden.",
-      "profileSaved": "Koper profiel opgeslagen.",
-      "profileSaveError": "Kon koper profiel niet opslaan.",
-      "noSignhostRedirect": "Geen Signhost redirect URL ontvangen.",
-      "signhostError": "Kon Signhost flow niet voortzetten.",
-      "kycSubmitted": "Koper KYC antwoorden verstuurd.",
-      "kycError": "Kon koper KYC antwoorden niet versturen."
+      "load": "Impossible de charger la vérification de l'acheteur.",
+      "questionsLoad": "Impossible de charger les questions KYC de l'acheteur.",
+      "profileSaved": "Profil de l'acheteur sauvegardé.",
+      "profileSaveError": "Impossible de sauvegarder le profil de l'acheteur.",
+      "noSignhostRedirect": "Aucune URL de redirection Signhost n'a été retournée.",
+      "signhostError": "Impossible de poursuivre le processus Signhost.",
+      "kycSubmitted": "Réponses KYC de l'acheteur soumises.",
+      "kycError": "Impossible de soumettre les réponses KYC de l'acheteur."
     },
-    "loading": "Laden koper verificatie..."
+    "loading": "Chargement de la vérification de l'acheteur..."
   },
   "VideoSettings": {
     "title": "Paramètres vidéo et réseaux sociaux",
@@ -2285,7 +2285,7 @@
   "DashboardBids": {
     "eyebrow": "Bidding",
     "title": "Bids",
-    "subtitle": "Review, accept, reject or counter offers on your boats.",
+    "subtitle": "Examinez, acceptez, refusez ou contre-proposez des offres sur vos bateaux.",
     "actions": {
       "accept": "Accept",
       "reject": "Reject",
@@ -2303,32 +2303,32 @@
     },
     "empty": {
       "title": "No bids yet",
-      "subtitle": "When a buyer places a bid, it will appear here."
+      "subtitle": "Lorsqu'un acheteur fait une offre, elle apparaîtra ici."
     },
     "toasts": {
       "accept": "Bid accepted",
       "reject": "Bid rejected",
-      "counter": "Counter offer sent",
+      "counter": "Contre-offre envoyée",
       "failed": "Action failed"
     }
   },
   "LocationBidSettings": {
     "title": "Bid settings",
-    "subtitle": "Control bidding visibility and routing for this location.",
-    "bidsPageEnabled": "Show bids page for users at this location",
-    "sellerNotifications": "Notify seller on new bids",
-    "directChat": "Allow direct buyer/seller chat",
-    "routingMode": "Bid routing mode",
+    "subtitle": "Contrôlez la visibilité et le routage des offres pour cet emplacement.",
+    "bidsPageEnabled": "Afficher la page des offres pour les utilisateurs de cet emplacement",
+    "sellerNotifications": "Notifier le vendeur des nouvelles offres",
+    "directChat": "Autoriser la messagerie directe acheteur/vendeur",
+    "routingMode": "Mode de routage des offres",
     "modes": {
-      "direct": "Direct buyer/seller",
-      "broker": "Broker controlled",
+      "direct": "Acheteur/vendeur direct",
+      "broker": "Contrôlé par le courtier",
       "adminReview": "Admin review"
     },
     "save": "Save settings",
     "saving": "Saving...",
-    "saveSuccess": "Bid settings saved",
-    "saveError": "Failed to save bid settings",
-    "loading": "Loading bid settings..."
+    "saveSuccess": "Paramètres d'offre sauvegardés",
+    "saveError": "Échec de la sauvegarde des paramètres d'offre",
+    "loading": "Chargement des paramètres d'offre..."
   },
   "BoatIntake": {
     "nav": {

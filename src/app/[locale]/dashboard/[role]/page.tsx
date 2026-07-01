@@ -797,26 +797,6 @@ export default function AdminDashboardHome() {
         "border-[#DDD1FF] bg-gradient-to-br from-[#F5F3FF] to-[#FAF5FF]",
     },
     {
-      key: "knowledgeLibrary",
-      title: t("shortcuts.knowledgeLibrary.title"),
-      description: t("shortcuts.knowledgeLibrary.description"),
-      href: `${dashboardBase}/knowledgebase/articles`,
-      icon: Library,
-      iconTone: "text-[#059669]",
-      iconShell:
-        "border-[#C7EEDB] bg-gradient-to-br from-[#ECFDF5] to-[#F8FAFC]",
-    },
-    {
-      key: "knowledgeBrain",
-      title: t("shortcuts.knowledgeBrain.title"),
-      description: t("shortcuts.knowledgeBrain.description"),
-      href: `${dashboardBase}/knowledge-brain`,
-      icon: Brain,
-      iconTone: "text-[#4F46E5]",
-      iconShell:
-        "border-[#D7D7FF] bg-gradient-to-br from-[#EEF2FF] to-[#F8FAFC]",
-    },
-    {
       key: "socialAutomation",
       title: t("shortcuts.socialAutomation.title"),
       description: t("shortcuts.socialAutomation.description"),

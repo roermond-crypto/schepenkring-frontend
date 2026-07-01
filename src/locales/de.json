@@ -593,7 +593,7 @@
         "description": "Verwalten Sie KI-Wissen, Vorschläge und Lernsignale für Ihr Team."
       },
       "socialAutomation": {
-        "title": "Social Automation",
+        "title": "Soziale Automatisierung",
         "description": "Steuern Sie KI-Videos, WhatsApp-Zustellung und Social-Workflows."
       },
       "audit": {
@@ -1829,7 +1829,7 @@
     "subtitle": "Schalten Sie den globalen Schepenkring-Marktplatz frei. Schließen Sie diese Schritte ab, um Ihr Schiff zu inserieren.",
     "currentProgress": "Aktueller Fortschritt",
     "createFirstBoat": "Erstes Boot erstellen",
-    "description": "iDIN, iDEAL 0.01, and seller KYC answers create a reusable profile verification that stays valid for 90 days. Boats can stay in draft while verification is in progress, but publication remains blocked until the backend marks the seller verification as approved and still current.",
+    "description": "iDIN, iDEAL 0.01 und KYC-Antworten des Verkäufers erstellen eine wiederverwendbare Profilverifizierung, die 90 Tage lang gültig bleibt. Boote können im Entwurfsstatus bleiben, während die Verifizierung läuft, die Veröffentlichung bleibt jedoch gesperrt, bis das Backend die Verkäuferverifizierung als genehmigt und aktuell markiert.",
     "steps": {
       "profile": "Profile",
       "payment": "Payment",
@@ -1839,12 +1839,12 @@
       "signing": "Signing"
     },
     "flow": {
-      "stepCounter": "Step {current} of {total}"
+      "stepCounter": "Schritt {current} von {total}"
     },
     "summary": {
-      "currentStatus": "Current status: {value}",
+      "currentStatus": "Aktueller Status: {value}",
       "nextStep": "Next step: {value}",
-      "canPublish": "Can publish boat: {value}",
+      "canPublish": "Boot veröffentlichen möglich: {value}",
       "validUntil": "Valid until: {value}",
       "complete": "Complete",
       "inProgress": "In progress",
@@ -1852,7 +1852,7 @@
       "yes": "Yes",
       "no": "No"
     },
-    "blockersTitle": "Blocking compliance flags",
+    "blockersTitle": "Blockierende Compliance-Hinweise",
     "sellerTypes": {
       "private": "Private",
       "business": "Business"
@@ -1865,7 +1865,7 @@
       "addressLine1": "Address line 1",
       "addressLine2": "Address line 2",
       "city": "City",
-      "state": "State / province",
+      "state": "Bundesland / Provinz",
       "postalCode": "Postal code",
       "country": "Country code",
       "birthDate": "Birth date",
@@ -1874,7 +1874,7 @@
       "kvkNumber": "KvK number"
     },
     "actions": {
-      "saveProfile": "Save profile and continue",
+      "saveProfile": "Profil speichern und fortfahren",
       "saving": "Saving...",
       "opening": "Opening...",
       "submitting": "Submitting...",
@@ -1894,30 +1894,30 @@
       "kycSubmitted": "KYC answers submitted.",
       "kycError": "Could not submit KYC answers."
     },
-    "loading": "Loading seller onboarding...",
+    "loading": "Verkäufer-Onboarding wird geladen...",
     "sections": {
       "profile": {
-        "addressLabel": "Google Maps address",
-        "addressPlaceholder": "Start typing your street or city"
+        "addressLabel": "Google Maps-Adresse",
+        "addressPlaceholder": "Beginnen Sie mit der Eingabe Ihrer Straße oder Stadt"
       },
       "contract": {
-        "title": "Payment received",
-        "description": "Your payment has been successfully processed. We can now generate your contract.",
+        "title": "Zahlung eingegangen",
+        "description": "Ihre Zahlung wurde erfolgreich verarbeitet. Wir können nun Ihren Vertrag erstellen.",
         "generating": "Generating...",
-        "action": "Generate contract"
+        "action": "Vertrag erstellen"
       },
       "verification": {
-        "title": "Identity verification",
-        "description": "Click the button below to start verification via Signhost (iDIN and iDEAL 0.01).",
-        "action": "Start verification in Signhost"
+        "title": "Identitätsverifizierung",
+        "description": "Klicken Sie auf die Schaltfläche unten, um die Verifizierung über Signhost (iDIN und iDEAL 0.01) zu starten.",
+        "action": "Verifizierung in Signhost starten"
       },
       "kyc": {
         "action": "Submit answers"
       },
       "signing": {
         "title": "Sign contract",
-        "description": "Your verification is complete. Now sign the contract to finalize your onboarding.",
-        "action": "Sign in Signhost"
+        "description": "Ihre Verifizierung ist abgeschlossen. Unterzeichnen Sie nun den Vertrag, um Ihr Onboarding abzuschließen.",
+        "action": "In Signhost unterzeichnen"
       },
       "manualReview": {
         "title": "Antrag wird geprüft",
@@ -1930,23 +1930,23 @@
     }
   },
   "BuyerVerificationPanel": {
-    "eyebrow": "Buyer Verification",
-    "title": "Complete buyer verification",
-    "description": "iDIN, iDEAL 0.01, and buyer KYC answers are stored on your profile and can be reused for future test drives and deals until the 90-day validity window expires.",
+    "eyebrow": "Käuferverifizierung",
+    "title": "Käuferverifizierung abschließen",
+    "description": "iDIN, iDEAL 0.01 und KYC-Antworten des Käufers werden in Ihrem Profil gespeichert und können für zukünftige Probefahrten und Transaktionen wiederverwendet werden, bis das 90-tägige Gültigkeitsfenster abläuft.",
     "steps": {
       "profile": "Profile",
       "verification": "Verification",
       "kyc": "KYC"
     },
     "flow": {
-      "stepCounter": "Step {current} of {total}"
+      "stepCounter": "Schritt {current} von {total}"
     },
     "statusValues": {
       "created": "Created",
-      "profileCompleted": "Profile completed",
-      "signhostVerificationStarted": "Verification started",
+      "profileCompleted": "Profil abgeschlossen",
+      "signhostVerificationStarted": "Verifizierung gestartet",
       "idinCompleted": "iDIN completed",
-      "idealCompleted": "iDEAL 0.01 completed",
+      "idealCompleted": "iDEAL 0.01 abgeschlossen",
       "kycPending": "KYC pending",
       "kycCompleted": "KYC completed",
       "manualReview": "Manual review",
@@ -1968,7 +1968,7 @@
       "addressLine1": "Address line 1",
       "addressLine2": "Address line 2",
       "city": "City",
-      "state": "State / province",
+      "state": "Bundesland / Provinz",
       "postalCode": "Postal code",
       "country": "Country code",
       "birthDate": "Birth date",
@@ -1992,28 +1992,28 @@
         "addressPlaceholder": "Tippen Sie, um Ihre Adresse zu suchen..."
       },
       "verification": {
-        "title": "Continue identity and bank verification",
-        "description": "Continue the hosted Signhost flow for buyer identity verification and the 0.01 EUR bank verification.",
-        "reverification": "Your previous buyer verification has expired. Complete the hosted Signhost flow again to refresh the next 90-day validity window.",
-        "action": "Continue in Signhost"
+        "title": "Identitäts- und Bankverifizierung fortsetzen",
+        "description": "Setzen Sie den gehosteten Signhost-Prozess für die Identitätsverifizierung des Käufers und die 0,01-EUR-Bankverifizierung fort.",
+        "reverification": "Ihre vorherige Käuferverifizierung ist abgelaufen. Durchlaufen Sie den gehosteten Signhost-Prozess erneut, um das nächste 90-tägige Gültigkeitsfenster zu erneuern.",
+        "action": "In Signhost fortfahren"
       },
       "kyc": {
-        "title": "Answer the buyer KYC questions",
-        "description": "Finish the risk and compliance questions so your reusable buyer verification can be submitted for approval.",
-        "action": "Submit buyer KYC answers"
+        "title": "KYC-Fragen des Käufers beantworten",
+        "description": "Beantworten Sie die Risiko- und Compliance-Fragen, damit Ihre wiederverwendbare Käuferverifizierung zur Genehmigung eingereicht werden kann.",
+        "action": "KYC-Antworten des Käufers einreichen"
       }
     },
     "toasts": {
-      "load": "Could not load buyer verification.",
-      "questionsLoad": "Could not load buyer KYC questions.",
-      "profileSaved": "Buyer profile saved.",
-      "profileSaveError": "Could not save the buyer profile.",
-      "noSignhostRedirect": "No Signhost redirect URL was returned.",
-      "signhostError": "Could not continue the Signhost flow.",
-      "kycSubmitted": "Buyer KYC answers submitted.",
-      "kycError": "Could not submit buyer KYC answers."
+      "load": "Käuferverifizierung konnte nicht geladen werden.",
+      "questionsLoad": "KYC-Fragen des Käufers konnten nicht geladen werden.",
+      "profileSaved": "Käuferprofil gespeichert.",
+      "profileSaveError": "Das Käuferprofil konnte nicht gespeichert werden.",
+      "noSignhostRedirect": "Es wurde keine Signhost-Weiterleitungs-URL zurückgegeben.",
+      "signhostError": "Der Signhost-Prozess konnte nicht fortgesetzt werden.",
+      "kycSubmitted": "KYC-Antworten des Käufers eingereicht.",
+      "kycError": "KYC-Antworten des Käufers konnten nicht eingereicht werden."
     },
-    "loading": "Loading buyer verification..."
+    "loading": "Käuferverifizierung wird geladen..."
   },
   "VideoSettings": {
     "title": "Video- und Social-Einstellungen",
@@ -2295,7 +2295,7 @@
   "DashboardBids": {
     "eyebrow": "Bidding",
     "title": "Bids",
-    "subtitle": "Review, accept, reject or counter offers on your boats.",
+    "subtitle": "Prüfen, akzeptieren, ablehnen oder kontern Sie Angebote für Ihre Boote.",
     "actions": {
       "accept": "Accept",
       "reject": "Reject",
@@ -2313,32 +2313,32 @@
     },
     "empty": {
       "title": "No bids yet",
-      "subtitle": "When a buyer places a bid, it will appear here."
+      "subtitle": "Wenn ein Käufer ein Gebot abgibt, wird es hier angezeigt."
     },
     "toasts": {
       "accept": "Bid accepted",
       "reject": "Bid rejected",
-      "counter": "Counter offer sent",
+      "counter": "Gegenangebot gesendet",
       "failed": "Action failed"
     }
   },
   "LocationBidSettings": {
     "title": "Bid settings",
-    "subtitle": "Control bidding visibility and routing for this location.",
-    "bidsPageEnabled": "Show bids page for users at this location",
-    "sellerNotifications": "Notify seller on new bids",
-    "directChat": "Allow direct buyer/seller chat",
-    "routingMode": "Bid routing mode",
+    "subtitle": "Steuern Sie Gebotssichtbarkeit und -routing für diesen Standort.",
+    "bidsPageEnabled": "Gebotsseite für Benutzer an diesem Standort anzeigen",
+    "sellerNotifications": "Verkäufer bei neuen Geboten benachrichtigen",
+    "directChat": "Direkten Käufer/Verkäufer-Chat erlauben",
+    "routingMode": "Gebotsrouting-Modus",
     "modes": {
-      "direct": "Direct buyer/seller",
-      "broker": "Broker controlled",
+      "direct": "Direkter Käufer/Verkäufer",
+      "broker": "Makler gesteuert",
       "adminReview": "Admin review"
     },
     "save": "Save settings",
     "saving": "Saving...",
-    "saveSuccess": "Bid settings saved",
-    "saveError": "Failed to save bid settings",
-    "loading": "Loading bid settings..."
+    "saveSuccess": "Gebotseinstellungen gespeichert",
+    "saveError": "Gebotseinstellungen konnten nicht gespeichert werden",
+    "loading": "Gebotseinstellungen werden geladen..."
   },
   "BoatIntake": {
     "nav": {

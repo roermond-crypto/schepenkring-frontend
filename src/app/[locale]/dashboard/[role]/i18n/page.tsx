@@ -45,6 +45,19 @@ function flattenKeys(obj: Record<string, unknown>, prefix = ""): Record<string, 
   return result;
 }
 
+// Known cross-language terms that are intentionally identical to English
+const CROSS_LANG_TERMS = new Set([
+  "Schepenkring", "Schepenkring CRM", "Dashboard", "CRM Dashboard",
+  "KYC", "PDF", "IBAN", "CE", "BTW", "VAT", "FAQ", "Chat", "OK",
+  "Copilot", "Knowledge Brain", "Salesfunnel", "Chat Widget",
+  // Contact info that is intentionally the same in all languages
+  "lelystad@schepenkring.nl", "+31 (0)320 711340", "8242 PE Lelystad",
+  "Parkhaven 3, 8242 PE Lelystad", "support@schepen-kring.nl • +31 20 123 4567",
+  // Technical field names / URL paths / template strings
+  "copilot_action_id", "/dashboard/admin/boats/create",
+  "john@example.com", "{action} - {reason}",
+]);
+
 function analyzeLocale(
   locale: string,
   data: Record<string, unknown>,
@@ -58,16 +71,24 @@ function analyzeLocale(
 
   const missingKeys = Object.keys(reference).filter((k) => !(k in flat));
 
-  const valueMap: Record<string, string[]> = {};
-  for (const [k, v] of Object.entries(flat)) {
-    if (v.length > 3) {
-      if (!valueMap[v]) valueMap[v] = [];
-      valueMap[v].push(k);
-    }
-  }
+  // Only flag keys where the translation is identical to the English source AND
+  // the string is long enough to realistically need translation (>15 chars).
+  // This catches genuinely untranslated strings without flagging short common
+  // words like "Opslaan" that legitimately map to many keys.
   const duplicateValues: Record<string, string[]> = {};
-  for (const [v, keys] of Object.entries(valueMap)) {
-    if (keys.length > 1) duplicateValues[v] = keys;
+  if (locale !== "en") {
+    for (const [k, enVal] of Object.entries(reference)) {
+      const locVal = flat[k];
+      if (
+        locVal !== undefined &&
+        locVal === enVal &&
+        enVal.length > 15 &&
+        !CROSS_LANG_TERMS.has(enVal)
+      ) {
+        if (!duplicateValues[enVal]) duplicateValues[enVal] = [];
+        duplicateValues[enVal].push(k);
+      }
+    }
   }
 
   return {

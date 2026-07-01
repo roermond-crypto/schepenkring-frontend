@@ -135,7 +135,7 @@ export function Sidebar({
         icon: CalendarDays,
       });
       items.push({
-        title: "Boden",
+        title: t.bids ?? "Biedingen",
         href: `${root}/offers`,
         icon: Handshake,
       });
