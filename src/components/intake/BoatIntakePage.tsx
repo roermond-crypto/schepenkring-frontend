@@ -18,7 +18,7 @@ import {
   MessageCircle,
   LogIn,
 } from "lucide-react";
-import { LanguageSwitcher } from "@/components/common/language-switcher";
+import { PublicHeader } from "@/components/common/PublicHeader";
 import type { AppLocale } from "@/lib/i18n";
 
 // ── Types ────────────────────────────────────────────────────
@@ -350,36 +350,16 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
     <div className="min-h-screen bg-[#edf3f7]">
 
       {/* ── Nav — white header with logo ── */}
-      <nav className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-5 py-3">
-          <Link href={`/${locale}/boot-aanmelden`} className="flex items-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/schepenkring-logo.png" alt="Schepenkring" className="h-10 w-auto" />
-          </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-            {[
-              { label: s(t, "nav.supply", "Aanbod"), href: "https://www.schepenkring.nl/aanbod-boten/" },
-              { label: s(t, "nav.locations", "Vestigingen"), href: "https://www.schepenkring.nl/vestigingen/" },
-              { label: s(t, "nav.about", "Over ons"), href: "https://www.schepenkring.nl/boot-verkopen/schip-verkopen/" },
-            ].map(({ label, href }) => (
-              <a key={href} href={href} className="text-slate-600 hover:text-[#003566] transition-colors">{label}</a>
-            ))}
-            <LanguageSwitcher locale={locale} />
-            <Link href={`/${locale}/auth?mode=login`}
-              className="bg-[#C8102E] hover:bg-[#a50d25] px-4 py-2 rounded-full text-sm font-bold text-white transition-colors">
-              {s(t, "nav.login", "Inloggen")}
-            </Link>
-          </div>
-          {/* Mobile: language switcher + login */}
-          <div className="flex md:hidden items-center gap-2">
-            <LanguageSwitcher locale={locale} />
-            <Link href={`/${locale}/auth?mode=login`}
-              className="bg-[#C8102E] hover:bg-[#a50d25] px-3 py-1.5 rounded-full text-xs font-bold text-white transition-colors">
-              {s(t, "nav.login", "Inloggen")}
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicHeader
+        locale={locale}
+        labels={{
+          supply: s(t, "nav.supply", "Aanbod"),
+          locations: s(t, "nav.locations", "Vestigingen"),
+          about: s(t, "nav.about", "Over ons"),
+          login: s(t, "nav.login", "Inloggen"),
+        }}
+        showBootAanmelden={false}
+      />
 
       {/* ── WhatsApp-style contact bar ── */}
       <div className="bg-[#25D366] text-white">

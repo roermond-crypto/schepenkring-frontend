@@ -32,9 +32,8 @@ import {
 import { setClientSession } from "@/lib/auth/client-session";
 import { normalizeRole, type UserRole } from "@/lib/auth/roles";
 import { type AppLocale } from "@/lib/i18n";
-import { LanguageSwitcher } from "@/components/common/language-switcher";
+import { PublicHeader } from "@/components/common/PublicHeader";
 import boatsHeroImage from "../../../public/boatslogo.jpg";
-import schepenkringLogo from "../../../public/schepenkring-logo.png";
 
 type AuthMode = "login" | "register";
 type SignupRole = "buyer" | "seller";
@@ -302,63 +301,17 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     <div className="min-h-screen flex flex-col bg-[#edf3f7] dark:bg-slate-950 font-sans">
 
       {/* ── White top header ── */}
-      <nav className="bg-white border-b border-slate-200 shadow-sm shrink-0">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
-          {/* Logo */}
-          <Link href={`/${locale}/boot-aanmelden`} className="flex items-center shrink-0">
-            <Image
-              src={schepenkringLogo}
-              alt="Schepenkring"
-              width={150}
-              height={42}
-              className="h-10 w-auto object-contain"
-              priority
-            />
-          </Link>
-
-          {/* Right-side nav */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Login / Register toggle tabs */}
-            <div className="flex bg-slate-100 rounded-lg p-0.5 gap-0.5">
-              <button
-                type="button"
-                onClick={() => switchMode("login")}
-                className={[
-                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
-                  mode === "login"
-                    ? "bg-white text-[#003566] shadow-sm"
-                    : "text-slate-500 hover:text-slate-700",
-                ].join(" ")}
-              >
-                {copy.login || "Inloggen"}
-              </button>
-              <button
-                type="button"
-                onClick={() => switchMode("register")}
-                className={[
-                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
-                  mode === "register"
-                    ? "bg-white text-[#003566] shadow-sm"
-                    : "text-slate-500 hover:text-slate-700",
-                ].join(" ")}
-              >
-                {copy.register || "Registreren"}
-              </button>
-            </div>
-
-            {/* Boot aanmelden CTA */}
-            <Link
-              href={`/${locale}/boot-aanmelden`}
-              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#C8102E] hover:bg-[#a50d25] text-white text-xs font-bold transition-colors"
-            >
-              {copy.intakeCtaLabel || "Boot aanmelden"}
-            </Link>
-
-            {/* Language switcher */}
-            <LanguageSwitcher locale={locale} />
-          </div>
-        </div>
-      </nav>
+      <PublicHeader
+        locale={locale}
+        authMode={mode}
+        onSwitchMode={switchMode}
+        labels={{
+          login: copy.login || "Inloggen",
+          register: copy.register || "Registreren",
+          bootAanmelden: copy.intakeCtaLabel || "Boot aanmelden",
+        }}
+        showBootAanmelden
+      />
 
       {/* ── Auth card ── */}
       <div className="flex-1 flex items-center justify-center p-4 py-8">

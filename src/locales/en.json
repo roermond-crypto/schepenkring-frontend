@@ -1326,7 +1326,10 @@
       "automationRules": "Automation Rules"
     },
     "board": {
-      "dropHere": "Drop tasks here"
+      "dropHere": "Drop tasks here",
+      "addTask": "Add task",
+      "addColumn": "Add column",
+      "columnTitlePlaceholder": "Column title..."
     },
     "empty": {
       "noTasks": "No tasks found",
@@ -1339,6 +1342,7 @@
       "createdBy": "Created by",
       "na": "—",
       "me": "Me",
+      "you": "You",
       "due": "Due",
       "overdue": "OVERDUE"
     },

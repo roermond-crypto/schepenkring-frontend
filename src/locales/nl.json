@@ -1326,7 +1326,10 @@
       "automationRules": "Automatiseringsregels"
     },
     "board": {
-      "dropHere": "Sleep taken hierheen"
+      "dropHere": "Sleep taken hierheen",
+      "addTask": "Taak toevoegen",
+      "addColumn": "Kolom toevoegen",
+      "columnTitlePlaceholder": "Kolomnaam..."
     },
     "empty": {
       "noTasks": "Geen taken gevonden",
@@ -1339,6 +1342,7 @@
       "createdBy": "Aangemaakt door",
       "na": "—",
       "me": "Ik",
+      "you": "Jij",
       "due": "Vervalt",
       "overdue": "TE LAAT"
     },

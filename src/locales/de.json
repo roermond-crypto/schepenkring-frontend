@@ -1326,7 +1326,10 @@
       "automationRules": "Automatisierungsregeln"
     },
     "board": {
-      "dropHere": "Ziehen Sie Aufgaben hierher"
+      "dropHere": "Ziehen Sie Aufgaben hierher",
+      "addTask": "Aufgabe hinzufügen",
+      "addColumn": "Spalte hinzufügen",
+      "columnTitlePlaceholder": "Spaltenname..."
     },
     "empty": {
       "noTasks": "Keine Aufgaben gefunden",
@@ -1339,6 +1342,7 @@
       "createdBy": "Erstellt von",
       "na": "—",
       "me": "Ich",
+      "you": "Du",
       "due": "Fällig",
       "overdue": "ÜBERFÄLLIG"
     },

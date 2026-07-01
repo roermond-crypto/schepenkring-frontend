@@ -1316,7 +1316,10 @@
       "automationRules": "Règles d'automatisation"
     },
     "board": {
-      "dropHere": "Déposez les tâches ici"
+      "dropHere": "Déposez les tâches ici",
+      "addTask": "Ajouter une tâche",
+      "addColumn": "Ajouter une colonne",
+      "columnTitlePlaceholder": "Nom de la colonne..."
     },
     "empty": {
       "noTasks": "Aucune tâche trouvée",
@@ -1329,6 +1332,7 @@
       "createdBy": "Créé par",
       "na": "—",
       "me": "Moi",
+      "you": "Vous",
       "due": "Échéance",
       "overdue": "EN RETARD"
     },

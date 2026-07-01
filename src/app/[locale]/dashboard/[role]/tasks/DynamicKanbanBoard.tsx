@@ -416,7 +416,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                                             className="flex items-center justify-center p-2 text-slate-400 dark:text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg cursor-pointer transition-colors border border-dashed border-transparent hover:border-sky-200 dark:hover:border-sky-800 mt-2"
                                                         >
                                                             <Plus size={16} className="mr-1" />
-                                                            <span className="text-xs font-semibold uppercase tracking-wider">Add Task</span>
+                                                            <span className="text-xs font-semibold uppercase tracking-wider">{t("board.addTask")}</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -437,7 +437,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                     <input
                                         autoFocus
                                         className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 mb-2"
-                                        placeholder="Column title..."
+                                        placeholder={t("board.columnTitlePlaceholder")}
                                         value={newColName}
                                         onChange={(e) => setNewColName(e.target.value)}
                                         onKeyDown={(e) => {
@@ -446,8 +446,8 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                         }}
                                     />
                                     <div className="flex gap-2">
-                                        <Button className="h-8 flex-1 bg-sky-600 hover:bg-sky-500" onClick={handleAddColSubmit}>Add</Button>
-                                        <Button className="h-8 flex-1" variant="outline" onClick={() => setIsAddingCol(false)}>Cancel</Button>
+                                        <Button className="h-8 flex-1 bg-sky-600 hover:bg-sky-500" onClick={handleAddColSubmit}>{t("actions.save")}</Button>
+                                        <Button className="h-8 flex-1" variant="outline" onClick={() => setIsAddingCol(false)}>{t("actions.cancel")}</Button>
                                     </div>
                                 </div>
                                 ) : (
@@ -456,7 +456,7 @@ const DynamicKanbanBoard: React.FC<Props> = ({
                                     className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
                                 >
                                     <Plus size={18} />
-                                    <span className="text-sm font-bold uppercase tracking-widest">Add Column</span>
+                                    <span className="text-sm font-bold uppercase tracking-widest">{t("board.addColumn")}</span>
                                 </button>
                                 )}
                             </div>
