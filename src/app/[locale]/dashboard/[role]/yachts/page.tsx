@@ -658,95 +658,41 @@ export default function FleetManagementPage() {
         {/* STATS CARDS */}
         {!isClientRole && (
           <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mb-8">
-            <div className="bg-white p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                    {t?.stats?.total || "Total"}
-                  </p>
-                  <p className="text-xl font-bold text-[#003566]">
-                    {stats.total}
-                  </p>
+            {[
+              { key: "all", label: t?.stats?.total || "Total", value: stats.total, color: "text-[#003566]", icon: <BarChart3 className="text-blue-600" size={18} /> },
+              { key: "For Sale", label: t?.stats?.forSale || "For Sale", value: stats.forSale, color: "text-emerald-600", icon: <Euro className="text-emerald-600" size={18} /> },
+              { key: "For Bid", label: t?.stats?.forBid || "For Bid", value: stats.forBid, color: "text-blue-600", icon: <Users className="text-blue-600" size={18} /> },
+              { key: "Sold", label: t?.stats?.sold || "Sold", value: stats.sold, color: "text-amber-600", icon: <CheckCircle className="text-amber-600" size={18} /> },
+              { key: "Draft", label: t?.stats?.draft || "Draft", value: stats.draft, color: "text-slate-500", icon: <AlertTriangle className="text-slate-500" size={18} /> },
+              { key: "Active", label: t?.stats?.active || "Active", value: stats.active, color: "text-emerald-600", icon: <CheckCircle className="text-emerald-600" size={18} /> },
+              { key: "Inactive", label: t?.stats?.inactive || "Inactive", value: stats.inactive, color: "text-red-600", icon: <XCircle className="text-red-600" size={18} /> },
+            ].map((card) => (
+              <button
+                key={card.key}
+                onClick={() => {
+                  setSelectedStatus(card.key);
+                  setPagination((prev) => ({ ...prev, current_page: 1 }));
+                }}
+                className={cn(
+                  "bg-white p-4 border shadow-sm text-left transition-all hover:shadow-md",
+                  selectedStatus === card.key
+                    ? "border-[#003566] ring-1 ring-[#003566]"
+                    : "border-slate-200 hover:border-[#003566]/40",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                      {card.label}
+                    </p>
+                    <p className={cn("text-xl font-bold", card.color)}>
+                      {card.value}
+                    </p>
+                  </div>
+                  {card.icon}
                 </div>
-                <BarChart3 className="text-blue-600" size={18} />
-              </div>
-            </div>
-            <div className="bg-white p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                    {t?.stats?.forSale || "For Sale"}
-                  </p>
-                  <p className="text-xl font-bold text-emerald-600">
-                    {stats.forSale}
-                  </p>
-                </div>
-                <Euro className="text-emerald-600" size={18} />
-              </div>
-            </div>
-            <div className="bg-white p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                    {t?.stats?.forBid || "For Bid"}
-                  </p>
-                  <p className="text-xl font-bold text-blue-600">
-                    {stats.forBid}
-                  </p>
-                </div>
-                <Users className="text-blue-600" size={18} />
-              </div>
-            </div>
-            <div className="bg-white p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                    {t?.stats?.sold || "Sold"}
-                  </p>
-                  <p className="text-xl font-bold text-amber-600">{stats.sold}</p>
-                </div>
-                <CheckCircle className="text-amber-600" size={18} />
-              </div>
-            </div>
-            <div className="bg-white p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                    {t?.stats?.draft || "Draft"}
-                  </p>
-                  <p className="text-xl font-bold text-slate-500">
-                    {stats.draft}
-                  </p>
-                </div>
-                <AlertTriangle className="text-slate-500" size={18} />
-              </div>
-            </div>
-            <div className="bg-white p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                    {t?.stats?.active || "Active"}
-                  </p>
-                  <p className="text-xl font-bold text-emerald-600">
-                    {stats.active}
-                  </p>
-                </div>
-                <CheckCircle className="text-emerald-600" size={18} />
-              </div>
-            </div>
-            <div className="bg-white p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                    {t?.stats?.inactive || "Inactive"}
-                  </p>
-                  <p className="text-xl font-bold text-red-600">
-                    {stats.inactive}
-                  </p>
-                </div>
-                <XCircle className="text-red-600" size={18} />
-              </div>
-            </div>
+              </button>
+            ))}
           </div>
         )}
 
