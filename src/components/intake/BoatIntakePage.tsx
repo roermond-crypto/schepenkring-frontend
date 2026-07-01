@@ -392,7 +392,7 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
             <p className="text-[10px] text-white/80 mt-0.5">{s(t, "whatsapp.status", "Online — wij reageren binnen 1 werkdag")}</p>
           </div>
           <a
-            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "31853033940"}`}
+            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "31611888904"}`}
             target="_blank" rel="noopener noreferrer"
             className="shrink-0 text-[11px] font-bold bg-white/20 hover:bg-white/30 transition-colors px-3 py-1.5 rounded-full">
             {s(t, "whatsapp.cta", "Chat met ons")}
