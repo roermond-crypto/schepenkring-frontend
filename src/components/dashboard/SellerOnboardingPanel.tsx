@@ -147,6 +147,8 @@ export function SellerOnboardingPanel({
 }) {
   const dictionary = getDictionary(locale);
   const t = dictionary.SellerOnboardingPanel;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const kycQ = (dictionary as any).SellerKycQuestions as Record<string, { prompt: string; options: Record<string, string> }> | undefined;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -532,12 +534,12 @@ export function SellerOnboardingPanel({
            <form onSubmit={handleKycSubmit} className="space-y-6">
              {questions.map(q => (
                <div key={q.id} className="rounded-2xl border border-slate-200 p-6 bg-white">
-                 <p className="font-bold text-[#12325b]">{q.prompt}</p>
+                 <p className="font-bold text-[#12325b]">{kycQ?.[q.key]?.prompt ?? q.prompt}</p>
                  <div className="mt-4 flex flex-wrap gap-3">
                    {q.options.map(opt => (
                      <label key={opt.id} className={cn("cursor-pointer rounded-xl border px-4 py-2 transition", answers[q.key] === opt.value ? "bg-blue-50 border-blue-500 text-blue-700" : "bg-white border-slate-200")}>
                        <input type="radio" value={opt.value} checked={answers[q.key] === opt.value} onChange={() => setAnswers(prev => ({ ...prev, [q.key]: opt.value }))} className="hidden" />
-                       {opt.label}
+                       {kycQ?.[q.key]?.options?.[opt.value] ?? opt.label}
                      </label>
                    ))}
                  </div>
@@ -555,7 +557,7 @@ export function SellerOnboardingPanel({
              <h3 className="mt-4 text-xl font-bold">{t.sections.signing.title}</h3>
              <p className="mt-2 text-slate-600">{t.sections.signing.description}</p>
              <Link
-               href={`/${locale}/dashboard/seller/yachts/new?fresh=true`}
+               href={`/${locale}/dashboard/seller/yachts`}
                className="mt-6 inline-flex rounded-2xl bg-emerald-600 px-8 py-4 text-white font-bold"
              >
                {t.createFirstBoat}

@@ -2923,5 +2923,56 @@
     "yachts": "yachts",
     "seoTitle": "SEO title",
     "seoDescription": "SEO description"
+  },
+  "SellerKycQuestions": {
+    "pep": {
+      "prompt": "Are you a politically exposed person (PEP)?",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "pep_associate": {
+      "prompt": "Are you a family member or close associate of a PEP?",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "acting_for_third_party": {
+      "prompt": "Are you acting on behalf of someone else?",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "beneficial_owner": {
+      "prompt": "Are you the beneficial owner of the boat sale proceeds?",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "boat_ownership_type": {
+      "prompt": "Is this boat owned privately or by a company?",
+      "options": {
+        "private": "Privately",
+        "company": "By a company"
+      }
+    },
+    "own_bank_account": {
+      "prompt": "Is the payout account your own bank account?",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "foreign_payout_account": {
+      "prompt": "Will funds come from or go to a foreign bank account?",
+      "options": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    }
   }
 }

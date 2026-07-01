@@ -3000,5 +3000,56 @@
     "yachts": "yachts",
     "seoTitle": "Titre SEO",
     "seoDescription": "Description SEO"
+  },
+  "SellerKycQuestions": {
+    "pep": {
+      "prompt": "Êtes-vous une personne politiquement exposée (PPE)?",
+      "options": {
+        "yes": "Oui",
+        "no": "Non"
+      }
+    },
+    "pep_associate": {
+      "prompt": "Êtes-vous un membre de la famille ou un proche d'une PPE?",
+      "options": {
+        "yes": "Oui",
+        "no": "Non"
+      }
+    },
+    "acting_for_third_party": {
+      "prompt": "Agissez-vous au nom de quelqu'un d'autre?",
+      "options": {
+        "yes": "Oui",
+        "no": "Non"
+      }
+    },
+    "beneficial_owner": {
+      "prompt": "Êtes-vous le bénéficiaire effectif du produit de la vente?",
+      "options": {
+        "yes": "Oui",
+        "no": "Non"
+      }
+    },
+    "boat_ownership_type": {
+      "prompt": "Le bateau est-il détenu à titre privé ou par une société?",
+      "options": {
+        "private": "À titre privé",
+        "company": "Par une société"
+      }
+    },
+    "own_bank_account": {
+      "prompt": "Le compte de paiement est-il votre propre compte bancaire?",
+      "options": {
+        "yes": "Oui",
+        "no": "Non"
+      }
+    },
+    "foreign_payout_account": {
+      "prompt": "Les fonds proviennent-ils ou vont-ils vers un compte bancaire étranger?",
+      "options": {
+        "yes": "Oui",
+        "no": "Non"
+      }
+    }
   }
 }

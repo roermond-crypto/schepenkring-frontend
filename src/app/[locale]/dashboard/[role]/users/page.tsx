@@ -432,6 +432,21 @@ export default function RoleManagementPage() {
     }
   };
 
+  const handleApproveSeller = async (user: UserRecord) => {
+    if (!user.seller_onboarding) return;
+    const tid = toast.loading(t("toastsSeller.approving"));
+    try {
+      await api.post(`/admin/seller-onboarding-reviews/${user.seller_onboarding.id}/approve`);
+      setUsers(prev => prev.map(u => u.id === user.id
+        ? { ...u, seller_onboarding: { ...u.seller_onboarding!, status: "APPROVED", can_publish_boat: true } }
+        : u
+      ));
+      toast.success(t("toastsSeller.approved"), { id: tid });
+    } catch {
+      toast.error(t("toastsSeller.approveFailed"), { id: tid });
+    }
+  };
+
   const handleStatusToggle = async (user: UserRecord) => {
     const nextStatus: UserStatus =
       user.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
@@ -829,10 +844,15 @@ export default function RoleManagementPage() {
 
                     <div className="flex flex-col gap-1">
                       {user.seller_onboarding?.status === "MANUAL_REVIEW" ? (
-                        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                        <button
+                          type="button"
+                          onClick={() => void handleApproveSeller(user)}
+                          title={t("actions.approveSeller")}
+                          className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                        >
                           <Clock size={11} />
                           {t("labels.waitingApproval")}
-                        </span>
+                        </button>
                       ) : (
                         <span
                           className={cn(
@@ -918,20 +938,7 @@ export default function RoleManagementPage() {
                                 </button>
                                 {user.seller_onboarding?.status === "MANUAL_REVIEW" && (
                                   <button
-                                    onClick={async () => {
-                                      setOpenActionId(null);
-                                      const tid = toast.loading(t("toastsSeller.approving"));
-                                      try {
-                                        await api.post(`/admin/seller-onboarding-reviews/${user.seller_onboarding!.id}/approve`);
-                                        setUsers(prev => prev.map(u => u.id === user.id
-                                          ? { ...u, seller_onboarding: { ...u.seller_onboarding!, status: "APPROVED", can_publish_boat: true } }
-                                          : u
-                                        ));
-                                        toast.success(t("toastsSeller.approved"), { id: tid });
-                                      } catch {
-                                        toast.error(t("toastsSeller.approveFailed"), { id: tid });
-                                      }
-                                    }}
+                                    onClick={() => { setOpenActionId(null); void handleApproveSeller(user); }}
                                     className="w-full px-4 py-2.5 text-left text-sm text-emerald-700 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
                                   >
                                     <span className="inline-flex items-center gap-3">

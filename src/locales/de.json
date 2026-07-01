@@ -2924,5 +2924,56 @@
     "yachts": "Jachten",
     "seoTitle": "SEO-Titel",
     "seoDescription": "SEO-Beschreibung"
+  },
+  "SellerKycQuestions": {
+    "pep": {
+      "prompt": "Sind Sie eine politisch exponierte Person (PEP)?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nein"
+      }
+    },
+    "pep_associate": {
+      "prompt": "Sind Sie ein Familienmitglied oder enger Vertrauter einer PEP?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nein"
+      }
+    },
+    "acting_for_third_party": {
+      "prompt": "Handeln Sie im Namen einer anderen Person?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nein"
+      }
+    },
+    "beneficial_owner": {
+      "prompt": "Sind Sie der wirtschaftliche Eigentümer des Verkaufserlöses?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nein"
+      }
+    },
+    "boat_ownership_type": {
+      "prompt": "Ist das Boot privat oder im Besitz eines Unternehmens?",
+      "options": {
+        "private": "Privat",
+        "company": "Unternehmen"
+      }
+    },
+    "own_bank_account": {
+      "prompt": "Ist das Auszahlungskonto Ihr eigenes Bankkonto?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nein"
+      }
+    },
+    "foreign_payout_account": {
+      "prompt": "Fließen die Gelder von oder zu einem ausländischen Bankkonto?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nein"
+      }
+    }
   }
 }

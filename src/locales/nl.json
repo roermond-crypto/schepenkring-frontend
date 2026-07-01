@@ -2923,5 +2923,56 @@
     "yachts": "jachten",
     "seoTitle": "SEO-titel",
     "seoDescription": "SEO-beschrijving"
+  },
+  "SellerKycQuestions": {
+    "pep": {
+      "prompt": "Bent u een politiek prominent persoon (PEP)?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nee"
+      }
+    },
+    "pep_associate": {
+      "prompt": "Bent u een familielid of naaste van een politiek prominent persoon?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nee"
+      }
+    },
+    "acting_for_third_party": {
+      "prompt": "Handelt u namens iemand anders?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nee"
+      }
+    },
+    "beneficial_owner": {
+      "prompt": "Bent u de uiteindelijk begunstigde van de verkoopopbrengst?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nee"
+      }
+    },
+    "boat_ownership_type": {
+      "prompt": "Is de boot privébezit of eigendom van een bedrijf?",
+      "options": {
+        "private": "Privébezit",
+        "company": "Bedrijfsbezit"
+      }
+    },
+    "own_bank_account": {
+      "prompt": "Is het uitbetalingsrekening uw eigen bankrekening?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nee"
+      }
+    },
+    "foreign_payout_account": {
+      "prompt": "Worden de gelden gestort op of ontvangen van een buitenlandse bankrekening?",
+      "options": {
+        "yes": "Ja",
+        "no": "Nee"
+      }
+    }
   }
 }
