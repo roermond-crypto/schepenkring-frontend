@@ -352,7 +352,7 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
       {/* ── Nav — white header with logo ── */}
       <nav className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-5 py-3">
-          <Link href="/" className="flex items-center">
+          <Link href={`/${locale}/boot-aanmelden`} className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/schepenkring-logo.png" alt="Schepenkring" className="h-10 w-auto" />
           </Link>

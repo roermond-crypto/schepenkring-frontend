@@ -75,7 +75,7 @@ export function DashboardHeader({
 
         <div className="shrink-0">
           <div className="flex items-center gap-3 lg:gap-4">
-            <Link href="/" className="flex items-center group shrink-0">
+            <Link href={`/${locale}/boot-aanmelden`} className="flex items-center group shrink-0">
               <Image
                 alt=""
                 src="/schepenkring-logo.png"

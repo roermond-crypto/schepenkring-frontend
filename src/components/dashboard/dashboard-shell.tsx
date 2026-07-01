@@ -177,7 +177,9 @@ function DashboardShellInner({
              {/* Minimal Onboarding Header */}
              <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-[70]">
                 <div className="flex items-center">
-                   <img src="/schepenkring-logo.png" alt="Schepenkring" className="h-9 w-auto object-contain" />
+                  <Link href={`/${locale}/boot-aanmelden`}>
+                    <img src="/schepenkring-logo.png" alt="Schepenkring" className="h-9 w-auto object-contain" />
+                  </Link>
                 </div>
                 <div className="flex items-center gap-3">
                   <LanguageSwitcher locale={locale} />

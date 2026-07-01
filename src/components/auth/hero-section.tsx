@@ -305,7 +305,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
       <nav className="bg-white border-b border-slate-200 shadow-sm shrink-0">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
           {/* Logo */}
-          <Link href={`/${locale}`} className="flex items-center shrink-0">
+          <Link href={`/${locale}/boot-aanmelden`} className="flex items-center shrink-0">
             <Image
               src={schepenkringLogo}
               alt="Schepenkring"
