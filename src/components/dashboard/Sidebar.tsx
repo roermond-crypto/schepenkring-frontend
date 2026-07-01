@@ -191,6 +191,11 @@ export function Sidebar({
       }
     } else if (isPartnerLikeRole(role)) {
       items.push({
+        title: t.bids ?? "Biedingen",
+        href: `${root}/offers`,
+        icon: Handshake,
+      });
+      items.push({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,

@@ -405,9 +405,11 @@ export default function AdminOffersPage() {
 
   const initialized = useRef(false);
 
+  const isLocation = role === "location" || role === "partner";
+
   useEffect(() => {
-    if (role !== "admin") router.replace(`/${locale}/dashboard/${role}`);
-  }, [locale, role, router]);
+    if (role !== "admin" && !isLocation) router.replace(`/${locale}/dashboard/${role}`);
+  }, [locale, role, isLocation, router]);
 
   useEffect(() => {
     api.get("/admin/locations").then((res) => {
@@ -446,15 +448,15 @@ export default function AdminOffersPage() {
   }, [applied, page]);
 
   useEffect(() => {
-    if (role !== "admin") return;
+    if (role !== "admin" && !isLocation) return;
     if (initialized.current) return;
     initialized.current = true;
     void loadOffers();
-  }, [loadOffers, role]);
+  }, [loadOffers, role, isLocation]);
 
   useEffect(() => {
     if (!initialized.current) return;
-    if (role !== "admin") return;
+    if (role !== "admin" && !isLocation) return;
     void loadOffers(false, 1);
     setPage(1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
