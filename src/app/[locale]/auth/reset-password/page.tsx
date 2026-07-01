@@ -22,7 +22,8 @@ export default async function ResetPasswordPage({
 
   const currentLocale = getLocaleOrDefault(locale);
   const dict = getDictionary(currentLocale);
-  const a = dict.auth || {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const a = (dict.auth || {}) as any;
 
   return (
     <ResetPasswordClient
