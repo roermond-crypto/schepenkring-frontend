@@ -201,7 +201,8 @@
       "videoTemplates": "Videosjablonen",
       "emailTemplates": "E-mailsjablonen",
       "contractTemplates": "Contractsjablonen",
-      "i18nQuality": "Vertalingskwaliteit"
+      "i18nQuality": "Vertalingskwaliteit",
+      "contractTypes": "Contracttypes"
     },
     "notifications": {
       "label": "Meldingen",

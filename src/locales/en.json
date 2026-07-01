@@ -201,7 +201,8 @@
       "contractTemplates": "Contract Templates",
       "i18nQuality": "Translation Quality",
       "chatWidget": "Chat Widget",
-      "locations": "Locations"
+      "locations": "Locations",
+      "contractTypes": "Contract types"
     },
     "notifications": {
       "label": "Notifications",

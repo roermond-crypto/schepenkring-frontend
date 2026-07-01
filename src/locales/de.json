@@ -201,7 +201,8 @@
       "emailTemplates": "E-Mail-Vorlagen",
       "contractTemplates": "Vertragsvorlagen",
       "i18nQuality": "Übersetzungsqualität",
-      "chatWidget": "Chat-Widget"
+      "chatWidget": "Chat-Widget",
+      "contractTypes": "Vertragstypen"
     },
     "notifications": {
       "label": "Benachrichtigungen",
