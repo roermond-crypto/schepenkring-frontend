@@ -968,12 +968,22 @@
       "finalizeEnrollment": "Benutzer anlegen",
       "refresh": "Aktualisieren",
       "approveSeller": "Verkäufer genehmigen",
-      "rejectSeller": "Verkäufer ablehnen"
+      "rejectSeller": "Verkäufer ablehnen",
+      "viewAccount": "Konto anzeigen",
+      "setInactive": "Deaktivieren",
+      "setActive": "Aktivieren"
     },
     "labels": {
       "status": "Status",
       "loadingUsers": "Benutzer werden geladen...",
-      "waitingApproval": "Wartet auf Genehmigung"
+      "waitingApproval": "Wartet auf Genehmigung",
+      "lastLogin": "Letzte Anmeldung",
+      "twoFactorOn": "2FA An",
+      "twoFactorOff": "2FA Aus",
+      "noProfileName": "Kein Profilname",
+      "noPhone": "Kein Telefon",
+      "noLocation": "Kein Standort",
+      "never": "Nie"
     },
     "toastsSeller": {
       "approving": "Verkäufer wird genehmigt...",

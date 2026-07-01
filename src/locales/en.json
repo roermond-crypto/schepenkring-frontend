@@ -968,12 +968,22 @@
       "finalizeEnrollment": "Finalize Enrollment",
       "refresh": "Refresh",
       "approveSeller": "Approve seller",
-      "rejectSeller": "Reject seller"
+      "rejectSeller": "Reject seller",
+      "viewAccount": "View account",
+      "setInactive": "Set inactive",
+      "setActive": "Set active"
     },
     "labels": {
       "status": "Status",
       "loadingUsers": "Loading users...",
-      "waitingApproval": "Waiting for approval"
+      "waitingApproval": "Waiting for approval",
+      "lastLogin": "Last login",
+      "twoFactorOn": "2FA On",
+      "twoFactorOff": "2FA Off",
+      "noProfileName": "No profile name",
+      "noPhone": "No phone",
+      "noLocation": "No location",
+      "never": "Never"
     },
     "toastsSeller": {
       "approving": "Approving seller...",

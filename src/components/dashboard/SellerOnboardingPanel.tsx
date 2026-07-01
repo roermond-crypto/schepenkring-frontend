@@ -447,31 +447,27 @@ export function SellerOnboardingPanel({
 
   return (
     <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_32px_100px_-40px_rgba(15,23,42,0.3)]">
-      <div className="relative border-b border-slate-100 bg-[#003566] p-8 sm:p-10 overflow-hidden">
-        {/* Background Decorative Element */}
-        <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-white/10 to-transparent pointer-events-none" />
-        <div className="absolute -left-12 -top-12 h-48 w-48 rounded-full bg-blue-400/20 blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <div className="border-b border-slate-100 bg-white p-8 sm:p-10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.3em] text-blue-200 border border-white/10 backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#003566]/15 bg-[#003566]/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.3em] text-[#003566]">
               <ShieldCheck size={12} />
               {t.eyebrow}
             </div>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white tracking-tight">{t.title}</h2>
-            <p className="mt-3 text-blue-100/70 text-sm max-w-xl font-medium leading-relaxed">
+            <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-[#003566] tracking-tight">{t.title}</h2>
+            <p className="mt-2 text-sm text-slate-500 max-w-xl font-medium leading-relaxed">
               {t.subtitle}
             </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-6 py-4 text-center ring-1 ring-white/10 shadow-2xl">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-300/80 mb-1">{t.currentProgress}</p>
-            <div className="text-2xl font-black text-white">
+          <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-6 py-4 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">{t.currentProgress}</p>
+            <div className="text-2xl font-black text-[#003566]">
               {t.flow.stepCounter.replace("{current}", (currentStepIndex + 1).toString()).replace("{total}", stepConfig.length.toString())}
             </div>
           </div>
         </div>
-        
-        <div className="mt-10">
+
+        <div className="mt-8">
           <OnboardingStepper
             steps={stepperItems}
             onStepSelect={(key) => {

@@ -234,10 +234,10 @@ function extractErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) return "Never";
+function formatDateTime(value?: string | null, never = "Never") {
+  if (!value) return never;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Never";
+  if (Number.isNaN(date.getTime())) return never;
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
@@ -249,6 +249,11 @@ export default function RoleManagementPage() {
   const params = useParams<{ role: string }>();
   const locale = useLocale();
   const t = useTranslations("DashboardAdminUsers");
+  const statusLabels: Record<StatusUi, string> = {
+    Active: t("options.active"),
+    Inactive: t("options.inactive"),
+    Pending: t("options.pending"),
+  };
   const { user: sessionUser } = useClientSession();
   const routeRole = params.role;
   const isEmployeeView = routeRole === "employee" || sessionUser.role === "employee";
@@ -757,10 +762,10 @@ export default function RoleManagementPage() {
                         <p className="truncate text-[11px] text-slate-400">
                           {[user.first_name, user.last_name]
                             .filter(Boolean)
-                            .join(" ") || "No profile name"}
+                            .join(" ") || t("labels.noProfileName")}
                         </p>
                         <p className="truncate text-[11px] text-slate-400">
-                          {user.phone || "No phone"}
+                          {user.phone || t("labels.noPhone")}
                         </p>
                       </div>
                     </div>
@@ -772,11 +777,11 @@ export default function RoleManagementPage() {
                       <p className="mt-0.5 truncate text-[11px] text-slate-400">
                         {user.client_location?.name ||
                           (user.locations?.length
-                            ? `${user.locations.length} location(s)`
-                            : "No location")}
+                            ? `${user.locations.length} ×`
+                            : t("labels.noLocation"))}
                       </p>
                       <p className="truncate text-[11px] text-slate-400">
-                        Last login: {formatDateTime(user.last_login_at)}
+                        {t("labels.lastLogin")}: {formatDateTime(user.last_login_at, t("labels.never"))}
                       </p>
                     </div>
 
@@ -784,7 +789,7 @@ export default function RoleManagementPage() {
                       {isEmployeeView ? (
                         <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
                           <Anchor size={11} />
-                          {user.client_location?.name || "No location"}
+                          {user.client_location?.name || t("labels.noLocation")}
                         </span>
                       ) : (
                         <>
@@ -793,7 +798,7 @@ export default function RoleManagementPage() {
                             {locationRoleLabel(user.type, user.location_role)}
                           </span>
                           <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
-                            {user.two_factor_enabled ? "2FA On" : "2FA Off"}
+                            {user.two_factor_enabled ? t("labels.twoFactorOn") : t("labels.twoFactorOff")}
                           </span>
                         </>
                       )}
@@ -823,20 +828,21 @@ export default function RoleManagementPage() {
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <span
-                        className={cn(
-                          "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
-                          status.bg,
-                          status.color,
-                        )}
-                      >
-                        <StatusIcon size={11} />
-                        {mapStatusToUi(user.status)}
-                      </span>
-                      {user.seller_onboarding?.status === "MANUAL_REVIEW" && (
-                        <span className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                          <Clock size={9} />
+                      {user.seller_onboarding?.status === "MANUAL_REVIEW" ? (
+                        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                          <Clock size={11} />
                           {t("labels.waitingApproval")}
+                        </span>
+                      ) : (
+                        <span
+                          className={cn(
+                            "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+                            status.bg,
+                            status.color,
+                          )}
+                        >
+                          <StatusIcon size={11} />
+                          {statusLabels[mapStatusToUi(user.status)]}
                         </span>
                       )}
                     </div>
@@ -875,7 +881,7 @@ export default function RoleManagementPage() {
                                 >
                                   <span className="inline-flex items-center gap-3">
                                     <UserCircle size={15} className="text-blue-500" />
-                                    View account
+                                    {t("actions.viewAccount")}
                                   </span>
                                 </button>
                                 <button
@@ -892,8 +898,8 @@ export default function RoleManagementPage() {
                                       <CheckCircle2 size={15} className="text-emerald-500" />
                                     )}
                                     {user.status === "ACTIVE"
-                                      ? "Set inactive"
-                                      : "Set active"}
+                                      ? t("actions.setInactive")
+                                      : t("actions.setActive")}
                                   </span>
                                 </button>
                                 <button

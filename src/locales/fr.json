@@ -958,12 +958,22 @@
       "finalizeEnrollment": "Finaliser l'inscription",
       "refresh": "Actualiser",
       "approveSeller": "Approuver le vendeur",
-      "rejectSeller": "Rejeter le vendeur"
+      "rejectSeller": "Rejeter le vendeur",
+      "viewAccount": "Voir le compte",
+      "setInactive": "Désactiver",
+      "setActive": "Activer"
     },
     "labels": {
       "status": "Statut",
       "loadingUsers": "Chargement des utilisateurs...",
-      "waitingApproval": "En attente d'approbation"
+      "waitingApproval": "En attente d'approbation",
+      "lastLogin": "Dernière connexion",
+      "twoFactorOn": "2FA Activé",
+      "twoFactorOff": "2FA Désactivé",
+      "noProfileName": "Pas de nom de profil",
+      "noPhone": "Pas de téléphone",
+      "noLocation": "Pas d'emplacement",
+      "never": "Jamais"
     },
     "toastsSeller": {
       "approving": "Approbation du vendeur...",

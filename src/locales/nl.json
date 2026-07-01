@@ -968,12 +968,22 @@
       "finalizeEnrollment": "Gebruiker aanmaken",
       "refresh": "Vernieuwen",
       "approveSeller": "Verkoper goedkeuren",
-      "rejectSeller": "Verkoper afwijzen"
+      "rejectSeller": "Verkoper afwijzen",
+      "viewAccount": "Bekijk account",
+      "setInactive": "Deactiveren",
+      "setActive": "Activeren"
     },
     "labels": {
       "status": "Status",
       "loadingUsers": "Gebruikers laden...",
-      "waitingApproval": "Wacht op goedkeuring"
+      "waitingApproval": "Wacht op goedkeuring",
+      "lastLogin": "Laatste login",
+      "twoFactorOn": "2FA Aan",
+      "twoFactorOff": "2FA Uit",
+      "noProfileName": "Geen profielnaam",
+      "noPhone": "Geen telefoon",
+      "noLocation": "Geen locatie",
+      "never": "Nooit"
     },
     "toastsSeller": {
       "approving": "Verkoper goedkeuren...",
