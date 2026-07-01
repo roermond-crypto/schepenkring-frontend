@@ -7,7 +7,6 @@ interface TranslatableTask {
   id: number;
   title: string;
   description?: string;
-  [key: string]: unknown;
 }
 
 // Returns the same task array with title/description replaced by locale translations.
