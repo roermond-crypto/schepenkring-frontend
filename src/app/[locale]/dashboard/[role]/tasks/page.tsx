@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useTranslatedTasks } from "@/hooks/useTranslatedTasks";
 import { useParams, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useTranslations, useLocale } from "next-intl";
@@ -1786,6 +1787,11 @@ export default function AdminTaskBoardPage() {
     [filteredTasks, columns],
   );
 
+  // Auto-translate task title + description to the current UI locale.
+  // Falls back to original text while loading; results are cached per session.
+  const displayTasks = useTranslatedTasks(filteredTasks, locale);
+  const displayBoardTasks = useTranslatedTasks(filteredBoardTasks, locale);
+
   const handleTaskSubmit = async (taskData: TaskSubmitData) => {
     try {
       const token = getStoredToken();
@@ -2443,7 +2449,7 @@ export default function AdminTaskBoardPage() {
               )}
             >
               <DynamicKanbanBoard
-                tasks={filteredBoardTasks}
+                tasks={displayBoardTasks}
                 columns={columns}
                 onTaskMove={handleTaskMove}
                 onColumnMove={handleColumnMove}
@@ -2467,7 +2473,7 @@ export default function AdminTaskBoardPage() {
           ) : viewMode === "list" ? (
             <div className="space-y-4">
               <AnimatePresence mode="popLayout">
-                {filteredTasks.length === 0 ? (
+                {displayTasks.length === 0 ? (
                   <div className="text-center p-12 border-2 border-dashed border-slate-200 rounded-lg">
                     <p className="text-slate-400">{t("empty.noTasks")}</p>
                     <p className="text-sm text-slate-300 mt-2">
@@ -2479,7 +2485,7 @@ export default function AdminTaskBoardPage() {
                     </p>
                   </div>
                 ) : (
-                  filteredTasks.map((task) => (
+                  displayTasks.map((task) => (
                     <motion.div
                       key={task.id}
                       layout
@@ -2652,7 +2658,7 @@ export default function AdminTaskBoardPage() {
           ) : (
             <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
               <CalendarView
-                tasks={filteredTasks}
+                tasks={displayTasks}
                 currentDate={currentCalendarDate}
                 setCurrentDate={setCurrentCalendarDate}
                 onTaskClick={(task) => {
