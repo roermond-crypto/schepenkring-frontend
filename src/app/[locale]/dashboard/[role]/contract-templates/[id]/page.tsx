@@ -401,8 +401,10 @@ function VersionsPanel({
   useEffect(() => {
     void (async () => {
       try {
-        const res = await api.get<TemplateVersion[]>(`/admin/contract-templates/${templateId}/versions`);
-        setVersions(Array.isArray(res.data) ? res.data : []);
+        const res = await api.get(`/admin/contract-templates/${templateId}/versions`);
+        // Backend returns { versions: [...] }
+        const versionsArr = (res.data as { versions?: TemplateVersion[] })?.versions ?? res.data;
+        setVersions(Array.isArray(versionsArr) ? versionsArr : []);
       } catch {
         toast.error("Versies laden mislukt.");
       } finally {
@@ -542,17 +544,18 @@ export default function ContractTemplateEditorPage() {
   const loadTemplate = async () => {
     setLoading(true);
     try {
-      const res = await api.get<ContractTemplate>(`/admin/contract-templates/${templateId}`);
-      const t = res.data;
-      setTemplate(t);
-      setName(t.name ?? "");
-      setDescription(t.description ?? "");
-      setTemplateType(t.type ?? "purchase_contract");
-      setLanguage(t.language ?? "nl");
-      setIsGlobal(t.is_global ?? false);
-      setIsDefault(t.is_default ?? false);
+      const res = await api.get(`/admin/contract-templates/${templateId}`);
+      // Backend returns { template: {...}, versions: [...] }
+      const tpl = (res.data as { template?: ContractTemplate } & ContractTemplate)?.template ?? res.data as ContractTemplate;
+      setTemplate(tpl);
+      setName(tpl.name ?? "");
+      setDescription(tpl.description ?? "");
+      setTemplateType(tpl.type ?? "purchase_contract");
+      setLanguage(tpl.language ?? "nl");
+      setIsGlobal(tpl.is_global ?? false);
+      setIsDefault(tpl.is_default ?? false);
       if (editor) {
-        editor.commands.setContent(t.content_html ?? "");
+        editor.commands.setContent(tpl.content_html ?? "");
       }
       setIsDirty(false);
     } catch {
@@ -572,12 +575,15 @@ export default function ContractTemplateEditorPage() {
   const loadMeta = async () => {
     try {
       const [typesRes, tagsRes, locRes] = await Promise.all([
-        api.get<TemplateType[]>("/admin/contract-templates/types"),
-        api.get<TagInfo[]>("/admin/contract-templates/tags"),
+        api.get("/admin/contract-templates/types"),
+        api.get("/admin/contract-templates/tags"),
         api.get<{ data: LocationOption[] }>("/admin/locations?per_page=200"),
       ]);
-      setTypes(Array.isArray(typesRes.data) ? typesRes.data : []);
-      setTags(Array.isArray(tagsRes.data) ? tagsRes.data : []);
+      // Backend wraps: { types: [...] } and { tags: [...] }
+      const typesArr = (typesRes.data as { types?: TemplateType[] })?.types;
+      setTypes(Array.isArray(typesArr) ? typesArr : []);
+      const tagsArr = (tagsRes.data as { tags?: TagInfo[] })?.tags;
+      setTags(Array.isArray(tagsArr) ? tagsArr : []);
       setLocations(locRes.data?.data ?? []);
     } catch {
       // non-fatal
@@ -722,6 +728,17 @@ export default function ContractTemplateEditorPage() {
             );
           })}
         </div>
+
+        <a
+          href={`${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/admin/contract-templates/${templateId}/pdf?use_sample_tags=true`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+          title="PDF bekijken / downloaden"
+        >
+          <FileText size={14} />
+          <span className="hidden sm:inline">PDF</span>
+        </a>
 
         <button
           onClick={() => setShowSaveModal(true)}

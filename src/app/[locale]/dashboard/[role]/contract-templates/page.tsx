@@ -105,7 +105,7 @@ export default function ContractTemplatesPage() {
     try {
       const res = await api.post<{ template: ContractTemplate }>("/admin/contract-templates", {
         name: "Nieuw sjabloon",
-        type: "purchase_contract",
+        type: types[0]?.value ?? "purchase_contract",
         language: "nl",
         content_html: `<h1>Koopovereenkomst</h1>
 <p>Datum: <strong>{{contract_date}}</strong></p>
@@ -120,8 +120,8 @@ export default function ContractTemplatesPage() {
 <p>Verkoper: _________________________ &nbsp;&nbsp; Koper: _________________________</p>
 <p>{{location_name}} · {{location_address}}</p>`,
       });
-      const t = res.data?.template;
-      if (t?.id) router.push(`${root}/contract-templates/${t.id}`);
+      const newTemplate = res.data?.template;
+      if (newTemplate?.id) router.push(`${root}/contract-templates/${newTemplate.id}`);
       else await loadData();
     } catch {
       toast.error(t("createFailed"));

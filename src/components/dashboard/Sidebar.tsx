@@ -160,6 +160,11 @@ export function Sidebar({
         icon: FileText,
       });
       items.push({
+        title: t.contractTypes ?? "Contracttypes",
+        href: `${root}/contract-types`,
+        icon: FileText,
+      });
+      items.push({
         title: t.i18nQuality ?? "Vertalingskwaliteit",
         href: `${root}/i18n`,
         icon: Globe,
