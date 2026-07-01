@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -8,19 +8,13 @@ import {
   AlertTriangle,
   ArchiveRestore,
   CheckCircle2,
-  Globe,
   LayoutTemplate,
   Loader2,
-  LogIn,
-  Mail,
   MapPin,
   Pencil,
-  Phone,
   Plus,
   RefreshCcw,
   Trash2,
-  UserMinus,
-  UserPlus,
   Users,
   XCircle,
 } from "lucide-react";
@@ -36,9 +30,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { setClientSession } from "@/lib/auth/client-session";
-import { useClientSession } from "@/components/session/ClientSessionProvider";
-import { useRouter } from "next/navigation";
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -49,30 +40,8 @@ type LocationRecord = {
   status: "ACTIVE" | "INACTIVE";
   public_visible?: boolean;
   location_color?: string | null;
-  // address
-  address_line1?: string | null;
-  street_number?: string | null;
-  postal_code?: string | null;
   city?: string | null;
-  country?: string | null;
   phone?: string | null;
-  email?: string | null;
-  website?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  // content
-  description_nl?: string | null;
-  description_en?: string | null;
-  description_de?: string | null;
-  opening_hours?: Record<string, { open: string; close: string; closed: boolean }> | null;
-  default_seller_id?: number | null;
-  default_seller?: { id: number; name: string; email: string } | null;
-  seo_title?: string | null;
-  seo_description?: string | null;
-  seo_keywords?: string | null;
-  // counts
-  clients_total: number;
-  staff_total: number;
   employee_count?: number;
   employees?: Array<{
     id: number;
@@ -88,17 +57,6 @@ type LocationRecord = {
   open_tasks: number;
   created_at: string;
   updated_at: string;
-};
-
-type LocationUser = {
-  id: number;
-  name: string;
-  email: string;
-  type: string;
-  status: string;
-  phone?: string | null;
-  location_role?: string | null;
-  last_login_at?: string | null;
 };
 
 type ArchivedLocation = {
@@ -120,120 +78,6 @@ type ImpactData = {
   safe_to_delete: boolean;
 };
 
-const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
-type Day = typeof DAYS[number];
-const EMPTY_HOURS = { open: "09:00", close: "17:00", closed: false };
-
-type FormState = {
-  name: string;
-  code: string;
-  status: "ACTIVE" | "INACTIVE";
-  public_visible: boolean;
-  location_color: string;
-  address_line1: string;
-  street_number: string;
-  postal_code: string;
-  city: string;
-  country: string;
-  phone: string;
-  email: string;
-  website: string;
-  description_nl: string;
-  description_en: string;
-  description_de: string;
-  opening_hours: Record<Day, { open: string; close: string; closed: boolean }>;
-  default_seller_id: number | "";
-  seo_title: string;
-  seo_description: string;
-  seo_keywords: string;
-};
-
-const EMPTY_FORM: FormState = {
-  name: "",
-  code: "",
-  status: "ACTIVE",
-  public_visible: false,
-  location_color: "#003566",
-  address_line1: "",
-  street_number: "",
-  postal_code: "",
-  city: "",
-  country: "Netherlands",
-  phone: "",
-  email: "",
-  website: "",
-  description_nl: "",
-  description_en: "",
-  description_de: "",
-  opening_hours: Object.fromEntries(DAYS.map((d) => [d, { ...EMPTY_HOURS }])) as FormState["opening_hours"],
-  default_seller_id: "",
-  seo_title: "",
-  seo_description: "",
-  seo_keywords: "",
-};
-
-// ── Google Places address autocomplete ───────────────────────────
-
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    google?: any;
-    initGooglePlaces?: () => void;
-  }
-}
-
-function useGooglePlaces(
-  inputRef: React.RefObject<HTMLInputElement | null>,
-  onPlace: (data: { address: string; city: string; postal: string; country: string; lat: number; lng: number }) => void,
-) {
-  useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
-    if (!apiKey || !inputRef.current) return;
-
-    const init = () => {
-      if (!window.google?.maps?.places || !inputRef.current) return;
-      const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ["address"],
-        fields: ["address_components", "geometry", "formatted_address"],
-      });
-      ac.addListener("place_changed", () => {
-        const place = ac.getPlace();
-        if (!place.address_components) return;
-
-        const get = (type: string) =>
-          place.address_components?.find((c: { types: string[] }) => c.types.includes(type))?.long_name ?? "";
-        const getShort = (type: string) =>
-          place.address_components?.find((c: { types: string[] }) => c.types.includes(type))?.short_name ?? "";
-
-        onPlace({
-          address: `${get("route")} ${get("street_number")}`.trim(),
-          city: get("locality") || get("postal_town") || get("administrative_area_level_2"),
-          postal: getShort("postal_code"),
-          country: get("country"),
-          lat: place.geometry?.location?.lat() ?? 0,
-          lng: place.geometry?.location?.lng() ?? 0,
-        });
-      });
-    };
-
-    if (window.google?.maps?.places) {
-      init();
-      return;
-    }
-
-    if (!document.getElementById("google-places-script")) {
-      const script = document.createElement("script");
-      script.id = "google-places-script";
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGooglePlaces`;
-      script.async = true;
-      window.initGooglePlaces = init;
-      document.head.appendChild(script);
-    } else {
-      window.initGooglePlaces = init;
-    }
-  }, [inputRef, onPlace]);
-}
-
 // ── Component ─────────────────────────────────────────────────────
 
 export function AdminLocationsManagerPage({
@@ -244,31 +88,13 @@ export function AdminLocationsManagerPage({
   role: string;
 }) {
   const t = useTranslations("AdminLocations");
-  const router = useRouter();
-  const { user: sessionUser } = useClientSession();
-  const addressInputRef = useRef<HTMLInputElement>(null);
 
   const [locations, setLocations] = useState<LocationRecord[]>([]);
   const [archivedLocations, setArchivedLocations] = useState<ArchivedLocation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
   const [showArchived, setShowArchived] = useState(false);
-
-  // Create/Edit dialog
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingLocation, setEditingLocation] = useState<LocationRecord | null>(null);
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [dialogTab, setDialogTab] = useState<"info" | "users">("info");
-
-  // Location users
-  const [locationUsers, setLocationUsers] = useState<LocationUser[]>([]);
-  const [usersLoading, setUsersLoading] = useState(false);
-  const [allUsers, setAllUsers] = useState<Array<{ id: number; name: string; email: string; type: string }>>([]);
-  const [addUserId, setAddUserId] = useState("");
-  const [addUserRole, setAddUserRole] = useState("LOCATION_EMPLOYEE");
-  const [addingUser, setAddingUser] = useState(false);
 
   // Delete flow
   const [deleteTarget, setDeleteTarget] = useState<LocationRecord | null>(null);
@@ -284,24 +110,7 @@ export function AdminLocationsManagerPage({
   const [permanentTarget, setPermanentTarget] = useState<ArchivedLocation | null>(null);
   const [permanentDeleting, setPermanentDeleting] = useState(false);
 
-  // Impersonation
-  const [impersonating, setImpersonating] = useState(false);
-
   const widgetHref = `/${locale}/dashboard/${role}/locations/widget`;
-
-  // ── Google Places hook ─────────────────────────────────────────
-
-  useGooglePlaces(addressInputRef, ({ address, city, postal, country, lat, lng }) => {
-    setForm((f) => ({
-      ...f,
-      address_line1: address,
-      city,
-      postal_code: postal,
-      country,
-    }));
-    // store lat/lng separately as numbers
-    void (lat); void (lng);
-  });
 
   // ── Data loading ────────────────────────────────────────────────
 
@@ -323,36 +132,6 @@ export function AdminLocationsManagerPage({
 
   useEffect(() => { void loadLocations(); }, [loadLocations]);
 
-  const loadLocationUsers = useCallback(async (locationId: number) => {
-    setUsersLoading(true);
-    try {
-      const res = await api.get(`/admin/locations/${locationId}/users`);
-      setLocationUsers(Array.isArray(res.data?.data) ? res.data.data : []);
-    } catch {
-      toast.error(t("loadUsersFailed"));
-    } finally {
-      setUsersLoading(false);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Load all users for "add user" dropdown
-  useEffect(() => {
-    if (!isDialogOpen || !editingLocation) return;
-    api.get("/admin/users").then((res) => {
-      const list = Array.isArray(res.data?.data) ? res.data.data : [];
-      setAllUsers(list.map((u: { id: number; name: string; email: string; type: string }) => ({
-        id: u.id, name: u.name, email: u.email, type: u.type,
-      })));
-    }).catch(() => {});
-  }, [isDialogOpen, editingLocation]);
-
-  // Load users when switching to users tab
-  useEffect(() => {
-    if (dialogTab === "users" && editingLocation) {
-      void loadLocationUsers(editingLocation.id);
-    }
-  }, [dialogTab, editingLocation, loadLocationUsers]);
-
   const filteredLocations = useMemo(() => {
     const q = search.trim().toLowerCase();
     return locations.filter((l) => {
@@ -361,183 +140,6 @@ export function AdminLocationsManagerPage({
       return matchesStatus && matchesSearch;
     });
   }, [locations, search, statusFilter]);
-
-  // ── Create / Edit ───────────────────────────────────────────────
-
-  const resetDialog = () => {
-    setEditingLocation(null);
-    setForm(EMPTY_FORM);
-    setIsDialogOpen(false);
-    setDialogTab("info");
-    setLocationUsers([]);
-    setAddUserId("");
-  };
-
-  const openEdit = (location: LocationRecord) => {
-    setEditingLocation(location);
-    const defaultHours = Object.fromEntries(DAYS.map((d) => [d, { ...EMPTY_HOURS }])) as FormState["opening_hours"];
-    const savedHours = (location.opening_hours ?? {}) as Partial<Record<Day, { open: string; close: string; closed: boolean }>>;
-    const mergedHours = { ...defaultHours };
-    DAYS.forEach((d) => { if (savedHours[d]) mergedHours[d] = { ...EMPTY_HOURS, ...savedHours[d] }; });
-    setForm({
-      name: location.name,
-      code: location.code,
-      status: location.status,
-      public_visible: location.public_visible ?? false,
-      location_color: location.location_color ?? "#003566",
-      address_line1: location.address_line1 ?? "",
-      street_number: location.street_number ?? "",
-      postal_code: location.postal_code ?? "",
-      city: location.city ?? "",
-      country: location.country ?? "Netherlands",
-      phone: location.phone ?? "",
-      email: location.email ?? "",
-      website: location.website ?? "",
-      description_nl: location.description_nl ?? "",
-      description_en: location.description_en ?? "",
-      description_de: location.description_de ?? "",
-      opening_hours: mergedHours,
-      default_seller_id: location.default_seller_id ?? "",
-      seo_title: location.seo_title ?? "",
-      seo_description: location.seo_description ?? "",
-      seo_keywords: location.seo_keywords ?? "",
-    });
-    setDialogTab("info");
-    setLocationUsers([]);
-    setIsDialogOpen(true);
-  };
-
-  const handleSubmit = async () => {
-    if (!form.name.trim() || !form.code.trim()) {
-      toast.error(t("nameCodeRequired"));
-      return;
-    }
-    setSaving(true);
-    try {
-      const payload = {
-        name: form.name.trim(),
-        code: form.code.trim().toUpperCase(),
-        status: form.status,
-        public_visible: form.public_visible,
-        location_color: form.location_color || null,
-        address_line1: form.address_line1 || null,
-        street_number: form.street_number || null,
-        postal_code: form.postal_code || null,
-        city: form.city || null,
-        country: form.country || null,
-        phone: form.phone || null,
-        email: form.email || null,
-        website: form.website || null,
-        description_nl: form.description_nl || null,
-        description_en: form.description_en || null,
-        description_de: form.description_de || null,
-        opening_hours: form.opening_hours,
-        default_seller_id: form.default_seller_id || null,
-        seo_title: form.seo_title || null,
-        seo_description: form.seo_description || null,
-        seo_keywords: form.seo_keywords || null,
-      };
-
-      if (editingLocation) {
-        await api.patch(`/admin/locations/${editingLocation.id}`, payload);
-        toast.success(t("locationUpdated"));
-      } else {
-        await api.post("/admin/locations", payload);
-        toast.success(t("locationCreated"));
-      }
-      resetDialog();
-      await loadLocations();
-    } catch {
-      toast.error(t("saveFailed"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // ── Location user management ────────────────────────────────────
-
-  const handleAddUser = async () => {
-    if (!editingLocation || !addUserId) return;
-    setAddingUser(true);
-    try {
-      await api.post(`/admin/locations/${editingLocation.id}/users`, {
-        user_id: Number(addUserId),
-        role: addUserRole,
-      });
-      toast.success(t("userAdded"));
-      setAddUserId("");
-      await loadLocationUsers(editingLocation.id);
-    } catch {
-      toast.error(t("addFailed"));
-    } finally {
-      setAddingUser(false);
-    }
-  };
-
-  const handleRemoveUser = async (userId: number, userName: string) => {
-    if (!editingLocation) return;
-    try {
-      await api.delete(`/admin/locations/${editingLocation.id}/users/${userId}`);
-      toast.success(t("userRemovedFromLocation", { name: userName }));
-      setLocationUsers((prev) => prev.filter((u) => u.id !== userId));
-    } catch {
-      toast.error(t("removeFailed"));
-    }
-  };
-
-  const handleImpersonate = async (user: LocationUser) => {
-    setImpersonating(true);
-    try {
-      const adminPassword = prompt(t("impersonatePrompt"));
-      if (!adminPassword) { setImpersonating(false); return; }
-
-      const res = await api.post(
-        `/admin/impersonate/${user.id}`,
-        { password: adminPassword },
-        { headers: { "Idempotency-Key": crypto.randomUUID() } },
-      );
-
-      const token = res.data?.token;
-      const impersonated = res.data?.impersonated;
-      if (!token || !impersonated) throw new Error("Impersonation failed");
-
-      const roleMap: Record<string, "client" | "employee" | "location" | "admin" | "buyer" | "seller" | "partner"> = { ADMIN: "admin", EMPLOYEE: "employee", PARTNER: "partner", CLIENT: "client", SELLER: "seller", BUYER: "buyer" };
-
-      setClientSession(token, {
-        id: String(impersonated.id),
-        name: impersonated.name,
-        email: impersonated.email,
-        role: roleMap[impersonated.type] ?? "client",
-        type: impersonated.type,
-        status: impersonated.status,
-        phone: impersonated.phone ?? null,
-        location_id: impersonated.location_id ?? null,
-        location_role: impersonated.location_role ?? null,
-        client_location_id: impersonated.client_location_id ?? null,
-        has_location_assignment: impersonated.has_location_assignment ?? false,
-        can_access_board: impersonated.can_access_board ?? false,
-        location: impersonated.location ?? null,
-        locations: impersonated.locations ?? [],
-      });
-
-      localStorage.setItem("impersonation_session", JSON.stringify({
-        started_at: res.data?.session?.started_at,
-        impersonated_id: impersonated.id,
-        impersonated_name: impersonated.name,
-      }));
-
-      toast.success(t("impersonationStarted", { name: impersonated.name }));
-      resetDialog();
-      setTimeout(() => {
-        router.push(`/${locale}/dashboard/${roleMap[impersonated.type] ?? "client"}`);
-        router.refresh();
-      }, 400);
-    } catch {
-      toast.error(t("impersonateFailed"));
-    } finally {
-      setImpersonating(false);
-    }
-  };
 
   // ── Delete flow ─────────────────────────────────────────────────
 
@@ -615,24 +217,12 @@ export function AdminLocationsManagerPage({
     return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(d);
   };
 
-  const typeLabel = (type: string) =>
-    t(`type_${type}` as Parameters<typeof t>[0]) || type;
-
-  const typeColor = (type: string) => {
-    if (type === "PARTNER") return "bg-teal-100 text-teal-700";
-    if (type === "EMPLOYEE") return "bg-blue-100 text-blue-700";
-    if (type === "ADMIN") return "bg-purple-100 text-purple-700";
-    return "bg-slate-100 text-slate-600";
-  };
-
   const ImpactRow = ({ label, count }: { label: string; count: number }) => (
     <div className="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-0">
       <span className="text-sm text-slate-600">{label}</span>
       <span className={cn("text-sm font-bold tabular-nums", count > 0 ? "text-red-600" : "text-slate-300")}>{count}</span>
     </div>
   );
-
-  const availableUsersToAdd = allUsers.filter((u) => !locationUsers.find((lu) => lu.id === u.id));
 
   // ── Render ──────────────────────────────────────────────────────
 
@@ -662,8 +252,10 @@ export function AdminLocationsManagerPage({
             <Button asChild className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]">
               <Link href={widgetHref}><LayoutTemplate />{t("widgetSettings")}</Link>
             </Button>
-            <Button type="button" className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]" onClick={() => { setEditingLocation(null); setForm(EMPTY_FORM); setDialogTab("info"); setIsDialogOpen(true); }}>
-              <Plus />{t("createLocation")}
+            <Button asChild className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]">
+              <Link href={`/${locale}/dashboard/${role}/locations/new`}>
+                <Plus />{t("createLocation")}
+              </Link>
             </Button>
             {archivedLocations.length > 0 && (
               <Button type="button" variant="outline" className={cn("rounded-xl", showArchived && "bg-amber-50 border-amber-200 text-amber-700")} onClick={() => setShowArchived((v) => !v)}>
@@ -777,8 +369,10 @@ export function AdminLocationsManagerPage({
                     <Users />
                   </Link>
                 </Button>
-                <Button type="button" variant="outline" size="icon" className="rounded-xl" onClick={() => openEdit(location)}>
-                  <Pencil />
+                <Button asChild variant="outline" size="icon" className="rounded-xl" title={t("editLocation")}>
+                  <Link href={`/${locale}/dashboard/${role}/locations/${location.id}/edit`}>
+                    <Pencil />
+                  </Link>
                 </Button>
                 <Button type="button" variant="outline" size="icon" className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => void openDeleteFlow(location)}>
                   <Trash2 />
@@ -788,312 +382,6 @@ export function AdminLocationsManagerPage({
           ))
         )}
       </div>
-
-      {/* ── Create / Edit Dialog ───────────────────────────────────── */}
-      <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) resetDialog(); }}>
-        <DialogContent className="max-w-2xl rounded-[28px] border-slate-200 bg-white p-0 max-h-[90vh] overflow-y-auto">
-          <div className="p-6 sm:p-8">
-            <DialogHeader>
-              <DialogTitle className="text-2xl text-[#003566]">
-                {editingLocation ? t("editLocation") : t("createLocation")}
-              </DialogTitle>
-              <DialogDescription className="text-slate-500">
-                {editingLocation ? editingLocation.name : t("createLocationDesc")}
-              </DialogDescription>
-            </DialogHeader>
-
-            {/* Tabs (only when editing) */}
-            {editingLocation && (
-              <div className="mt-4 flex gap-1 rounded-xl bg-slate-100 p-1">
-                <button
-                  type="button"
-                  className={cn("flex-1 rounded-lg py-2 text-sm font-semibold transition-colors", dialogTab === "info" ? "bg-white text-[#003566] shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                  onClick={() => setDialogTab("info")}
-                >
-                  {t("information")}
-                </button>
-                <button
-                  type="button"
-                  className={cn("flex-1 rounded-lg py-2 text-sm font-semibold transition-colors", dialogTab === "users" ? "bg-white text-[#003566] shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                  onClick={() => setDialogTab("users")}
-                >
-                  <span className="flex items-center justify-center gap-1.5">
-                    <Users className="h-3.5 w-3.5" />
-                    {t("users")}
-                    {locationUsers.length > 0 && <span className="rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5">{locationUsers.length}</span>}
-                  </span>
-                </button>
-              </div>
-            )}
-
-            {/* Info tab */}
-            {dialogTab === "info" && (
-              <div className="mt-5 space-y-4">
-                {/* Core */}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">{t("nameField")}</label>
-                    <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Schepenkring Heeg" className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400" />
-                  </div>
-                  <div className="grid gap-3 grid-cols-2">
-                    <div>
-                      <label className="block mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">{t("codeField")}</label>
-                      <input value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="HG" className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm uppercase outline-none focus:border-blue-400" />
-                    </div>
-                    <div>
-                      <label className="block mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">Status</label>
-                      <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as "ACTIVE" | "INACTIVE" }))} className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400">
-                        <option value="ACTIVE">{t("active")}</option>
-                        <option value="INACTIVE">{t("inactive")}</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Address */}
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5" />{t("addressDetails")}
-                  </p>
-                  <div>
-                    <label className="block mb-1 text-xs font-semibold text-slate-500">{t("streetField")}</label>
-                    <input
-                      ref={addressInputRef}
-                      value={form.address_line1}
-                      onChange={(e) => setForm((f) => ({ ...f, address_line1: e.target.value }))}
-                      placeholder={t("streetPlaceholder")}
-                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400"
-                    />
-                  </div>
-                  <div className="grid gap-3 grid-cols-3">
-                    <div>
-                      <label className="block mb-1 text-xs font-semibold text-slate-500">{t("houseNumber")}</label>
-                      <input value={form.street_number} onChange={(e) => setForm((f) => ({ ...f, street_number: e.target.value }))} placeholder="12a" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
-                    </div>
-                    <div>
-                      <label className="block mb-1 text-xs font-semibold text-slate-500">{t("postalCode")}</label>
-                      <input value={form.postal_code} onChange={(e) => setForm((f) => ({ ...f, postal_code: e.target.value }))} placeholder="8621 AB" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
-                    </div>
-                    <div>
-                      <label className="block mb-1 text-xs font-semibold text-slate-500">{t("city")}</label>
-                      <input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="Heeg" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-xs font-semibold text-slate-500">{t("country")}</label>
-                    <input value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} placeholder="Netherlands" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
-                  </div>
-                </div>
-
-                {/* Contact */}
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5" />{t("contactDetails")}
-                  </p>
-                  <div className="grid gap-3 grid-cols-2">
-                    <div>
-                      <label className="block mb-1 text-xs font-semibold text-slate-500">{t("phone")}</label>
-                      <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+31 6 12345678" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" type="tel" />
-                    </div>
-                    <div>
-                      <label className="block mb-1 text-xs font-semibold text-slate-500">E-mail</label>
-                      <input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="heeg@schepenkring.nl" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" type="email" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="mb-1 text-xs font-semibold text-slate-500 flex items-center gap-1">
-                      <Globe className="h-3 w-3" /> Website
-                    </label>
-                    <input value={form.website} onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))} placeholder="https://www.schepenkring.nl/heeg" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" type="url" />
-                  </div>
-                </div>
-
-                {/* Visibility + color */}
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{t("visibility")}</p>
-                  <div className="grid gap-3 grid-cols-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={form.public_visible} onChange={(e) => setForm((f) => ({ ...f, public_visible: e.target.checked }))} className="h-4 w-4 rounded border-slate-300 accent-[#003566]" />
-                      <span className="text-sm text-slate-700">{t("publiclyVisible")}</span>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-semibold text-slate-500">{t("color")}</label>
-                      <input type="color" value={form.location_color} onChange={(e) => setForm((f) => ({ ...f, location_color: e.target.value }))} className="h-8 w-16 rounded-lg border border-slate-200 p-0.5 cursor-pointer" />
-                      <span className="text-xs text-slate-400">{form.location_color}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Descriptions */}
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{t("description")}</p>
-                  {(["nl", "en", "de"] as const).map((lang) => (
-                    <div key={lang}>
-                      <label className="block mb-1 text-xs font-semibold text-slate-500 uppercase">{lang.toUpperCase()}</label>
-                      <textarea
-                        rows={2}
-                        value={form[`description_${lang}` as "description_nl" | "description_en" | "description_de"]}
-                        onChange={(e) => setForm((f) => ({ ...f, [`description_${lang}`]: e.target.value }))}
-                        placeholder={t(`descriptionIn_${lang}` as Parameters<typeof t>[0])}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none"
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                {/* Opening hours */}
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{t("openingHours")}</p>
-                  {DAYS.map((day) => (
-                    <div key={day} className="flex items-center gap-3">
-                      <span className="w-24 text-xs font-semibold text-slate-600 shrink-0">{t(`day_${day}` as Parameters<typeof t>[0])}</span>
-                      <label className="flex items-center gap-1.5 text-xs text-slate-500 shrink-0">
-                        <input
-                          type="checkbox"
-                          checked={!form.opening_hours[day].closed}
-                          onChange={(e) => setForm((f) => ({ ...f, opening_hours: { ...f.opening_hours, [day]: { ...f.opening_hours[day], closed: !e.target.checked } } }))}
-                          className="h-3.5 w-3.5 accent-[#003566]"
-                        />
-                        {t("open")}
-                      </label>
-                      {!form.opening_hours[day].closed && (
-                        <>
-                          <input
-                            type="time"
-                            value={form.opening_hours[day].open}
-                            onChange={(e) => setForm((f) => ({ ...f, opening_hours: { ...f.opening_hours, [day]: { ...f.opening_hours[day], open: e.target.value } } }))}
-                            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs outline-none focus:border-blue-400"
-                          />
-                          <span className="text-slate-400 text-xs">–</span>
-                          <input
-                            type="time"
-                            value={form.opening_hours[day].close}
-                            onChange={(e) => setForm((f) => ({ ...f, opening_hours: { ...f.opening_hours, [day]: { ...f.opening_hours[day], close: e.target.value } } }))}
-                            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs outline-none focus:border-blue-400"
-                          />
-                        </>
-                      )}
-                      {form.opening_hours[day].closed && <span className="text-xs text-slate-400 italic">{t("closed")}</span>}
-                    </div>
-                  ))}
-                </div>
-
-                {/* SEO */}
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">SEO</p>
-                  <div>
-                    <label className="block mb-1 text-xs font-semibold text-slate-500">{t("seoTitle")}</label>
-                    <input value={form.seo_title} onChange={(e) => setForm((f) => ({ ...f, seo_title: e.target.value }))} placeholder="Schepenkring Heeg | Jachten te koop" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-xs font-semibold text-slate-500">{t("seoDescription")}</label>
-                    <textarea value={form.seo_description} onChange={(e) => setForm((f) => ({ ...f, seo_description: e.target.value }))} rows={2} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Bezoek onze vestiging in Heeg…" />
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-xs font-semibold text-slate-500">{t("keywords")}</label>
-                    <input value={form.seo_keywords} onChange={(e) => setForm((f) => ({ ...f, seo_keywords: e.target.value }))} placeholder="jacht, heeg, te koop, friesland" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400" />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Users tab */}
-            {dialogTab === "users" && editingLocation && (
-              <div className="mt-5 space-y-4">
-                {/* Add user */}
-                <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
-                    <UserPlus className="h-3.5 w-3.5" />{t("addUser")}
-                  </p>
-                  <div className="grid gap-2 sm:grid-cols-[1fr_160px_auto]">
-                    <select value={addUserId} onChange={(e) => setAddUserId(e.target.value)} className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400">
-                      <option value="">{t("selectUser")}</option>
-                      {availableUsersToAdd.map((u) => (
-                        <option key={u.id} value={u.id}>{u.name} ({u.type})</option>
-                      ))}
-                    </select>
-                    <select value={addUserRole} onChange={(e) => setAddUserRole(e.target.value)} className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400">
-                      <option value="LOCATION_EMPLOYEE">{t("employee")}</option>
-                      <option value="LOCATION_MANAGER">{t("manager")}</option>
-                    </select>
-                    <Button type="button" disabled={!addUserId || addingUser} onClick={() => void handleAddUser()} className="h-10 rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B] whitespace-nowrap">
-                      {addingUser ? <Loader2 className="animate-spin h-4 w-4" /> : <><UserPlus className="h-4 w-4 mr-1" />{t("add")}</>}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* User list */}
-                {usersLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="animate-spin h-5 w-5 text-slate-400" />
-                    <span className="ml-2 text-sm text-slate-500">{t("loadingUsers")}</span>
-                  </div>
-                ) : locationUsers.length === 0 ? (
-                  <div className="py-8 text-center text-sm text-slate-400">
-                    {t("noUsers")}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {locationUsers.map((u) => (
-                      <div key={u.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-slate-900 text-sm">{u.name}</span>
-                            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase", typeColor(u.type))}>{typeLabel(u.type)}</span>
-                            {u.location_role && (
-                              <span className="rounded-full bg-slate-200 text-slate-600 px-2 py-0.5 text-[10px] font-semibold">
-                                {u.location_role === "LOCATION_MANAGER" ? t("manager") : t("employee")}
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-0.5 text-xs text-slate-500 flex items-center gap-2">
-                            <Mail className="h-3 w-3" />{u.email}
-                            {u.last_login_at && <span className="text-slate-400">· {t("lastLogin")} {new Date(u.last_login_at).toLocaleDateString(locale)}</span>}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1.5 ml-3 shrink-0">
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="h-8 w-8 rounded-lg text-blue-600 border-blue-200 hover:bg-blue-50"
-                            title={t("impersonateUser")}
-                            disabled={impersonating}
-                            onClick={() => void handleImpersonate(u)}
-                          >
-                            <LogIn className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="h-8 w-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50"
-                            title={t("removeFromLocation")}
-                            onClick={() => void handleRemoveUser(u.id, u.name)}
-                          >
-                            <UserMinus className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {dialogTab === "info" && (
-              <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" className="rounded-xl" onClick={resetDialog} disabled={saving}>
-                  {t("cancel")}
-                </Button>
-                <Button type="button" className="rounded-xl bg-[#003566] text-white hover:bg-[#0B4A8B]" onClick={() => void handleSubmit()} disabled={saving}>
-                  {saving ? t("saving") : editingLocation ? t("update") : t("create")}
-                </Button>
-              </DialogFooter>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* ── Delete request Dialog ──────────────────────────────────── */}
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setImpactData(null); setDeleteSuccess(false); } }}>

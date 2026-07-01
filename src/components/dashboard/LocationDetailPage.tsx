@@ -384,7 +384,7 @@ export function LocationDetailPage({
                 <RefreshCcw className="h-3.5 w-3.5 mr-1" />Verversen
               </Button>
               <Button asChild size="sm" className="rounded-xl bg-white text-slate-800 hover:bg-white/90">
-                <Link href={`/${locale}/dashboard/${role}/locations`}><Pencil className="h-3.5 w-3.5 mr-1" />Bewerken</Link>
+                <Link href={`/${locale}/dashboard/${role}/locations/${locationId}/edit`}><Pencil className="h-3.5 w-3.5 mr-1" />Bewerken</Link>
               </Button>
             </div>
           </div>
@@ -644,7 +644,7 @@ export function LocationDetailPage({
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-slate-900">Locatie-instellingen</h2>
             <Button asChild className="rounded-xl bg-[#003566] text-white">
-              <Link href={`/${locale}/dashboard/${role}/locations`}><Pencil className="h-4 w-4 mr-1.5" />Bewerken</Link>
+              <Link href={`/${locale}/dashboard/${role}/locations/${locationId}/edit`}><Pencil className="h-4 w-4 mr-1.5" />Bewerken</Link>
             </Button>
           </div>
 
