@@ -2466,6 +2466,7 @@ const YACHT_FORM_TEXT = {
         "Schritt 2 wird nach der Bildfreigabe geöffnet. Die KI-Extraktion läuft im Hintergrund weiter und füllt die Felder, sobald alles bereit ist.",
       stillProcessingCount: "{count} noch in Bearbeitung...",
       approveAllImages: "Alle freigeben",
+      approveAllFailed: "Bilder konnten nicht freigegeben werden.",
       aiTimedOutStepTwo:
         "Die KI-Extraktion hat ein Zeitlimit erreicht. Schritt 2 ist entsperrt; Sie können fortfahren und die KI später erneut ausführen.",
       imagesApprovedManualAi:
@@ -2996,6 +2997,7 @@ const YACHT_FORM_TEXT = {
         "L'etape 2 s'ouvre apres l'approbation des images. L'extraction IA continue en arriere-plan et remplit les champs des qu'elle est prete.",
       stillProcessingCount: "{count} encore en cours de traitement...",
       approveAllImages: "Tout approuver",
+      approveAllFailed: "Echec de l'approbation des images.",
       aiTimedOutStepTwo:
         "L'extraction IA a expire. L'etape 2 est deverrouillee ; vous pouvez continuer et relancer l'IA plus tard.",
       imagesApprovedManualAi:
@@ -3548,13 +3550,13 @@ function YachtEditorInner() {
     step2HelpByLocale[locale as keyof typeof step2HelpByLocale] ??
     step2HelpByLocale.en;
   const labelText = (
-    key: keyof typeof yachtFormText.labels,
+    key: keyof typeof YACHT_FORM_TEXT["en"]["labels"],
     fallback: string,
-  ) => t?.labels?.[key] || yachtFormText.labels[key] || fallback;
+  ) => (t?.labels as Record<string, string>)?.[key] || (yachtFormText.labels as Record<string, string>)[key] || fallback;
   const placeholderText = (
-    key: keyof typeof yachtFormText.placeholders,
+    key: keyof typeof YACHT_FORM_TEXT["en"]["placeholders"],
     fallback: string,
-  ) => t?.placeholders?.[key] || yachtFormText.placeholders[key] || fallback;
+  ) => (t?.placeholders as Record<string, string>)?.[key] || (yachtFormText.placeholders as Record<string, string>)[key] || fallback;
   const commonText = (key: keyof typeof step2CommonText, fallback: string) =>
     t?.common?.[key] || step2CommonText[key] || fallback;
   const step2Placeholder = (
