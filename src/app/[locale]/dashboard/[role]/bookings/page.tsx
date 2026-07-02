@@ -381,6 +381,133 @@ export default function DashboardBookingsPage() {
         </div>
       ) : null}
 
+      {/* Filter bar — always visible in both views */}
+      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_220px_220px_auto_auto]">
+          <label className="space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+              {t("filters.search")}
+            </span>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={filters.search}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    search: event.target.value,
+                  }))
+                }
+                placeholder={t("filters.searchPlaceholder")}
+                className="h-11 rounded-2xl border-slate-200 pl-9 text-sm text-slate-700"
+              />
+            </div>
+          </label>
+
+          <label className="space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+              {t("filters.status")}
+            </span>
+            <select
+              value={filters.status}
+              onChange={(event) =>
+                setFilters((current) => ({
+                  ...current,
+                  status: event.target.value,
+                }))
+              }
+              className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
+            >
+              <option value="">{t("filters.allStatuses")}</option>
+              <option value="pending">{t("statuses.pending")}</option>
+              <option value="confirmed">{t("statuses.confirmed")}</option>
+              <option value="completed">{t("statuses.completed")}</option>
+              <option value="cancelled">{t("statuses.cancelled")}</option>
+            </select>
+          </label>
+
+          <label className="space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+              {t("filters.locationId")}
+            </span>
+            <select
+              value={filters.locationId}
+              onChange={(event) =>
+                setFilters((current) => ({
+                  ...current,
+                  locationId: event.target.value,
+                }))
+              }
+              className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566]"
+            >
+              <option value="">{t("filters.allLocations")}</option>
+              {locationOptions.map((l) => (
+                <option key={l.id} value={String(l.id)}>{l.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-auto h-11 rounded-2xl border-slate-200"
+            onClick={() => {
+              setFilters({ search: "", status: "", locationId: "" });
+              setAppliedFilters({ search: "", status: "", locationId: "" });
+            }}
+          >
+            {t("filters.reset")}
+          </Button>
+          <Button
+            type="button"
+            className="mt-auto h-11 rounded-2xl bg-[#003566] px-5 text-[10px] font-black uppercase tracking-[0.22em] hover:bg-[#00284d]"
+            onClick={() => {
+              setAppliedFilters(filters);
+              void loadBookings(true);
+            }}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            {t("filters.apply")}
+          </Button>
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-sm text-slate-500">
+            {t("resultsSummary", {
+              total: String(meta?.total ?? bookings.length),
+            })}
+          </p>
+          {hasActiveFilters ? (
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
+              {appliedFilters.search ? (
+                <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
+                  {t("activeFilters.search", { value: appliedFilters.search })}
+                </span>
+              ) : null}
+              {appliedFilters.status ? (
+                <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
+                  {t("activeFilters.status", {
+                    value: t(`statuses.${appliedFilters.status}`),
+                  })}
+                </span>
+              ) : null}
+              {appliedFilters.locationId ? (
+                <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
+                  {t("activeFilters.location", {
+                    value: locationOptions.find((l) => String(l.id) === appliedFilters.locationId)?.name ?? appliedFilters.locationId,
+                  })}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
       {/* View toggle */}
       <div className="flex items-center gap-2">
         <button
@@ -541,140 +668,8 @@ export default function DashboardBookingsPage() {
 
       {/* List view */}
       {viewMode === "list" && (
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_220px_220px_auto_auto]">
-            <label className="space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                {t("filters.search")}
-              </span>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  value={filters.search}
-                  onChange={(event) =>
-                    setFilters((current) => ({
-                      ...current,
-                      search: event.target.value,
-                    }))
-                  }
-                  placeholder={t("filters.searchPlaceholder")}
-                  className="h-11 rounded-2xl border-slate-200 pl-9 text-sm text-slate-700"
-                />
-              </div>
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                {t("filters.status")}
-              </span>
-              <select
-                value={filters.status}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    status: event.target.value,
-                  }))
-                }
-                className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
-              >
-                <option value="">{t("filters.allStatuses")}</option>
-                <option value="pending">{t("statuses.pending")}</option>
-                <option value="confirmed">{t("statuses.confirmed")}</option>
-                <option value="completed">{t("statuses.completed")}</option>
-                <option value="cancelled">{t("statuses.cancelled")}</option>
-              </select>
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                {t("filters.locationId")}
-              </span>
-              <select
-                value={filters.locationId}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    locationId: event.target.value,
-                  }))
-                }
-                className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566]"
-              >
-                <option value="">{t("filters.allLocations")}</option>
-                {locationOptions.map((l) => (
-                  <option key={l.id} value={String(l.id)}>{l.name}</option>
-                ))}
-              </select>
-            </label>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-auto h-11 rounded-2xl border-slate-200"
-              onClick={() => {
-                setFilters({
-                  search: "",
-                  status: "",
-                  locationId: "",
-                });
-                setAppliedFilters({
-                  search: "",
-                  status: "",
-                  locationId: "",
-                });
-              }}
-            >
-              {t("filters.reset")}
-            </Button>
-            <Button
-              type="button"
-              className="mt-auto h-11 rounded-2xl bg-[#003566] px-5 text-[10px] font-black uppercase tracking-[0.22em] hover:bg-[#00284d]"
-              onClick={() => {
-                setAppliedFilters(filters);
-                void loadBookings(true);
-              }}
-              disabled={refreshing}
-            >
-              {refreshing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
-              )}
-              {t("filters.apply")}
-            </Button>
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-sm text-slate-500">
-            {t("resultsSummary", {
-              total: String(meta?.total ?? bookings.length),
-            })}
-          </p>
-          {hasActiveFilters ? (
-            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
-              {appliedFilters.search ? (
-                <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
-                  {t("activeFilters.search", { value: appliedFilters.search })}
-                </span>
-              ) : null}
-              {appliedFilters.status ? (
-                <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
-                  {t("activeFilters.status", {
-                    value: t(`statuses.${appliedFilters.status}`),
-                  })}
-                </span>
-              ) : null}
-              {appliedFilters.locationId ? (
-                <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
-                  {t("activeFilters.location", {
-                    value: locationOptions.find((l) => String(l.id) === appliedFilters.locationId)?.name ?? appliedFilters.locationId,
-                  })}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="mt-6 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+      <section className="rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-[2rem]">
           <div className="hidden grid-cols-[110px_minmax(0,1.3fr)_minmax(0,1fr)_170px_140px_120px] gap-4 border-b border-[#E5EEFB] bg-[#F8FBFF] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#7C94B8] lg:grid">
             <span>{t("table.id")}</span>
             <span>{t("table.guest")}</span>
