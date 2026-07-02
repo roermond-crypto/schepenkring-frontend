@@ -13,6 +13,7 @@ interface Step3Locale {
   aiTone: string; minWords: string; maxWords: string; regenerate: string;
   stopRecording: string; startDictation: string; defaultVoice: string;
   stopAudio: string; playAudio: string; editorPlaceholder: string;
+  ttsUnsupported: string;
   tones: Record<string, string>;
 }
 const STEP3_TEXT: Record<string, Step3Locale> = {
@@ -27,6 +28,7 @@ const STEP3_TEXT: Record<string, Step3Locale> = {
     stopAudio: "Audio stoppen",
     playAudio: "Audio afspelen",
     editorPlaceholder: "Bekijk en bewerk de door AI gegenereerde beschrijving hier...",
+    ttsUnsupported: "Tekst-naar-spraak wordt niet ondersteund in deze browser.",
     tones: { professional: "Professioneel", enthusiastic: "Enthousiast", luxurious: "Luxueus", concise: "Beknopt & Direct", storytelling: "Verhaalvertelling" },
   },
   en: {
@@ -40,6 +42,7 @@ const STEP3_TEXT: Record<string, Step3Locale> = {
     stopAudio: "Stop Audio",
     playAudio: "Play Audio",
     editorPlaceholder: "Review and edit the AI-generated description here...",
+    ttsUnsupported: "Text-to-speech not supported in this browser.",
     tones: { professional: "Professional", enthusiastic: "Enthusiastic", luxurious: "Luxurious", concise: "Concise & Direct", storytelling: "Storytelling" },
   },
   de: {
@@ -53,6 +56,7 @@ const STEP3_TEXT: Record<string, Step3Locale> = {
     stopAudio: "Audio stoppen",
     playAudio: "Audio abspielen",
     editorPlaceholder: "KI-generierte Beschreibung hier überprüfen und bearbeiten...",
+    ttsUnsupported: "Text-to-Speech wird in diesem Browser nicht unterstützt.",
     tones: { professional: "Professionell", enthusiastic: "Enthusiastisch", luxurious: "Luxuriös", concise: "Prägnant & Direkt", storytelling: "Storytelling" },
   },
   fr: {
@@ -66,6 +70,7 @@ const STEP3_TEXT: Record<string, Step3Locale> = {
     stopAudio: "Arrêter l'audio",
     playAudio: "Lire l'audio",
     editorPlaceholder: "Examinez et modifiez la description générée par l'IA ici...",
+    ttsUnsupported: "La synthèse vocale n'est pas prise en charge dans ce navigateur.",
     tones: { professional: "Professionnel", enthusiastic: "Enthousiaste", luxurious: "Luxueux", concise: "Concis & Direct", storytelling: "Narration" },
   },
 };
@@ -286,9 +291,7 @@ export function WizardStep3({
                     window.speechSynthesis.speak(utterance);
                     setIsPlayingAudio(true);
                   } else {
-                    toast.error(
-                      "Text-to-speech not supported in this browser.",
-                    );
+                    toast.error(tx.ttsUnsupported);
                   }
                 }}
                 className={cn(

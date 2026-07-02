@@ -706,7 +706,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                               </div>
                               <div className="flex gap-2 mt-2">
                                 {img.status === "ready_for_review" && (
-                                  <button onClick={() => pipeline.approveImage(img.id)} className="flex-1 bg-emerald-500 text-white text-[10px] font-bold py-1.5 rounded-md flex items-center justify-center gap-1"><Check size={12} /> Approve</button>
+                                  <button onClick={() => pipeline.approveImage(img.id)} className="flex-1 bg-emerald-500 text-white text-[10px] font-bold py-1.5 rounded-md flex items-center justify-center gap-1"><Check size={12} /> {labelText("approveImage", "Approve")}</button>
                                 )}
                                 <button onClick={() => pipeline.deleteImage(img.id)} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-md"><Trash size={12} /></button>
                               </div>
@@ -728,8 +728,8 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
       <Dialog open={manualSortDialogOpen} onOpenChange={setManualSortDialogOpen}>
         <DialogContent className="flex h-[min(94vh,980px)] w-[min(96vw,1400px)] max-w-none flex-col overflow-hidden rounded-[32px] p-0 shadow-2xl">
           <DialogHeader className="p-8 border-b">
-            <DialogTitle className="text-3xl font-bold">Manual Sort</DialogTitle>
-            <DialogDescription>Drag images to control the order they appear in the gallery.</DialogDescription>
+            <DialogTitle className="text-3xl font-bold">{labelText("manualSortTitle", "Manual Sort")}</DialogTitle>
+            <DialogDescription>{labelText("manualSortDescription", "Drag images to control the order they appear in the gallery.")}</DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
             <DragDropContext onDragEnd={handleManualSortDragEnd}>
@@ -755,10 +755,10 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
             </DragDropContext>
           </div>
           <div className="p-6 border-t flex justify-end gap-4 bg-white">
-            <Button variant="outline" onClick={() => setManualSortDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setManualSortDialogOpen(false)}>{labelText("cancel", "Cancel")}</Button>
             <Button onClick={handleSaveManualSort} disabled={isSavingManualSort}>
               {isSavingManualSort ? <Loader2 className="animate-spin mr-2" /> : <Check className="mr-2" />}
-              Save Order
+              {labelText("saveOrder", "Save Order")}
             </Button>
           </div>
         </DialogContent>
@@ -778,18 +778,18 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
               <div className="p-8 space-y-4">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-bold">{selectedLightboxImage.original_name}</DialogTitle>
-                  <DialogDescription>AI Review Details</DialogDescription>
+                  <DialogDescription>{labelText("aiReviewDetails", "AI Review Details")}</DialogDescription>
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-8">
                   <div className="p-6 rounded-2xl border bg-slate-50">
-                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">AI Quality Score</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">{labelText("aiQualityScore", "AI Quality Score")}</p>
                     <p className="text-4xl font-bold mt-2">{selectedLightboxImage.quality_score}/100</p>
                     <div className="h-2 w-full bg-slate-200 rounded-full mt-4 overflow-hidden">
                       <div className="h-full bg-blue-500" style={{ width: `${selectedLightboxImage.quality_score}%` }} />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">AI Comments</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">{labelText("aiComments", "AI Comments")}</p>
                     {buildImageAiNotes(selectedLightboxImage).map(note => (
                       <div key={note} className="text-sm p-3 bg-blue-50 rounded-lg text-blue-800">{note}</div>
                     ))}
@@ -948,7 +948,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                             {labelText("marketingVideo", "Marketing Video")} #{video.id}
                           </p>
                           <p className="mt-1 text-xs text-slate-500">
-                            Template: {video.template_type || "vertical_slideshow_v1"}
+                            {labelText("templateLabel", "Template")}: {video.template_type || "vertical_slideshow_v1"}
                           </p>
                         </div>
                         <span
@@ -973,7 +973,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                             className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-50"
                           >
                             <Eye size={12} className="mr-2" />
-                            Open Video
+                            {labelText("openVideo", "Open Video")}
                           </a>
                         )}
                         <Button
@@ -988,7 +988,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                           ) : (
                             <Sparkles size={12} className="mr-2" />
                           )}
-                          Send WhatsApp
+                          {labelText("sendWhatsApp", "Send WhatsApp")}
                         </Button>
                       </div>
                     </div>
@@ -1025,7 +1025,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                     <div className="flex-1 space-y-3 pt-1">
                       <div className="flex justify-between items-start">
                         <p className="text-[11px] font-black text-[#003566] uppercase tracking-wider">
-                          Status:
+                          {labelText("statusLabel", "Status")}:
                           <span
                             className={cn(
                               "ml-2 px-2 py-0.5 rounded text-[9px] text-white",
@@ -1052,7 +1052,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                           }
                           disabled={isNewMode && !createdYachtId}
                         >
-                          Social Settings
+                          {labelText("socialSettings", "Social Settings")}
                         </Button>
                         <Button
                           type="button"
@@ -1061,7 +1061,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                           onClick={() => handleVideoDelete(video.id)}
                           disabled={isNewMode && !createdYachtId}
                         >
-                          <Trash size={14} className="mr-1.5" /> Remove
+                          <Trash size={14} className="mr-1.5" /> {labelText("removeAction", "Remove")}
                         </Button>
                       </div>
                     </div>
@@ -1152,15 +1152,15 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
         {!isOnline ? (
           <div className="bg-amber-50 border-amber-200 p-4 rounded-xl flex gap-3 text-sm text-amber-800">
              <WifiOff />
-             <p>Offline: Fill details manually or skip to Step 2.</p>
-             <button onClick={() => setActiveStep(2)} className="bg-amber-600 text-white px-4 py-1 rounded-lg">Skip</button>
+             <p>{labelText("offlineBannerHint", "Offline: Fill details manually or skip to Step 2.")}</p>
+             <button onClick={() => setActiveStep(2)} className="bg-amber-600 text-white px-4 py-1 rounded-lg">{labelText("skipButton", "Skip")}</button>
           </div>
         ) : (
           <>
             {isExtracting ? (
               <div className="flex flex-col items-center gap-4 animate-pulse">
                 <Loader2 className="animate-spin text-blue-600" size={32} />
-                <p className="font-bold text-blue-600">Gemini is analyzing your assets...</p>
+                <p className="font-bold text-blue-600">{labelText("geminiAnalyzing", "Gemini is analyzing your assets...")}</p>
               </div>
             ) : (
               <button
@@ -1170,7 +1170,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                 }}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-12 py-4 rounded-2xl shadow-xl shadow-indigo-200 transition-all flex items-center gap-3 uppercase tracking-widest"
               >
-                <Sparkles /> Start AI Extraction
+                <Sparkles /> {labelText("startAiExtraction", "Start AI Extraction")}
               </button>
             )}
           </>

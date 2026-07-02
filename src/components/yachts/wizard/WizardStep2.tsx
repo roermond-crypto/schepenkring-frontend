@@ -394,7 +394,7 @@ export function WizardStep2({
                 });
                 setFormKey((k) => k + 1); // Refresh form to show new defaultValues
                 if (!isAuto) {
-                  toast.success("AI suggestions applied to form!");
+                  toast.success(labelText("aiSuggestionsApplied", "AI suggestions applied to form!"));
                 }
               }}
             />
@@ -1011,11 +1011,11 @@ export function WizardStep2({
                       name="engine_type"
                       defaultValue={selectedYacht?.engine_type || ""}
                     >
-                      <option value="">Select…</option>
-                      <option value="inboard">Inboard</option>
-                      <option value="outboard">Outboard</option>
-                      <option value="saildrive">Saildrive</option>
-                      <option value="sterndrive">Sterndrive</option>
+                      <option value="">{labelText("engineTypeSelect", "Select…")}</option>
+                      <option value="inboard">{labelText("engineTypeInboard", "Inboard")}</option>
+                      <option value="outboard">{labelText("engineTypeOutboard", "Outboard")}</option>
+                      <option value="saildrive">{labelText("engineTypeSaildrive", "Saildrive")}</option>
+                      <option value="sterndrive">{labelText("engineTypeSterndrive", "Sterndrive")}</option>
                     </SelectField>
                   </div>
                   <div className="space-y-1 group">

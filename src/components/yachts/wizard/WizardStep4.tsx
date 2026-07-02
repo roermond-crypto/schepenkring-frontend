@@ -135,48 +135,48 @@ const STEP4_TEXT: Record<string, Record<string, string>> = {
 };
 
 const MIN_NOTICE_OPTIONS = [
-  { value: "0", labels: { en: "Same day", nl: "Dezelfde dag", de: "Am selben Tag" } },
-  { value: "1", labels: { en: "1 day", nl: "1 dag", de: "1 Tag" } },
-  { value: "2", labels: { en: "2 days", nl: "2 dagen", de: "2 Tage" } },
-  { value: "3", labels: { en: "3 days", nl: "3 dagen", de: "3 Tage" } },
-  { value: "7", labels: { en: "1 week", nl: "1 week", de: "1 Woche" } },
+  { value: "0", labels: { en: "Same day", nl: "Dezelfde dag", de: "Am selben Tag", fr: "Même jour" } },
+  { value: "1", labels: { en: "1 day", nl: "1 dag", de: "1 Tag", fr: "1 jour" } },
+  { value: "2", labels: { en: "2 days", nl: "2 dagen", de: "2 Tage", fr: "2 jours" } },
+  { value: "3", labels: { en: "3 days", nl: "3 dagen", de: "3 Tage", fr: "3 jours" } },
+  { value: "7", labels: { en: "1 week", nl: "1 week", de: "1 Woche", fr: "1 semaine" } },
 ];
 
 const MAX_AHEAD_OPTIONS = [
-  { value: "30", labels: { en: "30 days", nl: "30 dagen", de: "30 Tage" } },
-  { value: "60", labels: { en: "60 days", nl: "60 dagen", de: "60 Tage" } },
-  { value: "90", labels: { en: "90 days", nl: "90 dagen", de: "90 Tage" } },
-  { value: "180", labels: { en: "180 days", nl: "180 dagen", de: "180 Tage" } },
-  { value: "365", labels: { en: "1 year", nl: "1 jaar", de: "1 Jahr" } },
+  { value: "30", labels: { en: "30 days", nl: "30 dagen", de: "30 Tage", fr: "30 jours" } },
+  { value: "60", labels: { en: "60 days", nl: "60 dagen", de: "60 Tage", fr: "60 jours" } },
+  { value: "90", labels: { en: "90 days", nl: "90 dagen", de: "90 Tage", fr: "90 jours" } },
+  { value: "180", labels: { en: "180 days", nl: "180 dagen", de: "180 Tage", fr: "180 jours" } },
+  { value: "365", labels: { en: "1 year", nl: "1 jaar", de: "1 Jahr", fr: "1 an" } },
 ];
 
 const APPOINTMENT_DURATION_OPTIONS = [
-  { value: "15", labels: { en: "15 minutes", nl: "15 minuten", de: "15 Minuten" } },
-  { value: "30", labels: { en: "30 minutes", nl: "30 minuten", de: "30 Minuten" } },
-  { value: "45", labels: { en: "45 minutes", nl: "45 minuten", de: "45 Minuten" } },
-  { value: "60", labels: { en: "60 minuten", nl: "60 minuten", de: "60 Minuten" } },
-  { value: "90", labels: { en: "90 minutes", nl: "90 minuten", de: "90 Minuten" } },
-  { value: "120", labels: { en: "120 minutes", nl: "120 minuten", de: "120 Minuten" } },
+  { value: "15", labels: { en: "15 minutes", nl: "15 minuten", de: "15 Minuten", fr: "15 minutes" } },
+  { value: "30", labels: { en: "30 minutes", nl: "30 minuten", de: "30 Minuten", fr: "30 minutes" } },
+  { value: "45", labels: { en: "45 minutes", nl: "45 minuten", de: "45 Minuten", fr: "45 minutes" } },
+  { value: "60", labels: { en: "60 minutes", nl: "60 minuten", de: "60 Minuten", fr: "60 minutes" } },
+  { value: "90", labels: { en: "90 minutes", nl: "90 minuten", de: "90 Minuten", fr: "90 minutes" } },
+  { value: "120", labels: { en: "120 minutes", nl: "120 minuten", de: "120 Minuten", fr: "120 minutes" } },
 ];
 
 const MAX_APPOINTMENTS_OPTIONS = [
-  { value: "1", labels: { en: "1 per day", nl: "1 per dag", de: "1 pro Tag" } },
-  { value: "2", labels: { en: "2 per day", nl: "2 per dag", de: "2 pro Tag" } },
-  { value: "3", labels: { en: "3 per day", nl: "3 per dag", de: "3 pro Tag" } },
-  { value: "5", labels: { en: "5 per dag", nl: "5 per dag", de: "5 pro Tag" } },
-  { value: "10", labels: { en: "10 per dag", nl: "10 per dag", de: "10 pro Tag" } },
-  { value: "unlimited", labels: { en: "Unlimited", nl: "Onbeperkt", de: "Unbegrenzt" } },
+  { value: "1", labels: { en: "1 per day", nl: "1 per dag", de: "1 pro Tag", fr: "1 par jour" } },
+  { value: "2", labels: { en: "2 per day", nl: "2 per dag", de: "2 pro Tag", fr: "2 par jour" } },
+  { value: "3", labels: { en: "3 per day", nl: "3 per dag", de: "3 pro Tag", fr: "3 par jour" } },
+  { value: "5", labels: { en: "5 per day", nl: "5 per dag", de: "5 pro Tag", fr: "5 par jour" } },
+  { value: "10", labels: { en: "10 per day", nl: "10 per dag", de: "10 pro Tag", fr: "10 par jour" } },
+  { value: "unlimited", labels: { en: "Unlimited", nl: "Onbeperkt", de: "Unbegrenzt", fr: "Illimité" } },
 ];
 
 const OPTIONAL_CUTOFF_OPTIONS = [
-  { value: "none", labels: { en: "No cutoff", nl: "Geen limiet", de: "Kein Limit" } },
-  { value: "1", labels: { en: "1 hour before", nl: "1 uur van tevoren", de: "1 Stunde vorher" } },
-  { value: "2", labels: { en: "2 hours before", nl: "2 uur van tevoren", de: "2 Stunden vorher" } },
-  { value: "4", labels: { en: "4 hours before", nl: "4 uur van tevoren", de: "4 Stunden vorher" } },
-  { value: "8", labels: { en: "8 hours before", nl: "8 uur van tevoren", de: "8 Stunden vorher" } },
-  { value: "12", labels: { en: "12 hours before", nl: "12 uur van tevoren", de: "12 Stunden vorher" } },
-  { value: "24", labels: { en: "24 hours before", nl: "24 uur van tevoren", de: "24 Stunden vorher" } },
-  { value: "48", labels: { en: "48 hours before", nl: "48 uur van tevoren", de: "48 Stunden vorher" } },
+  { value: "none", labels: { en: "No cutoff", nl: "Geen limiet", de: "Kein Limit", fr: "Aucune limite" } },
+  { value: "1", labels: { en: "1 hour before", nl: "1 uur van tevoren", de: "1 Stunde vorher", fr: "1 heure avant" } },
+  { value: "2", labels: { en: "2 hours before", nl: "2 uur van tevoren", de: "2 Stunden vorher", fr: "2 heures avant" } },
+  { value: "4", labels: { en: "4 hours before", nl: "4 uur van tevoren", de: "4 Stunden vorher", fr: "4 heures avant" } },
+  { value: "8", labels: { en: "8 hours before", nl: "8 uur van tevoren", de: "8 Stunden vorher", fr: "8 heures avant" } },
+  { value: "12", labels: { en: "12 hours before", nl: "12 uur van tevoren", de: "12 Stunden vorher", fr: "12 heures avant" } },
+  { value: "24", labels: { en: "24 hours before", nl: "24 uur van tevoren", de: "24 Stunden vorher", fr: "24 heures avant" } },
+  { value: "48", labels: { en: "48 hours before", nl: "48 uur van tevoren", de: "48 Stunden vorher", fr: "48 heures avant" } },
 ];
 
 export function WizardStep4({
@@ -285,7 +285,7 @@ export function WizardStep4({
               <div key={dIdx} className="bg-slate-50/50 border border-slate-100 p-5 rounded-lg space-y-4">
                 <div className="pb-2 border-b border-slate-200 flex justify-between items-center">
                   <p className="text-sm font-black text-[#003566]">
-                    {day.date.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" })}
+                    {day.date.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" })}
                   </p>
                 </div>
                 

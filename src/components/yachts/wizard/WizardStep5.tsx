@@ -227,7 +227,7 @@ export function WizardStep5({
                         )}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
-                    PDF, DOC, DOCX, JPG, PNG (Max 10MB each)
+                    {labelText("complianceDocHint", "PDF, DOC, DOCX, JPG, PNG (Max 10MB each)")}
                   </p>
                 </div>
                 <input

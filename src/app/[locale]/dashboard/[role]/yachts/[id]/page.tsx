@@ -1378,6 +1378,58 @@ const YACHT_FORM_TEXT = {
       sellerInviteEnabledDesc: "Send an invitation email to the seller to create an account",
       requiredDocuments: "Required Documents",
       loading: "Loading...",
+      stepOf: "Step {step} of {total}",
+      fieldSettings: "Field Settings",
+      vesselNotFound: "Vessel not found.",
+      loadYachtFailed: "Failed to load yacht details",
+      uploadMp4Only: "Please upload an MP4 file.",
+      creatingDraft: "Creating vessel draft...",
+      creatingDraftForDoc: "Creating vessel draft for document upload...",
+      createDraftFailed: "Failed to initialize draft vessel.",
+      saveBeforeVideo: "Save the vessel first before uploading a video.",
+      videoUploadedOk: "Video uploaded successfully",
+      videoUploadFailed: "Video upload failed",
+      saveBeforeMarketingVideo: "Save the vessel first before generating a marketing video.",
+      approveImageForVideo: "Approve at least one uploaded image before generating a marketing video.",
+      approveAllFailed: "Failed to approve images.",
+      documentRemoved: "Document removed",
+      documentDeleteFailed: "Failed to delete document",
+      documentOrderFailed: "Failed to save document order.",
+      saveYachtFirst: "Please save the yacht first.",
+      removeDocument: "Remove Document",
+      removeDocumentDesc: "Are you sure you want to remove this document? This action cannot be undone.",
+      removeAction: "Remove",
+      removeVideo: "Remove Video",
+      removeVideoDesc: "Are you sure you want to remove this video?",
+      saveBeforeSticker: "Save the vessel first before generating a sticker.",
+      saveBeforePreview: "Save the vessel first before previewing the sticker.",
+      saveBeforeDownload: "Save the vessel first before downloading the sticker.",
+      stickerRefreshed: "Sticker refreshed successfully.",
+      stickerGenerated: "Sticker generated successfully.",
+      stickerFailed: "Failed to generate the sticker.",
+      previewFailed: "Failed to preview the sticker.",
+      deleteImagesFailed: "Failed to delete images.",
+      openVideo: "Open Video",
+      sendWhatsApp: "Send WhatsApp",
+      socialSettings: "Social Settings",
+      statusLabel: "Status",
+      aiSuggestionsApplied: "AI suggestions applied to form!",
+      engineTypeSelect: "Select…",
+      engineTypeInboard: "Inboard",
+      engineTypeOutboard: "Outboard",
+      engineTypeSaildrive: "Saildrive",
+      engineTypeSterndrive: "Sterndrive",
+      complianceDocHint: "PDF, DOC, DOCX, JPG, PNG (Max 10MB each)",
+      offlineBannerHint: "Offline: Fill details manually or skip to Step 2.",
+      skipButton: "Skip",
+      geminiAnalyzing: "Gemini is analyzing your assets...",
+      startAiExtraction: "Start AI Extraction",
+      aiQualityScore: "AI Quality Score",
+      aiComments: "AI Comments",
+      aiReviewDetails: "AI Review Details",
+      manualSortTitle: "Manual Sort",
+      saveOrder: "Save Order",
+      templateLabel: "Template",
     },
     placeholders: {
       sellerSearch: "Search by name or email...",
@@ -1919,6 +1971,58 @@ const YACHT_FORM_TEXT = {
       sellerInviteEnabledDesc: "Stuur een uitnodigingse-mail naar de verkoper om een account aan te maken",
       requiredDocuments: "Benodigde Documenten",
       loading: "Laden...",
+      stepOf: "Stap {step} van {total}",
+      fieldSettings: "Veldinstellingen",
+      vesselNotFound: "Vaartuig niet gevonden.",
+      loadYachtFailed: "Laden van vaartuiggegevens mislukt",
+      uploadMp4Only: "Upload een MP4-bestand.",
+      creatingDraft: "Concept aanmaken...",
+      creatingDraftForDoc: "Concept aanmaken voor document upload...",
+      createDraftFailed: "Aanmaken van concept mislukt.",
+      saveBeforeVideo: "Sla eerst het vaartuig op voordat je een video uploadt.",
+      videoUploadedOk: "Video succesvol geüpload",
+      videoUploadFailed: "Video uploaden mislukt",
+      saveBeforeMarketingVideo: "Sla het vaartuig eerst op voordat je een marketingvideo genereert.",
+      approveImageForVideo: "Keur minimaal één afbeelding goed voordat je een marketingvideo genereert.",
+      approveAllFailed: "Afbeeldingen goedkeuren mislukt.",
+      documentRemoved: "Document verwijderd",
+      documentDeleteFailed: "Verwijderen mislukt",
+      documentOrderFailed: "Documentvolgorde opslaan mislukt.",
+      saveYachtFirst: "Sla eerst het vaartuig op.",
+      removeDocument: "Document verwijderen",
+      removeDocumentDesc: "Weet je zeker dat je dit document wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      removeAction: "Verwijderen",
+      removeVideo: "Video verwijderen",
+      removeVideoDesc: "Weet je zeker dat je deze video wilt verwijderen?",
+      saveBeforeSticker: "Sla het vaartuig eerst op voordat je een sticker genereert.",
+      saveBeforePreview: "Sla het vaartuig eerst op voordat je de sticker bekijkt.",
+      saveBeforeDownload: "Sla het vaartuig eerst op voordat je de sticker downloadt.",
+      stickerRefreshed: "Sticker vernieuwd.",
+      stickerGenerated: "Sticker gegenereerd.",
+      stickerFailed: "Sticker genereren mislukt.",
+      previewFailed: "Sticker bekijken mislukt.",
+      deleteImagesFailed: "Verwijderen van afbeeldingen mislukt.",
+      openVideo: "Video openen",
+      sendWhatsApp: "WhatsApp versturen",
+      socialSettings: "Social instellingen",
+      statusLabel: "Status",
+      aiSuggestionsApplied: "AI-suggesties toegepast op het formulier!",
+      engineTypeSelect: "— kies —",
+      engineTypeInboard: "Inboormotor",
+      engineTypeOutboard: "Buitenboordmotor",
+      engineTypeSaildrive: "Saildrive",
+      engineTypeSterndrive: "Sterndrive",
+      complianceDocHint: "PDF, DOC, DOCX, JPG, PNG (max. 10 MB per bestand)",
+      offlineBannerHint: "Offline: vul handmatig in of ga naar stap 2.",
+      skipButton: "Overslaan",
+      geminiAnalyzing: "Gemini analyseert je bestanden...",
+      startAiExtraction: "AI-extractie starten",
+      aiQualityScore: "AI-beoordelingsscore",
+      aiComments: "AI-opmerkingen",
+      aiReviewDetails: "AI-controledetails",
+      manualSortTitle: "Handmatig sorteren",
+      saveOrder: "Volgorde opslaan",
+      templateLabel: "Template",
     },
     placeholders: {
       sellerSearch: "Zoek op naam of e-mail...",
@@ -5935,7 +6039,7 @@ function YachtEditorInner() {
       await pipeline.approveAll();
     } catch (error) {
       console.error("Approve all failed", error);
-      toast.error("Failed to approve images.");
+      toast.error(labelText("approveAllFailed", "Failed to approve images."));
     } finally {
       setIsApprovingAllImages(false);
     }
@@ -6765,12 +6869,12 @@ function YachtEditorInner() {
       } catch (err: any) {
         if (err?.response?.status === 404) {
           console.warn(`[YachtEditor] Skipping missing yacht ${yachtId}`);
-          toast.error("Vessel not found.");
+          toast.error(labelText("vesselNotFound", "Vessel not found."));
           router.push(`/${locale}/dashboard/${role}/yachts`);
           return;
         }
         console.error("Failed to fetch yacht details", err);
-        toast.error("Failed to load yacht details");
+        toast.error(labelText("loadYachtFailed", "Failed to load yacht details"));
         router.push(`/${locale}/dashboard/${role}/yachts`);
       } finally {
         setLoading(false);
@@ -6792,7 +6896,7 @@ function YachtEditorInner() {
       const isMp4 =
         file.type === "video/mp4" || /\.mp4$/i.test(file.name || "");
       if (!isMp4) {
-        toast.error("Please upload an MP4 file.");
+        toast.error(labelText("uploadMp4Only", "Please upload an MP4 file."));
         return;
       }
 
@@ -6802,14 +6906,14 @@ function YachtEditorInner() {
       let targetId = isNewMode ? createdYachtId : yachtId;
 
       if (isNewMode && !targetId) {
-        draftToastId = toast.loading("Creating vessel draft...");
+        draftToastId = toast.loading(labelText("creatingDraft", "Creating vessel draft..."));
         targetId = await createBootstrapDraftYacht();
         toast.dismiss(draftToastId);
         draftToastId = undefined;
       }
 
       if (!targetId) {
-        toast.error("Save the vessel first before uploading a video.");
+        toast.error(labelText("saveBeforeVideo", "Save the vessel first before uploading a video."));
         return;
       }
 
@@ -6822,13 +6926,13 @@ function YachtEditorInner() {
       });
       const uploadedVideo = res.data?.video ?? res.data?.data ?? res.data;
       setBoatVideos((prev) => [uploadedVideo, ...prev]);
-      toast.success(t?.video?.uploaded || "Video uploaded successfully");
+      toast.success(t?.video?.uploaded || labelText("videoUploadedOk", "Video uploaded successfully"));
     } catch (err: any) {
       const message =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         t?.video?.uploadFailed ||
-        "Video upload failed";
+        labelText("videoUploadFailed", "Video upload failed");
       console.error("Video upload failed", err);
       toast.error(message);
     } finally {
@@ -6844,26 +6948,24 @@ function YachtEditorInner() {
     async (force = false) => {
       let targetId = isNewMode ? createdYachtId : yachtId;
       if (isNewMode && !targetId) {
-        const loadingToastId = toast.loading("Creating vessel draft...");
+        const loadingToastId = toast.loading(labelText("creatingDraft", "Creating vessel draft..."));
         try {
           targetId = await createBootstrapDraftYacht();
           toast.dismiss(loadingToastId);
         } catch (error) {
           toast.dismiss(loadingToastId);
-          toast.error("Failed to initialize draft vessel.");
+          toast.error(labelText("createDraftFailed", "Failed to initialize draft vessel."));
           return;
         }
       }
 
       if (!targetId) {
-        toast.error("Save the vessel first before generating a marketing video.");
+        toast.error(labelText("saveBeforeMarketingVideo", "Save the vessel first before generating a marketing video."));
         return;
       }
 
       if (approvedMarketingImageIds.length === 0) {
-        toast.error(
-          "Approve at least one uploaded image before generating a marketing video.",
-        );
+        toast.error(labelText("approveImageForVideo", "Approve at least one uploaded image before generating a marketing video."));
         return;
       }
 
@@ -6966,15 +7068,13 @@ function YachtEditorInner() {
 
       let targetId = currentBoatDocumentId;
       if (isNewMode && !targetId) {
-        const loadingToastId = toast.loading(
-          "Creating vessel draft for document upload...",
-        );
+        const loadingToastId = toast.loading(labelText("creatingDraftForDoc", "Creating vessel draft for document upload..."));
         try {
           targetId = await createBootstrapDraftYacht();
           toast.dismiss(loadingToastId);
         } catch (err) {
           toast.dismiss(loadingToastId);
-          toast.error("Failed to initialize draft vessel.");
+          toast.error(labelText("createDraftFailed", "Failed to initialize draft vessel."));
           return;
         }
       }
@@ -7092,9 +7192,9 @@ function YachtEditorInner() {
       setBoatDocuments((prev) =>
         prev.filter((doc) => doc.id !== documentToDelete),
       );
-      toast.success("Document removed");
+      toast.success(labelText("documentRemoved", "Document removed"));
     } catch (err) {
-      toast.error("Failed to delete document");
+      toast.error(labelText("documentDeleteFailed", "Failed to delete document"));
     } finally {
       setDeleteDocumentDialogOpen(false);
       setDocumentToDelete(null);
@@ -7113,7 +7213,7 @@ function YachtEditorInner() {
 
     const targetId = currentBoatDocumentId;
     if (!targetId) {
-      toast.error("Please save the yacht first.");
+      toast.error(labelText("saveYachtFirst", "Please save the yacht first."));
       return;
     }
 
@@ -7138,7 +7238,7 @@ function YachtEditorInner() {
         document_ids: reorderedIds,
       });
     } catch (err) {
-      toast.error("Failed to save document order.");
+      toast.error(labelText("documentOrderFailed", "Failed to save document order."));
       const refreshed = await api.get(`/yachts/${targetId}/documents`);
       setBoatDocuments(Array.isArray(refreshed.data) ? refreshed.data : []);
     }
@@ -7291,7 +7391,7 @@ function YachtEditorInner() {
         await pipeline.reorderImages(reordered.map((image) => image.id));
       } catch (error) {
         setReviewImages(pipeline.images);
-        toast.error("Failed to save image order");
+        toast.error(labelText("manualSortFailed", "Failed to save image order."));
         console.error(error);
       } finally {
         setIsReorderingImages(false);
@@ -7554,7 +7654,7 @@ function YachtEditorInner() {
         handleStepChange(2);
       }
     } catch (error) {
-      toast.error("Failed to delete images.");
+      toast.error(labelText("deleteImagesFailed", "Failed to delete images."));
       console.error(error);
     } finally {
       setIsDeletingFailedImages(false);
@@ -7563,7 +7663,7 @@ function YachtEditorInner() {
 
   const handleGenerateSticker = useCallback(async () => {
     if (!activeYachtId) {
-      toast.error("Save the vessel first before generating a sticker.");
+      toast.error(labelText("saveBeforeSticker", "Save the vessel first before generating a sticker."));
       return;
     }
 
@@ -7578,12 +7678,12 @@ function YachtEditorInner() {
       }));
       toast.success(
         selectedYacht?.qr_code_path
-          ? "Sticker refreshed successfully."
-          : "Sticker generated successfully.",
+          ? labelText("stickerRefreshed", "Sticker refreshed successfully.")
+          : labelText("stickerGenerated", "Sticker generated successfully."),
       );
     } catch (error: any) {
       toast.error(
-        error?.response?.data?.message || "Failed to generate the sticker.",
+        error?.response?.data?.message || labelText("stickerFailed", "Failed to generate the sticker."),
       );
     } finally {
       setIsGeneratingSticker(false);
@@ -7592,7 +7692,7 @@ function YachtEditorInner() {
 
   const openStickerPreview = useCallback(() => {
     if (!activeYachtId) {
-      toast.error("Save the vessel first before previewing the sticker.");
+      toast.error(labelText("saveBeforePreview", "Save the vessel first before previewing the sticker."));
       return;
     }
 
@@ -7616,7 +7716,7 @@ function YachtEditorInner() {
         window.setTimeout(() => window.URL.revokeObjectURL(previewUrl), 60_000);
       } catch (error: any) {
         toast.error(
-          error?.response?.data?.message || "Failed to preview the sticker.",
+          error?.response?.data?.message || labelText("previewFailed", "Failed to preview the sticker."),
         );
       }
     })();
@@ -7624,7 +7724,7 @@ function YachtEditorInner() {
 
   const downloadStickerPdf = useCallback(() => {
     if (!activeYachtId) {
-      toast.error("Save the vessel first before downloading the sticker.");
+      toast.error(labelText("saveBeforeDownload", "Save the vessel first before downloading the sticker."));
       return;
     }
 
@@ -8035,7 +8135,7 @@ function YachtEditorInner() {
 
       // Auto-create draft yacht upon first image drop in new mode
       if (isNewMode && !targetId) {
-        toast.loading("Creating vessel draft...", { id: toastId });
+        toast.loading(labelText("creatingDraft", "Creating vessel draft..."), { id: toastId });
         targetId = await createBootstrapDraftYacht();
         shouldSetCreatedYachtId = true;
         verifiedDraftYachtIdRef.current = Number(targetId);
@@ -8849,8 +8949,8 @@ function YachtEditorInner() {
             <p className="text-sm text-slate-500 mt-2 min-h-[40px]">
               {extractionStatus ||
                 (extractionType === "gemini"
-                  ? "AI is analyzing your yacht photos and preparing fields."
-                  : "🪄 RAG Engine is searching Pinecone to find consensus and auto-filling details...")}
+                  ? labelText("extractionAnalyzingPhotos", "AI is analyzing your yacht photos and preparing fields.")
+                  : labelText("extractionSearchingKnowledge", "RAG Engine is searching Pinecone to find consensus and auto-filling details..."))}
             </p>
             <div className="mt-5 space-y-3">
               <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -8972,7 +9072,7 @@ function YachtEditorInner() {
                     )}
               </h1>
               <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider mt-0.5">
-                Step {activeVisibleStepIndex + 1} of {visibleWizardSteps.length}{" "}
+                {labelText("stepOf", "Step {step} of {total}").replace("{step}", String(activeVisibleStepIndex + 1)).replace("{total}", String(visibleWizardSteps.length))}{" "}
                 &middot; {visibleWizardSteps[activeVisibleStepIndex]?.label}
               </p>
             </div>
@@ -9003,7 +9103,7 @@ function YachtEditorInner() {
                 className="h-10 w-full border-white/20 bg-white/10 px-4 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/15 hover:text-white lg:w-auto"
               >
                 <Settings2 size={14} className="mr-2" />
-                Field Settings
+                {labelText("fieldSettings", "Field Settings")}
               </Button>
             )}
           </div>
@@ -9308,7 +9408,7 @@ function YachtEditorInner() {
               {t?.wizard?.nav?.previous || labelText("previous", "Previous")}
             </Button>
             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-              Step {activeVisibleStepIndex + 1} of {visibleWizardSteps.length}
+              {labelText("stepOf", "Step {step} of {total}").replace("{step}", String(activeVisibleStepIndex + 1)).replace("{total}", String(visibleWizardSteps.length))}
             </span>
             {activeVisibleStepIndex < visibleWizardSteps.length - 1 &&
             activeStep !== 5 ? (
@@ -9430,10 +9530,10 @@ function YachtEditorInner() {
       <ConfirmDialog
         open={deleteDocumentDialogOpen}
         onOpenChange={setDeleteDocumentDialogOpen}
-        title="Remove Document"
-        description="Are you sure you want to remove this document? This action cannot be undone."
-        confirmText="Remove"
-        cancelText="Cancel"
+        title={labelText("removeDocument", "Remove Document")}
+        description={labelText("removeDocumentDesc", "Are you sure you want to remove this document? This action cannot be undone.")}
+        confirmText={labelText("removeAction", "Remove")}
+        cancelText={labelText("cancel", "Cancel")}
         variant="destructive"
         onConfirm={executeDocumentDelete}
       />
@@ -9441,13 +9541,10 @@ function YachtEditorInner() {
       <ConfirmDialog
         open={deleteVideoDialogOpen}
         onOpenChange={setDeleteVideoDialogOpen}
-        title={t?.video?.confirmDeleteTitle || "Remove Video"}
-        description={
-          t?.video?.confirmDelete ||
-          "Are you sure you want to remove this video?"
-        }
-        confirmText="Remove"
-        cancelText="Cancel"
+        title={t?.video?.confirmDeleteTitle || labelText("removeVideo", "Remove Video")}
+        description={t?.video?.confirmDelete || labelText("removeVideoDesc", "Are you sure you want to remove this video?")}
+        confirmText={labelText("removeAction", "Remove")}
+        cancelText={labelText("cancel", "Cancel")}
         variant="destructive"
         onConfirm={executeVideoDelete}
       />
