@@ -4983,6 +4983,111 @@ function YachtEditorInner() {
   const [isRunningMarktplaatsAction, setIsRunningMarktplaatsAction] =
     useState<string | null>(null);
   const sellerPublicationOptions = SELLER_PUBLICATION_OPTIONS;
+
+  // ─── Platform Network state ─────────────────────────────────────────────────
+  const [activePlatforms, setActivePlatforms] = useState<import("@/components/yachts/wizard/WizardStep5").ActivePlatform[]>([]);
+  const [boatPlatformPublications, setBoatPlatformPublications] = useState<import("@/components/yachts/wizard/WizardStep5").BoatPlatformPublication[]>([]);
+  const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(false);
+  const [syncingPlatformId, setSyncingPlatformId] = useState<number | null>(null);
+  const [isSavingPlatformPublications, setIsSavingPlatformPublications] = useState(false);
+  const [openMarineXml, setOpenMarineXml] = useState<string | null>(null);
+  const [isGeneratingOpenMarine, setIsGeneratingOpenMarine] = useState(false);
+  const [openMarineValidation, setOpenMarineValidation] = useState<import("@/components/yachts/wizard/WizardStep5").OpenMarineValidation | null>(null);
+
+  const loadPlatforms = useCallback(async (yachtId: number | string) => {
+    setIsLoadingPlatforms(true);
+    try {
+      const [platformsRes, pubsRes] = await Promise.all([
+        api.get<import("@/components/yachts/wizard/WizardStep5").ActivePlatform[]>("/admin/platforms?is_active=true"),
+        api.get<import("@/components/yachts/wizard/WizardStep5").BoatPlatformPublication[]>(`/admin/yachts/${yachtId}/platform-publications`),
+      ]);
+      const platforms = Array.isArray(platformsRes.data) ? platformsRes.data : ((platformsRes.data as any)?.data ?? []);
+      const pubs = Array.isArray(pubsRes.data) ? pubsRes.data : ((pubsRes.data as any)?.data ?? []);
+      setActivePlatforms(platforms);
+      setBoatPlatformPublications(pubs);
+    } catch {
+      // Silently fail — platform network is optional
+    } finally {
+      setIsLoadingPlatforms(false);
+    }
+  }, []);
+
+  const handleTogglePlatformEnabled = useCallback((platformId: number, enabled: boolean) => {
+    setBoatPlatformPublications((prev) => {
+      const exists = prev.find((p) => p.platform_id === platformId);
+      if (exists) {
+        return prev.map((p) => p.platform_id === platformId ? { ...p, enabled } : p);
+      }
+      return [...prev, { platform_id: platformId, enabled, external_platform_id: "", status: "not_exported", last_sync_at: null, last_success_at: null, last_error_at: null, last_error_message: null, retry_count: 0 }];
+    });
+  }, []);
+
+  const handleUpdatePlatformExternalId = useCallback((platformId: number, externalId: string) => {
+    setBoatPlatformPublications((prev) => {
+      const exists = prev.find((p) => p.platform_id === platformId);
+      if (exists) {
+        return prev.map((p) => p.platform_id === platformId ? { ...p, external_platform_id: externalId } : p);
+      }
+      return [...prev, { platform_id: platformId, enabled: true, external_platform_id: externalId, status: "not_exported", last_sync_at: null, last_success_at: null, last_error_at: null, last_error_message: null, retry_count: 0 }];
+    });
+  }, []);
+
+  const handleSyncPlatform = useCallback(async (platformId: number) => {
+    if (!activeYachtId) return;
+    setSyncingPlatformId(platformId);
+    try {
+      const res = await api.post<import("@/components/yachts/wizard/WizardStep5").BoatPlatformPublication>(`/admin/yachts/${activeYachtId}/platform-publications/${platformId}/sync`);
+      setBoatPlatformPublications((prev) =>
+        prev.map((p) => p.platform_id === platformId ? { ...p, ...res.data } : p)
+      );
+      toast.success("Synchronisatie gestart.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Synchronisatie mislukt.");
+    } finally {
+      setSyncingPlatformId(null);
+    }
+  }, [activeYachtId]);
+
+  const handleSavePlatformPublications = useCallback(async () => {
+    if (!activeYachtId) return;
+    setIsSavingPlatformPublications(true);
+    try {
+      const res = await api.put<import("@/components/yachts/wizard/WizardStep5").BoatPlatformPublication[]>(
+        `/admin/yachts/${activeYachtId}/platform-publications`,
+        { publications: boatPlatformPublications }
+      );
+      const updated = Array.isArray(res.data) ? res.data : ((res.data as any)?.data ?? boatPlatformPublications);
+      setBoatPlatformPublications(updated);
+      toast.success("Publicatie-instellingen opgeslagen.");
+    } catch {
+      toast.error("Opslaan mislukt.");
+    } finally {
+      setIsSavingPlatformPublications(false);
+    }
+  }, [activeYachtId, boatPlatformPublications]);
+
+  const handleGenerateOpenMarine = useCallback(async () => {
+    if (!activeYachtId) return;
+    setIsGeneratingOpenMarine(true);
+    try {
+      const res = await api.post<{ xml: string; validation: import("@/components/yachts/wizard/WizardStep5").OpenMarineValidation }>(
+        `/admin/yachts/${activeYachtId}/open-marine/generate`
+      );
+      setOpenMarineXml(res.data.xml);
+      setOpenMarineValidation(res.data.validation);
+      if (res.data.validation.valid) {
+        toast.success("OpenMarine XML gegenereerd en gevalideerd.");
+      } else {
+        toast.error(`OpenMarine validatie: ${res.data.validation.errors.length} fout(en) gevonden.`);
+      }
+    } catch {
+      toast.error("OpenMarine generatie mislukt.");
+    } finally {
+      setIsGeneratingOpenMarine(false);
+    }
+  }, [activeYachtId]);
+  // ───────────────────────────────────────────────────────────────────────────
+
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [documentDropTarget, setDocumentDropTarget] =
     useState<BoatDocumentType | null>(null);
@@ -5163,7 +5268,7 @@ function YachtEditorInner() {
     };
   }, [currentBoatDocumentId, isNewMode]);
 
-  // Fetch Checklist Templates for Step 5
+  // Fetch Checklist Templates + Platforms for Step 5
   useEffect(() => {
     if (activeStep === 5) {
       const fetchComplianceData = async () => {
@@ -5184,11 +5289,17 @@ function YachtEditorInner() {
         }
       };
       fetchComplianceData();
+      if (activeYachtId && role === "admin") {
+        void loadPlatforms(activeYachtId);
+      }
     }
   }, [
     activeStep,
     selectedYacht?.boat_type_id,
     (draft?.data as any)?.boat_type_id,
+    activeYachtId,
+    role,
+    loadPlatforms,
   ]);
 
   useEffect(() => {
@@ -9368,6 +9479,19 @@ function YachtEditorInner() {
               setInternalReviewSelection={setInternalReviewSelection}
               reviewActionLoading={reviewActionLoading}
               updateInternalReviewStatus={updateInternalReviewStatus}
+              activePlatforms={activePlatforms}
+              boatPlatformPublications={boatPlatformPublications}
+              isLoadingPlatforms={isLoadingPlatforms}
+              onTogglePlatformEnabled={handleTogglePlatformEnabled}
+              onUpdatePlatformExternalId={handleUpdatePlatformExternalId}
+              onSyncPlatform={handleSyncPlatform}
+              syncingPlatformId={syncingPlatformId}
+              openMarineXml={openMarineXml}
+              isGeneratingOpenMarine={isGeneratingOpenMarine}
+              openMarineValidation={openMarineValidation}
+              onGenerateOpenMarine={handleGenerateOpenMarine}
+              onSavePlatformPublications={handleSavePlatformPublications}
+              isSavingPlatformPublications={isSavingPlatformPublications}
               isSubmitting={isSubmitting}
             />
           )}

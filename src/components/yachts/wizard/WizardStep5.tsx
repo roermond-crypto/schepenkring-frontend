@@ -1,20 +1,70 @@
 "use client";
 
-import React from "react";
-import { 
-  FileText, 
-  CheckSquare, 
-  Loader2, 
-  UploadCloud, 
-  Eye, 
-  Trash, 
+import React, { useState } from "react";
+import {
+  FileText,
+  CheckSquare,
+  Loader2,
+  UploadCloud,
+  Eye,
+  Trash,
   CheckCircle,
   Globe,
   Save,
   AlertCircle,
+  Radio,
+  ToggleLeft,
+  ToggleRight,
+  RefreshCw,
+  ExternalLink,
+  Rss,
+  Code2,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+// ─── Platform types ───────────────────────────────────────────────────────────
+export interface ActivePlatform {
+  id: number;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  website_url: string | null;
+  platform_type: string;
+  export_method: string;
+  is_openmarine_enabled: boolean;
+  priority: number;
+}
+
+export type PlatformPublicationStatus = "pending" | "published" | "synced" | "failed" | "paused" | "not_exported";
+
+export interface BoatPlatformPublication {
+  id?: number;
+  platform_id: number;
+  enabled: boolean;
+  external_platform_id: string;
+  status: PlatformPublicationStatus;
+  last_sync_at: string | null;
+  last_success_at: string | null;
+  last_error_at: string | null;
+  last_error_message: string | null;
+  retry_count: number;
+}
+
+export interface OpenMarineValidation {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  missing_required: string[];
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface WizardStep5Props {
   labelText: (key: any, fallback: string) => any;
@@ -61,6 +111,23 @@ interface WizardStep5Props {
   reviewActionLoading: any;
   updateInternalReviewStatus: (status: "Draft" | "For Sale", nextStep?: number) => Promise<void>;
   
+  // Platform Network Props
+  activePlatforms: ActivePlatform[];
+  boatPlatformPublications: BoatPlatformPublication[];
+  isLoadingPlatforms: boolean;
+  onTogglePlatformEnabled: (platformId: number, enabled: boolean) => void;
+  onUpdatePlatformExternalId: (platformId: number, externalId: string) => void;
+  onSyncPlatform: (platformId: number) => Promise<void>;
+  syncingPlatformId: number | null;
+
+  // OpenMarine Props
+  openMarineXml: string | null;
+  isGeneratingOpenMarine: boolean;
+  openMarineValidation: OpenMarineValidation | null;
+  onGenerateOpenMarine: () => Promise<void>;
+  onSavePlatformPublications: () => Promise<void>;
+  isSavingPlatformPublications: boolean;
+
   // Submit Props
   isSubmitting: boolean;
 }
@@ -105,9 +172,35 @@ export function WizardStep5({
   setInternalReviewSelection,
   reviewActionLoading,
   updateInternalReviewStatus,
+  activePlatforms,
+  boatPlatformPublications,
+  isLoadingPlatforms,
+  onTogglePlatformEnabled,
+  onUpdatePlatformExternalId,
+  onSyncPlatform,
+  syncingPlatformId,
+  openMarineXml,
+  isGeneratingOpenMarine,
+  openMarineValidation,
+  onGenerateOpenMarine,
+  onSavePlatformPublications,
+  isSavingPlatformPublications,
   isSubmitting,
 }: WizardStep5Props) {
   const isAdminRole = role === "admin";
+  const [showXmlPreview, setShowXmlPreview] = useState(false);
+
+  const getPub = (platformId: number): BoatPlatformPublication | undefined =>
+    boatPlatformPublications.find((p) => p.platform_id === platformId);
+
+  const STATUS_CONFIG: Record<PlatformPublicationStatus, { label: string; color: string; icon: React.ReactNode }> = {
+    pending:       { label: "In wachtrij",     color: "bg-yellow-50 border-yellow-200 text-yellow-700",  icon: <Loader2 size={11} className="animate-spin" /> },
+    published:     { label: "Gepubliceerd",    color: "bg-green-50 border-green-200 text-green-700",    icon: <CheckCircle2 size={11} /> },
+    synced:        { label: "Gesynchroniseerd",color: "bg-blue-50 border-blue-200 text-blue-700",       icon: <CheckCircle2 size={11} /> },
+    failed:        { label: "Mislukt",         color: "bg-red-50 border-red-200 text-red-700",          icon: <XCircle size={11} /> },
+    paused:        { label: "Gepauzeerd",      color: "bg-slate-50 border-slate-200 text-slate-600",    icon: <AlertTriangle size={11} /> },
+    not_exported:  { label: "Niet geëxporteerd",color: "bg-slate-50 border-slate-200 text-slate-500",  icon: <XCircle size={11} /> },
+  };
 
   return (
     <div className="space-y-8">
@@ -311,6 +404,254 @@ export function WizardStep5({
           </div>
         </div>
 
+        {/* ── PLATFORM NETWORK ─────────────────────────────────────── */}
+        {isAdminRole && (
+          <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                <Radio size={16} className="text-indigo-600" />
+                Platform Netwerk
+              </h4>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!activeYachtId || isSavingPlatformPublications}
+                  onClick={() => void onSavePlatformPublications()}
+                  className="rounded-lg text-xs gap-1.5"
+                >
+                  {isSavingPlatformPublications ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                  Publicatie-instellingen opslaan
+                </Button>
+              </div>
+            </div>
+
+            {isLoadingPlatforms ? (
+              <div className="flex items-center gap-2 text-sm text-slate-400 py-4">
+                <Loader2 size={16} className="animate-spin" /> Platforms laden...
+              </div>
+            ) : activePlatforms.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-400">
+                <Radio size={20} className="mx-auto mb-2 opacity-40" />
+                <p>Geen actieve platforms geconfigureerd.</p>
+                <a href="../platforms" className="text-blue-600 hover:underline text-xs mt-1 inline-block">Platform Netwerk beheren →</a>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activePlatforms.map((platform) => {
+                  const pub = getPub(platform.id);
+                  const enabled = pub ? pub.enabled : true;
+                  const status = pub?.status ?? "not_exported";
+                  const statusCfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.not_exported;
+                  const hasError = pub?.last_error_message && pub.status === "failed";
+
+                  return (
+                    <div
+                      key={platform.id}
+                      className={cn(
+                        "rounded-xl border p-4 transition-all",
+                        enabled ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50 opacity-70"
+                      )}
+                    >
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Logo */}
+                        <div className="w-10 h-10 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0 overflow-hidden">
+                          {platform.logo_url
+                            ? <img src={platform.logo_url} alt={platform.name} className="w-full h-full object-contain p-1" />
+                            : <Globe size={16} className="text-slate-400" />
+                          }
+                        </div>
+
+                        {/* Name + badges */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm text-slate-800">{platform.name}</span>
+                            {platform.is_openmarine_enabled && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-indigo-50 border-indigo-200 text-indigo-700 uppercase tracking-wide flex items-center gap-0.5">
+                                <Rss size={8} /> OpenMarine
+                              </span>
+                            )}
+                            <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-0.5", statusCfg.color)}>
+                              {statusCfg.icon} {statusCfg.label}
+                            </span>
+                          </div>
+                          {pub?.last_sync_at && (
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              Gesynchroniseerd: {new Date(pub.last_sync_at).toLocaleDateString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          )}
+                          {hasError && (
+                            <p className="text-[10px] text-red-600 mt-0.5 flex items-center gap-1">
+                              <AlertTriangle size={9} /> {pub!.last_error_message}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* External ID input */}
+                        <div className="shrink-0 hidden sm:block">
+                          <input
+                            type="text"
+                            value={pub?.external_platform_id ?? ""}
+                            onChange={(e) => onUpdatePlatformExternalId(platform.id, e.target.value)}
+                            placeholder="Extern ID"
+                            className="h-8 w-32 rounded-md border border-slate-200 bg-slate-50 px-2 text-xs font-mono focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+
+                        {/* Sync button */}
+                        <button
+                          type="button"
+                          onClick={() => void onSyncPlatform(platform.id)}
+                          disabled={!activeYachtId || syncingPlatformId === platform.id}
+                          title="Synchroniseer nu"
+                          className="shrink-0 h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-colors disabled:opacity-40"
+                        >
+                          {syncingPlatformId === platform.id
+                            ? <Loader2 size={13} className="animate-spin" />
+                            : <RefreshCw size={13} />
+                          }
+                        </button>
+
+                        {/* Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => onTogglePlatformEnabled(platform.id, !enabled)}
+                          className={cn(
+                            "shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors",
+                            enabled
+                              ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+                              : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100"
+                          )}
+                        >
+                          {enabled ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                          {enabled ? "Aan" : "Uit"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── OPENMARINE 2.0 ───────────────────────────────────────── */}
+        {isAdminRole && (
+          <div className="mb-8 rounded-xl border border-indigo-200 bg-white p-6 shadow-sm space-y-5">
+            <div className="flex items-center justify-between border-b border-indigo-100 pb-4">
+              <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                <Rss size={16} className="text-indigo-600" />
+                OpenMarine 2.0 Export
+              </h4>
+              <Button
+                type="button"
+                onClick={() => void onGenerateOpenMarine()}
+                disabled={!activeYachtId || isGeneratingOpenMarine}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 h-8 text-xs px-3"
+              >
+                {isGeneratingOpenMarine ? <Loader2 size={12} className="animate-spin" /> : <Rss size={12} />}
+                {openMarineXml ? "Opnieuw genereren" : "Genereer OpenMarine XML"}
+              </Button>
+            </div>
+
+            {/* Validation result */}
+            {openMarineValidation && (
+              <div className={cn(
+                "rounded-lg border p-4",
+                openMarineValidation.valid
+                  ? "border-green-200 bg-green-50"
+                  : "border-red-200 bg-red-50"
+              )}>
+                <div className="flex items-center gap-2 mb-2">
+                  {openMarineValidation.valid
+                    ? <CheckCircle2 size={15} className="text-green-600" />
+                    : <XCircle size={15} className="text-red-600" />
+                  }
+                  <span className={cn("text-sm font-bold", openMarineValidation.valid ? "text-green-700" : "text-red-700")}>
+                    {openMarineValidation.valid ? "Validatie geslaagd" : "Validatiefouten gevonden"}
+                  </span>
+                </div>
+                {openMarineValidation.missing_required.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-red-700 uppercase tracking-wide">Verplichte velden ontbreken:</p>
+                    {openMarineValidation.missing_required.map((field) => (
+                      <p key={field} className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertTriangle size={9} /> {field}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                {openMarineValidation.errors.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    <p className="text-xs font-bold text-red-700 uppercase tracking-wide">Fouten:</p>
+                    {openMarineValidation.errors.map((err, i) => (
+                      <p key={i} className="text-xs text-red-600">{err}</p>
+                    ))}
+                  </div>
+                )}
+                {openMarineValidation.warnings.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    <p className="text-xs font-bold text-yellow-700 uppercase tracking-wide">Waarschuwingen:</p>
+                    {openMarineValidation.warnings.map((w, i) => (
+                      <p key={i} className="text-xs text-yellow-700 flex items-center gap-1">
+                        <AlertTriangle size={9} /> {w}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* XML Preview */}
+            {openMarineXml && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setShowXmlPreview((v) => !v)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700 hover:text-indigo-900 transition-colors"
+                  >
+                    {showXmlPreview ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    {showXmlPreview ? "XML verbergen" : "Gegenereerde XML bekijken"}
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { void navigator.clipboard.writeText(openMarineXml); }}
+                      className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:text-slate-700 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50"
+                    >
+                      <Copy size={10} /> Kopiëren
+                    </button>
+                    <a
+                      href={`data:text/xml;charset=utf-8,${encodeURIComponent(openMarineXml)}`}
+                      download="openmarine-export.xml"
+                      className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:text-slate-700 px-2 py-1 rounded border border-slate-200 hover:bg-slate-50"
+                    >
+                      <Download size={10} /> Download
+                    </a>
+                  </div>
+                </div>
+                {showXmlPreview && (
+                  <pre className="text-[10px] font-mono bg-slate-900 text-green-400 rounded-lg p-4 overflow-auto max-h-64 whitespace-pre-wrap leading-relaxed">
+                    {openMarineXml}
+                  </pre>
+                )}
+                <p className="text-[10px] text-slate-400">
+                  Automatisch hergenereerd na elke opslag. Wordt gebruikt voor alle OpenMarine-platforms.
+                </p>
+              </div>
+            )}
+
+            {!openMarineXml && !isGeneratingOpenMarine && (
+              <p className="text-sm text-slate-400 text-center py-4">
+                Klik op "Genereer OpenMarine XML" om een preview te zien en te valideren.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── MARKTPLAATS (admin only, legacy section) ─────────────── */}
         {isAdminRole ? (
           <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">

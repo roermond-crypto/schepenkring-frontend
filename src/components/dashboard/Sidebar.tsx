@@ -25,6 +25,7 @@ import {
   Mail,
   FileText,
   Globe,
+  Radio,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -170,6 +171,11 @@ export function Sidebar({
         title: t.i18nQuality ?? "Vertalingskwaliteit",
         href: `${root}/i18n`,
         icon: Globe,
+      });
+      items.push({
+        title: "Platform Netwerk",
+        href: `${root}/platforms`,
+        icon: Radio,
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
