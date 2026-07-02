@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { AreaChart, Area, Tooltip, ResponsiveContainer } from "recharts";
 import {
   TrendingUp,
@@ -36,6 +36,7 @@ import {
   Library,
 } from "lucide-react";
 import { BuyerVerificationPanel } from "@/components/dashboard/BuyerVerificationPanel";
+import { PublishingHealthWidget } from "@/components/dashboard/PublishingHealthWidget";
 import { SellerOnboardingPanel } from "@/components/dashboard/SellerOnboardingPanel";
 import { SellerDashboardPanel } from "@/components/dashboard/SellerDashboardPanel";
 import { ClientContractCard } from "@/components/dashboard/ClientContractCard";
@@ -270,6 +271,7 @@ function getDashboardYachtName(yacht: DashboardYacht | null): string {
 export default function AdminDashboardHome() {
   const t = useTranslations("DashboardAdminOverview");
   const params = useParams<{ locale?: string; role?: string }>();
+  const locale = useLocale();
   const role = normalizeRole(params?.role) ?? "admin";
   const dashboardBase = `/dashboard/${role}`;
   const marketplaceUrl = "https://www.schepenkring.nl/aanbod-boten/";
@@ -1685,6 +1687,12 @@ export default function AdminDashboardHome() {
           </div>
         )}
       </div>
+
+      {isAdminRole && (
+        <div className="mt-6">
+          <PublishingHealthWidget dashboardBase={dashboardBase} locale={locale} />
+        </div>
+      )}
       </>
       )}
       </>

@@ -165,6 +165,39 @@ export default function FleetManagementPage() {
     to: 0,
   });
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  // ─── Public intake submissions ────────────────────────────────────────────
+  const [intakes, setIntakes] = useState<any[]>([]);
+  const [intakesLoading, setIntakesLoading] = useState(false);
+  const [intakesVisible, setIntakesVisible] = useState(false);
+  const [convertingIntakeId, setConvertingIntakeId] = useState<number | null>(null);
+
+  const loadIntakes = async () => {
+    setIntakesLoading(true);
+    try {
+      const res = await api.get<any>("/admin/boat-intakes?status=pending&per_page=20");
+      const data = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+      setIntakes(data);
+      if (data.length > 0) setIntakesVisible(true);
+    } catch { /* silent — endpoint may not exist yet */ } finally {
+      setIntakesLoading(false);
+    }
+  };
+
+  const handleConvertIntake = async (intake: any) => {
+    if (!confirm(`Publieke aanmelding van "${intake.boat_brand ?? ""} ${intake.boat_model ?? ""}".trim() aanmaken als boot in het systeem?`)) return;
+    setConvertingIntakeId(intake.id);
+    try {
+      const res = await api.post<{ yacht_id: number }>(`/admin/boat-intakes/${intake.id}/convert`);
+      toast.success("Boot aangemaakt. Doorsturen naar het bewerkscherm...");
+      router.push(`/${locale}/dashboard/${role}/yachts/${res.data.yacht_id}?step=1`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Omzetten mislukt.");
+    } finally {
+      setConvertingIntakeId(null);
+    }
+  };
+  // ─────────────────────────────────────────────────────────────────────────
   const statusOptions = [
     { value: "all", label: t?.status?.all || "All" },
     { value: "For Sale", label: t?.status?.forSale || "For Sale" },
@@ -324,7 +357,8 @@ export default function FleetManagementPage() {
 
   useEffect(() => {
     fetchFleet();
-  }, [fetchFleet]);
+    if (role === "admin") void loadIntakes();
+  }, [fetchFleet, role]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -654,6 +688,67 @@ export default function FleetManagementPage() {
             </Button>
           </div>
         </div>
+
+        {/* ── PUBLIC INTAKE SUBMISSIONS ──────────────────────────── */}
+        {role === "admin" && (intakes.length > 0 || intakesLoading) && (
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => setIntakesVisible((v) => !v)}
+              className="flex items-center gap-2 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 hover:bg-amber-100 transition-colors mb-3"
+            >
+              <AlertTriangle size={14} />
+              {intakesLoading
+                ? "Publieke aanmeldingen laden..."
+                : `${intakes.length} publieke aanmelding${intakes.length !== 1 ? "en" : ""} wachten op verwerking`}
+              <ChevronRight
+                size={14}
+                className={cn("transition-transform", intakesVisible && "rotate-90")}
+              />
+            </button>
+
+            {intakesVisible && !intakesLoading && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+                <p className="text-xs text-amber-700 font-semibold">
+                  Dit zijn publieke bootaanmeldingen via /boot-aanmelden die nog niet zijn omgezet naar een boot in het systeem. Klik "Omzetten" om een complete boot aan te maken en verder te gaan in de wizard.
+                </p>
+                {intakes.map((intake: any) => (
+                  <div
+                    key={intake.id}
+                    className="bg-white border border-amber-200 rounded-lg p-4 flex flex-wrap items-center gap-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-slate-800">
+                        {[intake.boat_brand, intake.boat_model, intake.boat_name].filter(Boolean).join(" ") || `Aanmelding #${intake.id}`}
+                      </p>
+                      <div className="flex flex-wrap gap-3 text-xs text-slate-500 mt-0.5">
+                        {intake.asking_price && <span>€{Number(intake.asking_price).toLocaleString("nl-NL")}</span>}
+                        {intake.build_year && <span>{intake.build_year}</span>}
+                        {intake.seller_first_name && <span>{intake.seller_first_name} {intake.seller_last_name}</span>}
+                        {intake.seller_email && <span>{intake.seller_email}</span>}
+                        {intake.created_at && <span>{new Date(intake.created_at).toLocaleDateString("nl-NL")}</span>}
+                        {typeof intake.intake_score === "number" && (
+                          <span className="font-semibold text-amber-700">Score: {intake.intake_score}%</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleConvertIntake(intake)}
+                      disabled={convertingIntakeId === intake.id}
+                      className="flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg bg-[#003566] text-white hover:bg-blue-800 transition-colors disabled:opacity-50"
+                    >
+                      {convertingIntakeId === intake.id
+                        ? <Loader2 size={12} className="animate-spin" />
+                        : <Plus size={12} />}
+                      Omzetten naar boot
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* STATS CARDS */}
         {!isClientRole && (

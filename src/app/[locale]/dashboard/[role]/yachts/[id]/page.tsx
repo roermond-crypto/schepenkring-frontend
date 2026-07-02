@@ -9090,8 +9090,8 @@ function YachtEditorInner() {
       )}
 
       {/* ── STEP INDICATOR (circles with connecting lines) ──── */}
-      <div className="border-b border-gray-200">
-        <div className="max-w-2xl mx-auto flex items-center justify-center py-7 px-6">
+      <div className="border-b border-gray-200 bg-white">
+        <div className="max-w-3xl mx-auto flex items-start justify-center py-6 px-4 gap-0">
           {visibleWizardSteps.map((step, index) => {
             const isActive = activeStep === step.id;
             const stepVisibleIndex = visibleWizardSteps.findIndex(
@@ -9102,53 +9102,67 @@ function YachtEditorInner() {
               stepVisibleIndex < activeVisibleStepIndex ||
               (activeVisibleStepIndex === visibleWizardSteps.length - 1 &&
                 stepVisibleIndex === activeVisibleStepIndex);
-            const isPast = isActive || isCompleted;
+            const isFuture = !isActive && !isCompleted;
             const isLocked =
               (!canProceedFromStep1 && step.id > 1) ||
               (isNewMode && isExtracting && step.id > 1) ||
               (isNewMode && step.id === 6 && !createdYachtId);
+
+            const StepIcon = step.icon;
+
             return (
-              <div key={step.id} className="flex items-center">
-                <button
-                  type="button"
-                  onClick={() => handleStepChange(step.id)}
-                  disabled={isLocked}
-                  title={
-                    isLocked
-                      ? isNewMode && step.id === 6 && !createdYachtId
-                        ? labelText("saveVesselFirst", "Save Vessel First")
-                        : labelText(
-                            "approveImagesFirst",
-                            "Approve Images First",
-                          )
-                      : step.label
-                  }
-                  className={`
-                    w-[54px] h-[54px] rounded-full flex items-center justify-center
-                    text-[18px] font-bold border-[3px] transition-all duration-300
-                    ${
+              <div key={step.id} className="flex items-start">
+                {/* Step circle + label */}
+                <div className="flex flex-col items-center w-14 sm:w-16 md:w-[72px]">
+                  <button
+                    type="button"
+                    onClick={() => handleStepChange(step.id)}
+                    disabled={isLocked}
+                    title={
                       isLocked
-                        ? "border-slate-200 text-slate-300 bg-slate-100 cursor-not-allowed opacity-50"
-                        : isPast
-                          ? "border-[#2563eb] text-[#2563eb] bg-white hover:bg-blue-50 cursor-pointer"
-                          : "border-[#d4d8de] text-[#b0b5bd] bg-[#f0f2f5] hover:border-[#b0b5bd] cursor-pointer"
+                        ? isNewMode && step.id === 6 && !createdYachtId
+                          ? labelText("saveVesselFirst", "Save Vessel First")
+                          : labelText("approveImagesFirst", "Approve Images First")
+                        : step.label
                     }
-                  `}
-                >
-                  {isCompleted ? (
-                    <Check size={20} strokeWidth={3} />
-                  ) : (
-                    index + 1
-                  )}
-                </button>
+                    className={cn(
+                      "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2",
+                      isLocked
+                        ? "border-slate-200 text-slate-300 bg-slate-50 cursor-not-allowed opacity-40"
+                        : isActive
+                          ? "border-[#003566] bg-[#003566] text-white shadow-lg shadow-blue-900/30 scale-110 cursor-pointer"
+                          : isCompleted
+                            ? "border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer"
+                            : "border-slate-200 text-slate-400 bg-slate-50 hover:border-slate-300 cursor-pointer"
+                    )}
+                  >
+                    {isCompleted && !isActive ? (
+                      <Check size={16} strokeWidth={3} />
+                    ) : (
+                      <StepIcon size={isActive ? 18 : 15} />
+                    )}
+                  </button>
+                  {/* Step label — always visible, highlighted for active */}
+                  <span className={cn(
+                    "mt-1.5 text-center leading-tight transition-all duration-200",
+                    "hidden sm:block text-[9px] font-bold uppercase tracking-wide max-w-[64px]",
+                    isActive ? "text-[#003566]" : isFuture ? "text-slate-300" : "text-slate-400"
+                  )}>
+                    {step.label}
+                  </span>
+                </div>
+
+                {/* Connector line */}
                 {index < visibleWizardSteps.length - 1 && (
-                  <div
-                    className={`w-[60px] sm:w-[80px] md:w-[100px] h-[3px] transition-all duration-300 ${
+                  <div className="flex items-center mt-5 sm:mt-6">
+                    <div className={cn(
+                      "h-[2px] transition-all duration-300",
+                      "w-4 sm:w-6 md:w-8",
                       stepVisibleIndex < activeVisibleStepIndex
-                        ? "bg-[#2563eb]"
-                        : "bg-[#d4d8de]"
-                    }`}
-                  />
+                        ? "bg-blue-500"
+                        : "bg-slate-200"
+                    )} />
+                  </div>
                 )}
               </div>
             );
