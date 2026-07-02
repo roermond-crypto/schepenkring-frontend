@@ -107,9 +107,9 @@ function FormSection({ title, children }: { title: string; children: React.React
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, hint, children, className }: { label: string; hint?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="space-y-1">
+    <div className={`space-y-1 ${className ?? ""}`}>
       <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{label}</label>
       {hint && <p className="text-[11px] text-slate-400">{hint}</p>}
       {children}

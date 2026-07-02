@@ -1425,7 +1425,6 @@ const YACHT_FORM_TEXT = {
       geminiAnalyzing: "Gemini is analyzing your assets...",
       startAiExtraction: "Start AI Extraction",
       aiQualityScore: "AI Quality Score",
-      aiComments: "AI Comments",
       aiReviewDetails: "AI Review Details",
       manualSortTitle: "Manual Sort",
       saveOrder: "Save Order",
