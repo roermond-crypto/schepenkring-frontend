@@ -2016,11 +2016,9 @@ const YACHT_FORM_TEXT = {
       geminiAnalyzing: "Gemini analyseert je bestanden...",
       startAiExtraction: "AI-extractie starten",
       aiQualityScore: "AI-beoordelingsscore",
-      aiComments: "AI-opmerkingen",
       aiReviewDetails: "AI-controledetails",
       manualSortTitle: "Handmatig sorteren",
       saveOrder: "Volgorde opslaan",
-      templateLabel: "Template",
     },
     placeholders: {
       sellerSearch: "Zoek op naam of e-mail...",
