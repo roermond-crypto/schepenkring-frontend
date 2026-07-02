@@ -178,9 +178,21 @@ export async function updateAdminUser(
     name?: string;
     email?: string | null;
     phone?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    date_of_birth?: string | null;
     status?: MeUserStatus;
     location_id?: number | null;
     location_role?: string | null;
+    address_line1?: string | null;
+    address_line2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postal_code?: string | null;
+    country?: string | null;
+    two_factor_enabled?: boolean;
+    password?: string | null;
+    password_confirmation?: string | null;
   },
 ) {
   const { data } = await api.patch<{ data: MeUser }>(

@@ -141,10 +141,8 @@ export default function DashboardAccountPage() {
   const placeInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<AccountTab>("profile");
-  const canEditCurrentTab =
-    !isAdminSelectedUserView ||
-    activeTab === "profile" ||
-    activeTab === "personal";
+  // Admin and employee (location manager) can edit all fields of selected users.
+  const canEditCurrentTab = true;
   const [user, setUser] = useState<MeUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -232,8 +230,8 @@ export default function DashboardAccountPage() {
     email: "",
   });
   const [address, setAddress] = useState({
-    address_line1: "",
-    address_line2: "",
+    street: "",
+    house_number: "",
     city: "",
     state: "",
     postal_code: "",
@@ -312,8 +310,8 @@ export default function DashboardAccountPage() {
           email: nextUser.email || "",
         });
         setAddress({
-          address_line1: nextUser.address_line1 || "",
-          address_line2: nextUser.address_line2 || "",
+          street: nextUser.address_line1 || "",
+          house_number: nextUser.address_line2 || "",
           city: nextUser.city || "",
           state: nextUser.state || "",
           postal_code: nextUser.postal_code || "",
@@ -402,7 +400,8 @@ export default function DashboardAccountPage() {
         const place = autocomplete.getPlace();
         if (!place.address_components) return;
 
-        let address1 = "";
+        let street = "";
+        let houseNumber = "";
         let city = "";
         let state = "";
         let postal = "";
@@ -412,10 +411,10 @@ export default function DashboardAccountPage() {
           (component: GoogleAddressComponent) => {
             const types = component.types;
             if (types.includes("street_number")) {
-              address1 = `${component.long_name} ${address1}`;
+              houseNumber = component.long_name;
             }
             if (types.includes("route")) {
-              address1 += component.short_name;
+              street = component.short_name;
             }
             if (types.includes("locality")) {
               city = component.long_name;
@@ -434,10 +433,8 @@ export default function DashboardAccountPage() {
 
         setAddress((prev) => ({
           ...prev,
-          address_line1:
-            address1.trim() ||
-            placeInputRef.current?.value ||
-            prev.address_line1,
+          street: street || placeInputRef.current?.value || prev.street,
+          house_number: houseNumber || prev.house_number,
           city: city || prev.city,
           state: state || prev.state,
           postal_code: postal || prev.postal_code,
@@ -486,7 +483,7 @@ export default function DashboardAccountPage() {
       profile.name,
       personal.email,
       personal.phone,
-      address.address_line1,
+      address.street,
       address.city,
       address.country,
     ];
@@ -499,8 +496,9 @@ export default function DashboardAccountPage() {
     setSuccess(null);
     try {
       if (isAdminSelectedUserView && selectedUserId) {
+        let response;
         if (activeTab === "profile") {
-          const response = await updateAdminUser(selectedUserId, {
+          response = await updateAdminUser(selectedUserId, {
             name: profile.name,
             status: user?.status || "ACTIVE",
             location_id:
@@ -514,22 +512,43 @@ export default function DashboardAccountPage() {
                 ? locationAssignment.location_role || null
                 : undefined,
           });
-          setUser({
-            ...response.data,
-            avatar: normalizeAvatarUrl(response.data.avatar),
-          });
         } else if (activeTab === "personal") {
-          const response = await updateAdminUser(selectedUserId, {
+          response = await updateAdminUser(selectedUserId, {
+            first_name: personal.first_name || null,
+            last_name: personal.last_name || null,
             email: personal.email || null,
             phone: personal.phone || null,
+            date_of_birth: personal.date_of_birth || null,
           });
-          setUser({
-            ...response.data,
-            avatar: normalizeAvatarUrl(response.data.avatar),
+        } else if (activeTab === "address") {
+          response = await updateAdminUser(selectedUserId, {
+            address_line1: address.street || null,
+            address_line2: address.house_number || null,
+            city: address.city || null,
+            state: address.state || null,
+            postal_code: address.postal_code || null,
+            country: address.country || null,
           });
+        } else if (activeTab === "security") {
+          response = await updateAdminUser(selectedUserId, {
+            two_factor_enabled: security.two_factor_enabled,
+          });
+        } else if (activeTab === "password") {
+          if (!password.password || password.password !== password.password_confirmation) {
+            throw new Error(t("toasts.passwordMismatch"));
+          }
+          response = await updateAdminUser(selectedUserId, {
+            password: password.password,
+            password_confirmation: password.password_confirmation,
+          });
+          setPassword({ current_password: "", password: "", password_confirmation: "" });
         } else {
-          throw new Error("This section is read-only for selected users.");
+          throw new Error("Unknown tab.");
         }
+        setUser({
+          ...response.data,
+          avatar: normalizeAvatarUrl(response.data.avatar),
+        });
       } else if (activeTab === "profile") {
         const response = await updateMeProfile({
           name: profile.name,
@@ -557,8 +576,8 @@ export default function DashboardAccountPage() {
         setUser(response.data);
       } else if (activeTab === "address") {
         const response = await updateMeAddress({
-          address_line1: address.address_line1 || null,
-          address_line2: address.address_line2 || null,
+          address_line1: address.street || null,
+          address_line2: address.house_number || null,
           city: address.city || null,
           state: address.state || null,
           postal_code: address.postal_code || null,
@@ -1000,8 +1019,7 @@ export default function DashboardAccountPage() {
                         <User size={12} /> {t("fields.firstName")}
                       </span>
                       <input
-                        disabled={isAdminSelectedUserView}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         value={personal.first_name}
                         onChange={(e) =>
                           setPersonal((p) => ({
@@ -1016,8 +1034,7 @@ export default function DashboardAccountPage() {
                         <User size={12} /> {t("fields.lastName")}
                       </span>
                       <input
-                        disabled={isAdminSelectedUserView}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         value={personal.last_name}
                         onChange={(e) =>
                           setPersonal((p) => ({
@@ -1057,9 +1074,8 @@ export default function DashboardAccountPage() {
                         <User size={12} /> {t("fields.dateOfBirth")}
                       </span>
                       <input
-                        disabled={isAdminSelectedUserView}
                         type="date"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         value={personal.date_of_birth}
                         onChange={(e) =>
                           setPersonal((p) => ({
@@ -1073,39 +1089,43 @@ export default function DashboardAccountPage() {
                 ) : null}
 
                 {activeTab === "address" ? (
-                  <fieldset
-                    disabled={isAdminSelectedUserView}
-                    className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <label className="space-y-2 sm:col-span-2">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {/* Street + house number on the same row */}
+                    <label className="space-y-2" style={{ gridColumn: "1 / span 1" }}>
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
-                        <MapPin size={12} /> {t("fields.addressLine1")}
+                        <MapPin size={12} /> {t("fields.street") || "Straat"}
                       </span>
                       <input
                         ref={placeInputRef}
                         autoComplete="off"
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                        value={address.address_line1}
+                        value={address.street}
                         onChange={(e) =>
-                          setAddress((p) => ({
-                            ...p,
-                            address_line1: e.target.value,
-                          }))
+                          setAddress((p) => ({ ...p, street: e.target.value }))
                         }
                       />
                     </label>
-                    <label className="space-y-2 sm:col-span-2">
+                    <label className="space-y-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
-                        <MapPin size={12} /> {t("fields.addressLine2")}
+                        <MapPin size={12} /> {t("fields.houseNumber") || "Huisnummer"}
                       </span>
                       <input
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                        value={address.address_line2}
+                        value={address.house_number}
                         onChange={(e) =>
-                          setAddress((p) => ({
-                            ...p,
-                            address_line2: e.target.value,
-                          }))
+                          setAddress((p) => ({ ...p, house_number: e.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                        <MapPin size={12} /> {t("fields.postalCode")}
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        value={address.postal_code}
+                        onChange={(e) =>
+                          setAddress((p) => ({ ...p, postal_code: e.target.value }))
                         }
                       />
                     </label>
@@ -1123,28 +1143,13 @@ export default function DashboardAccountPage() {
                     </label>
                     <label className="space-y-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
-                        <MapPin size={12} /> {t("fields.state")}
+                        <MapPin size={12} /> {t("fields.state") || "Provincie"}
                       </span>
                       <input
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         value={address.state}
                         onChange={(e) =>
                           setAddress((p) => ({ ...p, state: e.target.value }))
-                        }
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
-                        <MapPin size={12} /> {t("fields.postalCode")}
-                      </span>
-                      <input
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                        value={address.postal_code}
-                        onChange={(e) =>
-                          setAddress((p) => ({
-                            ...p,
-                            postal_code: e.target.value,
-                          }))
                         }
                       />
                     </label>
@@ -1160,14 +1165,11 @@ export default function DashboardAccountPage() {
                         }
                       />
                     </label>
-                  </fieldset>
+                  </div>
                 ) : null}
 
                 {activeTab === "security" ? (
-                  <fieldset
-                    disabled={isAdminSelectedUserView}
-                    className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
+                  <fieldset className="grid gap-4 sm:grid-cols-2">
                     <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
                       <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                         <Shield size={14} />
@@ -1221,26 +1223,25 @@ export default function DashboardAccountPage() {
                 ) : null}
 
                 {activeTab === "password" ? (
-                  <fieldset
-                    disabled={isAdminSelectedUserView}
-                    className="grid gap-4 sm:grid-cols-2 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <label className="space-y-2 sm:col-span-2">
-                      <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
-                        <Lock size={12} /> {t("fields.currentPassword")}
-                      </span>
-                      <input
-                        type="password"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                        value={password.current_password}
-                        onChange={(e) =>
-                          setPassword((p) => ({
-                            ...p,
-                            current_password: e.target.value,
-                          }))
-                        }
-                      />
-                    </label>
+                  <fieldset className="grid gap-4 sm:grid-cols-2">
+                    {!isAdminSelectedUserView ? (
+                      <label className="space-y-2 sm:col-span-2">
+                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                          <Lock size={12} /> {t("fields.currentPassword")}
+                        </span>
+                        <input
+                          type="password"
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          value={password.current_password}
+                          onChange={(e) =>
+                            setPassword((p) => ({
+                              ...p,
+                              current_password: e.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                    ) : null}
                     <label className="space-y-2">
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
                         <Lock size={12} /> {t("fields.newPassword")}
@@ -1276,18 +1277,11 @@ export default function DashboardAccountPage() {
                   </fieldset>
                 ) : null}
 
-                {isAdminSelectedUserView && !canEditCurrentTab ? (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                    This section is view-only for selected users. Admin editing
-                    is currently limited to name, email, phone, and status.
-                  </div>
-                ) : null}
-
                 <div className="flex justify-end">
                   <Button
                     type="button"
                     onClick={() => void saveCurrentTab()}
-                    disabled={saving || !canEditCurrentTab}
+                    disabled={saving}
                     className="h-11 rounded-2xl bg-[#003566] px-5 text-xs font-bold uppercase tracking-[0.16em] text-white hover:bg-[#00284d]"
                   >
                     {saving ? (
