@@ -3676,6 +3676,28 @@ function YachtEditorInner() {
     [visibleWizardSteps],
   );
 
+  const [creatingKyc, setCreatingKyc] = useState(false);
+
+  async function createKycForYacht() {
+    if (isNewMode || !selectedYachtId) return;
+    setCreatingKyc(true);
+    try {
+      const payload: Record<string, string | number | null> = {
+        yacht_id: selectedYachtId,
+        boat_name: selectedYacht?.boat_name ?? null,
+        boat_type: selectedYacht?.boat_type ?? null,
+        boat_value: selectedYacht?.price ?? null,
+        location_id: selectedYacht?.location_id ?? null,
+      };
+      const res = await api.post<{ kyc_case: { id: number } }>("/admin/kyc-cases", payload);
+      router.push(`/${locale}/dashboard/${role}/kyc/${res.data.kyc_case.id}`);
+    } catch {
+      // silently ignore — user can create manually
+    } finally {
+      setCreatingKyc(false);
+    }
+  }
+
   // Form State
   const [selectedYacht, setSelectedYacht] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -8955,19 +8977,36 @@ function YachtEditorInner() {
               </p>
             </div>
           </div>
-          {role === "admin" && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                router.push(`/${locale}/dashboard/${role}/yachts/settings`)
-              }
-              className="h-10 w-full border-white/20 bg-white/10 px-4 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/15 hover:text-white lg:w-auto"
-            >
-              <Settings2 size={14} className="mr-2" />
-              Field Settings
-            </Button>
-          )}
+          <div className="flex gap-2 items-center">
+            {!isNewMode && role === "admin" && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void createKycForYacht()}
+                disabled={creatingKyc}
+                className="h-10 w-full border-white/20 bg-white/10 px-4 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/15 hover:text-white lg:w-auto"
+              >
+                {creatingKyc
+                  ? <Loader2 size={14} className="mr-2 animate-spin" />
+                  : <ShieldCheck size={14} className="mr-2" />
+                }
+                KYC
+              </Button>
+            )}
+            {role === "admin" && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  router.push(`/${locale}/dashboard/${role}/yachts/settings`)
+                }
+                className="h-10 w-full border-white/20 bg-white/10 px-4 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/15 hover:text-white lg:w-auto"
+              >
+                <Settings2 size={14} className="mr-2" />
+                Field Settings
+              </Button>
+            )}
+          </div>
         </div>
       </div>
       <div className="max-w-7xl mx-auto p-6 lg:p-12 pt-16">

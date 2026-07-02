@@ -15,6 +15,7 @@ import {
   Save,
   Loader2,
   ChevronLeft,
+  ShieldCheck,
 } from "lucide-react";
 import {
   getAdminUser,
@@ -147,6 +148,26 @@ export default function DashboardAccountPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [creatingKyc, setCreatingKyc] = useState(false);
+
+  async function createKycForUser() {
+    if (!selectedUserId) return;
+    setCreatingKyc(true);
+    try {
+      const payload: Record<string, string | number | null> = {
+        buyer_id: Number(selectedUserId),
+        buyer_name: user?.name ?? null,
+        buyer_email: user?.email ?? null,
+        buyer_phone: user?.phone ?? null,
+      };
+      const res = await api.post<{ kyc_case: { id: number } }>("/admin/kyc-cases", payload);
+      router.push(`/${locale}/dashboard/${role}/kyc/${res.data.kyc_case.id}`);
+    } catch {
+      setError("Kon KYC-dossier niet aanmaken.");
+    } finally {
+      setCreatingKyc(false);
+    }
+  }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isAdminSelectedUserView) return;
@@ -658,8 +679,23 @@ export default function DashboardAccountPage() {
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Back to Users
               </Button>
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700">
-                Viewing selected user account
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void createKycForUser()}
+                  disabled={creatingKyc}
+                  className="h-10 rounded-2xl border-[#003566]/20 bg-[#003566]/5 px-4 text-xs font-bold uppercase tracking-[0.16em] text-[#003566] hover:bg-[#003566]/10"
+                >
+                  {creatingKyc
+                    ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    : <ShieldCheck className="mr-2 h-3.5 w-3.5" />
+                  }
+                  KYC aanmaken
+                </Button>
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700">
+                  Viewing selected user account
+                </div>
               </div>
             </div>
           ) : null}
