@@ -5,10 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle2, AlertCircle, ChevronRight, ShieldCheck } from "lucide-react";
 import { requestPasswordReset } from "@/lib/api/auth";
-import { LanguageSwitcher } from "@/components/common/language-switcher";
 import type { AppLocale } from "@/lib/i18n";
+import { PublicHeader } from "@/components/common/PublicHeader";
 import boatsHeroImage from "../../../public/boatslogo.jpg";
-import schepenkringLogo from "../../../public/schepenkring-logo.png";
 
 export function ForgotPasswordClient({
   locale,
@@ -54,31 +53,7 @@ export function ForgotPasswordClient({
   return (
     <div className="min-h-screen flex flex-col bg-[#edf3f7] dark:bg-slate-950 font-sans">
 
-      {/* White top header */}
-      <nav className="bg-white border-b border-slate-200 shadow-sm shrink-0">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
-          <Link href={`/${locale}/boot-aanmelden`} className="flex items-center shrink-0">
-            <Image
-              src={schepenkringLogo}
-              alt="Schepenkring"
-              width={150}
-              height={42}
-              className="h-10 w-auto object-contain"
-              priority
-            />
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/${locale}/auth?mode=login`}
-              className="px-4 py-2 rounded-lg bg-slate-100 text-[#003566] text-xs font-bold hover:bg-slate-200 transition-colors"
-            >
-              {copy.backToLogin}
-            </Link>
-            <LanguageSwitcher locale={locale} />
-          </div>
-        </div>
-      </nav>
+      <PublicHeader locale={locale} showBootAanmelden />
 
       {/* Card */}
       <div className="flex-1 flex items-center justify-center p-4 py-8">

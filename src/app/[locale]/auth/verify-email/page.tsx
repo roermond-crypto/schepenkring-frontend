@@ -1,4 +1,5 @@
 import { VerifyEmailForm } from "@/components/auth/verify-email-form";
+import { PublicHeader } from "@/components/common/PublicHeader";
 import { DEFAULT_LOCALE, getLocaleOrDefault, isSupportedLocale } from "@/lib/i18n";
 import { redirect } from "next/navigation";
 
@@ -18,10 +19,11 @@ export default async function VerifyEmailPage({ params, searchParams }: VerifyEm
   const currentLocale = getLocaleOrDefault(locale);
 
   return (
-    <main className="min-h-screen bg-gray-50 p-4 dark:bg-slate-950">
-      <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center">
+    <div className="min-h-screen flex flex-col bg-[#edf3f7] dark:bg-slate-950">
+      <PublicHeader locale={currentLocale} showBootAanmelden />
+      <div className="flex-1 flex items-center justify-center p-4">
         <VerifyEmailForm locale={currentLocale} email={email ?? ""} code={code ?? ""} />
       </div>
-    </main>
+    </div>
   );
 }
