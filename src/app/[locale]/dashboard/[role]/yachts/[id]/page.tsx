@@ -1428,7 +1428,6 @@ const YACHT_FORM_TEXT = {
       aiReviewDetails: "AI Review Details",
       manualSortTitle: "Manual Sort",
       saveOrder: "Save Order",
-      templateLabel: "Template",
     },
     placeholders: {
       sellerSearch: "Search by name or email...",
