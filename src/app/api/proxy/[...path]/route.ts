@@ -38,7 +38,9 @@ async function handleProxy(request: NextRequest, path: string[]) {
   const init: RequestInit = {
     method,
     headers,
-    body: method === "GET" ? undefined : await request.text(),
+    // arrayBuffer() preserves raw bytes for both JSON and multipart/form-data uploads.
+    // request.text() was corrupting binary image data by decoding it as UTF-8.
+    body: method === "GET" ? undefined : await request.arrayBuffer(),
   };
 
   const backendResponse = await fetch(targetUrl, init);
