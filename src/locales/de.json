@@ -2745,6 +2745,85 @@
     "duplicateTitle": "Duplizieren",
     "archiveTitle": "Archivieren"
   },
+  "ContractTemplateEditor": {
+    "toolbar": {
+      "undo": "Rückgängig",
+      "redo": "Wiederholen",
+      "bold": "Fett",
+      "italic": "Kursiv",
+      "underline": "Unterstrichen",
+      "heading": "Überschrift {level}",
+      "bulletList": "Aufzählungsliste",
+      "orderedList": "Nummerierte Liste",
+      "pageBreak": "Seitenumbruch einfügen",
+      "insertSignature": "Unterschriftenblock einfügen",
+      "signatureLabel": "Unterschrift",
+      "clearFormat": "Formatierung entfernen"
+    },
+    "tags": {
+      "sectionTitle": "Tags einfügen",
+      "searchPlaceholder": "Tag suchen...",
+      "missingTitle": "Fehlende Tags ({count})"
+    },
+    "preview": {
+      "sectionTitle": "Vorschau",
+      "sampleValues": "Beispielwerte",
+      "loadError": "Vorschau konnte nicht geladen werden.",
+      "missingTagsWarning": "{count} Tag(s) fehlen: {tags}"
+    },
+    "versions": {
+      "sectionTitle": "Versionsverlauf",
+      "loadFailed": "Versionen konnten nicht geladen werden.",
+      "confirmRestore": "Version {version} wiederherstellen?",
+      "restoreSuccess": "Version {version} wiederhergestellt.",
+      "restoreFailed": "Wiederherstellung fehlgeschlagen.",
+      "currentBadge": "Aktuell",
+      "restoreButton": "Wiederherstellen"
+    },
+    "meta": {
+      "sectionTitle": "Vorlageneinstellungen",
+      "typeLabel": "Typ",
+      "languageLabel": "Sprache",
+      "descriptionLabel": "Beschreibung",
+      "globalMaster": "Globale Vorlage",
+      "defaultForLocation": "Standard für Standort",
+      "locationSection": "Standort",
+      "assignSection": "Einem anderen Standort zuweisen",
+      "chooseLocation": "Standort auswählen...",
+      "duplicateForLocation": "Für Standort duplizieren",
+      "assignSuccess": "Vorlage dem Standort zugewiesen.",
+      "assignFailed": "Zuweisung fehlgeschlagen."
+    },
+    "topBar": {
+      "namePlaceholder": "Vorlagenname...",
+      "globalBadge": "Global",
+      "locationFallback": "Standort",
+      "defaultBadge": "Standard",
+      "unsavedIndicator": "Nicht gespeichert",
+      "missingTagsWarning": "{count} fehlender Tag(s)",
+      "pdfButtonTitle": "PDF herunterladen",
+      "pdfButtonLabel": "PDF",
+      "saveButton": "Speichern",
+      "panelTags": "Tags",
+      "panelPreview": "Vorschau",
+      "panelVersions": "Versionen",
+      "panelSettings": "Einstellungen",
+      "a4Hint": "A4 · {type} · {lang}"
+    },
+    "saveModal": {
+      "title": "Änderung speichern",
+      "subtitle": "Optional eine Notiz hinzufügen. Diese wird im Versionsverlauf gespeichert.",
+      "placeholder": "Z.B. Artikel 3 nach rechtlicher Prüfung angepasst...",
+      "cancel": "Abbrechen",
+      "saveWithoutNote": "Ohne Notiz speichern",
+      "save": "Speichern",
+      "saveSuccess": "Gespeichert.",
+      "saveFailed": "Speichern fehlgeschlagen."
+    },
+    "loadFailed": "Vorlage konnte nicht geladen werden.",
+    "notFound": "Vorlage nicht gefunden.",
+    "pdfFailed": "PDF-Download fehlgeschlagen."
+  },
   "EmailTemplates": {
     "title": "E-Mail-Vorlagen",
     "subtitle": "Drag-and-Drop-Vorlagenersteller",

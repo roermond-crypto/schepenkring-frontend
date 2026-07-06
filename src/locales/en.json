@@ -2745,6 +2745,85 @@
     "duplicateTitle": "Duplicate",
     "archiveTitle": "Archive"
   },
+  "ContractTemplateEditor": {
+    "toolbar": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "heading": "Heading {level}",
+      "bulletList": "Bullet list",
+      "orderedList": "Numbered list",
+      "pageBreak": "Insert page break",
+      "insertSignature": "Insert signature block",
+      "signatureLabel": "Signature",
+      "clearFormat": "Clear formatting"
+    },
+    "tags": {
+      "sectionTitle": "Insert tags",
+      "searchPlaceholder": "Search tag...",
+      "missingTitle": "Missing tags ({count})"
+    },
+    "preview": {
+      "sectionTitle": "Preview",
+      "sampleValues": "Sample values",
+      "loadError": "Preview could not be loaded.",
+      "missingTagsWarning": "{count} tag(s) missing: {tags}"
+    },
+    "versions": {
+      "sectionTitle": "Version history",
+      "loadFailed": "Failed to load versions.",
+      "confirmRestore": "Restore version {version}?",
+      "restoreSuccess": "Version {version} restored.",
+      "restoreFailed": "Restore failed.",
+      "currentBadge": "Current",
+      "restoreButton": "Restore"
+    },
+    "meta": {
+      "sectionTitle": "Template settings",
+      "typeLabel": "Type",
+      "languageLabel": "Language",
+      "descriptionLabel": "Description",
+      "globalMaster": "Global master",
+      "defaultForLocation": "Default for location",
+      "locationSection": "Location",
+      "assignSection": "Assign to another location",
+      "chooseLocation": "Choose location...",
+      "duplicateForLocation": "Duplicate for location",
+      "assignSuccess": "Template assigned to location.",
+      "assignFailed": "Assignment failed."
+    },
+    "topBar": {
+      "namePlaceholder": "Template name...",
+      "globalBadge": "Global",
+      "locationFallback": "Location",
+      "defaultBadge": "Default",
+      "unsavedIndicator": "Unsaved",
+      "missingTagsWarning": "{count} missing tag(s)",
+      "pdfButtonTitle": "Download PDF",
+      "pdfButtonLabel": "PDF",
+      "saveButton": "Save",
+      "panelTags": "Tags",
+      "panelPreview": "Preview",
+      "panelVersions": "Versions",
+      "panelSettings": "Settings",
+      "a4Hint": "A4 · {type} · {lang}"
+    },
+    "saveModal": {
+      "title": "Save change",
+      "subtitle": "Optionally add a note. This will be saved in the version history.",
+      "placeholder": "E.g. Article 3 updated after legal review...",
+      "cancel": "Cancel",
+      "saveWithoutNote": "Save without note",
+      "save": "Save",
+      "saveSuccess": "Saved.",
+      "saveFailed": "Save failed."
+    },
+    "loadFailed": "Failed to load template.",
+    "notFound": "Template not found.",
+    "pdfFailed": "PDF download failed."
+  },
   "EmailTemplates": {
     "title": "Email templates",
     "subtitle": "Drag-and-drop template builder",

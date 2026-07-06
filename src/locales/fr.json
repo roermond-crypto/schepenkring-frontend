@@ -2745,6 +2745,85 @@
     "duplicateTitle": "Dupliquer",
     "archiveTitle": "Archiver"
   },
+  "ContractTemplateEditor": {
+    "toolbar": {
+      "undo": "Annuler",
+      "redo": "Rétablir",
+      "bold": "Gras",
+      "italic": "Italique",
+      "underline": "Souligné",
+      "heading": "Titre {level}",
+      "bulletList": "Liste à puces",
+      "orderedList": "Liste numérotée",
+      "pageBreak": "Insérer un saut de page",
+      "insertSignature": "Insérer un bloc de signature",
+      "signatureLabel": "Signature",
+      "clearFormat": "Supprimer la mise en forme"
+    },
+    "tags": {
+      "sectionTitle": "Insérer des balises",
+      "searchPlaceholder": "Rechercher une balise...",
+      "missingTitle": "Balises manquantes ({count})"
+    },
+    "preview": {
+      "sectionTitle": "Aperçu",
+      "sampleValues": "Valeurs exemples",
+      "loadError": "Impossible de charger l'aperçu.",
+      "missingTagsWarning": "{count} balise(s) manquante(s) : {tags}"
+    },
+    "versions": {
+      "sectionTitle": "Historique des versions",
+      "loadFailed": "Échec du chargement des versions.",
+      "confirmRestore": "Restaurer la version {version} ?",
+      "restoreSuccess": "Version {version} restaurée.",
+      "restoreFailed": "Échec de la restauration.",
+      "currentBadge": "Actuelle",
+      "restoreButton": "Restaurer"
+    },
+    "meta": {
+      "sectionTitle": "Paramètres du modèle",
+      "typeLabel": "Type",
+      "languageLabel": "Langue",
+      "descriptionLabel": "Description",
+      "globalMaster": "Modèle global",
+      "defaultForLocation": "Par défaut pour le site",
+      "locationSection": "Site",
+      "assignSection": "Assigner à un autre site",
+      "chooseLocation": "Choisir un site...",
+      "duplicateForLocation": "Dupliquer pour le site",
+      "assignSuccess": "Modèle assigné au site.",
+      "assignFailed": "Échec de l'assignation."
+    },
+    "topBar": {
+      "namePlaceholder": "Nom du modèle...",
+      "globalBadge": "Global",
+      "locationFallback": "Site",
+      "defaultBadge": "Par défaut",
+      "unsavedIndicator": "Non enregistré",
+      "missingTagsWarning": "{count} balise(s) manquante(s)",
+      "pdfButtonTitle": "Télécharger le PDF",
+      "pdfButtonLabel": "PDF",
+      "saveButton": "Enregistrer",
+      "panelTags": "Balises",
+      "panelPreview": "Aperçu",
+      "panelVersions": "Versions",
+      "panelSettings": "Paramètres",
+      "a4Hint": "A4 · {type} · {lang}"
+    },
+    "saveModal": {
+      "title": "Enregistrer la modification",
+      "subtitle": "Ajoutez optionnellement une note. Elle sera enregistrée dans l'historique des versions.",
+      "placeholder": "Ex. Article 3 mis à jour après avis juridique...",
+      "cancel": "Annuler",
+      "saveWithoutNote": "Enregistrer sans note",
+      "save": "Enregistrer",
+      "saveSuccess": "Enregistré.",
+      "saveFailed": "Échec de l'enregistrement."
+    },
+    "loadFailed": "Échec du chargement du modèle.",
+    "notFound": "Modèle introuvable.",
+    "pdfFailed": "Échec du téléchargement du PDF."
+  },
   "EmailTemplates": {
     "title": "Modèles d'e-mail",
     "subtitle": "Générateur de modèles par glisser-déposer",

@@ -2745,6 +2745,85 @@
     "duplicateTitle": "Dupliceren",
     "archiveTitle": "Archiveren"
   },
+  "ContractTemplateEditor": {
+    "toolbar": {
+      "undo": "Ongedaan maken",
+      "redo": "Opnieuw",
+      "bold": "Vet",
+      "italic": "Cursief",
+      "underline": "Onderstreept",
+      "heading": "Kop {level}",
+      "bulletList": "Ongeordende lijst",
+      "orderedList": "Genummerde lijst",
+      "pageBreak": "Pagina-einde invoegen",
+      "insertSignature": "Handtekeningblok invoegen",
+      "signatureLabel": "Handtekening",
+      "clearFormat": "Opmaak verwijderen"
+    },
+    "tags": {
+      "sectionTitle": "Tags invoegen",
+      "searchPlaceholder": "Zoek tag...",
+      "missingTitle": "Ontbrekende tags ({count})"
+    },
+    "preview": {
+      "sectionTitle": "Voorbeeld",
+      "sampleValues": "Voorbeeldwaarden",
+      "loadError": "Preview kon niet worden geladen.",
+      "missingTagsWarning": "{count} tag(s) ontbreken: {tags}"
+    },
+    "versions": {
+      "sectionTitle": "Versiegeschiedenis",
+      "loadFailed": "Versies laden mislukt.",
+      "confirmRestore": "Versie {version} herstellen?",
+      "restoreSuccess": "Versie {version} hersteld.",
+      "restoreFailed": "Herstellen mislukt.",
+      "currentBadge": "Huidig",
+      "restoreButton": "Herstel"
+    },
+    "meta": {
+      "sectionTitle": "Sjablooninstellingen",
+      "typeLabel": "Type",
+      "languageLabel": "Taal",
+      "descriptionLabel": "Beschrijving",
+      "globalMaster": "Globaal master",
+      "defaultForLocation": "Standaard voor locatie",
+      "locationSection": "Locatie",
+      "assignSection": "Toewijzen aan andere locatie",
+      "chooseLocation": "Kies locatie...",
+      "duplicateForLocation": "Dupliceren voor locatie",
+      "assignSuccess": "Sjabloon toegewezen aan locatie.",
+      "assignFailed": "Toewijzen mislukt."
+    },
+    "topBar": {
+      "namePlaceholder": "Sjabloonnaam...",
+      "globalBadge": "Globaal",
+      "locationFallback": "Locatie",
+      "defaultBadge": "Standaard",
+      "unsavedIndicator": "Niet opgeslagen",
+      "missingTagsWarning": "{count} ontbrekende tag(s)",
+      "pdfButtonTitle": "PDF downloaden",
+      "pdfButtonLabel": "PDF",
+      "saveButton": "Opslaan",
+      "panelTags": "Tags",
+      "panelPreview": "Voorbeeld",
+      "panelVersions": "Versies",
+      "panelSettings": "Instellingen",
+      "a4Hint": "A4 · {type} · {lang}"
+    },
+    "saveModal": {
+      "title": "Wijziging opslaan",
+      "subtitle": "Voeg optioneel een notitie toe. Dit wordt opgeslagen in de versiegeschiedenis.",
+      "placeholder": "Bijv. Artikel 3 aangepast na juridisch advies...",
+      "cancel": "Annuleren",
+      "saveWithoutNote": "Opslaan zonder notitie",
+      "save": "Opslaan",
+      "saveSuccess": "Opgeslagen.",
+      "saveFailed": "Opslaan mislukt."
+    },
+    "loadFailed": "Sjabloon laden mislukt.",
+    "notFound": "Sjabloon niet gevonden.",
+    "pdfFailed": "PDF downloaden mislukt."
+  },
   "EmailTemplates": {
     "title": "E-mailsjablonen",
     "subtitle": "Drag-and-drop sjabloonbouwer",
