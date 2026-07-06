@@ -331,8 +331,8 @@ export default function DashboardAccountPage() {
           email: nextUser.email || "",
         });
         setAddress({
-          street: nextUser.address_line1 || "",
-          house_number: nextUser.address_line2 || "",
+          street: nextUser.street || nextUser.address_line1 || "",
+          house_number: nextUser.house_number || nextUser.address_line2 || "",
           city: nextUser.city || "",
           state: nextUser.state || "",
           postal_code: nextUser.postal_code || "",
@@ -543,8 +543,8 @@ export default function DashboardAccountPage() {
           });
         } else if (activeTab === "address") {
           response = await updateAdminUser(selectedUserId, {
-            address_line1: address.street || null,
-            address_line2: address.house_number || null,
+            street: address.street || null,
+            house_number: address.house_number || null,
             city: address.city || null,
             state: address.state || null,
             postal_code: address.postal_code || null,
@@ -566,9 +566,23 @@ export default function DashboardAccountPage() {
         } else {
           throw new Error("Unknown tab.");
         }
-        setUser({
-          ...response.data,
-          avatar: normalizeAvatarUrl(response.data.avatar),
+        const savedUser = { ...response.data, avatar: normalizeAvatarUrl(response.data.avatar) };
+        setUser(savedUser);
+        // Re-sync form state so fields reflect what the server actually saved
+        setPersonal({
+          first_name: savedUser.first_name || "",
+          last_name: savedUser.last_name || "",
+          phone: savedUser.phone || "",
+          date_of_birth: savedUser.date_of_birth || "",
+          email: savedUser.email || "",
+        });
+        setAddress({
+          street: savedUser.street || savedUser.address_line1 || "",
+          house_number: savedUser.house_number || savedUser.address_line2 || "",
+          city: savedUser.city || "",
+          state: savedUser.state || "",
+          postal_code: savedUser.postal_code || "",
+          country: savedUser.country || "",
         });
       } else if (activeTab === "profile") {
         const response = await updateMeProfile({
@@ -597,8 +611,8 @@ export default function DashboardAccountPage() {
         setUser(response.data);
       } else if (activeTab === "address") {
         const response = await updateMeAddress({
-          address_line1: address.street || null,
-          address_line2: address.house_number || null,
+          street: address.street || null,
+          house_number: address.house_number || null,
           city: address.city || null,
           state: address.state || null,
           postal_code: address.postal_code || null,

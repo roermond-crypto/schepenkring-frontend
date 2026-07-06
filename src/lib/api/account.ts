@@ -39,6 +39,8 @@ export type MeUser = {
   }>;
   timezone: string | null;
   locale: string | null;
+  street: string | null;
+  house_number: string | null;
   address_line1: string | null;
   address_line2: string | null;
   city: string | null;
@@ -184,6 +186,8 @@ export async function updateAdminUser(
     status?: MeUserStatus;
     location_id?: number | null;
     location_role?: string | null;
+    street?: string | null;
+    house_number?: string | null;
     address_line1?: string | null;
     address_line2?: string | null;
     city?: string | null;
@@ -235,6 +239,8 @@ export async function updateMePersonal(payload: {
 }
 
 export async function updateMeAddress(payload: {
+  street?: string | null;
+  house_number?: string | null;
   address_line1?: string | null;
   address_line2?: string | null;
   city?: string | null;
