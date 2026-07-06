@@ -2389,6 +2389,7 @@
       "email": "Email address",
       "phone": "Phone number",
       "streetAddress": "Street + number",
+      "addressHint": "Type your address and select from the suggestions",
       "postalCode": "Postal code",
       "city": "City",
       "location": "Branch",

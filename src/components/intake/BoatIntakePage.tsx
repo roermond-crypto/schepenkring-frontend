@@ -495,7 +495,7 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
                 </Field>
 
                 {/* Address with Google Places autocomplete */}
-                <Field label={s(t, "contact.streetAddress")} hint={s(t, "contact.addressHint", "Typ uw adres en selecteer uit de suggesties")}>
+                <Field label={s(t, "contact.streetAddress")} hint={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ? s(t, "contact.addressHint") : undefined}>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     <input

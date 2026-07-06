@@ -2389,6 +2389,7 @@
       "email": "E-Mail-Adresse",
       "phone": "Telefonnummer",
       "streetAddress": "Straße + Nr.",
+      "addressHint": "Geben Sie Ihre Adresse ein und wählen Sie aus den Vorschlägen",
       "postalCode": "Postleitzahl",
       "city": "Stadt",
       "location": "Standort",

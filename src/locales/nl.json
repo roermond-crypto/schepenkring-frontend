@@ -2389,6 +2389,7 @@
       "email": "E-mailadres",
       "phone": "Telefoonnummer",
       "streetAddress": "Straat + nr",
+      "addressHint": "Typ uw adres en selecteer uit de suggesties",
       "postalCode": "Postcode",
       "city": "Stad",
       "location": "Vestiging",
