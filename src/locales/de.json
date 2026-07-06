@@ -2997,5 +2997,148 @@
         "no": "Nein"
       }
     }
+  },
+  "DashboardAdminOffers": {
+    "status": {
+      "new": "Neu",
+      "sent_to_seller": "Gesendet",
+      "seller_accepted": "Akzeptiert",
+      "seller_rejected": "Abgelehnt",
+      "seller_countered": "Gegenangebot",
+      "withdrawn": "Zurückgezogen",
+      "completed": "Abgeschlossen"
+    },
+    "statusOptions": {
+      "new": "Neu",
+      "sent_to_seller": "An Verkäufer gesendet",
+      "seller_accepted": "Vom Verkäufer akzeptiert",
+      "seller_rejected": "Vom Verkäufer abgelehnt",
+      "seller_countered": "Gegenangebot",
+      "withdrawn": "Zurückgezogen",
+      "completed": "Abgeschlossen"
+    },
+    "sourceOptions": {
+      "admin": "Admin",
+      "phone": "Telefon",
+      "email": "E-Mail",
+      "widget": "Widget"
+    },
+    "toast": {
+      "validationBuyerName": "Käufername ist erforderlich.",
+      "validationAmount": "Geben Sie einen gültigen Betrag ein.",
+      "validationBoat": "Wählen Sie ein Boot aus.",
+      "updated": "Angebot aktualisiert.",
+      "created": "Angebot erstellt.",
+      "saveFailed": "Speichern fehlgeschlagen.",
+      "loadFailed": "Angebote konnten nicht geladen werden. Bitte erneut versuchen.",
+      "detailFailed": "Details konnten nicht geladen werden.",
+      "emailSent": "E-Mail an Verkäufer gesendet.",
+      "emailFailed": "Senden fehlgeschlagen."
+    },
+    "form": {
+      "titleEdit": "Angebot #{id} bearbeiten",
+      "titleCreate": "Neues Angebot erstellen",
+      "descriptionEdit": "Aktualisieren Sie die Details dieses Angebots.",
+      "descriptionCreate": "Registrieren Sie ein Angebot im Namen eines Käufers.",
+      "boat": "Boot *",
+      "boatSearch": "Nach Marke, Modell oder Name suchen…",
+      "buyerName": "Käufername *",
+      "buyerNamePlaceholder": "Vor- und Nachname",
+      "email": "E-Mail",
+      "emailPlaceholder": "kaeufer@beispiel.de",
+      "phone": "Telefon",
+      "phonePlaceholder": "+31 6 12345678",
+      "amount": "Angebotsbetrag (€) *",
+      "amountPlaceholder": "z.B. 45000",
+      "status": "Status",
+      "source": "Quelle",
+      "message": "Käufernachricht",
+      "messagePlaceholder": "Optionale Nachricht…",
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "createSubmit": "Angebot erstellen"
+    },
+    "hero": {
+      "tag": "Gebote & Angebote",
+      "title": "Angebotsübersicht",
+      "subtitle": "Verwalten Sie alle eingegangenen Angebote — Status ansehen, Verkäufer benachrichtigen und den Gegenangebotsprozess verfolgen.",
+      "refresh": "Aktualisieren",
+      "newOffer": "Neues Angebot"
+    },
+    "stats": {
+      "total": "Gesamt",
+      "new": "Neu",
+      "accepted": "Akzeptiert",
+      "counter": "Gegenangebot",
+      "belowMin": "Unter Minimum"
+    },
+    "filters": {
+      "search": "Suche",
+      "searchPlaceholder": "Name, E-Mail, Telefon…",
+      "status": "Status",
+      "allStatuses": "Alle Status",
+      "location": "Standort",
+      "allLocations": "Alle Standorte",
+      "reset": "Zurücksetzen",
+      "searchBtn": "Suchen"
+    },
+    "table": {
+      "id": "#",
+      "buyer": "Käufer",
+      "boat": "Boot",
+      "amount": "Betrag",
+      "status": "Status",
+      "date": "Datum",
+      "actions": "Aktionen"
+    },
+    "loading": "Angebote werden geladen…",
+    "retry": "Erneut versuchen",
+    "empty": {
+      "title": "Keine Angebote gefunden",
+      "body": "Es wurden noch keine Angebote erhalten oder sie entsprechen nicht den Filtern."
+    },
+    "row": {
+      "askingPrice": "Anfragspreis",
+      "belowMin": "unter Min.",
+      "view": "Ansehen",
+      "edit": "Bearbeiten",
+      "location": "Standort {id}",
+      "boatFallback": "Boot #{id}"
+    },
+    "pagination": "Seite {page} von {lastPage}",
+    "detail": {
+      "title": "Angebotsdetail",
+      "titleWithId": "Angebot #{id}",
+      "description": "Vollständige Informationen zu diesem Angebot und seinem Status.",
+      "loading": "Wird geladen…",
+      "belowMin": "Unter Mindestgebot",
+      "buyer": "Käufer",
+      "name": "Name",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "amounts": "Beträge",
+      "offer": "Angebot",
+      "askingPrice": "Anfragspreis",
+      "minBid": "Mindestgebot",
+      "counterOffer": "Gegenangebot",
+      "boatLocation": "Boot & Standort",
+      "boat": "Boot",
+      "location": "Standort",
+      "buyerMessage": "Käufernachricht",
+      "seller": "Verkäufer",
+      "noSeller": "Kein Verkäufer verknüpft",
+      "notifiedOn": "Gesendet am {date}",
+      "notifySeller": "Verkäufer benachrichtigen",
+      "timeline": "Zeitverlauf",
+      "received": "Angebot erhalten — {date}",
+      "sentToSeller": "An Verkäufer gesendet — {date}",
+      "sellerResponded": "Verkäufer reagiert ({status}) — {date}",
+      "editBtn": "Bearbeiten",
+      "viewChat": "Chat ansehen",
+      "emailSeller": "Verkäufer anschreiben",
+      "statusAccepted": "Akzeptiert",
+      "statusRejected": "Abgelehnt",
+      "statusWithdrawn": "Zurückgezogen"
+    }
   }
 }

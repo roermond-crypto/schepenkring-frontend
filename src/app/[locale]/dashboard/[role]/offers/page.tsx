@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,29 +112,40 @@ function fmtDate(v?: string | null) {
   return new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" }).format(new Date(v));
 }
 
-function boatLabel(o: OfferRecord) {
-  if (!o.yacht) return `Boot #${o.yacht_id}`;
+function boatLabel(o: OfferRecord, fallback: string) {
+  if (!o.yacht) return fallback;
   const name = [o.yacht.manufacturer, o.yacht.model].filter(Boolean).join(" ");
-  return name || o.yacht.boat_name || `Boot #${o.yacht_id}`;
+  return name || o.yacht.boat_name || fallback;
 }
 
-type StatusStyle = { label: string; ring: string; dot: string };
-const STATUS_STYLES: Record<string, StatusStyle> = {
-  new:              { label: "Nieuw",            ring: "ring-slate-200",   dot: "bg-slate-400" },
-  sent_to_seller:   { label: "Verstuurd",        ring: "ring-blue-200",    dot: "bg-blue-500" },
-  seller_accepted:  { label: "Geaccepteerd",     ring: "ring-emerald-200", dot: "bg-emerald-500" },
-  seller_rejected:  { label: "Afgewezen",        ring: "ring-rose-200",    dot: "bg-rose-500" },
-  seller_countered: { label: "Tegenbod",         ring: "ring-amber-200",   dot: "bg-amber-500" },
-  withdrawn:        { label: "Ingetrokken",      ring: "ring-slate-200",   dot: "bg-slate-400" },
-  completed:        { label: "Afgerond",         ring: "ring-emerald-200", dot: "bg-emerald-600" },
+// Ring + dot styles only — labels come from translations
+const STATUS_RING_DOT: Record<string, { ring: string; dot: string }> = {
+  new:              { ring: "ring-slate-200",   dot: "bg-slate-400" },
+  sent_to_seller:   { ring: "ring-blue-200",    dot: "bg-blue-500" },
+  seller_accepted:  { ring: "ring-emerald-200", dot: "bg-emerald-500" },
+  seller_rejected:  { ring: "ring-rose-200",    dot: "bg-rose-500" },
+  seller_countered: { ring: "ring-amber-200",   dot: "bg-amber-500" },
+  withdrawn:        { ring: "ring-slate-200",   dot: "bg-slate-400" },
+  completed:        { ring: "ring-emerald-200", dot: "bg-emerald-600" },
 };
 
 function StatusBadge({ status }: { status: OfferStatus }) {
-  const s = STATUS_STYLES[status] ?? { label: status, ring: "ring-slate-200", dot: "bg-slate-400" };
+  const t = useTranslations("DashboardAdminOffers");
+  const s = STATUS_RING_DOT[status] ?? { ring: "ring-slate-200", dot: "bg-slate-400" };
+  const labels: Record<string, string> = {
+    new: t("status.new"),
+    sent_to_seller: t("status.sent_to_seller"),
+    seller_accepted: t("status.seller_accepted"),
+    seller_rejected: t("status.seller_rejected"),
+    seller_countered: t("status.seller_countered"),
+    withdrawn: t("status.withdrawn"),
+    completed: t("status.completed"),
+  };
+  const label = labels[status] ?? status;
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${s.ring} bg-white`}>
       <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-      {s.label}
+      {label}
     </span>
   );
 }
@@ -153,11 +165,11 @@ function OfferFormDialog({
   onClose: () => void;
   onSaved: (o: OfferRecord) => void;
 }) {
+  const t = useTranslations("DashboardAdminOffers");
   const isEdit = !!editOffer;
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
-  // Yacht search state
   const [yachtQuery, setYachtQuery] = useState("");
   const [yachtResults, setYachtResults] = useState<YachtOption[]>([]);
   const [yachtOpen, setYachtOpen] = useState(false);
@@ -177,7 +189,7 @@ function OfferFormDialog({
         status: editOffer.status,
         source: editOffer.source ?? "admin",
       });
-      setYachtLabel(boatLabel(editOffer));
+      setYachtLabel(boatLabel(editOffer, t("row.boatFallback", { id: editOffer.yacht_id })));
       setYachtQuery("");
     } else {
       setForm(EMPTY_FORM);
@@ -186,7 +198,7 @@ function OfferFormDialog({
     }
     setYachtResults([]);
     setYachtOpen(false);
-  }, [open, editOffer]);
+  }, [open, editOffer, t]);
 
   useEffect(() => {
     if (!yachtQuery || yachtQuery.length < 2) { setYachtResults([]); setYachtOpen(false); return; }
@@ -197,20 +209,20 @@ function OfferFormDialog({
         const items = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
         setYachtResults(items.map((y: { id: number; boat_name?: string; manufacturer?: string; model?: string }) => ({
           id: y.id,
-          label: [y.manufacturer, y.model, y.boat_name].filter(Boolean).join(" ") || `Boot #${y.id}`,
+          label: [y.manufacturer, y.model, y.boat_name].filter(Boolean).join(" ") || t("row.boatFallback", { id: y.id }),
         })));
         setYachtOpen(true);
       } catch { /* ignore */ }
     }, 300);
-  }, [yachtQuery]);
+  }, [yachtQuery, t]);
 
   const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.buyer_name.trim()) { toast.error("Naam koper is verplicht."); return; }
-    if (!form.amount || isNaN(Number(form.amount))) { toast.error("Voer een geldig bedrag in."); return; }
-    if (!isEdit && !form.yacht_id) { toast.error("Selecteer een boot."); return; }
+    if (!form.buyer_name.trim()) { toast.error(t("toast.validationBuyerName")); return; }
+    if (!form.amount || isNaN(Number(form.amount))) { toast.error(t("toast.validationAmount")); return; }
+    if (!isEdit && !form.yacht_id) { toast.error(t("toast.validationBoat")); return; }
 
     setSaving(true);
     try {
@@ -224,7 +236,7 @@ function OfferFormDialog({
           message: form.message || null,
           status: form.status,
         });
-        toast.success("Bod bijgewerkt.");
+        toast.success(t("toast.updated"));
       } else {
         res = await api.post("/admin/offers", {
           yacht_id: Number(form.yacht_id),
@@ -235,14 +247,14 @@ function OfferFormDialog({
           message: form.message || null,
           source: form.source || "admin",
         });
-        toast.success("Bod aangemaakt.");
+        toast.success(t("toast.created"));
       }
       const saved = (res.data as { offer: OfferRecord }).offer;
       onSaved(saved);
       onClose();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg ?? "Opslaan mislukt.");
+      toast.error(msg ?? t("toast.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -253,10 +265,10 @@ function OfferFormDialog({
       <DialogContent className="max-w-xl rounded-[2rem] border-slate-200 p-0">
         <DialogHeader className="border-b border-slate-200 px-6 py-5">
           <DialogTitle className="text-xl font-semibold text-[#0B1F3A]">
-            {isEdit ? `Bod #${editOffer!.id} bewerken` : "Nieuw bod aanmaken"}
+            {isEdit ? t("form.titleEdit", { id: editOffer!.id }) : t("form.titleCreate")}
           </DialogTitle>
           <DialogDescription className="text-sm text-slate-500">
-            {isEdit ? "Pas de gegevens van dit bod aan." : "Registreer een bod namens een koper."}
+            {isEdit ? t("form.descriptionEdit") : t("form.descriptionCreate")}
           </DialogDescription>
         </DialogHeader>
 
@@ -264,11 +276,11 @@ function OfferFormDialog({
           {/* Yacht search — create only */}
           {!isEdit && (
             <div className="space-y-1 relative">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Boot *</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">{t("form.boat")}</label>
               <Input
                 value={yachtQuery || yachtLabel}
                 onChange={(e) => { setYachtQuery(e.target.value); setYachtLabel(""); set("yacht_id", ""); }}
-                placeholder="Zoek op merk, model of naam…"
+                placeholder={t("form.boatSearch")}
                 className="h-11 rounded-2xl border-slate-200"
                 autoComplete="off"
               />
@@ -295,39 +307,39 @@ function OfferFormDialog({
           {/* Buyer info */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Naam koper *</label>
-              <Input value={form.buyer_name} onChange={(e) => set("buyer_name", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder="Voor- en achternaam" required />
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">{t("form.buyerName")}</label>
+              <Input value={form.buyer_name} onChange={(e) => set("buyer_name", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder={t("form.buyerNamePlaceholder")} required />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">E-mail</label>
-              <Input type="email" value={form.buyer_email} onChange={(e) => set("buyer_email", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder="koper@voorbeeld.nl" />
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">{t("form.email")}</label>
+              <Input type="email" value={form.buyer_email} onChange={(e) => set("buyer_email", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder={t("form.emailPlaceholder")} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Telefoon</label>
-              <Input value={form.buyer_phone} onChange={(e) => set("buyer_phone", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder="+31 6 12345678" />
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">{t("form.phone")}</label>
+              <Input value={form.buyer_phone} onChange={(e) => set("buyer_phone", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder={t("form.phonePlaceholder")} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Bod bedrag (€) *</label>
-              <Input type="number" min={1} value={form.amount} onChange={(e) => set("amount", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder="bijv. 45000" required />
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">{t("form.amount")}</label>
+              <Input type="number" min={1} value={form.amount} onChange={(e) => set("amount", e.target.value)} className="h-11 rounded-2xl border-slate-200" placeholder={t("form.amountPlaceholder")} required />
             </div>
           </div>
 
           {/* Status — edit only */}
           {isEdit && (
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Status</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">{t("form.status")}</label>
               <select
                 value={form.status}
                 onChange={(e) => set("status", e.target.value)}
                 className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
               >
-                <option value="new">Nieuw</option>
-                <option value="sent_to_seller">Verstuurd naar verkoper</option>
-                <option value="seller_accepted">Geaccepteerd door verkoper</option>
-                <option value="seller_rejected">Afgewezen door verkoper</option>
-                <option value="seller_countered">Tegenbod</option>
-                <option value="withdrawn">Ingetrokken</option>
-                <option value="completed">Afgerond</option>
+                <option value="new">{t("statusOptions.new")}</option>
+                <option value="sent_to_seller">{t("statusOptions.sent_to_seller")}</option>
+                <option value="seller_accepted">{t("statusOptions.seller_accepted")}</option>
+                <option value="seller_rejected">{t("statusOptions.seller_rejected")}</option>
+                <option value="seller_countered">{t("statusOptions.seller_countered")}</option>
+                <option value="withdrawn">{t("statusOptions.withdrawn")}</option>
+                <option value="completed">{t("statusOptions.completed")}</option>
               </select>
             </div>
           )}
@@ -335,37 +347,37 @@ function OfferFormDialog({
           {/* Source — create only */}
           {!isEdit && (
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Bron</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-500">{t("form.source")}</label>
               <select
                 value={form.source}
                 onChange={(e) => set("source", e.target.value)}
                 className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
               >
-                <option value="admin">Admin</option>
-                <option value="phone">Telefoon</option>
-                <option value="email">E-mail</option>
-                <option value="widget">Widget</option>
+                <option value="admin">{t("sourceOptions.admin")}</option>
+                <option value="phone">{t("sourceOptions.phone")}</option>
+                <option value="email">{t("sourceOptions.email")}</option>
+                <option value="widget">{t("sourceOptions.widget")}</option>
               </select>
             </div>
           )}
 
           {/* Message */}
           <div className="space-y-1">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Bericht van koper</label>
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-500">{t("form.message")}</label>
             <textarea
               value={form.message}
               onChange={(e) => set("message", e.target.value)}
               rows={3}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-[#003566] resize-none"
-              placeholder="Optioneel bericht…"
+              placeholder={t("form.messagePlaceholder")}
             />
           </div>
 
           <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
-            <Button type="button" variant="outline" className="h-10 rounded-2xl" onClick={onClose}>Annuleren</Button>
+            <Button type="button" variant="outline" className="h-10 rounded-2xl" onClick={onClose}>{t("form.cancel")}</Button>
             <Button type="submit" disabled={saving} className="h-10 rounded-2xl bg-[#003566] px-6 text-[10px] font-black uppercase tracking-[0.22em] hover:bg-[#00284d]">
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEdit ? "Opslaan" : "Bod aanmaken"}
+              {isEdit ? t("form.save") : t("form.createSubmit")}
             </Button>
           </div>
         </form>
@@ -377,6 +389,7 @@ function OfferFormDialog({
 // ── Page ─────────────────────────────────────────────────────
 
 export default function AdminOffersPage() {
+  const t = useTranslations("DashboardAdminOffers");
   const params = useParams<{ locale?: string; role?: string }>();
   const router = useRouter();
   const locale = params?.locale ?? "nl";
@@ -393,19 +406,28 @@ export default function AdminOffersPage() {
   const [error, setError] = useState<string | null>(null);
   const [locations, setLocations] = useState<LocationOption[]>([]);
 
-  // Detail
   const [selected, setSelected] = useState<OfferRecord | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [notifying, setNotifying] = useState(false);
 
-  // Create / Edit form
   const [formOpen, setFormOpen] = useState(false);
   const [editOffer, setEditOffer] = useState<OfferRecord | null>(null);
 
   const initialized = useRef(false);
 
   const isLocation = role === "location" || role === "partner";
+
+  // Status label map for use outside StatusBadge (e.g. timeline)
+  const statusLabels: Record<string, string> = {
+    new: t("status.new"),
+    sent_to_seller: t("status.sent_to_seller"),
+    seller_accepted: t("status.seller_accepted"),
+    seller_rejected: t("status.seller_rejected"),
+    seller_countered: t("status.seller_countered"),
+    withdrawn: t("status.withdrawn"),
+    completed: t("status.completed"),
+  };
 
   useEffect(() => {
     if (role !== "admin" && !isLocation) router.replace(`/${locale}/dashboard/${role}`);
@@ -416,10 +438,10 @@ export default function AdminOffersPage() {
       const items = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
       setLocations(items.map((l: { id: number; name?: string; meta?: { name?: string } }) => ({
         id: l.id,
-        name: l.meta?.name ?? l.name ?? `Locatie ${l.id}`,
+        name: l.meta?.name ?? l.name ?? t("row.location", { id: l.id }),
       })));
     }).catch(() => {/* ignore */});
-  }, []);
+  }, [t]);
 
   const loadOffers = useCallback(async (showRefresh = false, targetPage = page) => {
     if (showRefresh) setRefreshing(true);
@@ -440,12 +462,12 @@ export default function AdminOffersPage() {
       setTotal(d.total ?? 0);
       setLastPage(d.last_page ?? 1);
     } catch {
-      setError("Boden laden mislukt. Probeer opnieuw.");
+      setError(t("toast.loadFailed"));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [applied, page]);
+  }, [applied, page, t]);
 
   useEffect(() => {
     if (role !== "admin" && !isLocation) return;
@@ -470,29 +492,29 @@ export default function AdminOffersPage() {
       const d = res.data as { offer: OfferRecord };
       setSelected(d.offer ?? null);
     } catch {
-      toast.error("Detail laden mislukt.");
+      toast.error(t("toast.detailFailed"));
       setDetailOpen(false);
     } finally {
       setDetailLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const notifySeller = useCallback(async (offerId: number) => {
     setNotifying(true);
     try {
       await api.post(`/admin/offers/${offerId}/notify-seller`);
-      toast.success("E-mail verstuurd naar verkoper.");
+      toast.success(t("toast.emailSent"));
       void loadOffers(true);
       if (selected?.id === offerId) {
         setSelected((prev) => prev ? { ...prev, status: "sent_to_seller", seller_notified: true } : prev);
       }
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg ?? "Verzenden mislukt.");
+      toast.error(msg ?? t("toast.emailFailed"));
     } finally {
       setNotifying(false);
     }
-  }, [loadOffers, selected?.id]);
+  }, [loadOffers, selected?.id, t]);
 
   const openCreate = () => { setEditOffer(null); setFormOpen(true); };
   const openEdit   = (o: OfferRecord) => { setEditOffer(o); setDetailOpen(false); setFormOpen(true); };
@@ -503,7 +525,7 @@ export default function AdminOffersPage() {
       if (idx >= 0) { const next = [...prev]; next[idx] = saved; return next; }
       return [saved, ...prev];
     });
-    setTotal((t) => t + (offers.find((o) => o.id === saved.id) ? 0 : 1));
+    setTotal((tt) => tt + (offers.find((o) => o.id === saved.id) ? 0 : 1));
   };
 
   const stats = useMemo(() => ({
@@ -523,11 +545,9 @@ export default function AdminOffersPage() {
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-blue-200/40 blur-3xl" />
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.38em] text-[#C8102E]">Bieden &amp; aanbiedingen</p>
-            <h1 className="mt-3 text-4xl font-serif italic text-[#003566] sm:text-5xl">Bod-overzicht</h1>
-            <p className="mt-3 max-w-3xl text-sm text-slate-500">
-              Beheer alle ontvangen boden — bekijk status, notificeer verkopers en volg het tegenbodproces.
-            </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.38em] text-[#C8102E]">{t("hero.tag")}</p>
+            <h1 className="mt-3 text-4xl font-serif italic text-[#003566] sm:text-5xl">{t("hero.title")}</h1>
+            <p className="mt-3 max-w-3xl text-sm text-slate-500">{t("hero.subtitle")}</p>
           </div>
           <div className="flex gap-3">
             <Button
@@ -538,7 +558,7 @@ export default function AdminOffersPage() {
               className="h-12 rounded-2xl border-slate-200 px-5 text-[10px] font-black uppercase tracking-[0.26em]"
             >
               {refreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-              Verversen
+              {t("hero.refresh")}
             </Button>
             <Button
               type="button"
@@ -546,18 +566,18 @@ export default function AdminOffersPage() {
               className="h-12 rounded-2xl bg-[#003566] px-6 text-[10px] font-black uppercase tracking-[0.26em] text-white hover:bg-[#00284d]"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Nieuw bod
+              {t("hero.newOffer")}
             </Button>
           </div>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {[
-            { label: "Totaal", value: stats.total, icon: Handshake, color: "text-[#003566]" },
-            { label: "Nieuw", value: stats.new_count, icon: Search, color: "text-slate-600" },
-            { label: "Geaccepteerd", value: stats.accepted, icon: CheckCircle2, color: "text-emerald-700" },
-            { label: "Tegenbod", value: stats.countered, icon: RefreshCw, color: "text-amber-700" },
-            { label: "Onder minimum", value: stats.below_minimum, icon: TrendingDown, color: "text-rose-700" },
+            { label: t("stats.total"),    value: stats.total,         icon: Handshake,  color: "text-[#003566]" },
+            { label: t("stats.new"),      value: stats.new_count,     icon: Search,     color: "text-slate-600" },
+            { label: t("stats.accepted"), value: stats.accepted,      icon: CheckCircle2, color: "text-emerald-700" },
+            { label: t("stats.counter"),  value: stats.countered,     icon: RefreshCw,  color: "text-amber-700" },
+            { label: t("stats.belowMin"), value: stats.below_minimum, icon: TrendingDown, color: "text-rose-700" },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="rounded-3xl border border-white/20 bg-white/85 p-4 shadow-sm backdrop-blur-sm">
               <div className="flex items-center gap-2">
@@ -574,13 +594,13 @@ export default function AdminOffersPage() {
       <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1.4fr)_200px_200px_auto_auto]">
           <label className="space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Zoeken</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{t("filters.search")}</span>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
                 value={filters.search}
                 onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-                placeholder="Naam, e-mail, telefoon…"
+                placeholder={t("filters.searchPlaceholder")}
                 className="h-11 rounded-2xl border-slate-200 pl-9 text-sm"
                 onKeyDown={(e) => { if (e.key === "Enter") { setApplied(filters); } }}
               />
@@ -588,31 +608,31 @@ export default function AdminOffersPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Status</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{t("filters.status")}</span>
             <select
               value={filters.status}
               onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
               className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
             >
-              <option value="">Alle statussen</option>
-              <option value="new">Nieuw</option>
-              <option value="sent_to_seller">Verstuurd</option>
-              <option value="seller_accepted">Geaccepteerd</option>
-              <option value="seller_rejected">Afgewezen</option>
-              <option value="seller_countered">Tegenbod</option>
-              <option value="withdrawn">Ingetrokken</option>
-              <option value="completed">Afgerond</option>
+              <option value="">{t("filters.allStatuses")}</option>
+              <option value="new">{t("status.new")}</option>
+              <option value="sent_to_seller">{t("status.sent_to_seller")}</option>
+              <option value="seller_accepted">{t("status.seller_accepted")}</option>
+              <option value="seller_rejected">{t("status.seller_rejected")}</option>
+              <option value="seller_countered">{t("status.seller_countered")}</option>
+              <option value="withdrawn">{t("status.withdrawn")}</option>
+              <option value="completed">{t("status.completed")}</option>
             </select>
           </label>
 
           <label className="space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Locatie</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{t("filters.location")}</span>
             <select
               value={filters.location_id}
               onChange={(e) => setFilters((f) => ({ ...f, location_id: e.target.value }))}
               className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#003566]"
             >
-              <option value="">Alle locaties</option>
+              <option value="">{t("filters.allLocations")}</option>
               {locations.map((l) => (
                 <option key={l.id} value={String(l.id)}>{l.name}</option>
               ))}
@@ -625,7 +645,7 @@ export default function AdminOffersPage() {
             className="mt-auto h-11 rounded-2xl border-slate-200"
             onClick={() => { setFilters({ search: "", status: "", location_id: "" }); setApplied({ search: "", status: "", location_id: "" }); }}
           >
-            Reset
+            {t("filters.reset")}
           </Button>
           <Button
             type="button"
@@ -634,42 +654,40 @@ export default function AdminOffersPage() {
             disabled={refreshing}
           >
             <Search className="mr-2 h-4 w-4" />
-            Zoeken
+            {t("filters.searchBtn")}
           </Button>
         </div>
 
         {/* ── Table ──────────────────────────────────────────── */}
         <div className="mt-6 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
           <div className="hidden grid-cols-[80px_minmax(0,1fr)_minmax(0,1fr)_140px_140px_110px_120px] gap-4 border-b border-[#E5EEFB] bg-[#F8FBFF] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#7C94B8] lg:grid">
-            <span>#</span>
-            <span>Koper</span>
-            <span>Boot</span>
-            <span>Bedrag</span>
-            <span>Status</span>
-            <span>Datum</span>
-            <span>Acties</span>
+            <span>{t("table.id")}</span>
+            <span>{t("table.buyer")}</span>
+            <span>{t("table.boat")}</span>
+            <span>{t("table.amount")}</span>
+            <span>{t("table.status")}</span>
+            <span>{t("table.date")}</span>
+            <span>{t("table.actions")}</span>
           </div>
 
           {loading ? (
             <div className="flex min-h-[260px] items-center justify-center gap-3 text-sm text-slate-500">
               <Loader2 className="h-5 w-5 animate-spin text-[#003566]" />
-              <span>Boden laden…</span>
+              <span>{t("loading")}</span>
             </div>
           ) : error ? (
             <div className="flex min-h-[260px] flex-col items-center justify-center gap-4 px-6 text-center">
               <AlertCircle className="h-10 w-10 text-rose-400" />
               <p className="text-sm text-slate-500">{error}</p>
               <Button type="button" className="rounded-2xl bg-[#003566] hover:bg-[#00284d]" onClick={() => void loadOffers(true)}>
-                Opnieuw proberen
+                {t("retry")}
               </Button>
             </div>
           ) : offers.length === 0 ? (
             <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 px-6 text-center">
               <Handshake className="h-10 w-10 text-slate-300" />
-              <h2 className="text-lg font-semibold text-[#0B1F3A]">Geen boden gevonden</h2>
-              <p className="max-w-md text-sm text-slate-500">
-                Er zijn nog geen boden ontvangen of ze voldoen niet aan de filters.
-              </p>
+              <h2 className="text-lg font-semibold text-[#0B1F3A]">{t("empty.title")}</h2>
+              <p className="max-w-md text-sm text-slate-500">{t("empty.body")}</p>
             </div>
           ) : (
             <div className="divide-y divide-[#E5EEFB]">
@@ -689,17 +707,17 @@ export default function AdminOffersPage() {
                   <div className="flex items-center gap-2">
                     <Ship className="h-4 w-4 shrink-0 text-slate-300" />
                     <div>
-                      <p className="font-semibold text-[#0B1F3A]">{boatLabel(offer)}</p>
-                      <p className="text-xs text-slate-400">{offer.location?.name ?? `Locatie ${offer.location_id ?? "—"}`}</p>
+                      <p className="font-semibold text-[#0B1F3A]">{boatLabel(offer, t("row.boatFallback", { id: offer.yacht_id }))}</p>
+                      <p className="text-xs text-slate-400">{offer.location?.name ?? t("row.location", { id: offer.location_id ?? "—" })}</p>
                     </div>
                   </div>
 
                   <div>
                     <p className="font-bold text-[#003566]">{fmtCurrency(offer.amount)}</p>
-                    {offer.asking_price ? <p className="text-xs text-slate-400">Vraagprijs {fmtCurrency(offer.asking_price)}</p> : null}
+                    {offer.asking_price ? <p className="text-xs text-slate-400">{t("row.askingPrice")} {fmtCurrency(offer.asking_price)}</p> : null}
                     {offer.below_minimum ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-600">
-                        <TrendingDown className="h-3 w-3" /> onder min.
+                        <TrendingDown className="h-3 w-3" /> {t("row.belowMin")}
                       </span>
                     ) : null}
                   </div>
@@ -715,13 +733,13 @@ export default function AdminOffersPage() {
                       className="h-9 rounded-2xl border-slate-200 text-xs px-3"
                       onClick={() => void openDetail(offer.id)}
                     >
-                      Bekijken
+                      {t("row.view")}
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
                       className="h-9 w-9 rounded-2xl border-slate-200 p-0 flex items-center justify-center"
-                      title="Bewerken"
+                      title={t("row.edit")}
                       onClick={() => openEdit(offer)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -745,7 +763,7 @@ export default function AdminOffersPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-slate-500">Pagina {page} van {lastPage}</span>
+            <span className="text-sm text-slate-500">{t("pagination", { page, lastPage })}</span>
             <Button
               type="button"
               variant="outline"
@@ -764,10 +782,10 @@ export default function AdminOffersPage() {
         <DialogContent className="max-w-2xl rounded-[2rem] border-slate-200 p-0">
           <DialogHeader className="border-b border-slate-200 px-6 py-5">
             <DialogTitle className="text-xl font-semibold text-[#0B1F3A]">
-              {selected ? `Bod #${selected.id}` : "Bod detail"}
+              {selected ? t("detail.titleWithId", { id: selected.id }) : t("detail.title")}
             </DialogTitle>
             <DialogDescription className="text-sm text-slate-500">
-              Volledige informatie over dit bod en de status.
+              {t("detail.description")}
             </DialogDescription>
           </DialogHeader>
 
@@ -775,7 +793,7 @@ export default function AdminOffersPage() {
             {detailLoading || !selected ? (
               <div className="flex min-h-[220px] items-center justify-center gap-3 text-sm text-slate-500">
                 <Loader2 className="h-5 w-5 animate-spin text-[#003566]" />
-                <span>Laden…</span>
+                <span>{t("detail.loading")}</span>
               </div>
             ) : (
               <div className="space-y-4">
@@ -784,7 +802,7 @@ export default function AdminOffersPage() {
                   <StatusBadge status={selected.status} />
                   {selected.below_minimum && (
                     <span className="flex items-center gap-1 text-xs font-semibold text-rose-600">
-                      <TrendingDown className="h-3.5 w-3.5" /> Onder minimumbod
+                      <TrendingDown className="h-3.5 w-3.5" /> {t("detail.belowMin")}
                     </span>
                   )}
                 </div>
@@ -792,28 +810,28 @@ export default function AdminOffersPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   {/* Buyer */}
                   <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Koper</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{t("detail.buyer")}</h3>
                     <dl className="space-y-1.5 text-sm">
-                      <dt className="font-semibold text-slate-600">Naam</dt>
+                      <dt className="font-semibold text-slate-600">{t("detail.name")}</dt>
                       <dd className="text-[#0B1F3A]">{selected.buyer_name || "—"}</dd>
-                      <dt className="font-semibold text-slate-600">E-mail</dt>
+                      <dt className="font-semibold text-slate-600">{t("detail.email")}</dt>
                       <dd className="text-[#0B1F3A]">{selected.buyer_email || "—"}</dd>
-                      <dt className="font-semibold text-slate-600">Telefoon</dt>
+                      <dt className="font-semibold text-slate-600">{t("detail.phone")}</dt>
                       <dd className="text-[#0B1F3A]">{selected.buyer_phone || "—"}</dd>
                     </dl>
                   </div>
 
                   {/* Offer amounts */}
                   <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Bedragen</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{t("detail.amounts")}</h3>
                     <dl className="space-y-1.5 text-sm">
-                      <dt className="font-semibold text-slate-600">Bod</dt>
+                      <dt className="font-semibold text-slate-600">{t("detail.offer")}</dt>
                       <dd className="text-xl font-bold text-[#003566]">{fmtCurrency(selected.amount)}</dd>
-                      <dt className="font-semibold text-slate-600">Vraagprijs</dt>
+                      <dt className="font-semibold text-slate-600">{t("detail.askingPrice")}</dt>
                       <dd className="text-[#0B1F3A]">{fmtCurrency(selected.asking_price)}</dd>
                       {selected.minimum_amount ? (
                         <>
-                          <dt className="font-semibold text-slate-600">Minimumbod</dt>
+                          <dt className="font-semibold text-slate-600">{t("detail.minBid")}</dt>
                           <dd className="text-[#0B1F3A]">{fmtCurrency(selected.minimum_amount)}</dd>
                         </>
                       ) : null}
@@ -823,7 +841,7 @@ export default function AdminOffersPage() {
                   {/* Counter offer (if any) */}
                   {selected.counter_amount ? (
                     <div className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-700">Tegenbod</h3>
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-700">{t("detail.counterOffer")}</h3>
                       <p className="text-xl font-bold text-amber-700">{fmtCurrency(selected.counter_amount)}</p>
                       {selected.counter_message && <p className="text-sm text-amber-800">{selected.counter_message}</p>}
                     </div>
@@ -831,11 +849,11 @@ export default function AdminOffersPage() {
 
                   {/* Boat & Location */}
                   <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Boot &amp; locatie</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{t("detail.boatLocation")}</h3>
                     <dl className="space-y-1.5 text-sm">
-                      <dt className="font-semibold text-slate-600">Boot</dt>
-                      <dd className="text-[#0B1F3A]">{boatLabel(selected)}</dd>
-                      <dt className="font-semibold text-slate-600">Locatie</dt>
+                      <dt className="font-semibold text-slate-600">{t("detail.boat")}</dt>
+                      <dd className="text-[#0B1F3A]">{boatLabel(selected, t("row.boatFallback", { id: selected.yacht_id }))}</dd>
+                      <dt className="font-semibold text-slate-600">{t("detail.location")}</dt>
                       <dd className="text-[#0B1F3A]">{selected.location?.name ?? `#${selected.location_id ?? "—"}`}</dd>
                     </dl>
                   </div>
@@ -844,26 +862,26 @@ export default function AdminOffersPage() {
                 {/* Buyer message */}
                 {selected.message ? (
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <h3 className="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Bericht koper</h3>
+                    <h3 className="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{t("detail.buyerMessage")}</h3>
                     <p className="text-sm leading-6 text-[#0B1F3A]">{selected.message}</p>
                   </div>
                 ) : null}
 
                 {/* Seller notification */}
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <h3 className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Verkoper</h3>
+                  <h3 className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{t("detail.seller")}</h3>
                   {selected.seller ? (
                     <p className="mb-3 text-sm text-[#0B1F3A]">
                       {selected.seller.name} — <a href={`mailto:${selected.seller.email}`} className="text-[#003566] underline">{selected.seller.email}</a>
                     </p>
                   ) : (
-                    <p className="mb-3 text-sm text-slate-400">Geen verkoper gekoppeld</p>
+                    <p className="mb-3 text-sm text-slate-400">{t("detail.noSeller")}</p>
                   )}
 
                   {selected.seller_notified ? (
                     <div className="flex items-center gap-2 text-sm text-emerald-700">
                       <MailCheck className="h-4 w-4" />
-                      <span>Verstuurd op {fmtDate(selected.seller_notified_at)}</span>
+                      <span>{t("detail.notifiedOn", { date: fmtDate(selected.seller_notified_at) })}</span>
                     </div>
                   ) : (
                     <Button
@@ -873,30 +891,33 @@ export default function AdminOffersPage() {
                       onClick={() => void notifySeller(selected.id)}
                     >
                       {notifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MailCheck className="mr-2 h-4 w-4" />}
-                      Verkoper notificeren
+                      {t("detail.notifySeller")}
                     </Button>
                   )}
                 </div>
 
                 {/* Timeline mini */}
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <h3 className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Tijdlijn</h3>
+                  <h3 className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{t("detail.timeline")}</h3>
                   <div className="space-y-2 text-xs text-slate-500">
                     <div className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-                      <span>Bod ontvangen — {fmtDate(selected.created_at)}</span>
+                      <span>{t("detail.received", { date: fmtDate(selected.created_at) })}</span>
                     </div>
                     {selected.seller_notified_at && (
                       <div className="flex items-center gap-2">
                         <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                        <span>Verstuurd naar verkoper — {fmtDate(selected.seller_notified_at)}</span>
+                        <span>{t("detail.sentToSeller", { date: fmtDate(selected.seller_notified_at) })}</span>
                       </div>
                     )}
                     {selected.seller_responded_at && (
                       <div className="flex items-center gap-2">
                         <span className={`h-1.5 w-1.5 rounded-full ${selected.status === "seller_accepted" ? "bg-emerald-500" : selected.status === "seller_rejected" ? "bg-rose-500" : "bg-amber-500"}`} />
                         <span>
-                          Verkoper gereageerd ({STATUS_STYLES[selected.status]?.label ?? selected.status}) — {fmtDate(selected.seller_responded_at)}
+                          {t("detail.sellerResponded", {
+                            status: statusLabels[selected.status] ?? selected.status,
+                            date: fmtDate(selected.seller_responded_at),
+                          })}
                         </span>
                       </div>
                     )}
@@ -912,7 +933,7 @@ export default function AdminOffersPage() {
                     onClick={() => openEdit(selected)}
                   >
                     <Pencil className="h-4 w-4" />
-                    Bewerken
+                    {t("detail.editBtn")}
                   </Button>
 
                   <div className="flex items-center gap-3">
@@ -923,7 +944,7 @@ export default function AdminOffersPage() {
                         className="h-10 rounded-2xl border-slate-200"
                         onClick={() => { setDetailOpen(false); router.push(`/${locale}/dashboard/${role}/chat?conversation=${selected.conversation_id}`); }}
                       >
-                        Chat bekijken
+                        {t("detail.viewChat")}
                       </Button>
                     )}
                     {selected.status === "new" && selected.seller && !selected.seller_notified && (
@@ -934,25 +955,25 @@ export default function AdminOffersPage() {
                         onClick={() => void notifySeller(selected.id)}
                       >
                         {notifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MailCheck className="mr-2 h-4 w-4" />}
-                        Verkoper mailen
+                        {t("detail.emailSeller")}
                       </Button>
                     )}
                     {(selected.status === "seller_accepted" || selected.status === "completed") && (
                       <div className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
                         <CheckCircle2 className="h-4 w-4" />
-                        Geaccepteerd
+                        {t("detail.statusAccepted")}
                       </div>
                     )}
                     {selected.status === "seller_rejected" && (
                       <div className="flex items-center gap-1.5 text-sm font-semibold text-rose-600">
                         <XCircle className="h-4 w-4" />
-                        Afgewezen
+                        {t("detail.statusRejected")}
                       </div>
                     )}
                     {selected.status === "withdrawn" && (
                       <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-500">
                         <Ban className="h-4 w-4" />
-                        Ingetrokken
+                        {t("detail.statusWithdrawn")}
                       </div>
                     )}
                   </div>

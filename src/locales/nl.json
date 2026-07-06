@@ -2997,5 +2997,148 @@
         "no": "Nee"
       }
     }
+  },
+  "DashboardAdminOffers": {
+    "status": {
+      "new": "Nieuw",
+      "sent_to_seller": "Verstuurd",
+      "seller_accepted": "Geaccepteerd",
+      "seller_rejected": "Afgewezen",
+      "seller_countered": "Tegenbod",
+      "withdrawn": "Ingetrokken",
+      "completed": "Afgerond"
+    },
+    "statusOptions": {
+      "new": "Nieuw",
+      "sent_to_seller": "Verstuurd naar verkoper",
+      "seller_accepted": "Geaccepteerd door verkoper",
+      "seller_rejected": "Afgewezen door verkoper",
+      "seller_countered": "Tegenbod",
+      "withdrawn": "Ingetrokken",
+      "completed": "Afgerond"
+    },
+    "sourceOptions": {
+      "admin": "Admin",
+      "phone": "Telefoon",
+      "email": "E-mail",
+      "widget": "Widget"
+    },
+    "toast": {
+      "validationBuyerName": "Naam koper is verplicht.",
+      "validationAmount": "Voer een geldig bedrag in.",
+      "validationBoat": "Selecteer een boot.",
+      "updated": "Bod bijgewerkt.",
+      "created": "Bod aangemaakt.",
+      "saveFailed": "Opslaan mislukt.",
+      "loadFailed": "Boden laden mislukt. Probeer opnieuw.",
+      "detailFailed": "Detail laden mislukt.",
+      "emailSent": "E-mail verstuurd naar verkoper.",
+      "emailFailed": "Verzenden mislukt."
+    },
+    "form": {
+      "titleEdit": "Bod #{id} bewerken",
+      "titleCreate": "Nieuw bod aanmaken",
+      "descriptionEdit": "Pas de gegevens van dit bod aan.",
+      "descriptionCreate": "Registreer een bod namens een koper.",
+      "boat": "Boot *",
+      "boatSearch": "Zoek op merk, model of naam…",
+      "buyerName": "Naam koper *",
+      "buyerNamePlaceholder": "Voor- en achternaam",
+      "email": "E-mail",
+      "emailPlaceholder": "koper@voorbeeld.nl",
+      "phone": "Telefoon",
+      "phonePlaceholder": "+31 6 12345678",
+      "amount": "Bod bedrag (€) *",
+      "amountPlaceholder": "bijv. 45000",
+      "status": "Status",
+      "source": "Bron",
+      "message": "Bericht van koper",
+      "messagePlaceholder": "Optioneel bericht…",
+      "cancel": "Annuleren",
+      "save": "Opslaan",
+      "createSubmit": "Bod aanmaken"
+    },
+    "hero": {
+      "tag": "Bieden & aanbiedingen",
+      "title": "Bod-overzicht",
+      "subtitle": "Beheer alle ontvangen boden — bekijk status, notificeer verkopers en volg het tegenbodproces.",
+      "refresh": "Verversen",
+      "newOffer": "Nieuw bod"
+    },
+    "stats": {
+      "total": "Totaal",
+      "new": "Nieuw",
+      "accepted": "Geaccepteerd",
+      "counter": "Tegenbod",
+      "belowMin": "Onder minimum"
+    },
+    "filters": {
+      "search": "Zoeken",
+      "searchPlaceholder": "Naam, e-mail, telefoon…",
+      "status": "Status",
+      "allStatuses": "Alle statussen",
+      "location": "Locatie",
+      "allLocations": "Alle locaties",
+      "reset": "Reset",
+      "searchBtn": "Zoeken"
+    },
+    "table": {
+      "id": "#",
+      "buyer": "Koper",
+      "boat": "Boot",
+      "amount": "Bedrag",
+      "status": "Status",
+      "date": "Datum",
+      "actions": "Acties"
+    },
+    "loading": "Boden laden…",
+    "retry": "Opnieuw proberen",
+    "empty": {
+      "title": "Geen boden gevonden",
+      "body": "Er zijn nog geen boden ontvangen of ze voldoen niet aan de filters."
+    },
+    "row": {
+      "askingPrice": "Vraagprijs",
+      "belowMin": "onder min.",
+      "view": "Bekijken",
+      "edit": "Bewerken",
+      "location": "Locatie {id}",
+      "boatFallback": "Boot #{id}"
+    },
+    "pagination": "Pagina {page} van {lastPage}",
+    "detail": {
+      "title": "Bod detail",
+      "titleWithId": "Bod #{id}",
+      "description": "Volledige informatie over dit bod en de status.",
+      "loading": "Laden…",
+      "belowMin": "Onder minimumbod",
+      "buyer": "Koper",
+      "name": "Naam",
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "amounts": "Bedragen",
+      "offer": "Bod",
+      "askingPrice": "Vraagprijs",
+      "minBid": "Minimumbod",
+      "counterOffer": "Tegenbod",
+      "boatLocation": "Boot & locatie",
+      "boat": "Boot",
+      "location": "Locatie",
+      "buyerMessage": "Bericht koper",
+      "seller": "Verkoper",
+      "noSeller": "Geen verkoper gekoppeld",
+      "notifiedOn": "Verstuurd op {date}",
+      "notifySeller": "Verkoper notificeren",
+      "timeline": "Tijdlijn",
+      "received": "Bod ontvangen — {date}",
+      "sentToSeller": "Verstuurd naar verkoper — {date}",
+      "sellerResponded": "Verkoper gereageerd ({status}) — {date}",
+      "editBtn": "Bewerken",
+      "viewChat": "Chat bekijken",
+      "emailSeller": "Verkoper mailen",
+      "statusAccepted": "Geaccepteerd",
+      "statusRejected": "Afgewezen",
+      "statusWithdrawn": "Ingetrokken"
+    }
   }
 }

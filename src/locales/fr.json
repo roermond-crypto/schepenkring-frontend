@@ -2997,5 +2997,148 @@
         "no": "Non"
       }
     }
+  },
+  "DashboardAdminOffers": {
+    "status": {
+      "new": "Nouveau",
+      "sent_to_seller": "Envoyé",
+      "seller_accepted": "Accepté",
+      "seller_rejected": "Refusé",
+      "seller_countered": "Contre-offre",
+      "withdrawn": "Retiré",
+      "completed": "Finalisé"
+    },
+    "statusOptions": {
+      "new": "Nouveau",
+      "sent_to_seller": "Envoyé au vendeur",
+      "seller_accepted": "Accepté par le vendeur",
+      "seller_rejected": "Refusé par le vendeur",
+      "seller_countered": "Contre-offre",
+      "withdrawn": "Retiré",
+      "completed": "Finalisé"
+    },
+    "sourceOptions": {
+      "admin": "Admin",
+      "phone": "Téléphone",
+      "email": "E-mail",
+      "widget": "Widget"
+    },
+    "toast": {
+      "validationBuyerName": "Le nom de l'acheteur est obligatoire.",
+      "validationAmount": "Saisissez un montant valide.",
+      "validationBoat": "Sélectionnez un bateau.",
+      "updated": "Offre mise à jour.",
+      "created": "Offre créée.",
+      "saveFailed": "Échec de l'enregistrement.",
+      "loadFailed": "Échec du chargement des offres. Veuillez réessayer.",
+      "detailFailed": "Échec du chargement du détail.",
+      "emailSent": "E-mail envoyé au vendeur.",
+      "emailFailed": "Échec de l'envoi."
+    },
+    "form": {
+      "titleEdit": "Modifier l'offre #{id}",
+      "titleCreate": "Créer une nouvelle offre",
+      "descriptionEdit": "Modifiez les détails de cette offre.",
+      "descriptionCreate": "Enregistrez une offre au nom d'un acheteur.",
+      "boat": "Bateau *",
+      "boatSearch": "Rechercher par marque, modèle ou nom…",
+      "buyerName": "Nom de l'acheteur *",
+      "buyerNamePlaceholder": "Prénom et nom",
+      "email": "E-mail",
+      "emailPlaceholder": "acheteur@exemple.fr",
+      "phone": "Téléphone",
+      "phonePlaceholder": "+31 6 12345678",
+      "amount": "Montant de l'offre (€) *",
+      "amountPlaceholder": "ex. 45000",
+      "status": "Statut",
+      "source": "Source",
+      "message": "Message de l'acheteur",
+      "messagePlaceholder": "Message optionnel…",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "createSubmit": "Créer l'offre"
+    },
+    "hero": {
+      "tag": "Enchères & offres",
+      "title": "Aperçu des offres",
+      "subtitle": "Gérez toutes les offres reçues — consultez le statut, notifiez les vendeurs et suivez le processus de contre-offre.",
+      "refresh": "Actualiser",
+      "newOffer": "Nouvelle offre"
+    },
+    "stats": {
+      "total": "Total",
+      "new": "Nouveau",
+      "accepted": "Accepté",
+      "counter": "Contre-offre",
+      "belowMin": "En dessous du minimum"
+    },
+    "filters": {
+      "search": "Rechercher",
+      "searchPlaceholder": "Nom, e-mail, téléphone…",
+      "status": "Statut",
+      "allStatuses": "Tous les statuts",
+      "location": "Localisation",
+      "allLocations": "Toutes les localisations",
+      "reset": "Réinitialiser",
+      "searchBtn": "Rechercher"
+    },
+    "table": {
+      "id": "#",
+      "buyer": "Acheteur",
+      "boat": "Bateau",
+      "amount": "Montant",
+      "status": "Statut",
+      "date": "Date",
+      "actions": "Actions"
+    },
+    "loading": "Chargement des offres…",
+    "retry": "Réessayer",
+    "empty": {
+      "title": "Aucune offre trouvée",
+      "body": "Aucune offre n'a encore été reçue ou elles ne correspondent pas aux filtres."
+    },
+    "row": {
+      "askingPrice": "Prix demandé",
+      "belowMin": "sous le min.",
+      "view": "Voir",
+      "edit": "Modifier",
+      "location": "Localisation {id}",
+      "boatFallback": "Bateau #{id}"
+    },
+    "pagination": "Page {page} sur {lastPage}",
+    "detail": {
+      "title": "Détail de l'offre",
+      "titleWithId": "Offre #{id}",
+      "description": "Informations complètes sur cette offre et son statut.",
+      "loading": "Chargement…",
+      "belowMin": "En dessous de l'offre minimale",
+      "buyer": "Acheteur",
+      "name": "Nom",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "amounts": "Montants",
+      "offer": "Offre",
+      "askingPrice": "Prix demandé",
+      "minBid": "Offre minimale",
+      "counterOffer": "Contre-offre",
+      "boatLocation": "Bateau & localisation",
+      "boat": "Bateau",
+      "location": "Localisation",
+      "buyerMessage": "Message de l'acheteur",
+      "seller": "Vendeur",
+      "noSeller": "Aucun vendeur associé",
+      "notifiedOn": "Envoyé le {date}",
+      "notifySeller": "Notifier le vendeur",
+      "timeline": "Chronologie",
+      "received": "Offre reçue — {date}",
+      "sentToSeller": "Envoyé au vendeur — {date}",
+      "sellerResponded": "Vendeur a répondu ({status}) — {date}",
+      "editBtn": "Modifier",
+      "viewChat": "Voir le chat",
+      "emailSeller": "Envoyer un e-mail au vendeur",
+      "statusAccepted": "Accepté",
+      "statusRejected": "Refusé",
+      "statusWithdrawn": "Retiré"
+    }
   }
 }

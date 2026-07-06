@@ -2997,5 +2997,148 @@
         "no": "No"
       }
     }
+  },
+  "DashboardAdminOffers": {
+    "status": {
+      "new": "New",
+      "sent_to_seller": "Sent",
+      "seller_accepted": "Accepted",
+      "seller_rejected": "Rejected",
+      "seller_countered": "Counter-offer",
+      "withdrawn": "Withdrawn",
+      "completed": "Completed"
+    },
+    "statusOptions": {
+      "new": "New",
+      "sent_to_seller": "Sent to seller",
+      "seller_accepted": "Accepted by seller",
+      "seller_rejected": "Rejected by seller",
+      "seller_countered": "Counter-offer",
+      "withdrawn": "Withdrawn",
+      "completed": "Completed"
+    },
+    "sourceOptions": {
+      "admin": "Admin",
+      "phone": "Phone",
+      "email": "Email",
+      "widget": "Widget"
+    },
+    "toast": {
+      "validationBuyerName": "Buyer name is required.",
+      "validationAmount": "Enter a valid amount.",
+      "validationBoat": "Select a boat.",
+      "updated": "Offer updated.",
+      "created": "Offer created.",
+      "saveFailed": "Save failed.",
+      "loadFailed": "Failed to load offers. Please try again.",
+      "detailFailed": "Failed to load detail.",
+      "emailSent": "Email sent to seller.",
+      "emailFailed": "Send failed."
+    },
+    "form": {
+      "titleEdit": "Edit offer #{id}",
+      "titleCreate": "Create new offer",
+      "descriptionEdit": "Update the details of this offer.",
+      "descriptionCreate": "Register an offer on behalf of a buyer.",
+      "boat": "Boat *",
+      "boatSearch": "Search by brand, model or name…",
+      "buyerName": "Buyer name *",
+      "buyerNamePlaceholder": "First and last name",
+      "email": "Email",
+      "emailPlaceholder": "buyer@example.com",
+      "phone": "Phone",
+      "phonePlaceholder": "+31 6 12345678",
+      "amount": "Offer amount (€) *",
+      "amountPlaceholder": "e.g. 45000",
+      "status": "Status",
+      "source": "Source",
+      "message": "Buyer message",
+      "messagePlaceholder": "Optional message…",
+      "cancel": "Cancel",
+      "save": "Save",
+      "createSubmit": "Create offer"
+    },
+    "hero": {
+      "tag": "Bidding & offers",
+      "title": "Offer overview",
+      "subtitle": "Manage all received offers — view status, notify sellers and track the counter-offer process.",
+      "refresh": "Refresh",
+      "newOffer": "New offer"
+    },
+    "stats": {
+      "total": "Total",
+      "new": "New",
+      "accepted": "Accepted",
+      "counter": "Counter-offer",
+      "belowMin": "Below minimum"
+    },
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Name, email, phone…",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "location": "Location",
+      "allLocations": "All locations",
+      "reset": "Reset",
+      "searchBtn": "Search"
+    },
+    "table": {
+      "id": "#",
+      "buyer": "Buyer",
+      "boat": "Boat",
+      "amount": "Amount",
+      "status": "Status",
+      "date": "Date",
+      "actions": "Actions"
+    },
+    "loading": "Loading offers…",
+    "retry": "Try again",
+    "empty": {
+      "title": "No offers found",
+      "body": "No offers have been received yet or they do not match the filters."
+    },
+    "row": {
+      "askingPrice": "Asking price",
+      "belowMin": "below min.",
+      "view": "View",
+      "edit": "Edit",
+      "location": "Location {id}",
+      "boatFallback": "Boat #{id}"
+    },
+    "pagination": "Page {page} of {lastPage}",
+    "detail": {
+      "title": "Offer detail",
+      "titleWithId": "Offer #{id}",
+      "description": "Full information about this offer and its status.",
+      "loading": "Loading…",
+      "belowMin": "Below minimum bid",
+      "buyer": "Buyer",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "amounts": "Amounts",
+      "offer": "Offer",
+      "askingPrice": "Asking price",
+      "minBid": "Minimum bid",
+      "counterOffer": "Counter-offer",
+      "boatLocation": "Boat & location",
+      "boat": "Boat",
+      "location": "Location",
+      "buyerMessage": "Buyer message",
+      "seller": "Seller",
+      "noSeller": "No seller linked",
+      "notifiedOn": "Sent on {date}",
+      "notifySeller": "Notify seller",
+      "timeline": "Timeline",
+      "received": "Offer received — {date}",
+      "sentToSeller": "Sent to seller — {date}",
+      "sellerResponded": "Seller responded ({status}) — {date}",
+      "editBtn": "Edit",
+      "viewChat": "View chat",
+      "emailSeller": "Email seller",
+      "statusAccepted": "Accepted",
+      "statusRejected": "Rejected",
+      "statusWithdrawn": "Withdrawn"
+    }
   }
 }
