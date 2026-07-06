@@ -1763,68 +1763,68 @@
     "createFirstBoat": "Créer votre premier bateau",
     "description": "Les réponses iDIN, iDEAL 0.01 et KYC du vendeur créent une vérification de profil réutilisable valable 90 jours.",
     "steps": {
-      "profile": "Profiel",
-      "payment": "Betaling",
-      "contract": "Contract",
-      "verification": "Verificatie",
+      "profile": "Profil",
+      "payment": "Paiement",
+      "contract": "Contrat",
+      "verification": "Vérification",
       "kyc": "KYC",
-      "signing": "Ondertekening"
+      "signing": "Signature"
     },
     "flow": {
       "stepCounter": "Étape {current} sur {total}"
     },
     "summary": {
       "currentStatus": "Statut actuel : {value}",
-      "nextStep": "Volgende stap: {value}",
+      "nextStep": "Étape suivante : {value}",
       "canPublish": "Publication du bateau possible : {value}",
-      "validUntil": "Geldig tot: {value}",
-      "complete": "Voltooid",
-      "inProgress": "In behandeling",
-      "pending": "In afwachting",
-      "yes": "Ja",
-      "no": "Nee"
+      "validUntil": "Valable jusqu'au : {value}",
+      "complete": "Terminé",
+      "inProgress": "En cours",
+      "pending": "En attente",
+      "yes": "Oui",
+      "no": "Non"
     },
     "blockersTitle": "Indicateurs de conformité bloquants",
     "sellerTypes": {
       "private": "Particulier",
-      "business": "Zakelijk"
+      "business": "Professionnel"
     },
     "fields": {
-      "sellerType": "Verkopertype",
-      "fullName": "Volledige naam",
+      "sellerType": "Type de vendeur",
+      "fullName": "Nom complet",
       "email": "E-mail",
-      "phone": "Telefoon",
-      "addressLine1": "Adresregel 1",
-      "addressLine2": "Adresregel 2",
-      "city": "Stad",
+      "phone": "Téléphone",
+      "addressLine1": "Adresse ligne 1",
+      "addressLine2": "Adresse ligne 2",
+      "city": "Ville",
       "state": "État / province",
-      "postalCode": "Postcode",
-      "country": "Landcode",
-      "birthDate": "Geboortedatum",
+      "postalCode": "Code postal",
+      "country": "Code pays",
+      "birthDate": "Date de naissance",
       "iban": "IBAN",
-      "companyName": "Bedrijfsnaam",
-      "kvkNumber": "KvK nummer"
+      "companyName": "Nom de l'entreprise",
+      "kvkNumber": "Numéro KvK"
     },
     "actions": {
       "saveProfile": "Sauvegarder le profil et continuer",
-      "saving": "Opslaan...",
-      "opening": "Openen...",
-      "submitting": "Versturen...",
-      "refresh": "Status vernieuwen"
+      "saving": "Enregistrement...",
+      "opening": "Ouverture...",
+      "submitting": "Envoi...",
+      "refresh": "Actualiser le statut"
     },
     "toasts": {
-      "load": "Kon verkoper onboarding niet laden.",
-      "questionsLoad": "Kon KYC vragen niet laden.",
-      "profileSaved": "Verkoper profiel opgeslagen.",
-      "profileSaveError": "Kon profiel niet opslaan.",
-      "noSignhostRedirect": "Geen Signhost redirect URL ontvangen.",
-      "signhostError": "Kon Signhost flow niet voortzetten.",
-      "noPaymentRedirect": "Geen Mollie checkout URL ontvangen.",
-      "paymentError": "Kon betaalflow niet starten.",
-      "contractGenerated": "Contract gegenereerd.",
-      "contractError": "Kon contract niet genereren.",
-      "kycSubmitted": "KYC antwoorden verstuurd.",
-      "kycError": "Kon KYC antwoorden niet versturen."
+      "load": "Impossible de charger l'intégration du vendeur.",
+      "questionsLoad": "Impossible de charger les questions KYC.",
+      "profileSaved": "Profil du vendeur enregistré.",
+      "profileSaveError": "Impossible d'enregistrer le profil.",
+      "noSignhostRedirect": "Aucune URL de redirection Signhost reçue.",
+      "signhostError": "Impossible de poursuivre le flux Signhost.",
+      "noPaymentRedirect": "Aucune URL de paiement Mollie reçue.",
+      "paymentError": "Impossible de démarrer le flux de paiement.",
+      "contractGenerated": "Contrat généré.",
+      "contractError": "Impossible de générer le contrat.",
+      "kycSubmitted": "Réponses KYC envoyées.",
+      "kycError": "Impossible d'envoyer les réponses KYC."
     },
     "loading": "Chargement de l'intégration du vendeur...",
     "sections": {
@@ -1835,7 +1835,7 @@
       "contract": {
         "title": "Paiement reçu",
         "description": "Votre paiement a été traité avec succès. Nous pouvons maintenant générer votre contrat.",
-        "generating": "Genereren...",
+        "generating": "Génération...",
         "action": "Générer le contrat"
       },
       "verification": {
@@ -1844,10 +1844,10 @@
         "action": "Démarrer la vérification dans Signhost"
       },
       "kyc": {
-        "action": "Antwoorden versturen"
+        "action": "Envoyer les réponses"
       },
       "signing": {
-        "title": "Contract ondertekenen",
+        "title": "Signer le contrat",
         "description": "Votre vérification est terminée. Signez maintenant le contrat pour finaliser votre intégration.",
         "action": "Signer dans Signhost"
       },
@@ -1866,47 +1866,47 @@
     "title": "Finaliser la vérification de l'acheteur",
     "description": "Les réponses iDIN, iDEAL 0.01 et KYC de l'acheteur sont stockées sur votre profil et peuvent être réutilisées pour de futurs essais et transactions jusqu'à l'expiration de la fenêtre de validité de 90 jours.",
     "steps": {
-      "profile": "Profiel",
-      "verification": "Verificatie",
+      "profile": "Profil",
+      "verification": "Vérification",
       "kyc": "KYC"
     },
     "flow": {
       "stepCounter": "Étape {current} sur {total}"
     },
     "statusValues": {
-      "created": "Aangemaakt",
+      "created": "Créé",
       "profileCompleted": "Profil complété",
       "signhostVerificationStarted": "Vérification démarrée",
-      "idinCompleted": "iDIN voltooid",
+      "idinCompleted": "iDIN terminé",
       "idealCompleted": "iDEAL 0.01 complété",
-      "kycPending": "KYC in afwachting",
-      "kycCompleted": "KYC voltooid",
-      "manualReview": "Handmatige beoordeling",
-      "approved": "Goedgekeurd",
-      "rejected": "Afgewezen"
+      "kycPending": "KYC en attente",
+      "kycCompleted": "KYC terminé",
+      "manualReview": "Examen manuel",
+      "approved": "Approuvé",
+      "rejected": "Rejeté"
     },
     "providerStatusValues": {
-      "pending": "In afwachting",
-      "completed": "Voltooid",
-      "rejected": "Afgewezen",
-      "expired": "Verlopen",
-      "cancelled": "Geannuleerd"
+      "pending": "En attente",
+      "completed": "Terminé",
+      "rejected": "Rejeté",
+      "expired": "Expiré",
+      "cancelled": "Annulé"
     },
     "fields": {
-      "buyerType": "Koper type",
-      "fullName": "Volledige naam",
+      "buyerType": "Type d'acheteur",
+      "fullName": "Nom complet",
       "email": "E-mail",
-      "phone": "Telefoon",
-      "addressLine1": "Adresregel 1",
-      "addressLine2": "Adresregel 2",
-      "city": "Stad",
+      "phone": "Téléphone",
+      "addressLine1": "Adresse ligne 1",
+      "addressLine2": "Adresse ligne 2",
+      "city": "Ville",
       "state": "État / province",
-      "postalCode": "Postcode",
-      "country": "Landcode",
-      "birthDate": "Geboortedatum",
+      "postalCode": "Code postal",
+      "country": "Code pays",
+      "birthDate": "Date de naissance",
       "iban": "IBAN",
-      "companyName": "Bedrijfsnaam",
-      "kvkNumber": "KvK nummer"
+      "companyName": "Nom de l'entreprise",
+      "kvkNumber": "Numéro KvK"
     },
     "actions": {
       "saveProfile": "Enregistrer le profil et continuer",

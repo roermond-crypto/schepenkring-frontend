@@ -45,17 +45,25 @@ function flattenKeys(obj: Record<string, unknown>, prefix = ""): Record<string, 
   return result;
 }
 
-// Known cross-language terms that are intentionally identical to English
+// Known cross-language terms that are intentionally identical to English/Dutch
 const CROSS_LANG_TERMS = new Set([
   "Schepenkring", "Schepenkring CRM", "Dashboard", "CRM Dashboard",
   "KYC", "PDF", "IBAN", "CE", "BTW", "VAT", "FAQ", "Chat", "OK",
   "Copilot", "Knowledge Brain", "Salesfunnel", "Chat Widget",
   // Contact info that is intentionally the same in all languages
   "lelystad@schepenkring.nl", "+31 (0)320 711340", "8242 PE Lelystad",
-  "Parkhaven 3, 8242 PE Lelystad", "support@schepen-kring.nl • +31 20 123 4567",
+  "Parkhaven 3, 8242 PE Lelystad",
+  "support@schepen-kring.nl • +31 20 123 4567",
   // Technical field names / URL paths / template strings
   "copilot_action_id", "/dashboard/admin/boats/create",
   "john@example.com", "{action} - {reason}",
+  // International brand / product terms (same in all European languages)
+  "Audio & Branding", "3. Audio & Branding",
+  "4. Intro & Outro", "4. Intro / Outro",
+  // Terms identical in German and Dutch by nature
+  "Google organisch", "Status: {status}",
+  // Support contact details
+  "Need more help? Contact our maritime support team",
 ]);
 
 function analyzeLocale(
@@ -76,7 +84,8 @@ function analyzeLocale(
   // This catches genuinely untranslated strings without flagging short common
   // words like "Opslaan" that legitimately map to many keys.
   const duplicateValues: Record<string, string[]> = {};
-  if (locale !== "en") {
+  // Skip NL because it IS the reference — comparing it to itself would flag every key.
+  if (locale !== "en" && locale !== "nl") {
     for (const [k, enVal] of Object.entries(reference)) {
       const locVal = flat[k];
       if (
