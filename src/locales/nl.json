@@ -2480,6 +2480,10 @@
         "vat_document": "BTW-document ontbreekt"
       },
       "emailSentTitle": "Bevestiging verzonden",
+      "emailFailedTitle": "Bevestiging kon niet worden verzonden",
+      "emailFailedBody": "Controleer uw spammap of klik op 'Opnieuw proberen'.",
+      "emailResend": "Opnieuw proberen",
+      "emailResending": "Opnieuw verzenden…",
       "nextStepTitle": "Wat zijn de volgende stappen?",
       "step1Title": "Controleer uw e-mail",
       "step1Body": "U ontvangt een bevestiging met een link om uw aanmelding aan te vullen met extra foto's en documenten.",

@@ -66,7 +66,7 @@ interface ScoreData {
 }
 
 interface SubmitResponse {
-  intake: { id: number; status: string; intake_score: number; score: ScoreData; missing_items: ScoreData["missing"] };
+  intake: { id: number; status: string; intake_score: number; score: ScoreData; missing_items: ScoreData["missing"]; confirmation_sent: boolean };
   resume_token: string;
 }
 
@@ -122,6 +122,8 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
   const [resumeToken, setResumeToken] = useState<string | null>(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [emailSent, setEmailSent] = useState<boolean | null>(null);
+  const [resendingEmail, setResendingEmail] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
 
@@ -291,6 +293,7 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
         const json: SubmitResponse = await res.json();
         setScore(json.intake.score);
         setResumeToken(json.resume_token);
+        setEmailSent(json.intake.confirmation_sent ?? false);
         // Store intake data so onboarding step 1 can be pre-filled
         try {
           localStorage.setItem("boat_intake_prefill", JSON.stringify({
@@ -358,6 +361,18 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
         if (json.score) setScore(json.score as ScoreData);
       }
     } catch { /* silent */ } finally { setUploadingDocs(false); }
+  }
+
+  async function handleResendEmail() {
+    if (!resumeToken || resendingEmail) return;
+    setResendingEmail(true);
+    try {
+      const res = await fetch(`${API}/boat-intake/${resumeToken}/resend-confirmation`, { method: "POST" });
+      if (res.ok) {
+        const json = await res.json();
+        setEmailSent(json.confirmation_sent ?? false);
+      }
+    } catch { /* silent */ } finally { setResendingEmail(false); }
   }
 
   const scoreColor = (n: number) => n >= 70 ? "text-green-600" : n >= 50 ? "text-amber-600" : "text-red-600";
@@ -757,20 +772,46 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
                   <h2 className="text-2xl font-bold text-slate-900 mb-1">{s(t, "review.title")}</h2>
                 </div>
 
-                {/* Email confirmation notice */}
-                <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-2xl">
-                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-green-100 shrink-0">
-                    <Mail className="w-4 h-4 text-green-700" />
+                {/* Email confirmation notice — conditional on actual delivery */}
+                {emailSent === true ? (
+                  <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-2xl">
+                    <div className="flex items-center justify-center w-9 h-9 rounded-full bg-green-100 shrink-0">
+                      <Mail className="w-4 h-4 text-green-700" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-green-800">
+                        {s(t, "review.emailSentTitle", "Bevestiging verzonden")}
+                      </p>
+                      <p className="text-xs text-green-700 mt-0.5 leading-relaxed">
+                        {s(t, "review.confirm").replace("{email}", form.seller_email)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-green-800">
-                      {s(t, "review.emailSentTitle", "Bevestiging verzonden")}
-                    </p>
-                    <p className="text-xs text-green-700 mt-0.5 leading-relaxed">
-                      {s(t, "review.confirm").replace("{email}", form.seller_email)}
-                    </p>
+                ) : (
+                  <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                    <div className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-100 shrink-0">
+                      <Mail className="w-4 h-4 text-amber-700" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-amber-800">
+                        {s(t, "review.emailFailedTitle", "Bevestiging kon niet worden verzonden")}
+                      </p>
+                      <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+                        {s(t, "review.emailFailedBody", "Controleer uw spammap of probeer opnieuw.")}
+                      </p>
+                      {resumeToken && (
+                        <button
+                          onClick={handleResendEmail}
+                          disabled={resendingEmail}
+                          className="mt-2 text-xs font-bold text-amber-900 underline hover:no-underline disabled:opacity-50">
+                          {resendingEmail
+                            ? s(t, "review.emailResending", "Opnieuw verzenden…")
+                            : s(t, "review.emailResend", "Opnieuw proberen")}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Completeness score */}
                 {score && (

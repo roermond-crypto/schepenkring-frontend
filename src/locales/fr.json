@@ -2394,6 +2394,10 @@
         "vat_document": "Document TVA manquant"
       },
       "emailSentTitle": "Confirmation envoyée",
+      "emailFailedTitle": "La confirmation n'a pas pu être envoyée",
+      "emailFailedBody": "Veuillez vérifier votre dossier spam ou cliquer sur 'Réessayer'.",
+      "emailResend": "Réessayer",
+      "emailResending": "Envoi en cours…",
       "nextStepTitle": "Quelles sont les prochaines étapes ?",
       "step1Title": "Vérifiez votre e-mail",
       "step1Body": "Vous recevrez une confirmation avec un lien pour ajouter des photos et documents supplémentaires à votre annonce.",

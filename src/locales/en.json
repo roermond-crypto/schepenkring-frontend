@@ -2480,6 +2480,10 @@
         "vat_document": "VAT document missing"
       },
       "emailSentTitle": "Confirmation sent",
+      "emailFailedTitle": "Confirmation could not be delivered",
+      "emailFailedBody": "Please check your spam folder or click 'Try again' below.",
+      "emailResend": "Try again",
+      "emailResending": "Sending…",
       "nextStepTitle": "What happens next?",
       "step1Title": "Check your email",
       "step1Body": "You will receive a confirmation with a link to add more photos and documents to your listing.",

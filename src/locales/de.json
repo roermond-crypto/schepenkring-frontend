@@ -2480,6 +2480,10 @@
         "vat_document": "MwSt.-Dokument fehlt"
       },
       "emailSentTitle": "Bestätigung gesendet",
+      "emailFailedTitle": "Bestätigung konnte nicht zugestellt werden",
+      "emailFailedBody": "Bitte prüfen Sie Ihren Spam-Ordner oder klicken Sie auf 'Erneut versuchen'.",
+      "emailResend": "Erneut versuchen",
+      "emailResending": "Wird gesendet…",
       "nextStepTitle": "Was sind die nächsten Schritte?",
       "step1Title": "Überprüfen Sie Ihre E-Mail",
       "step1Body": "Sie erhalten eine Bestätigung mit einem Link, um Ihrer Anmeldung weitere Fotos und Dokumente hinzuzufügen.",
