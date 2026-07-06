@@ -215,7 +215,7 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
 
   // Pre-fill Step 0 from logged-in user profile (if already authenticated)
   useEffect(() => {
-    getMe().then((user) => {
+    getMe().then(({ data: user }) => {
       setForm((prev) => ({
         ...prev,
         seller_first_name: prev.seller_first_name || user.first_name || "",
