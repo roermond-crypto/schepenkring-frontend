@@ -2479,11 +2479,19 @@
         "ce_certificate": "CE-certificaat ontbreekt",
         "vat_document": "BTW-document ontbreekt"
       },
+      "emailSentTitle": "Bevestiging verzonden",
       "nextStepTitle": "Wat zijn de volgende stappen?",
+      "step1Title": "Controleer uw e-mail",
+      "step1Body": "U ontvangt een bevestiging met een link om uw aanmelding aan te vullen met extra foto's en documenten.",
+      "step2Title": "Maak een account aan",
       "nextStepRegister": "Maak een account aan en uw profiel wordt automatisch ingevuld met de gegevens die u zojuist heeft ingevoerd.",
+      "step3Title": "Onze makelaar neemt contact op",
+      "step3Body": "Wij beoordelen uw aanmelding en nemen binnen één werkdag contact met u op.",
       "registerBtn": "Account aanmaken & doorgaan",
       "loginBtn": "Al een account? Inloggen",
-      "addDetailsBtn": "Meer foto's & documenten toevoegen"
+      "addDetailsBtn": "Toevoegen",
+      "addDocTitle": "Extra foto's & documenten toevoegen",
+      "addDocBody": "Voeg CE-certificaat, factuur, onderhoudsdocumenten of extra foto's toe via de link in uw e-mail."
     },
     "nav_buttons": {
       "prev": "← Vorige",
@@ -2502,8 +2510,10 @@
     "footer": "Schepenkring — De specialist in scheepsverkoop",
     "newBoatCta": "Nieuwe boot aanmelden",
     "whatsapp": {
+      "name": "Schepenkring Makelaars",
       "status": "Online — wij reageren binnen 1 werkdag",
-      "cta": "Chat met ons"
+      "cta": "Chat met ons",
+      "ctaShort": "Chat"
     }
   },
   "KycQuestions": {

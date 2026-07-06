@@ -2479,11 +2479,19 @@
         "ce_certificate": "CE certificate missing",
         "vat_document": "VAT document missing"
       },
+      "emailSentTitle": "Confirmation sent",
       "nextStepTitle": "What happens next?",
+      "step1Title": "Check your email",
+      "step1Body": "You will receive a confirmation with a link to add more photos and documents to your listing.",
+      "step2Title": "Create your account",
       "nextStepRegister": "Create your account and your profile will be pre-filled with the details you just entered.",
+      "step3Title": "Our broker will contact you",
+      "step3Body": "We will review your submission and contact you within one business day.",
       "registerBtn": "Create account & continue",
       "loginBtn": "Already have an account? Log in",
-      "addDetailsBtn": "Add more photos & documents"
+      "addDetailsBtn": "Add",
+      "addDocTitle": "Add more photos & documents",
+      "addDocBody": "Add your CE certificate, invoice, maintenance records or extra photos via the link in your email."
     },
     "nav_buttons": {
       "prev": "← Back",
@@ -2502,8 +2510,10 @@
     "footer": "Schepenkring — The specialist in boat sales",
     "newBoatCta": "Register new boat",
     "whatsapp": {
+      "name": "Schepenkring Makelaars",
       "status": "Online — we respond within 1 business day",
-      "cta": "Chat with us"
+      "cta": "Chat with us",
+      "ctaShort": "Chat"
     }
   },
   "KycQuestions": {

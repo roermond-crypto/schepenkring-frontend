@@ -2479,11 +2479,19 @@
         "ce_certificate": "CE-Zertifikat fehlt",
         "vat_document": "MwSt.-Dokument fehlt"
       },
+      "emailSentTitle": "Bestätigung gesendet",
       "nextStepTitle": "Was sind die nächsten Schritte?",
+      "step1Title": "Überprüfen Sie Ihre E-Mail",
+      "step1Body": "Sie erhalten eine Bestätigung mit einem Link, um Ihrer Anmeldung weitere Fotos und Dokumente hinzuzufügen.",
+      "step2Title": "Erstellen Sie ein Konto",
       "nextStepRegister": "Erstellen Sie ein Konto und Ihr Profil wird automatisch mit den soeben eingegebenen Daten ausgefüllt.",
+      "step3Title": "Unser Makler nimmt Kontakt auf",
+      "step3Body": "Wir prüfen Ihre Anmeldung und melden uns innerhalb eines Werktages bei Ihnen.",
       "registerBtn": "Konto erstellen & fortfahren",
       "loginBtn": "Bereits ein Konto? Einloggen",
-      "addDetailsBtn": "Mehr Fotos & Dokumente hinzufügen"
+      "addDetailsBtn": "Hinzufügen",
+      "addDocTitle": "Weitere Fotos & Dokumente hinzufügen",
+      "addDocBody": "Fügen Sie Ihr CE-Zertifikat, Ihre Rechnung, Wartungsunterlagen oder zusätzliche Fotos über den Link in Ihrer E-Mail hinzu."
     },
     "nav_buttons": {
       "prev": "← Zurück",
@@ -2502,8 +2510,10 @@
     "footer": "Schepenkring — Der Spezialist für Bootsverkauf",
     "newBoatCta": "Neues Boot anmelden",
     "whatsapp": {
+      "name": "Schepenkring Makelaars",
       "status": "Online — wir antworten innerhalb 1 Werktag",
-      "cta": "Schreiben Sie uns"
+      "cta": "Schreiben Sie uns",
+      "ctaShort": "Chat"
     }
   },
   "KycQuestions": {

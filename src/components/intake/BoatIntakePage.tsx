@@ -17,7 +17,9 @@ import {
   X,
   MessageCircle,
   LogIn,
+  Mail,
 } from "lucide-react";
+import { getMe } from "@/lib/api/account";
 import { PublicHeader } from "@/components/common/PublicHeader";
 import type { AppLocale } from "@/lib/i18n";
 
@@ -211,6 +213,24 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
     return () => { active = false; };
   }, []);
 
+  // Pre-fill Step 0 from logged-in user profile (if already authenticated)
+  useEffect(() => {
+    getMe().then((user) => {
+      setForm((prev) => ({
+        ...prev,
+        seller_first_name: prev.seller_first_name || user.first_name || "",
+        seller_last_name: prev.seller_last_name || user.last_name || "",
+        seller_email: prev.seller_email || user.email || "",
+        seller_phone: prev.seller_phone || user.phone || "",
+        seller_address: prev.seller_address || user.address_line1 || "",
+        seller_postal_code: prev.seller_postal_code || user.postal_code || "",
+        seller_city: prev.seller_city || user.city || "",
+        seller_country: prev.seller_country || user.country || "NL",
+        location_id: prev.location_id || user.client_location_id || user.location_id || "",
+      }));
+    }).catch(() => { /* not logged in — ignore */ });
+  }, []);
+
   function setField(key: keyof IntakeForm, value: string | number) {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => { const n = { ...prev }; delete n[key]; return n; });
@@ -365,24 +385,43 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
         showBootAanmelden={false}
       />
 
-      {/* ── WhatsApp-style contact bar ── */}
-      <div className="bg-[#25D366] text-white">
-        <div className="max-w-7xl mx-auto px-5 py-2.5 flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 shrink-0">
-            <MessageCircle className="w-4 h-4 text-white" />
+      {/* ── WhatsApp-style chat header ── */}
+      <a
+        href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "31611888904"}`}
+        target="_blank" rel="noopener noreferrer"
+        className="block bg-[#075E54] hover:bg-[#064e47] transition-colors cursor-pointer">
+        <div className="max-w-3xl mx-auto px-4 sm:px-5 py-3 flex items-center gap-3">
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            <div className="w-11 h-11 rounded-full bg-[#25D366] flex items-center justify-center overflow-hidden border-2 border-white/20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/schepenkring-logo.png"
+                alt="Schepenkring"
+                className="w-11 h-11 object-cover"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.nextSibling as HTMLElement).style.display = "flex"; }}
+              />
+              <span className="text-white font-black text-sm hidden items-center justify-center w-full h-full">SK</span>
+            </div>
+            <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#25D366] border-2 border-[#075E54]" />
           </div>
+          {/* Name + status */}
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold leading-none">Schepenkring</p>
-            <p className="text-[10px] text-white/80 mt-0.5">{s(t, "whatsapp.status", "Online — wij reageren binnen 1 werkdag")}</p>
+            <p className="text-white text-[15px] font-bold leading-tight truncate">
+              {s(t, "whatsapp.name", "Schepenkring Makelaars")}
+            </p>
+            <p className="text-[#A8D5B4] text-xs mt-0.5 truncate">
+              {s(t, "whatsapp.status", "Online — wij reageren binnen 1 werkdag")}
+            </p>
           </div>
-          <a
-            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "31611888904"}`}
-            target="_blank" rel="noopener noreferrer"
-            className="shrink-0 text-[11px] font-bold bg-white/20 hover:bg-white/30 transition-colors px-3 py-1.5 rounded-full">
-            {s(t, "whatsapp.cta", "Chat met ons")}
-          </a>
+          {/* Chat CTA */}
+          <div className="shrink-0 flex items-center gap-2 bg-[#25D366] hover:bg-[#1ebe59] transition-colors text-white text-xs font-bold px-3 py-2 rounded-full">
+            <MessageCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">{s(t, "whatsapp.cta", "Chat met ons")}</span>
+            <span className="sm:hidden">{s(t, "whatsapp.ctaShort", "Chat")}</span>
+          </div>
         </div>
-      </div>
+      </a>
 
       {/* ── Hero — boat image with dark overlay ── */}
       <div className="relative bg-[#003566] text-white pb-20 pt-12 sm:pt-16 overflow-hidden">
@@ -708,17 +747,32 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
 
             {/* ── Step 3: Review ── */}
             {step === 3 && (
-              <div className="space-y-6">
+              <div className="space-y-5">
+
+                {/* Success header */}
                 <div className="text-center">
                   <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-green-50 mb-4">
                     <Check className="w-7 h-7 sm:w-8 sm:h-8 text-green-500" />
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">{s(t, "review.title")}</h2>
-                  <p className="text-slate-500 text-sm">
-                    {s(t, "review.confirm").replace("{email}", form.seller_email)}
-                  </p>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-1">{s(t, "review.title")}</h2>
                 </div>
 
+                {/* Email confirmation notice */}
+                <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-2xl">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-green-100 shrink-0">
+                    <Mail className="w-4 h-4 text-green-700" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-green-800">
+                      {s(t, "review.emailSentTitle", "Bevestiging verzonden")}
+                    </p>
+                    <p className="text-xs text-green-700 mt-0.5 leading-relaxed">
+                      {s(t, "review.confirm").replace("{email}", form.seller_email)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Completeness score */}
                 {score && (
                   <div className="border border-slate-200 rounded-2xl p-4 sm:p-5 bg-slate-50">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
@@ -766,11 +820,45 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
                   </div>
                 )}
 
-                {/* ── Next steps ── */}
-                <div className="border border-[#003566]/20 rounded-2xl p-4 sm:p-5 bg-[#003566]/5">
-                  <p className="text-xs font-bold text-[#003566] uppercase tracking-wider mb-3">{s(t, "review.nextStepTitle")}</p>
-                  <p className="text-sm text-slate-600 mb-4">{s(t, "review.nextStepRegister")}</p>
-                  <div className="flex flex-col gap-3">
+                {/* ── Numbered next steps ── */}
+                <div className="border border-[#003566]/20 rounded-2xl overflow-hidden">
+                  <div className="px-4 sm:px-5 py-3 bg-[#003566]">
+                    <p className="text-xs font-bold text-white uppercase tracking-wider">
+                      {s(t, "review.nextStepTitle")}
+                    </p>
+                  </div>
+                  <div className="divide-y divide-slate-100 bg-white">
+                    {[
+                      {
+                        num: "1",
+                        title: s(t, "review.step1Title", "Controleer uw e-mail"),
+                        body: s(t, "review.step1Body", "U ontvangt een bevestiging met een link om uw aanmelding aan te vullen met extra foto's en documenten."),
+                      },
+                      {
+                        num: "2",
+                        title: s(t, "review.step2Title", "Maak een account aan"),
+                        body: s(t, "review.nextStepRegister"),
+                      },
+                      {
+                        num: "3",
+                        title: s(t, "review.step3Title", "Onze makelaar neemt contact op"),
+                        body: s(t, "review.step3Body", "Wij beoordelen uw aanmelding en nemen binnen één werkdag contact met u op."),
+                      },
+                    ].map(({ num, title, body }) => (
+                      <div key={num} className="flex items-start gap-4 p-4">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-full bg-[#003566] text-white text-xs font-black shrink-0 mt-0.5">
+                          {num}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{title}</p>
+                          <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{body}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Register / login CTA */}
+                  <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-100 flex flex-col gap-2.5">
                     <Link
                       href={`/${locale}/auth?mode=register`}
                       className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full bg-[#C8102E] text-white text-sm font-bold hover:bg-[#a50d25] transition-colors">
@@ -785,22 +873,36 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
                   </div>
                 </div>
 
+                {/* Upload more docs / photos (resume link) */}
                 {resumeToken && (
-                  <div className="text-center">
+                  <div className="border border-slate-200 rounded-2xl p-4 flex items-start gap-3 bg-white">
+                    <div className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 shrink-0">
+                      <Upload className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800">
+                        {s(t, "review.addDocTitle", "Extra foto's & documenten toevoegen")}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {s(t, "review.addDocBody", "Voeg CE-certificaat, factuur, onderhoudsdocumenten of extra foto's toe via de link in uw e-mail.")}
+                      </p>
+                    </div>
                     <a
                       href={`/${locale}/boot-aanmelden/aanvullen?token=${resumeToken}`}
-                      className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#003566] transition-colors">
-                      <Upload className="w-4 h-4" />
+                      className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#003566] text-white text-xs font-bold hover:bg-[#002a52] transition-colors">
+                      <Upload className="w-3.5 h-3.5" />
                       {s(t, "review.addDetailsBtn")}
                     </a>
                   </div>
                 )}
 
+                {/* View supply footer */}
                 <div className="text-center border-t border-slate-100 pt-4">
                   <p className="text-sm text-slate-500 mb-3">{s(t, "review.outro")}</p>
                   <a href="https://www.schepenkring.nl/aanbod-boten/"
-                    className="text-sm text-[#003566] font-semibold hover:underline">
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#003566] text-white text-sm font-bold hover:bg-[#002a52] transition-colors">
                     {s(t, "review.viewSupply")}
+                    <ChevronRight className="w-4 h-4" />
                   </a>
                 </div>
               </div>
