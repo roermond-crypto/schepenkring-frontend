@@ -8323,93 +8323,21 @@ function YachtEditorInner() {
         },
       );
 
-      const previewQueueByName = new Map<string, string[]>();
-      fileArray.forEach((file, index) => {
-        const previewUrl = optimisticImages[index]?.client_preview_url;
-        if (!previewUrl) return;
-        const queue = previewQueueByName.get(file.name) || [];
-        queue.push(previewUrl);
-        previewQueueByName.set(file.name, queue);
-      });
-
       if (uploadedImages.length > 0) {
-        const hydratedUploadedImages = uploadedImages.map((image) => {
-          const previewQueue =
-            typeof image.original_name === "string"
-              ? previewQueueByName.get(image.original_name)
-              : undefined;
-          const previewUrl = previewQueue?.shift() || null;
-
-          if (!previewUrl) {
-            return image;
-          }
-
-          return {
-            ...image,
-            client_preview_url: previewUrl,
-          };
-        });
-
-        pipeline.setImagesDirectly?.({
-          images: [...previousImages, ...hydratedUploadedImages],
-          stats: {
-            ...previousStats,
-            total: previousStats.total + hydratedUploadedImages.length,
-            approved:
-              previousStats.approved +
-              hydratedUploadedImages.filter(
-                (image) => image.status === "approved",
-              ).length,
-            processing:
-              previousStats.processing +
-              hydratedUploadedImages.filter(
-                (image) =>
-                  image.status === "processing" ||
-                  image.enhancement_method === "pending",
-              ).length,
-            ready:
-              previousStats.ready +
-              hydratedUploadedImages.filter(
-                (image) => image.status === "ready_for_review",
-              ).length,
-            min_required: previousStats.min_required,
-          },
-          step2_unlocked:
-            previousStep2Unlocked ||
-            hydratedUploadedImages.some((image) => image.status === "approved"),
-        });
-
-        const uploadedCountsByName = new Map<string, number>();
-        hydratedUploadedImages.forEach((image) => {
-          const key = normalizePipelineImageName(image.original_name);
-          uploadedCountsByName.set(
-            key,
-            (uploadedCountsByName.get(key) || 0) + 1,
-          );
-        });
-
+        // Drop optimistic previews so the refreshImages() response can replace
+        // them cleanly without a double-image flash.
         setPendingUploadPreviews((previous) =>
-          previous.filter((image) => {
-            if (
-              optimisticImages.some((optimistic) => optimistic.id === image.id)
-            ) {
-              return false;
-            }
-
-            const key = normalizePipelineImageName(image.original_name);
-            const availableCount = uploadedCountsByName.get(key) || 0;
-            if (availableCount <= 0) {
-              return true;
-            }
-
-            uploadedCountsByName.set(key, availableCount - 1);
-            return false;
-          }),
+          previous.filter(
+            (image) =>
+              !optimisticImages.some((optimistic) => optimistic.id === image.id),
+          ),
         );
 
-        // Sync with backend to guarantee images appear without a page refresh.
-        // The localWriteSeqRef counter is already at 2 (bumped twice by
-        // setImagesDirectly above), so this GET response will be accepted.
+        // Fetch the authoritative image list from the backend.
+        // AbortController inside refreshImages() cancels any stale in-flight
+        // GET (e.g. the initial-mount request) so only this response commits.
+        // setIsUploading(false) runs in `finally` after this resolves, so the
+        // loading spinner stays visible until images are ready to display.
         await pipeline.refreshImages();
       }
 

@@ -63,7 +63,7 @@ interface UseImagePipelineReturn {
     setImagesDirectly?: (data: { images: PipelineImage[]; stats: PipelineStats; step2_unlocked: boolean }) => void;
 }
 
-const POLL_INTERVAL = 5000; // 5 seconds — lower API pressure in production
+const POLL_INTERVAL = 5000;
 
 export function useImagePipeline(
     yachtId: string | number | null,
@@ -82,33 +82,49 @@ export function useImagePipeline(
     const [isUploading, setIsUploading] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const pollRef = useRef<NodeJS.Timeout | null>(null);
-    // Monotonic counter: bumped every time setImagesDirectly writes local state.
-    // refreshImages only commits its response if the counter hasn't moved since
-    // the request was dispatched, preventing stale GET responses from wiping a
-    // concurrent optimistic/upload update.
-    const localWriteSeqRef = useRef(0);
+
+    // Each refreshImages() call cancels the previous in-flight request via this
+    // ref. Only the most recently dispatched GET ever commits its response,
+    // which prevents stale responses (e.g. the initial mount GET) from wiping
+    // images that were just uploaded.
+    const refreshAbortRef = useRef<AbortController | null>(null);
 
     const isProcessing = stats.processing > 0;
 
-    // Fetch images from backend
     const refreshImages = useCallback(async () => {
         if (!yachtId || yachtId === "new") return;
 
-        // Snapshot the counter at dispatch time.
-        const seqAtDispatch = localWriteSeqRef.current;
+        // Cancel any in-flight request — only the latest response should commit.
+        if (refreshAbortRef.current) {
+            refreshAbortRef.current.abort();
+        }
+        const controller = new AbortController();
+        refreshAbortRef.current = controller;
 
         try {
-            const res = await api.get(`/yachts/${yachtId}/images`);
+            const res = await api.get(`/yachts/${yachtId}/images`, {
+                signal: controller.signal,
+            });
             const data = res.data;
-
-            // Discard if a local write happened while we were in-flight.
-            if (localWriteSeqRef.current !== seqAtDispatch) return;
-
             setImages(data.images || []);
             setStats(data.stats || { total: 0, approved: 0, processing: 0, ready: 0, min_required: 1 });
             setIsStep2Unlocked(data.step2_unlocked || false);
-        } catch (err) {
+        } catch (err: any) {
+            // Axios throws ERR_CANCELED / CanceledError when an AbortController
+            // aborts a request. Silence those — the newer request will commit.
+            if (
+                err?.code === "ERR_CANCELED" ||
+                err?.name === "CanceledError" ||
+                err?.name === "AbortError"
+            ) {
+                return;
+            }
             console.error("[ImagePipeline] Failed to fetch images:", err);
+        } finally {
+            // Only clear the ref if we are still the active controller.
+            if (refreshAbortRef.current === controller) {
+                refreshAbortRef.current = null;
+            }
         }
     }, [yachtId]);
 
@@ -169,22 +185,18 @@ export function useImagePipeline(
         [yachtId]
     );
 
-    // Approve a single image
     const approveImage = useCallback(
         async (imageId: number) => {
             if (!yachtId) return;
-
             await api.post(`/yachts/${yachtId}/images/${imageId}/approve`);
             await refreshImages();
         },
         [yachtId, refreshImages]
     );
 
-    // Delete a single image
     const deleteImage = useCallback(
         async (imageId: number) => {
             if (!yachtId) return;
-
             await api.post(`/yachts/${yachtId}/images/${imageId}/delete`);
             await refreshImages();
         },
@@ -214,12 +226,9 @@ export function useImagePipeline(
         [yachtId, refreshImages]
     );
 
-    // Toggle keep original
-    // Toggle keep original
     const toggleKeepOriginal = useCallback(
         async (imageId: number) => {
             if (!yachtId) return;
-
             await api.post(`/yachts/${yachtId}/images/${imageId}/toggle-keep-original`);
             await refreshImages();
         },
@@ -229,7 +238,6 @@ export function useImagePipeline(
     const reorderImages = useCallback(
         async (imageIds: number[]) => {
             if (!yachtId) return;
-
             await api.post(`/yachts/${yachtId}/images/reorder`, {
                 image_ids: imageIds,
             });
@@ -260,7 +268,6 @@ export function useImagePipeline(
         return nextImages;
     }, [yachtId]);
 
-    // Approve all ready images
     const approveAll = useCallback(async () => {
         if (!yachtId) return { step2_unlocked: false };
 
@@ -269,10 +276,10 @@ export function useImagePipeline(
         return { step2_unlocked: res.data.step2_unlocked || false };
     }, [yachtId, refreshImages]);
 
-    // Direct injection for bypassing stale closures after creation.
-    // Bumps localWriteSeqRef so any in-flight refreshImages() response is discarded.
+    // Direct state injection used for optimistic updates during upload.
+    // Does NOT cancel in-flight refreshImages() requests — call refreshImages()
+    // explicitly after upload completes to get the authoritative backend state.
     const setImagesDirectly = useCallback((data: { images: PipelineImage[]; stats: PipelineStats; step2_unlocked: boolean }) => {
-        localWriteSeqRef.current += 1;
         setImages(data.images || []);
         if (data.stats) setStats(data.stats);
         if (data.step2_unlocked !== undefined) setIsStep2Unlocked(data.step2_unlocked);
