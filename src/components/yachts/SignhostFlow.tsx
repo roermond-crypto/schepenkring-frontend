@@ -1870,6 +1870,14 @@ export function SignhostFlow({
   const [isGenerating, setIsGenerating] = useState(false);
   const [contractTemplateKey, setContractTemplateKey] =
     useState<ContractTemplateKey>("sale_agreement");
+
+  // DB contract templates for this location
+  const [dbContractTemplates, setDbContractTemplates] = useState<
+    Array<{ id: number; name: string; type: string; is_default: boolean }>
+  >([]);
+  // selectedDbTemplateId = null means "use legacy jsPDF rendering"
+  const [selectedDbTemplateId, setSelectedDbTemplateId] = useState<number | null>(null);
+
   const [sellerContacts, setSellerContacts] = useState<ContractPartyRecord[]>([]);
   const [buyerContacts, setBuyerContacts] = useState<ContractPartyRecord[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
@@ -1992,6 +2000,42 @@ export function SignhostFlow({
       active = false;
     };
   }, [canManageContract, linkedClientUserId, role]);
+
+  // Load DB contract templates for the current location
+  useEffect(() => {
+    if (!canManageContract) {
+      setDbContractTemplates([]);
+      return;
+    }
+
+    let active = true;
+
+    void api.get("/admin/contract-templates", {
+      params: {
+        ...(activeLocationId ? { location_id: activeLocationId } : {}),
+        per_page: 100,
+      },
+    }).then((res) => {
+      if (!active) return;
+      const raw = res.data;
+      const items: Array<{ id: number; name: string; type: string; is_default: boolean }> =
+        Array.isArray(raw) ? raw
+          : Array.isArray((raw as { data?: unknown })?.data) ? (raw as { data: typeof items }).data
+          : [];
+      setDbContractTemplates(items);
+      // Auto-select the default template for this location if none selected yet
+      if (selectedDbTemplateId === null) {
+        const def = items.find((t) => t.is_default);
+        if (def) setSelectedDbTemplateId(def.id);
+      }
+    }).catch(() => {
+      if (!active) return;
+      setDbContractTemplates([]);
+    });
+
+    return () => { active = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canManageContract, activeLocationId]);
 
   useEffect(() => {
     if (!canManageContract) {
@@ -3172,17 +3216,23 @@ export function SignhostFlow({
             )
           : undefined;
 
+      const selectedDbTemplate = selectedDbTemplateId
+        ? dbContractTemplates.find((t) => t.id === selectedDbTemplateId) ?? null
+        : null;
+
       const res = await signhostApi.generateYachtContract(yachtId, {
         location_id: activeLocationId,
         title: `${
           contractTemplateKey === "escrow_form"
             ? "Escrow account service form"
-            : previewCopy.title
+            : selectedDbTemplate?.name ?? previewCopy.title
         } - ${draft.vesselName || yachtName}`,
         send_to_signhost: shouldSendToSignhost,
         recipients: shouldSendToSignhost ? resolvedRecipients : undefined,
         reference: `vessel-${yachtId}-contract`,
         idempotencyKey: `contract_${yachtId}_${Date.now()}`,
+        // Pass the DB template ID so the backend renders real HTML → PDF via DomPDF
+        contract_template_id: selectedDbTemplateId ?? undefined,
         metadata: {
           boat_name: draft.vesselName || yachtName,
           contract_language: draft.language,
@@ -3198,6 +3248,8 @@ export function SignhostFlow({
           agreement_document_included: true,
           contract_template_key: contractTemplateKey,
           contract_template: contractTemplateKey,
+          contract_template_id: selectedDbTemplateId ?? null,
+          contract_template_name: selectedDbTemplate?.name ?? null,
           contract_template_payload: draft,
           contract_render_url: contractRenderUrl,
           contract_render_language:
@@ -3479,9 +3531,32 @@ export function SignhostFlow({
               </span>
             ) : null}
           </div>
-          <select value={contractTemplateKey} onChange={(e) => setContractTemplateKey(e.target.value as ContractTemplateKey)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-            {contractTemplateOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
+          {/* DB contract template selector */}
+          {dbContractTemplates.length > 0 ? (
+            <select
+              value={selectedDbTemplateId ?? ""}
+              onChange={(e) => setSelectedDbTemplateId(e.target.value ? Number(e.target.value) : null)}
+              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            >
+              <option value="">— Kies contractsjabloon —</option>
+              {dbContractTemplates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}{t.is_default ? " (standaard)" : ""}
+                </option>
+              ))}
+              <option value="">── Oud: Escrow-formulier ──</option>
+            </select>
+          ) : (
+            <select
+              value={contractTemplateKey}
+              onChange={(e) => setContractTemplateKey(e.target.value as ContractTemplateKey)}
+              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            >
+              {contractTemplateOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Expired/Failed warning */}

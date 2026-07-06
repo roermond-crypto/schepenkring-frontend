@@ -85,20 +85,31 @@ export default function ContractTemplatesPage() {
 
   const loadData = async () => {
     setLoading(true);
+    // Load templates first — this is the critical path
     try {
-      const [tRes, typesRes, locRes] = await Promise.all([
-        api.get<ContractTemplate[]>("/admin/contract-templates"),
-        api.get<{ types: TemplateType[] }>("/admin/contract-templates/types"),
-        api.get<{ data: LocationOption[] }>("/admin/locations?per_page=200"),
-      ]);
-      setTemplates(Array.isArray(tRes.data) ? tRes.data : (Array.isArray((tRes.data as { data?: unknown })?.data) ? (tRes.data as { data: ContractTemplate[] }).data : []));
-      setTypes(typesRes.data?.types ?? []);
-      setLocations(locRes.data?.data ?? []);
+      const tRes = await api.get("/admin/contract-templates");
+      const raw = tRes.data;
+      setTemplates(
+        Array.isArray(raw) ? raw
+          : Array.isArray((raw as { data?: unknown })?.data) ? (raw as { data: ContractTemplate[] }).data
+          : [],
+      );
     } catch {
       toast.error(t("loadFailed"));
     } finally {
       setLoading(false);
     }
+
+    // Load types and locations independently — non-critical; failure is silent
+    try {
+      const typesRes = await api.get<{ types: TemplateType[] }>("/admin/contract-templates/types");
+      setTypes(typesRes.data?.types ?? []);
+    } catch { /* non-fatal */ }
+
+    try {
+      const locRes = await api.get<{ data: LocationOption[] }>("/admin/locations?per_page=200");
+      setLocations(locRes.data?.data ?? []);
+    } catch { /* non-fatal */ }
   };
 
   const handleCreate = async () => {

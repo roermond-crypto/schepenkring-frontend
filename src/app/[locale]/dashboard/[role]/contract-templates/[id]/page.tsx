@@ -500,6 +500,7 @@ export default function ContractTemplateEditorPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
   const [rightPanel, setRightPanel] = useState<"tags" | "preview" | "versions" | "meta">("tags");
@@ -573,21 +574,23 @@ export default function ContractTemplateEditorPage() {
   }, [editor, template?.id]);
 
   const loadMeta = async () => {
+    // Each request is independent — one failure must not block the others
     try {
-      const [typesRes, tagsRes, locRes] = await Promise.all([
-        api.get("/admin/contract-templates/types"),
-        api.get("/admin/contract-templates/tags"),
-        api.get<{ data: LocationOption[] }>("/admin/locations?per_page=200"),
-      ]);
-      // Backend wraps: { types: [...] } and { tags: [...] }
+      const typesRes = await api.get("/admin/contract-templates/types");
       const typesArr = (typesRes.data as { types?: TemplateType[] })?.types;
       setTypes(Array.isArray(typesArr) ? typesArr : []);
+    } catch { /* non-fatal */ }
+
+    try {
+      const tagsRes = await api.get("/admin/contract-templates/tags");
       const tagsArr = (tagsRes.data as { tags?: TagInfo[] })?.tags;
       setTags(Array.isArray(tagsArr) ? tagsArr : []);
+    } catch { /* non-fatal */ }
+
+    try {
+      const locRes = await api.get<{ data: LocationOption[] }>("/admin/locations?per_page=200");
       setLocations(locRes.data?.data ?? []);
-    } catch {
-      // non-fatal
-    }
+    } catch { /* non-fatal */ }
   };
 
   // Detect missing tags whenever content changes
@@ -655,6 +658,36 @@ export default function ContractTemplateEditorPage() {
     await handleSave(changeNote);
     setSavingWithNote(false);
     setShowSaveModal(false);
+  };
+
+  // Authenticated PDF download — uses the axios instance so the Bearer token is sent
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const res = await api.get(`/admin/contract-templates/${templateId}/pdf`, {
+        params: { use_sample_tags: true },
+        responseType: "blob",
+      });
+      const contentType = (res.headers as Record<string, string>)["content-type"] ?? "";
+      const isPdf = contentType.includes("pdf");
+      const ext = isPdf ? "pdf" : "html";
+      const slug = (template?.name ?? `contract-template-${templateId}`)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const url = URL.createObjectURL(new Blob([res.data as BlobPart], { type: contentType }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${slug}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("PDF downloaden mislukt.");
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   if (loading) {
@@ -729,16 +762,16 @@ export default function ContractTemplateEditorPage() {
           })}
         </div>
 
-        <a
-          href={`${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/admin/contract-templates/${templateId}/pdf?use_sample_tags=true`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
-          title="PDF bekijken / downloaden"
+        <button
+          type="button"
+          onClick={() => void handleDownloadPdf()}
+          disabled={downloadingPdf}
+          className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+          title="PDF downloaden"
         >
-          <FileText size={14} />
+          {downloadingPdf ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
           <span className="hidden sm:inline">PDF</span>
-        </a>
+        </button>
 
         <button
           onClick={() => setShowSaveModal(true)}

@@ -44,6 +44,7 @@ export interface YachtContractGeneratePayload {
     recipients?: SignRecipient[];
     metadata?: Record<string, unknown>;
     idempotencyKey?: string;
+    contract_template_id?: number;
 }
 
 export interface SignhostDocument {
@@ -204,6 +205,9 @@ export const signhostApi = {
             reference: payload.reference,
             recipients: payload.recipients,
             metadata: payload.metadata,
+            ...(payload.contract_template_id != null
+                ? { contract_template_id: payload.contract_template_id }
+                : {}),
         }, {
             headers: payload.idempotencyKey
                 ? { "Idempotency-Key": payload.idempotencyKey }
