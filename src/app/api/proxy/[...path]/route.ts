@@ -51,7 +51,9 @@ async function handleProxy(request: NextRequest, path: string[]) {
   };
 
   const backendResponse = await fetch(targetUrl, init);
-  const data = await backendResponse.text();
+  // Use arrayBuffer to preserve raw bytes — .text() corrupts binary responses
+  // (PDFs, images) by decoding them as UTF-8 and replacing invalid sequences.
+  const data = await backendResponse.arrayBuffer();
 
   return new NextResponse(data, {
     status: backendResponse.status,
