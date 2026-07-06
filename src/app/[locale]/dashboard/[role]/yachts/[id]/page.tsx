@@ -8406,6 +8406,11 @@ function YachtEditorInner() {
             return false;
           }),
         );
+
+        // Sync with backend to guarantee images appear without a page refresh.
+        // The localWriteSeqRef counter is already at 2 (bumped twice by
+        // setImagesDirectly above), so this GET response will be accepted.
+        await pipeline.refreshImages();
       }
 
       if (shouldSetCreatedYachtId) {
