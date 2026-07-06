@@ -1861,14 +1861,14 @@
     },
     "summary": {
       "currentStatus": "Aktueller Status: {value}",
-      "nextStep": "Next step: {value}",
+      "nextStep": "Nächster Schritt: {value}",
       "canPublish": "Boot veröffentlichen möglich: {value}",
-      "validUntil": "Valid until: {value}",
-      "complete": "Complete",
-      "inProgress": "In progress",
-      "pending": "Pending",
-      "yes": "Yes",
-      "no": "No"
+      "validUntil": "Gültig bis: {value}",
+      "complete": "Abgeschlossen",
+      "inProgress": "In Bearbeitung",
+      "pending": "Ausstehend",
+      "yes": "Ja",
+      "no": "Nein"
     },
     "blockersTitle": "Blockierende Compliance-Hinweise",
     "sellerTypes": {
@@ -1899,18 +1899,18 @@
       "refresh": "Refresh status"
     },
     "toasts": {
-      "load": "Could not load seller onboarding.",
-      "questionsLoad": "Could not load KYC questions.",
-      "profileSaved": "Seller profile saved.",
-      "profileSaveError": "Could not save the profile.",
-      "noSignhostRedirect": "No Signhost redirect URL was returned.",
-      "signhostError": "Could not continue the Signhost flow.",
-      "noPaymentRedirect": "No Mollie checkout URL was returned.",
-      "paymentError": "Could not start the payment flow.",
-      "contractGenerated": "Contract generated.",
-      "contractError": "Could not generate the contract.",
-      "kycSubmitted": "KYC answers submitted.",
-      "kycError": "Could not submit KYC answers."
+      "load": "Verkäufer-Onboarding konnte nicht geladen werden.",
+      "questionsLoad": "KYC-Fragen konnten nicht geladen werden.",
+      "profileSaved": "Verkäuferprofil gespeichert.",
+      "profileSaveError": "Profil konnte nicht gespeichert werden.",
+      "noSignhostRedirect": "Keine Signhost-Weiterleitungs-URL erhalten.",
+      "signhostError": "Signhost-Prozess konnte nicht fortgesetzt werden.",
+      "noPaymentRedirect": "Keine Mollie-Checkout-URL erhalten.",
+      "paymentError": "Zahlungsvorgang konnte nicht gestartet werden.",
+      "contractGenerated": "Vertrag generiert.",
+      "contractError": "Vertrag konnte nicht generiert werden.",
+      "kycSubmitted": "KYC-Antworten eingereicht.",
+      "kycError": "KYC-Antworten konnten nicht eingereicht werden."
     },
     "loading": "Verkäufer-Onboarding wird geladen...",
     "sections": {

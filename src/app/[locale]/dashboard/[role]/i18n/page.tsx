@@ -64,6 +64,12 @@ const CROSS_LANG_TERMS = new Set([
   "Google organisch", "Status: {status}",
   // Support contact details
   "Need more help? Contact our maritime support team",
+  // Universal paper-size / template format strings
+  "A4 · {type} · {lang}",
+  // Brand name variants
+  "Schepenkring Makelaars",
+  // Phrases identical in French and English by coincidence
+  "Conversation active", "Page {page} / {last}",
 ]);
 
 function analyzeLocale(
