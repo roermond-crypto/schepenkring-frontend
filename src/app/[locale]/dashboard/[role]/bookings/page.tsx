@@ -463,11 +463,10 @@ export default function DashboardBookingsPage() {
             className="mt-auto h-11 rounded-2xl bg-[#003566] px-5 text-[10px] font-black uppercase tracking-[0.22em] hover:bg-[#00284d]"
             onClick={() => {
               setAppliedFilters(filters);
-              void loadBookings(true);
             }}
-            disabled={refreshing}
+            disabled={loading || refreshing}
           >
-            {refreshing ? (
+            {(loading || refreshing) ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="mr-2 h-4 w-4" />
