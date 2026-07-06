@@ -29,7 +29,14 @@ async function handleProxy(request: NextRequest, path: string[]) {
   const targetUrl = `${backendUrl.replace(/\/$/, "")}/${path.join("/")}${request.nextUrl.search}`;
 
   const headers = new Headers(request.headers);
-  headers.delete("host");
+
+  // Strip hop-by-hop headers — undici (Node fetch) rejects requests that
+  // include Connection, Keep-Alive, etc. as they are transport-layer only.
+  for (const h of ["host", "connection", "keep-alive", "transfer-encoding",
+                    "te", "trailer", "upgrade", "proxy-authorization",
+                    "proxy-authenticate"]) {
+    headers.delete(h);
+  }
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
