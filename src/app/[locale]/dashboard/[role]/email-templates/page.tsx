@@ -99,7 +99,7 @@ export default function EmailTemplatesPage() {
       setTypes(Array.isArray(rawTypes) ? (rawTypes as TemplateType[]) : []);
       setLocations(locRes.data?.data ?? []);
     } catch {
-      toast.error("Laden mislukt");
+      toast.error(t("loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -113,24 +113,24 @@ export default function EmailTemplatesPage() {
     setDuplicating(template.id);
     try {
       await api.post(`/admin/email-templates/${template.id}/duplicate`);
-      toast.success("Sjabloon gedupliceerd");
+      toast.success(t("duplicateSuccess"));
       await loadData();
     } catch {
-      toast.error("Dupliceren mislukt");
+      toast.error(t("duplicateFailed"));
     } finally {
       setDuplicating(null);
     }
   };
 
   const handleArchive = async (template: EmailTemplate) => {
-    if (!confirm(`Weet u zeker dat u "${template.name}" wilt archiveren?`)) return;
+    if (!confirm(t("archiveConfirm", { name: template.name }))) return;
     setArchiving(template.id);
     try {
       await api.delete(`/admin/email-templates/${template.id}`);
-      toast.success("Sjabloon gearchiveerd");
+      toast.success(t("archiveSuccess"));
       await loadData();
     } catch {
-      toast.error("Archiveren mislukt");
+      toast.error(t("archiveFailed"));
     } finally {
       setArchiving(null);
     }
@@ -148,14 +148,14 @@ export default function EmailTemplatesPage() {
         w.document.close();
       }
     } catch {
-      toast.error("Voorbeeld laden mislukt");
+      toast.error(t("previewFailed"));
     } finally {
       setPreviewing(null);
     }
   };
 
   const handleTestSend = async (template: EmailTemplate) => {
-    const email = prompt("Voer een e-mailadres in om de test te verzenden:");
+    const email = prompt(t("testSendPrompt"));
     if (!email || !email.includes("@")) return;
     setTestSending(template.id);
     try {
@@ -163,9 +163,9 @@ export default function EmailTemplatesPage() {
         email,
         lang: template.language_default ?? "nl",
       });
-      toast.success(`Test e-mail verzonden naar ${email}`);
+      toast.success(t("testSendSuccess", { email }));
     } catch {
-      toast.error("Verzenden mislukt");
+      toast.error(t("testSendFailed"));
     } finally {
       setTestSending(null);
     }
@@ -191,7 +191,7 @@ export default function EmailTemplatesPage() {
         await loadData();
       }
     } catch {
-      toast.error("Aanmaken mislukt");
+      toast.error(t("createFailed"));
     }
   };
 
@@ -225,8 +225,8 @@ export default function EmailTemplatesPage() {
       av = types.find((tp) => tp.value === a.type)?.label ?? a.type;
       bv = types.find((tp) => tp.value === b.type)?.label ?? b.type;
     } else if (sortKey === "location") {
-      av = a.is_global ? "Globaal" : (a.location?.name ?? "");
-      bv = b.is_global ? "Globaal" : (b.location?.name ?? "");
+      av = a.is_global ? t("global") : (a.location?.name ?? "");
+      bv = b.is_global ? t("global") : (b.location?.name ?? "");
     } else if (sortKey === "language_default") {
       av = a.language_default;
       bv = b.language_default;
@@ -264,9 +264,9 @@ export default function EmailTemplatesPage() {
               <Mail size={20} />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white">E-mailsjablonen</h1>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-white">{t("title")}</h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {filtered.length} sjablonen · beheer e-mailsjablonen per vestiging en gebeurtenis
+                {t("tableSubtitle", { count: filtered.length })}
               </p>
             </div>
           </div>
@@ -274,7 +274,7 @@ export default function EmailTemplatesPage() {
             onClick={() => void handleCreate()}
             className="bg-[#003566] text-white hover:bg-blue-900 rounded-xl"
           >
-            <Plus size={16} className="mr-2" /> Nieuw sjabloon
+            <Plus size={16} className="mr-2" /> {t("newTemplate")}
           </Button>
         </div>
 
@@ -285,7 +285,7 @@ export default function EmailTemplatesPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Zoek sjablonen…"
+              placeholder={t("searchPlaceholder")}
               className="h-9 pl-8 w-56 rounded-xl text-sm"
             />
           </div>
@@ -294,7 +294,7 @@ export default function EmailTemplatesPage() {
             onChange={(e) => setFilterType(e.target.value)}
             className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
-            <option value="all">Alle gebeurtenissen</option>
+            <option value="all">{t("allTypes")}</option>
             {types.map((tp) => (
               <option key={tp.value} value={tp.value}>{tp.label}</option>
             ))}
@@ -304,9 +304,9 @@ export default function EmailTemplatesPage() {
             onChange={(e) => { setFilterScope(e.target.value); setFilterLocationId(""); }}
             className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
-            <option value="all">Globaal + vestiging</option>
-            <option value="global">Alleen globaal</option>
-            <option value="location">Alleen vestiging</option>
+            <option value="all">{t("scopeAll")}</option>
+            <option value="global">{t("scopeGlobal")}</option>
+            <option value="location">{t("scopeLocation")}</option>
           </select>
           {filterScope !== "global" && locations.length > 0 && (
             <select
@@ -314,7 +314,7 @@ export default function EmailTemplatesPage() {
               onChange={(e) => setFilterLocationId(e.target.value)}
               className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             >
-              <option value="">Alle vestigingen</option>
+              <option value="">{t("allLocations")}</option>
               {locations.map((l) => (
                 <option key={l.id} value={String(l.id)}>{l.name}</option>
               ))}
@@ -327,7 +327,7 @@ export default function EmailTemplatesPage() {
               onChange={(e) => setShowArchived(e.target.checked)}
               className="rounded"
             />
-            Gearchiveerd tonen
+            {t("showArchived")}
           </label>
         </div>
       </div>
@@ -341,9 +341,9 @@ export default function EmailTemplatesPage() {
         ) : sorted.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center dark:border-slate-700 dark:bg-slate-900">
             <Mail size={40} className="mx-auto mb-3 text-slate-300" />
-            <p className="text-slate-500">Geen sjablonen gevonden</p>
+            <p className="text-slate-500">{t("emptyState")}</p>
             <Button onClick={() => void handleCreate()} className="mt-4 bg-[#003566] text-white hover:bg-blue-900 rounded-xl">
-              <Plus size={16} className="mr-2" /> Eerste sjabloon aanmaken
+              <Plus size={16} className="mr-2" /> {t("createFirst")}
             </Button>
           </div>
         ) : (
@@ -353,22 +353,22 @@ export default function EmailTemplatesPage() {
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
                     <Th onClick={() => toggleSort("type")}>
-                      Gebeurtenis <SortIcon col="type" />
+                      {t("colEvent")} <SortIcon col="type" />
                     </Th>
                     <Th onClick={() => toggleSort("location")}>
-                      Vestiging <SortIcon col="location" />
+                      {t("colLocation")} <SortIcon col="location" />
                     </Th>
                     <Th onClick={() => toggleSort("language_default")}>
-                      Taal <SortIcon col="language_default" />
+                      {t("colLanguage")} <SortIcon col="language_default" />
                     </Th>
                     <Th onClick={() => toggleSort("updated_at")}>
-                      Bijgewerkt <SortIcon col="updated_at" />
+                      {t("colUpdated")} <SortIcon col="updated_at" />
                     </Th>
                     <Th onClick={() => toggleSort("current_version")}>
-                      Versie <SortIcon col="current_version" />
+                      {t("colVersion")} <SortIcon col="current_version" />
                     </Th>
-                    <Th>Status</Th>
-                    <Th>Acties</Th>
+                    <Th>{t("colStatus")}</Th>
+                    <Th>{t("colActions")}</Th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -397,7 +397,7 @@ export default function EmailTemplatesPage() {
                       <td className="px-4 py-3">
                         {template.is_global ? (
                           <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
-                            <Globe2 size={9} /> Globaal
+                            <Globe2 size={9} /> {t("global")}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
@@ -427,15 +427,15 @@ export default function EmailTemplatesPage() {
                       <td className="px-4 py-3">
                         {template.is_archived ? (
                           <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-orange-700">
-                            Gearchiveerd
+                            {t("archived")}
                           </span>
                         ) : template.is_active ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                            <CheckCircle2 size={12} /> Actief
+                            <CheckCircle2 size={12} /> {t("statusActive")}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-                            <XCircle size={12} /> Concept
+                            <XCircle size={12} /> {t("statusDraft")}
                           </span>
                         )}
                       </td>
@@ -444,27 +444,27 @@ export default function EmailTemplatesPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
                           <ActionBtn
-                            title="Bewerken"
+                            title={t("edit")}
                             onClick={() => router.push(`${root}/email-templates/${template.id}`)}
                           >
                             <Pencil size={13} />
                           </ActionBtn>
                           <ActionBtn
-                            title="Voorbeeld"
+                            title={t("previewAction")}
                             loading={previewing === template.id}
                             onClick={() => void handlePreview(template)}
                           >
                             {previewing === template.id ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />}
                           </ActionBtn>
                           <ActionBtn
-                            title="Test e-mail verzenden"
+                            title={t("testSendAction")}
                             loading={testSending === template.id}
                             onClick={() => void handleTestSend(template)}
                           >
                             {testSending === template.id ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
                           </ActionBtn>
                           <ActionBtn
-                            title="Dupliceren"
+                            title={t("duplicateTitle")}
                             loading={duplicating === template.id}
                             onClick={() => void handleDuplicate(template)}
                           >
@@ -472,7 +472,7 @@ export default function EmailTemplatesPage() {
                           </ActionBtn>
                           {!template.is_archived && (
                             <ActionBtn
-                              title="Archiveren"
+                              title={t("archiveTitle")}
                               loading={archiving === template.id}
                               onClick={() => void handleArchive(template)}
                               danger

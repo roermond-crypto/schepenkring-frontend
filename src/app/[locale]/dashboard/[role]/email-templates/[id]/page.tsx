@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   DragDropContext,
   Droppable,
@@ -235,7 +235,18 @@ function BlockCanvasItem({
   onSelect: () => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("EmailTemplateEditor");
   const def = getBlockDef(block.type);
+
+  const BLOCK_LABELS: Record<BlockType, string> = {
+    logo: t("blocks.logo"), header: t("blocks.header"), text: t("blocks.text"),
+    rich_text: t("blocks.richText"), button: t("blocks.button"), image: t("blocks.image"),
+    divider: t("blocks.divider"), spacer: t("blocks.spacer"), footer: t("blocks.footer"),
+    signature: t("blocks.signature"), social_links: t("blocks.socials"),
+    boat_card: t("blocks.boatCard"), offer_card: t("blocks.offerCard"),
+    seller_card: t("blocks.sellerCard"), buyer_card: t("blocks.buyerCard"),
+    location_card: t("blocks.locationCard"), contract_card: t("blocks.contractCard"),
+  };
 
   const previewContent = () => {
     const s = block.settings;
@@ -244,30 +255,30 @@ function BlockCanvasItem({
         const src = s.source === "custom_url" && s.custom_url ? String(s.custom_url) : null;
         return src
           ? <img src={src} alt="Logo" className="h-10 max-w-[120px] object-contain rounded" />
-          : <div className="h-8 w-20 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">LOGO (locatie)</div>;
+          : <div className="h-8 w-20 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">{t("canvas.logoPlaceholder")}</div>;
       }
-      case "header": return <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{localStr(s.content, lang, "Koptekst...")}</p>;
-      case "text": return <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">{localStr(s.content, lang, "Tekst...")}</p>;
-      case "rich_text": return <p className="text-xs text-slate-500 dark:text-slate-400 italic">[Opgemaakte tekst]</p>;
+      case "header": return <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{localStr(s.content, lang, t("canvas.headerPlaceholder"))}</p>;
+      case "text": return <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">{localStr(s.content, lang, t("canvas.textPlaceholder"))}</p>;
+      case "rich_text": return <p className="text-xs text-slate-500 dark:text-slate-400 italic">{t("canvas.richTextLabel")}</p>;
       case "button": return (
         <div className="inline-block rounded-lg px-4 py-2 text-xs font-semibold text-white" style={{ backgroundColor: String(s.color ?? "#C8102E") }}>
-          {localStr(s.label, lang, "Knop")}
+          {localStr(s.label, lang, t("canvas.buttonFallback"))}
         </div>
       );
       case "image": return s.src
         ? <img src={String(s.src)} alt={String(s.alt || "")} className="max-h-24 w-full object-contain rounded" />
-        : <div className="h-12 w-full rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">AFBEELDING</div>;
+        : <div className="h-12 w-full rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">{t("canvas.imagePlaceholder")}</div>;
       case "divider": return <hr className="border-slate-200 dark:border-slate-700" />;
-      case "spacer": return <div className="h-3 text-[9px] text-slate-400 text-center">{Number(s.height ?? 24)}px ruimte</div>;
-      case "footer": return <p className="text-[10px] text-slate-400 text-center line-clamp-2">{localStr(s.content, lang, "Voettekst...")}</p>;
-      case "signature": return <p className="text-xs text-slate-600 dark:text-slate-300">{String(s.name ?? "Naam")} · {String(s.phone ?? "")}</p>;
-      case "social_links": return <p className="text-xs text-slate-500 dark:text-slate-400">[Social links]</p>;
-      case "boat_card": return <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30 px-3 py-2 text-xs text-blue-800 dark:text-blue-200"><Ship size={10} className="inline mr-1" />Boot kaart</div>;
-      case "offer_card": return <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 px-3 py-2 text-xs text-green-800 dark:text-green-200"><Tag size={10} className="inline mr-1" />Bod kaart</div>;
-      case "seller_card": return <div className="rounded-lg border border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-950/30 px-3 py-2 text-xs text-purple-800 dark:text-purple-200"><Phone size={10} className="inline mr-1" />Verkoper kaart</div>;
-      case "buyer_card": return <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30 px-3 py-2 text-xs text-orange-800 dark:text-orange-200"><Phone size={10} className="inline mr-1" />Koper kaart</div>;
-      case "location_card": return <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/30 px-3 py-2 text-xs text-slate-700 dark:text-slate-200"><Building2 size={10} className="inline mr-1" />Locatie kaart</div>;
-      case "contract_card": return <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30 px-3 py-2 text-xs text-red-800 dark:text-red-200"><CreditCard size={10} className="inline mr-1" />Contract kaart</div>;
+      case "spacer": return <div className="h-3 text-[9px] text-slate-400 text-center">{Number(s.height ?? 24)}{t("canvas.spacerSuffix")}</div>;
+      case "footer": return <p className="text-[10px] text-slate-400 text-center line-clamp-2">{localStr(s.content, lang, t("canvas.footerPlaceholder"))}</p>;
+      case "signature": return <p className="text-xs text-slate-600 dark:text-slate-300">{String(s.name ?? t("canvas.signatureName"))} · {String(s.phone ?? "")}</p>;
+      case "social_links": return <p className="text-xs text-slate-500 dark:text-slate-400">{t("canvas.socialLinksLabel")}</p>;
+      case "boat_card": return <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30 px-3 py-2 text-xs text-blue-800 dark:text-blue-200"><Ship size={10} className="inline mr-1" />{t("canvas.boatCardLabel")}</div>;
+      case "offer_card": return <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 px-3 py-2 text-xs text-green-800 dark:text-green-200"><Tag size={10} className="inline mr-1" />{t("canvas.offerCardLabel")}</div>;
+      case "seller_card": return <div className="rounded-lg border border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-950/30 px-3 py-2 text-xs text-purple-800 dark:text-purple-200"><Phone size={10} className="inline mr-1" />{t("canvas.sellerCardLabel")}</div>;
+      case "buyer_card": return <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30 px-3 py-2 text-xs text-orange-800 dark:text-orange-200"><Phone size={10} className="inline mr-1" />{t("canvas.buyerCardLabel")}</div>;
+      case "location_card": return <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/30 px-3 py-2 text-xs text-slate-700 dark:text-slate-200"><Building2 size={10} className="inline mr-1" />{t("canvas.locationCardLabel")}</div>;
+      case "contract_card": return <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30 px-3 py-2 text-xs text-red-800 dark:text-red-200"><CreditCard size={10} className="inline mr-1" />{t("canvas.contractCardLabel")}</div>;
     }
   };
 
@@ -296,7 +307,7 @@ function BlockCanvasItem({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 mb-2">
               <span className="text-slate-400 dark:text-slate-500">{def.icon}</span>
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">{def.label}</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">{BLOCK_LABELS[block.type] ?? def.label}</span>
             </div>
             <div>{previewContent()}</div>
           </div>
@@ -321,6 +332,7 @@ function LogoBlockSettings({
   s: Record<string, unknown>;
   setField: (key: string, value: unknown) => void;
 }) {
+  const t = useTranslations("EmailTemplateEditor");
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -337,7 +349,7 @@ function LogoBlockSettings({
       setField("source", "custom_url");
       setField("custom_url", res.data.url);
     } catch {
-      toast.error("Upload mislukt.");
+      toast.error(t("toasts.uploadFailed"));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -347,19 +359,19 @@ function LogoBlockSettings({
   return (
     <div className="space-y-4">
       <div>
-        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Bron</label>
+        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.logoSource")}</label>
         <select
           value={String(s.source ?? "location_logo")}
           onChange={(e) => setField("source", e.target.value)}
           className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
         >
-          <option value="location_logo">Logo van locatie (automatisch)</option>
-          <option value="custom_url">Eigen logo (URL of upload)</option>
+          <option value="location_logo">{t("blockSettings.logoSourceAuto")}</option>
+          <option value="custom_url">{t("blockSettings.logoSourceCustom")}</option>
         </select>
       </div>
       {String(s.source ?? "location_logo") === "custom_url" && (
         <div className="space-y-2">
-          <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Logo URL</label>
+          <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.logoUrl")}</label>
           <Input
             value={String(s.custom_url ?? "")}
             onChange={(e) => setField("custom_url", e.target.value)}
@@ -367,7 +379,7 @@ function LogoBlockSettings({
             placeholder="https://..."
           />
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-slate-400">of</span>
+            <span className="text-[10px] text-slate-400">{t("blockSettings.or")}</span>
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
@@ -375,7 +387,7 @@ function LogoBlockSettings({
               className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
-              {uploading ? "Uploaden..." : "Bestand uploaden"}
+              {uploading ? t("blockSettings.uploading") : t("blockSettings.uploadFile")}
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => void handleFileChange(e)} />
           </div>
@@ -397,6 +409,7 @@ function ImageBlockSettings({
   s: Record<string, unknown>;
   setField: (key: string, value: unknown) => void;
 }) {
+  const t = useTranslations("EmailTemplateEditor");
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -412,7 +425,7 @@ function ImageBlockSettings({
       });
       setField("src", res.data.url);
     } catch {
-      toast.error("Upload mislukt.");
+      toast.error(t("toasts.uploadFailed"));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -422,7 +435,7 @@ function ImageBlockSettings({
   return (
     <div className="space-y-4">
       <div>
-        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Afbeeldings-URL</label>
+        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.imageUrl")}</label>
         <Input value={String(s.src ?? "")} onChange={(e) => setField("src", e.target.value)} className="rounded-xl text-sm" placeholder="https://..." />
         <div className="mt-2 flex items-center gap-2">
           <button
@@ -432,7 +445,7 @@ function ImageBlockSettings({
             className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
-            {uploading ? "Uploaden..." : "Bestand uploaden"}
+            {uploading ? t("blockSettings.uploading") : t("blockSettings.uploadFile")}
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => void handleFileChange(e)} />
         </div>
@@ -441,11 +454,11 @@ function ImageBlockSettings({
         )}
       </div>
       <div>
-        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Alt-tekst</label>
+        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.altText")}</label>
         <Input value={String(s.alt ?? "")} onChange={(e) => setField("alt", e.target.value)} className="rounded-xl text-sm" />
       </div>
       <div>
-        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Link (optioneel)</label>
+        <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.linkOptional")}</label>
         <Input value={String(s.link ?? "")} onChange={(e) => setField("link", e.target.value)} className="rounded-xl text-sm" placeholder="https://..." />
       </div>
     </div>
@@ -467,8 +480,19 @@ function BlockSettings({
   onClose: () => void;
   tags: TagInfo[];
 }) {
+  const t = useTranslations("EmailTemplateEditor");
   const s = block.settings;
   const def = getBlockDef(block.type);
+
+  const BLOCK_LABELS: Record<BlockType, string> = {
+    logo: t("blocks.logo"), header: t("blocks.header"), text: t("blocks.text"),
+    rich_text: t("blocks.richText"), button: t("blocks.button"), image: t("blocks.image"),
+    divider: t("blocks.divider"), spacer: t("blocks.spacer"), footer: t("blocks.footer"),
+    signature: t("blocks.signature"), social_links: t("blocks.socials"),
+    boat_card: t("blocks.boatCard"), offer_card: t("blocks.offerCard"),
+    seller_card: t("blocks.sellerCard"), buyer_card: t("blocks.buyerCard"),
+    location_card: t("blocks.locationCard"), contract_card: t("blocks.contractCard"),
+  };
 
   const setField = (key: string, value: unknown) => onChange({ ...s, [key]: value });
   const setLocalizedField = (key: string, value: string) => {
@@ -531,17 +555,17 @@ function BlockSettings({
           <LogoBlockSettings s={s} setField={setField} />
         );
       case "header":
-        return <LocalizedTextArea fieldKey="content" label="Tekst" rows={2} />;
+        return <LocalizedTextArea fieldKey="content" label={t("blockSettings.text")} rows={2} />;
       case "text":
-        return <LocalizedTextArea fieldKey="content" label="Tekst" rows={5} />;
+        return <LocalizedTextArea fieldKey="content" label={t("blockSettings.text")} rows={5} />;
       case "rich_text":
-        return <LocalizedTextArea fieldKey="html" label="HTML inhoud" rows={8} />;
+        return <LocalizedTextArea fieldKey="html" label={t("blockSettings.htmlContent")} rows={8} />;
       case "button":
         return (
           <div className="space-y-4">
-            <LocalizedInput fieldKey="label" label="Label" />
+            <LocalizedInput fieldKey="label" label={t("blockSettings.buttonLabel")} />
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">URL / Tag</label>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.buttonUrl")}</label>
               <Input value={String(s.url ?? "")} onChange={(e) => setField("url", e.target.value)} className="rounded-xl text-sm" placeholder="{{offer_link}}" />
               <div className="mt-1.5 flex flex-wrap gap-1">
                 {["{{offer_link}}", "{{contract_link}}", "{{chat_link}}", "{{brochure_link}}", "{{boat_url}}"].map((tag) => (
@@ -552,7 +576,7 @@ function BlockSettings({
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Kleur</label>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.color")}</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={String(s.color ?? "#C8102E")} onChange={(e) => setField("color", e.target.value)} className="h-9 w-14 rounded-xl border border-slate-200 bg-white dark:border-slate-700 cursor-pointer" />
                 <Input value={String(s.color ?? "#C8102E")} onChange={(e) => setField("color", e.target.value)} className="rounded-xl text-sm font-mono" />
@@ -567,7 +591,7 @@ function BlockSettings({
       case "divider":
         return (
           <div>
-            <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Kleur</label>
+            <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.color")}</label>
             <div className="flex items-center gap-2">
               <input type="color" value={String(s.color ?? "#eeeeee")} onChange={(e) => setField("color", e.target.value)} className="h-9 w-14 rounded-xl border border-slate-200 bg-white dark:border-slate-700 cursor-pointer" />
               <Input value={String(s.color ?? "#eeeeee")} onChange={(e) => setField("color", e.target.value)} className="rounded-xl text-sm font-mono" />
@@ -577,25 +601,25 @@ function BlockSettings({
       case "spacer":
         return (
           <div>
-            <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Hoogte (px)</label>
+            <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.spacerHeight")}</label>
             <Input type="number" min={4} max={120} value={Number(s.height ?? 24)} onChange={(e) => setField("height", Number(e.target.value))} className="rounded-xl text-sm" />
           </div>
         );
       case "footer":
-        return <LocalizedTextArea fieldKey="content" label="Voettekst" rows={4} />;
+        return <LocalizedTextArea fieldKey="content" label={t("blockSettings.footer")} rows={4} />;
       case "signature":
         return (
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Naam</label>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.sigName")}</label>
               <Input value={String(s.name ?? "")} onChange={(e) => setField("name", e.target.value)} className="rounded-xl text-sm" placeholder="{{location_name}}" />
             </div>
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Functietitel</label>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.sigTitle")}</label>
               <Input value={String(s.title ?? "")} onChange={(e) => setField("title", e.target.value)} className="rounded-xl text-sm" />
             </div>
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Telefoon</label>
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("blockSettings.sigPhone")}</label>
               <Input value={String(s.phone ?? "")} onChange={(e) => setField("phone", e.target.value)} className="rounded-xl text-sm" placeholder="{{location_phone}}" />
             </div>
           </div>
@@ -603,44 +627,44 @@ function BlockSettings({
       case "social_links":
         return (
           <div className="text-sm text-slate-500 dark:text-slate-400">
-            Social links configuratie (beheer via locatie-instellingen)
+            {t("blockSettings.socialLinksInfo")}
           </div>
         );
       case "boat_card":
         return (
           <div className="space-y-4">
-            <BoolToggle fieldKey="show_image" label="Afbeelding tonen" />
-            <BoolToggle fieldKey="show_price" label="Prijs tonen" />
-            <LocalizedInput fieldKey="button_label" label="Knoptekst" />
+            <BoolToggle fieldKey="show_image" label={t("blockSettings.showImage")} />
+            <BoolToggle fieldKey="show_price" label={t("blockSettings.showPrice")} />
+            <LocalizedInput fieldKey="button_label" label={t("blockSettings.cardButtonText")} />
           </div>
         );
       case "offer_card":
         return (
           <div className="space-y-4">
-            <BoolToggle fieldKey="show_amount" label="Bedrag tonen" />
-            <LocalizedInput fieldKey="button_label" label="Knoptekst" />
+            <BoolToggle fieldKey="show_amount" label={t("blockSettings.showAmount")} />
+            <LocalizedInput fieldKey="button_label" label={t("blockSettings.cardButtonText")} />
           </div>
         );
       case "seller_card":
       case "buyer_card":
         return (
           <div className="space-y-4">
-            <BoolToggle fieldKey="show_email" label="E-mail tonen" />
-            <BoolToggle fieldKey="show_phone" label="Telefoon tonen" />
+            <BoolToggle fieldKey="show_email" label={t("blockSettings.showEmail")} />
+            <BoolToggle fieldKey="show_phone" label={t("blockSettings.showPhone")} />
           </div>
         );
       case "location_card":
         return (
           <div className="space-y-4">
-            <BoolToggle fieldKey="show_address" label="Adres tonen" />
-            <BoolToggle fieldKey="show_phone" label="Telefoon tonen" />
-            <BoolToggle fieldKey="show_email" label="E-mail tonen" />
+            <BoolToggle fieldKey="show_address" label={t("blockSettings.showAddress")} />
+            <BoolToggle fieldKey="show_phone" label={t("blockSettings.showPhone")} />
+            <BoolToggle fieldKey="show_email" label={t("blockSettings.showEmail")} />
           </div>
         );
       case "contract_card":
-        return <LocalizedInput fieldKey="button_label" label="Knoptekst" />;
+        return <LocalizedInput fieldKey="button_label" label={t("blockSettings.cardButtonText")} />;
       default:
-        return <p className="text-sm text-slate-400">Geen instellingen beschikbaar.</p>;
+        return <p className="text-sm text-slate-400">{t("blockSettings.noSettings")}</p>;
     }
   };
 
@@ -649,7 +673,7 @@ function BlockSettings({
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <span className="text-slate-500">{def.icon}</span>
-          <span className="font-semibold text-sm text-slate-900 dark:text-white">{def.label} — instellingen</span>
+          <span className="font-semibold text-sm text-slate-900 dark:text-white">{BLOCK_LABELS[block.type] ?? def.label} {t("blockSettings.panelSuffix")}</span>
         </div>
         <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
           <X size={15} />
@@ -658,7 +682,7 @@ function BlockSettings({
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
         {renderFields()}
         <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Beschikbare tags</p>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">{t("blockSettings.availableTags")}</p>
           <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
             {tags.map((t) => (
               <span key={t.key} title={t.description} className="rounded px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 cursor-default">
@@ -687,6 +711,7 @@ function PreviewPane({
   blocks: Block[];
   subject: LocalizedString;
 }) {
+  const t = useTranslations("EmailTemplateEditor");
   const [mode, setMode] = useState<PreviewMode>("desktop");
   const [dark, setDark] = useState(false);
   const [html, setHtml] = useState<string | null>(null);
@@ -701,11 +726,11 @@ function PreviewPane({
       const res = await api.post<{ html: string }>(`/admin/email-templates/${templateId}/preview`, { lang, blocks });
       setHtml(res.data.html);
     } catch {
-      setHtml("<p style='color:red;padding:20px;'>Preview kon niet worden geladen.</p>");
+      setHtml(`<p style='color:red;padding:20px;'>${t("preview.loadFailed")}</p>`);
     } finally {
       setLoading(false);
     }
-  }, [templateId, lang, blocks]);
+  }, [templateId, lang, blocks, t]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -718,9 +743,9 @@ function PreviewPane({
     setSendingTest(true);
     try {
       await api.post(`/admin/email-templates/${templateId}/test-send`, { email: testEmail, lang });
-      toast.success(`Test-e-mail verzonden naar ${testEmail}`);
+      toast.success(t("preview.testSentSuccess", { email: testEmail }));
     } catch {
-      toast.error("Verzenden mislukt.");
+      toast.error(t("preview.testSentFailed"));
     } finally {
       setSendingTest(false);
     }
@@ -760,7 +785,7 @@ function PreviewPane({
           <Input
             value={testEmail}
             onChange={(e) => setTestEmail(e.target.value)}
-            placeholder="test@voorbeeld.nl"
+            placeholder={t("preview.testPlaceholder")}
             className="h-8 rounded-xl text-xs w-44"
             type="email"
           />
@@ -771,15 +796,15 @@ function PreviewPane({
             className="h-8 rounded-xl bg-[#003566] text-white text-xs hover:bg-blue-900 disabled:opacity-50"
           >
             {sendingTest ? <Loader2 size={12} className="animate-spin mr-1" /> : <Send size={12} className="mr-1" />}
-            Test
+            {t("preview.testButton")}
           </Button>
         </div>
       </div>
 
       {/* Subject preview */}
       <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800">
-        <p className="text-[10px] text-slate-400 dark:text-slate-500">Onderwerp ({LANG_LABELS[lang]}):</p>
-        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{subject[lang] || "(geen onderwerp)"}</p>
+        <p className="text-[10px] text-slate-400 dark:text-slate-500">{t("preview.subjectPrefix")}{LANG_LABELS[lang]}):</p>
+        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{subject[lang] || t("preview.noSubject")}</p>
       </div>
 
       {/* Frame */}
@@ -816,6 +841,7 @@ function VersionsPanel({
   currentVersion: number;
   onRestore: () => void;
 }) {
+  const t = useTranslations("EmailTemplateEditor");
   const [versions, setVersions] = useState<TemplateVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [restoring, setRestoring] = useState<number | null>(null);
@@ -827,22 +853,22 @@ function VersionsPanel({
         const raw = res.data as { versions?: TemplateVersion[] } | TemplateVersion[];
         setVersions(Array.isArray(raw) ? raw : (raw as { versions?: TemplateVersion[] })?.versions ?? []);
       } catch {
-        toast.error("Versies laden mislukt.");
+        toast.error(t("versions.loadFailed"));
       } finally {
         setLoading(false);
       }
     })();
-  }, [templateId]);
+  }, [templateId, t]);
 
   const handleRestore = async (v: TemplateVersion) => {
-    if (!confirm(`Versie ${v.version} herstellen? De huidige versie wordt opgeslagen als nieuwe versie.`)) return;
+    if (!confirm(t("versions.restoreConfirm", { version: v.version }))) return;
     setRestoring(v.version);
     try {
       await api.post(`/admin/email-templates/${templateId}/restore-version`, { version: v.version });
-      toast.success(`Versie ${v.version} hersteld.`);
+      toast.success(t("versions.restored", { version: v.version }));
       onRestore();
     } catch {
-      toast.error("Herstellen mislukt.");
+      toast.error(t("versions.restoreFailed"));
     } finally {
       setRestoring(null);
     }
@@ -850,13 +876,13 @@ function VersionsPanel({
 
   return (
     <div className="p-5">
-      <p className="mb-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Versiegeschiedenis</p>
+      <p className="mb-4 text-[11px] font-black uppercase tracking-wider text-slate-400">{t("versions.title")}</p>
       {loading ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 size={20} className="animate-spin text-slate-400" />
         </div>
       ) : versions.length === 0 ? (
-        <p className="text-sm text-slate-500">Geen versies beschikbaar.</p>
+        <p className="text-sm text-slate-500">{t("versions.empty")}</p>
       ) : (
         <div className="space-y-2">
           {versions.map((v) => (
@@ -866,7 +892,7 @@ function VersionsPanel({
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold text-slate-900 dark:text-white">v{v.version}</span>
                     {v.version === currentVersion && (
-                      <span className="rounded-full bg-[#003566] px-1.5 py-0.5 text-[9px] font-black text-white">Huidig</span>
+                      <span className="rounded-full bg-[#003566] px-1.5 py-0.5 text-[9px] font-black text-white">{t("versions.current")}</span>
                     )}
                   </div>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500">{new Date(v.created_at).toLocaleString("nl-NL")}</p>
@@ -878,7 +904,7 @@ function VersionsPanel({
                     disabled={restoring === v.version}
                     className="rounded-lg border border-slate-200 px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                   >
-                    {restoring === v.version ? <Loader2 size={10} className="animate-spin" /> : "Herstellen"}
+                    {restoring === v.version ? <Loader2 size={10} className="animate-spin" /> : t("versions.restore")}
                   </button>
                 )}
               </div>
@@ -892,36 +918,28 @@ function VersionsPanel({
 
 // ─── Tags panel ───────────────────────────────────────────────────────────────
 
-const CATEGORY_LABELS: Record<string, string> = {
-  User:     "Gebruiker",
-  Buyer:    "Koper",
-  Seller:   "Verkoper",
-  Boat:     "Boot",
-  Location: "Vestiging",
-  Deal:     "Transactie",
-  Contract: "Contract",
-  Invoice:  "Factuur",
-  Payment:  "Betaling",
-  Company:  "Bedrijf",
-  System:   "Systeem",
-  Other:    "Overig",
-};
 const CATEGORY_ORDER = ["User", "Buyer", "Seller", "Boat", "Location", "Deal", "Contract", "Invoice", "Payment", "Company", "System"];
 
 function TagsPanel({ tags }: { tags: TagInfo[] }) {
+  const t = useTranslations("EmailTemplateEditor");
   const [search, setSearch] = useState("");
 
   const filtered = search
-    ? tags.filter((t) => t.key.toLowerCase().includes(search.toLowerCase()) || t.description.toLowerCase().includes(search.toLowerCase()))
+    ? tags.filter((tag) => tag.key.toLowerCase().includes(search.toLowerCase()) || tag.description.toLowerCase().includes(search.toLowerCase()))
     : tags;
 
   const grouped = CATEGORY_ORDER.reduce<Record<string, TagInfo[]>>((acc, cat) => {
-    const items = filtered.filter((t) => t.category === cat);
+    const items = filtered.filter((tag) => tag.category === cat);
     if (items.length > 0) acc[cat] = items;
     return acc;
   }, {});
-  const remaining = filtered.filter((t) => !CATEGORY_ORDER.includes(t.category));
+  const remaining = filtered.filter((tag) => !CATEGORY_ORDER.includes(tag.category));
   if (remaining.length > 0) grouped["other"] = remaining;
+
+  const getCategoryLabel = (cat: string): string => {
+    const key = `categories.${cat}` as Parameters<typeof t>[0];
+    try { return t(key); } catch { return cat; }
+  };
 
   const handleTagInsert = (e: React.MouseEvent, tagKey: string) => {
     e.preventDefault();
@@ -930,30 +948,30 @@ function TagsPanel({ tags }: { tags: TagInfo[] }) {
     if (active instanceof HTMLTextAreaElement || active instanceof HTMLInputElement) {
       document.execCommand("insertText", false, tagText);
     } else {
-      void navigator.clipboard.writeText(tagText).then(() => toast.success(`${tagText} gekopieerd`));
+      void navigator.clipboard.writeText(tagText).then(() => toast.success(t("tags.copied", { tag: tagText })));
     }
   };
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
-        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Tags invoegen</p>
+        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">{t("tags.title")}</p>
         <div className="relative">
           <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Zoek tags..."
+            placeholder={t("tags.searchPlaceholder")}
             className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 pl-7 pr-3 py-1.5 text-xs outline-none focus:border-[#003566] dark:text-slate-100"
           />
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <p className="text-[10px] text-slate-400 leading-relaxed">Klik op een tag om in te voegen op de cursorpositie, of kopieer naar klembord.</p>
+        <p className="text-[10px] text-slate-400 leading-relaxed">{t("tags.instruction")}</p>
         {Object.entries(grouped).map(([cat, items]) => (
           <div key={cat}>
             <p className="mb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
-              {CATEGORY_LABELS[cat] ?? cat}
+              {getCategoryLabel(cat)}
             </p>
             <div className="flex flex-wrap gap-1">
               {items.map((tag) => (
@@ -970,7 +988,7 @@ function TagsPanel({ tags }: { tags: TagInfo[] }) {
           </div>
         ))}
         {Object.keys(grouped).length === 0 && (
-          <p className="text-xs text-slate-400">Geen tags gevonden.</p>
+          <p className="text-xs text-slate-400">{t("tags.empty")}</p>
         )}
       </div>
     </div>
@@ -980,6 +998,7 @@ function TagsPanel({ tags }: { tags: TagInfo[] }) {
 // ─── Main editor page ─────────────────────────────────────────────────────────
 
 export default function EmailTemplateEditorPage() {
+  const t = useTranslations("EmailTemplateEditor");
   const locale = useLocale();
   const params = useParams<{ role?: string; id?: string }>();
   const role = params?.role ?? "admin";
@@ -1045,7 +1064,7 @@ export default function EmailTemplateEditorPage() {
       setIsGlobal(t.is_global ?? false);
       setIsDirty(false);
     } catch {
-      toast.error("Sjabloon laden mislukt.");
+      toast.error(t("toasts.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -1124,12 +1143,12 @@ export default function EmailTemplateEditorPage() {
         is_global: isGlobal,
         change_note: note || null,
       });
-      toast.success("Opgeslagen.");
+      toast.success(t("toasts.saved"));
       setIsDirty(false);
       setChangeNote("");
       await loadTemplate();
     } catch {
-      toast.error("Opslaan mislukt.");
+      toast.error(t("toasts.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -1157,7 +1176,7 @@ export default function EmailTemplateEditorPage() {
   if (!template) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <p className="text-slate-500">Sjabloon niet gevonden.</p>
+        <p className="text-slate-500">{t("toasts.notFound")}</p>
       </div>
     );
   }
@@ -1177,20 +1196,20 @@ export default function EmailTemplateEditorPage() {
             value={name}
             onChange={(e) => { setName(e.target.value); markDirty(); }}
             className="w-full bg-transparent text-base font-bold text-slate-900 dark:text-white outline-none placeholder:text-slate-400 truncate"
-            placeholder="Sjabloonnaam..."
+            placeholder={t("topBar.namePlaceholder")}
           />
           <div className="flex items-center gap-2 mt-0.5">
             {template.is_global ? (
               <span className="inline-flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-semibold">
-                <Globe2 size={9} /> Globaal master
+                <Globe2 size={9} /> {t("topBar.globalBadge")}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
-                <MapPin size={9} /> {template.location?.name ?? "Locatie"}
+                <MapPin size={9} /> {template.location?.name ?? t("topBar.locationFallback")}
               </span>
             )}
             <span className="text-[10px] text-slate-400">v{template.current_version}</span>
-            {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-orange-400" title="Niet opgeslagen wijzigingen" />}
+            {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-orange-400" title={t("topBar.unsavedDot")} />}
           </div>
         </div>
 
@@ -1212,16 +1231,16 @@ export default function EmailTemplateEditorPage() {
 
         {/* Right panel toggles */}
         <div className="flex items-center gap-0.5 rounded-xl border border-slate-200 dark:border-slate-700 p-0.5">
-          <button onClick={() => setRightPanel("preview")} className={cn("rounded-lg p-1.5 transition", rightPanel === "preview" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title="Preview">
+          <button onClick={() => setRightPanel("preview")} className={cn("rounded-lg p-1.5 transition", rightPanel === "preview" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title={t("topBar.previewTooltip")}>
             <Eye size={14} />
           </button>
-          <button onClick={() => setRightPanel("versions")} className={cn("rounded-lg p-1.5 transition", rightPanel === "versions" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title="Versies">
+          <button onClick={() => setRightPanel("versions")} className={cn("rounded-lg p-1.5 transition", rightPanel === "versions" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title={t("topBar.versionsTooltip")}>
             <History size={14} />
           </button>
-          <button onClick={() => setRightPanel("meta")} className={cn("rounded-lg p-1.5 transition", rightPanel === "meta" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title="Instellingen">
+          <button onClick={() => setRightPanel("meta")} className={cn("rounded-lg p-1.5 transition", rightPanel === "meta" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title={t("topBar.settingsTooltip")}>
             <Settings2 size={14} />
           </button>
-          <button onClick={() => setRightPanel("tags")} className={cn("rounded-lg p-1.5 transition", rightPanel === "tags" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title="Tags invoegen">
+          <button onClick={() => setRightPanel("tags")} className={cn("rounded-lg p-1.5 transition", rightPanel === "tags" ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200")} title={t("topBar.tagsTooltip")}>
             <Tag size={14} />
           </button>
         </div>
@@ -1232,7 +1251,7 @@ export default function EmailTemplateEditorPage() {
           className="flex items-center gap-2 rounded-xl bg-[#003566] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50 transition"
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-          Opslaan
+          {t("topBar.saveButton")}
         </button>
       </div>
 
@@ -1241,7 +1260,7 @@ export default function EmailTemplateEditorPage() {
         {/* Left: Block palette */}
         <div className="w-52 flex-shrink-0 flex flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
           <div className="px-3 pt-4 pb-2">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Blokken</p>
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">{t("palette.heading")}</p>
             <div className="flex gap-0.5 rounded-lg border border-slate-200 dark:border-slate-700 p-0.5">
               {(["all", "standard", "smart"] as const).map((f) => (
                 <button
@@ -1251,7 +1270,7 @@ export default function EmailTemplateEditorPage() {
                     blockFilter === f ? "bg-[#003566] text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                   )}
                 >
-                  {f === "all" ? "Alles" : f === "standard" ? "Basis" : <Sparkles size={10} className="mx-auto" />}
+                  {f === "all" ? t("palette.filterAll") : f === "standard" ? t("palette.filterBasic") : <Sparkles size={10} className="mx-auto" />}
                 </button>
               ))}
             </div>
@@ -1276,29 +1295,29 @@ export default function EmailTemplateEditorPage() {
           {/* Event / location / status info bar */}
           <div className="mb-3 rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3 flex flex-wrap items-center gap-3 text-xs">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Gebeurtenis:</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{t("infoBar.eventLabel")}</span>
               <select
                 value={templateType}
                 onChange={(e) => { setTemplateType(e.target.value); markDirty(); }}
                 className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               >
-                {types.length === 0 && <option value={templateType}>{templateType || "— kies —"}</option>}
+                {types.length === 0 && <option value={templateType}>{templateType || t("infoBar.eventFallback")}</option>}
                 {types.map((tp) => <option key={tp.value} value={tp.value}>{tp.label}</option>)}
               </select>
             </div>
             <div className="flex items-center gap-1.5">
               {template?.is_global ? (
                 <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
-                  <Globe2 size={9} /> Globaal
+                  <Globe2 size={9} /> {t("infoBar.globalBadge")}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                  <MapPin size={9} /> {template?.location?.name ?? "Geen vestiging"}
+                  <MapPin size={9} /> {template?.location?.name ?? t("infoBar.noLocation")}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Taal:</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{t("infoBar.languageLabel")}</span>
               <select
                 value={languageDefault}
                 onChange={(e) => { setLanguageDefault(e.target.value as Lang); markDirty(); }}
@@ -1310,7 +1329,7 @@ export default function EmailTemplateEditorPage() {
             <div className="ml-auto flex items-center gap-2">
               <label className="flex items-center gap-1.5 cursor-pointer select-none">
                 <span className={cn("text-[10px] font-black uppercase tracking-wider", isActive ? "text-emerald-600" : "text-slate-400")}>
-                  {isActive ? "Actief" : "Concept"}
+                  {isActive ? t("infoBar.statusActive") : t("infoBar.statusDraft")}
                 </span>
                 <button
                   type="button"
@@ -1330,24 +1349,24 @@ export default function EmailTemplateEditorPage() {
           <div className="mb-4 rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 space-y-3">
             <div>
               <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Onderwerp ({LANG_LABELS[activeLang]})
+                {t("canvas.subjectLabel", { lang: LANG_LABELS[activeLang] })}
               </label>
               <input
                 value={subject[activeLang] ?? ""}
                 onChange={(e) => { setSubject((prev) => ({ ...prev, [activeLang]: e.target.value })); markDirty(); }}
                 className="w-full bg-transparent text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300"
-                placeholder="E-mailonderwerp..."
+                placeholder={t("canvas.subjectPlaceholder")}
               />
             </div>
             <div>
               <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Preheader (voorvertoningtekst)
+                {t("canvas.preheaderLabel")}
               </label>
               <input
                 value={preheader}
                 onChange={(e) => { setPreheader(e.target.value); markDirty(); }}
                 className="w-full bg-transparent text-sm text-slate-600 dark:text-slate-300 outline-none placeholder:text-slate-300"
-                placeholder="Korte beschrijving zichtbaar in inbox naast het onderwerp…"
+                placeholder={t("canvas.preheaderPlaceholder")}
                 maxLength={200}
               />
             </div>
@@ -1365,7 +1384,7 @@ export default function EmailTemplateEditorPage() {
                   {blocks.length === 0 && (
                     <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 py-12 text-center">
                       <Plus size={24} className="mx-auto mb-2 text-slate-300" />
-                      <p className="text-sm text-slate-400">Klik op een blok links om toe te voegen</p>
+                      <p className="text-sm text-slate-400">{t("canvas.emptyState")}</p>
                     </div>
                   )}
                   {blocks.map((block, i) => (
@@ -1389,7 +1408,7 @@ export default function EmailTemplateEditorPage() {
           </DragDropContext>
 
           <div className="mt-4 text-center text-[10px] text-slate-300 dark:text-slate-600">
-            {blocks.length} blokken · sleep om te herordenen
+            {t("canvas.blocksCount", { count: blocks.length })}
           </div>
         </div>
 
@@ -1424,9 +1443,9 @@ export default function EmailTemplateEditorPage() {
           ) : (
             // Meta settings
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
-              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Sjablooninstellingen</p>
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{t("meta.title")}</p>
               <div>
-                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Beschrijving</label>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("meta.description")}</label>
                 <textarea
                   rows={2}
                   value={description}
@@ -1435,21 +1454,21 @@ export default function EmailTemplateEditorPage() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Naam afzender</label>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("meta.senderName")}</label>
                 <Input value={senderName} onChange={(e) => { setSenderName(e.target.value); markDirty(); }} className="rounded-xl text-sm" placeholder="{{location_name}}" />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">E-mailadres afzender</label>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("meta.senderEmail")}</label>
                 <Input value={senderEmail} onChange={(e) => { setSenderEmail(e.target.value); markDirty(); }} className="rounded-xl text-sm" type="email" />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Antwoord-naar</label>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("meta.replyTo")}</label>
                 <Input value={replyTo} onChange={(e) => { setReplyTo(e.target.value); markDirty(); }} className="rounded-xl text-sm" type="email" />
               </div>
               <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Stijl</p>
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{t("meta.style")}</p>
                 <div>
-                  <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Primaire kleur</label>
+                  <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t("meta.primaryColor")}</label>
                   <div className="flex items-center gap-2">
                     <input type="color" value={primaryColor} onChange={(e) => { setPrimaryColor(e.target.value); markDirty(); }} className="h-9 w-14 rounded-xl border border-slate-200 cursor-pointer dark:border-slate-700" />
                     <Input value={primaryColor} onChange={(e) => { setPrimaryColor(e.target.value); markDirty(); }} className="rounded-xl text-sm font-mono" />
@@ -1458,7 +1477,7 @@ export default function EmailTemplateEditorPage() {
               </div>
               {template.location && (
                 <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">Locatie</p>
+                  <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">{t("meta.locationSection")}</p>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50 px-3 py-2">
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{template.location.name}</p>
                   </div>
@@ -1473,24 +1492,24 @@ export default function EmailTemplateEditorPage() {
       {showChangeNoteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-2xl p-6">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Wijziging opslaan</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Voeg optioneel een notitie toe over wat je hebt gewijzigd. Dit wordt opgeslagen in de versiegeschiedenis.</p>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t("changeNote.title")}</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{t("changeNote.body")}</p>
             <textarea
               rows={3}
               value={changeNote}
               onChange={(e) => setChangeNote(e.target.value)}
-              placeholder="Bijv. Koptekst aangepast voor nieuwe campagne..."
+              placeholder={t("changeNote.placeholder")}
               className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:border-[#003566] resize-none mb-4"
             />
             <div className="flex gap-3 justify-end">
-              <Button variant="outline" onClick={() => setShowChangeNoteModal(false)} className="rounded-xl">Annuleren</Button>
+              <Button variant="outline" onClick={() => setShowChangeNoteModal(false)} className="rounded-xl">{t("changeNote.cancel")}</Button>
               <Button
                 onClick={() => void handleSave()}
                 disabled={saving}
                 variant="outline"
                 className="rounded-xl text-slate-500"
               >
-                Opslaan zonder notitie
+                {t("changeNote.saveWithoutNote")}
               </Button>
               <Button
                 onClick={() => void handleSaveWithNote()}
@@ -1498,7 +1517,7 @@ export default function EmailTemplateEditorPage() {
                 className="rounded-xl bg-[#003566] text-white hover:bg-blue-900"
               >
                 {savingWithNote ? <Loader2 size={14} className="animate-spin mr-1" /> : <Save size={14} className="mr-1" />}
-                Opslaan
+                {t("changeNote.save")}
               </Button>
             </div>
           </div>
