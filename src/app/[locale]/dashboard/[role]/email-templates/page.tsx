@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -8,11 +8,17 @@ import {
   Plus,
   Copy,
   Archive,
+  Pencil,
   Eye,
+  Send,
   Globe2,
   MapPin,
   Loader2,
   Search,
+  CheckCircle2,
+  XCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -29,6 +35,8 @@ interface EmailTemplate {
   location_id: number | null;
   location?: { id: number; name: string } | null;
   language_default: string;
+  subject: Record<string, string>;
+  preheader?: string | null;
   is_active: boolean;
   is_archived: boolean;
   current_version: number;
@@ -48,6 +56,8 @@ interface LocationOption {
 
 const LANG_LABELS: Record<string, string> = { nl: "NL", en: "EN", de: "DE", fr: "FR" };
 
+type SortKey = "type" | "location" | "language_default" | "updated_at" | "current_version";
+
 export default function EmailTemplatesPage() {
   const t = useTranslations("EmailTemplates");
   const locale = useLocale();
@@ -61,19 +71,21 @@ export default function EmailTemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
-  const [filterScope, setFilterScope] = useState("all"); // all | global | location
+  const [filterScope, setFilterScope] = useState("all");
   const [filterLocationId, setFilterLocationId] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("updated_at");
+  const [sortAsc, setSortAsc] = useState(false);
+
+  // Per-row action state
   const [duplicating, setDuplicating] = useState<number | null>(null);
   const [archiving, setArchiving] = useState<number | null>(null);
-  const [showArchived, setShowArchived] = useState(false);
+  const [previewing, setPreviewing] = useState<number | null>(null);
+  const [testSending, setTestSending] = useState<number | null>(null);
 
   const root = `/${locale}/dashboard/${role}`;
 
-  useEffect(() => {
-    void loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [tRes, typesRes, locRes] = await Promise.all([
@@ -84,39 +96,78 @@ export default function EmailTemplatesPage() {
       const rawTemplates = tRes.data as { data?: EmailTemplate[] } | EmailTemplate[];
       setTemplates(Array.isArray(rawTemplates) ? rawTemplates : (rawTemplates as { data?: EmailTemplate[] })?.data ?? []);
       const rawTypes = typesRes.data;
-      setTypes(Array.isArray(rawTypes) ? rawTypes as TemplateType[] : []);
+      setTypes(Array.isArray(rawTypes) ? (rawTypes as TemplateType[]) : []);
       setLocations(locRes.data?.data ?? []);
     } catch {
-      toast.error(t("loadFailed"));
+      toast.error("Laden mislukt");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const handleDuplicate = async (template: EmailTemplate) => {
     setDuplicating(template.id);
     try {
       await api.post(`/admin/email-templates/${template.id}/duplicate`);
-      toast.success(t("duplicateSuccess"));
+      toast.success("Sjabloon gedupliceerd");
       await loadData();
     } catch {
-      toast.error(t("duplicateFailed"));
+      toast.error("Dupliceren mislukt");
     } finally {
       setDuplicating(null);
     }
   };
 
   const handleArchive = async (template: EmailTemplate) => {
-    if (!confirm(t("archiveConfirm", { name: template.name }))) return;
+    if (!confirm(`Weet u zeker dat u "${template.name}" wilt archiveren?`)) return;
     setArchiving(template.id);
     try {
       await api.delete(`/admin/email-templates/${template.id}`);
-      toast.success(t("archiveSuccess"));
+      toast.success("Sjabloon gearchiveerd");
       await loadData();
     } catch {
-      toast.error(t("archiveFailed"));
+      toast.error("Archiveren mislukt");
     } finally {
       setArchiving(null);
+    }
+  };
+
+  const handlePreview = async (template: EmailTemplate) => {
+    setPreviewing(template.id);
+    try {
+      const res = await api.post<{ html: string }>(`/admin/email-templates/${template.id}/preview`, {
+        lang: template.language_default ?? "nl",
+      });
+      const w = window.open("", "_blank", "width=700,height=600,scrollbars=yes");
+      if (w) {
+        w.document.write(res.data.html);
+        w.document.close();
+      }
+    } catch {
+      toast.error("Voorbeeld laden mislukt");
+    } finally {
+      setPreviewing(null);
+    }
+  };
+
+  const handleTestSend = async (template: EmailTemplate) => {
+    const email = prompt("Voer een e-mailadres in om de test te verzenden:");
+    if (!email || !email.includes("@")) return;
+    setTestSending(template.id);
+    try {
+      await api.post(`/admin/email-templates/${template.id}/test-send`, {
+        email,
+        lang: template.language_default ?? "nl",
+      });
+      toast.success(`Test e-mail verzonden naar ${email}`);
+    } catch {
+      toast.error("Verzenden mislukt");
+    } finally {
+      setTestSending(null);
     }
   };
 
@@ -127,11 +178,10 @@ export default function EmailTemplatesPage() {
         name: "Nieuw sjabloon",
         subject: { nl: "Onderwerp", en: "Subject", de: "Betreff", fr: "Sujet" },
         blocks: [
-          { id: "1", type: "logo", settings: { source: "location_logo" } },
-          { id: "2", type: "header", settings: { content: { nl: "Hallo {{buyer_name}},", en: "Hello {{buyer_name}},", de: "Hallo {{buyer_name}},", fr: "Bonjour {{buyer_name}}," } } },
-          { id: "3", type: "text", settings: { content: { nl: "Dit is een nieuw e-mailsjabloon.", en: "This is a new email template.", de: "Dies ist eine neue E-Mail-Vorlage.", fr: "Ceci est un nouveau modèle d'e-mail." } } },
-          { id: "4", type: "button", settings: { label: { nl: "Bekijk", en: "View", de: "Ansehen", fr: "Voir" }, url: "{{offer_link}}" } },
-          { id: "5", type: "footer", settings: { content: { nl: "{{location_name}} · {{location_email}}", en: "{{location_name}} · {{location_email}}", de: "{{location_name}} · {{location_email}}", fr: "{{location_name}} · {{location_email}}" } } },
+          { id: "1", type: "logo", settings: { src: "{{location_logo}}", alt: "{{location_name}}", height: 50 } },
+          { id: "2", type: "header", settings: { content: { nl: "Hallo {{buyer_name}},", en: "Hello {{buyer_name}}," } } },
+          { id: "3", type: "text", settings: { content: { nl: "Dit is een nieuw e-mailsjabloon.", en: "This is a new email template." } } },
+          { id: "4", type: "footer", settings: { content: { nl: "{{location_name}} · {{location_email}}", en: "{{location_name}} · {{location_email}}" } } },
         ],
       });
       const newId = res.data?.template?.id;
@@ -141,36 +191,72 @@ export default function EmailTemplatesPage() {
         await loadData();
       }
     } catch {
-      toast.error(t("createFailed"));
+      toast.error("Aanmaken mislukt");
     }
   };
 
-  const filtered = templates.filter((t) => {
-    if (!showArchived && t.is_archived) return false;
-    if (filterType !== "all" && t.type !== filterType) return false;
-    if (filterScope === "global" && !t.is_global) return false;
-    if (filterScope === "location" && t.is_global) return false;
-    if (filterLocationId && String(t.location_id) !== filterLocationId) return false;
+  // ── Filtering ──
+
+  const filtered = templates.filter((tmpl) => {
+    if (!showArchived && tmpl.is_archived) return false;
+    if (filterType !== "all" && tmpl.type !== filterType) return false;
+    if (filterScope === "global" && !tmpl.is_global) return false;
+    if (filterScope === "location" && tmpl.is_global) return false;
+    if (filterLocationId && String(tmpl.location_id) !== filterLocationId) return false;
     if (search) {
       const q = search.toLowerCase();
-      if (!t.name.toLowerCase().includes(q) && !t.type.toLowerCase().includes(q)) return false;
+      const label = types.find((tp) => tp.value === tmpl.type)?.label ?? "";
+      if (
+        !tmpl.name.toLowerCase().includes(q) &&
+        !tmpl.type.toLowerCase().includes(q) &&
+        !label.toLowerCase().includes(q) &&
+        !(tmpl.location?.name ?? "").toLowerCase().includes(q)
+      ) return false;
     }
     return true;
   });
 
-  const grouped: Record<string, EmailTemplate[]> = {};
-  filtered.forEach((template) => {
-    const key = template.is_global ? t("globalMasterTemplates") : (template.location?.name ?? t("unknownLocation"));
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(template);
+  // ── Sorting ──
+
+  const sorted = [...filtered].sort((a, b) => {
+    let av = "";
+    let bv = "";
+    if (sortKey === "type") {
+      av = types.find((tp) => tp.value === a.type)?.label ?? a.type;
+      bv = types.find((tp) => tp.value === b.type)?.label ?? b.type;
+    } else if (sortKey === "location") {
+      av = a.is_global ? "Globaal" : (a.location?.name ?? "");
+      bv = b.is_global ? "Globaal" : (b.location?.name ?? "");
+    } else if (sortKey === "language_default") {
+      av = a.language_default;
+      bv = b.language_default;
+    } else if (sortKey === "updated_at") {
+      av = a.updated_at;
+      bv = b.updated_at;
+    } else if (sortKey === "current_version") {
+      return sortAsc ? a.current_version - b.current_version : b.current_version - a.current_version;
+    }
+    const cmp = av.localeCompare(bv);
+    return sortAsc ? cmp : -cmp;
   });
 
-  const typeLabel = (type: string) =>
-    types.find((tp) => tp.value === type)?.label ?? type;
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortAsc((p) => !p);
+    else { setSortKey(key); setSortAsc(true); }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) =>
+    sortKey !== col ? null : sortAsc ? (
+      <ChevronUp size={12} className="ml-0.5 inline-block" />
+    ) : (
+      <ChevronDown size={12} className="ml-0.5 inline-block" />
+    );
+
+  const typeLabel = (type: string) => types.find((tp) => tp.value === type)?.label ?? type;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      {/* Header */}
+      {/* Page header */}
       <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-6 py-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
@@ -178,16 +264,17 @@ export default function EmailTemplatesPage() {
               <Mail size={20} />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white">{t("title")}</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{t("subtitle")}</p>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-white">E-mailsjablonen</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {filtered.length} sjablonen · beheer e-mailsjablonen per vestiging en gebeurtenis
+              </p>
             </div>
           </div>
           <Button
             onClick={() => void handleCreate()}
             className="bg-[#003566] text-white hover:bg-blue-900 rounded-xl"
           >
-            <Plus size={16} className="mr-2" />
-            {t("newTemplate")}
+            <Plus size={16} className="mr-2" /> Nieuw sjabloon
           </Button>
         </div>
 
@@ -198,7 +285,7 @@ export default function EmailTemplatesPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("search")}
+              placeholder="Zoek sjablonen…"
               className="h-9 pl-8 w-56 rounded-xl text-sm"
             />
           </div>
@@ -207,19 +294,19 @@ export default function EmailTemplatesPage() {
             onChange={(e) => setFilterType(e.target.value)}
             className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
-            <option value="all">{t("allTypes")}</option>
-            {types.map((type) => (
-              <option key={type.value} value={type.value}>{type.label}</option>
+            <option value="all">Alle gebeurtenissen</option>
+            {types.map((tp) => (
+              <option key={tp.value} value={tp.value}>{tp.label}</option>
             ))}
           </select>
           <select
             value={filterScope}
-            onChange={(e) => setFilterScope(e.target.value)}
+            onChange={(e) => { setFilterScope(e.target.value); setFilterLocationId(""); }}
             className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
-            <option value="all">{t("scopeAll")}</option>
-            <option value="global">{t("scopeGlobal")}</option>
-            <option value="location">{t("scopeLocation")}</option>
+            <option value="all">Globaal + vestiging</option>
+            <option value="global">Alleen globaal</option>
+            <option value="location">Alleen vestiging</option>
           </select>
           {filterScope !== "global" && locations.length > 0 && (
             <select
@@ -227,7 +314,7 @@ export default function EmailTemplatesPage() {
               onChange={(e) => setFilterLocationId(e.target.value)}
               className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             >
-              <option value="">{t("allLocations")}</option>
+              <option value="">Alle vestigingen</option>
               {locations.map((l) => (
                 <option key={l.id} value={String(l.id)}>{l.name}</option>
               ))}
@@ -240,48 +327,166 @@ export default function EmailTemplatesPage() {
               onChange={(e) => setShowArchived(e.target.checked)}
               className="rounded"
             />
-            {t("showArchived")}
+            Gearchiveerd tonen
           </label>
         </div>
       </div>
 
+      {/* Table */}
       <div className="p-6">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 size={28} className="animate-spin text-slate-400" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center dark:border-slate-700 dark:bg-slate-900">
             <Mail size={40} className="mx-auto mb-3 text-slate-300" />
-            <p className="text-slate-500">{t("emptyState")}</p>
+            <p className="text-slate-500">Geen sjablonen gevonden</p>
             <Button onClick={() => void handleCreate()} className="mt-4 bg-[#003566] text-white hover:bg-blue-900 rounded-xl">
-              <Plus size={16} className="mr-2" /> {t("createFirst")}
+              <Plus size={16} className="mr-2" /> Eerste sjabloon aanmaken
             </Button>
           </div>
         ) : (
-          <div className="space-y-8">
-            {Object.entries(grouped).map(([group, items]) => (
-              <div key={group}>
-                <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-                  {group}
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {items.map((template) => (
-                    <TemplateCard
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
+                    <Th onClick={() => toggleSort("type")}>
+                      Gebeurtenis <SortIcon col="type" />
+                    </Th>
+                    <Th onClick={() => toggleSort("location")}>
+                      Vestiging <SortIcon col="location" />
+                    </Th>
+                    <Th onClick={() => toggleSort("language_default")}>
+                      Taal <SortIcon col="language_default" />
+                    </Th>
+                    <Th onClick={() => toggleSort("updated_at")}>
+                      Bijgewerkt <SortIcon col="updated_at" />
+                    </Th>
+                    <Th onClick={() => toggleSort("current_version")}>
+                      Versie <SortIcon col="current_version" />
+                    </Th>
+                    <Th>Status</Th>
+                    <Th>Acties</Th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {sorted.map((template) => (
+                    <tr
                       key={template.id}
-                      template={template}
-                      typeLabel={typeLabel(template.type)}
-                      root={root}
-                      locale={locale}
-                      onDuplicate={() => void handleDuplicate(template)}
-                      onArchive={() => void handleArchive(template)}
-                      duplicating={duplicating === template.id}
-                      archiving={archiving === template.id}
-                    />
+                      className={cn(
+                        "group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors",
+                        template.is_archived && "opacity-60",
+                      )}
+                    >
+                      {/* Event / type */}
+                      <td className="px-4 py-3">
+                        <div
+                          className="cursor-pointer"
+                          onClick={() => router.push(`${root}/email-templates/${template.id}`)}
+                        >
+                          <p className="font-semibold text-slate-900 dark:text-slate-100 leading-tight hover:text-[#003566] dark:hover:text-blue-400 transition-colors">
+                            {typeLabel(template.type)}
+                          </p>
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{template.name}</p>
+                        </div>
+                      </td>
+
+                      {/* Location */}
+                      <td className="px-4 py-3">
+                        {template.is_global ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
+                            <Globe2 size={9} /> Globaal
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                            <MapPin size={9} /> {template.location?.name ?? "—"}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Language */}
+                      <td className="px-4 py-3">
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                          {LANG_LABELS[template.language_default] ?? template.language_default}
+                        </span>
+                      </td>
+
+                      {/* Updated at */}
+                      <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        {new Date(template.updated_at).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
+                      </td>
+
+                      {/* Version */}
+                      <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 text-center">
+                        v{template.current_version}
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-4 py-3">
+                        {template.is_archived ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-orange-700">
+                            Gearchiveerd
+                          </span>
+                        ) : template.is_active ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 size={12} /> Actief
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                            <XCircle size={12} /> Concept
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <ActionBtn
+                            title="Bewerken"
+                            onClick={() => router.push(`${root}/email-templates/${template.id}`)}
+                          >
+                            <Pencil size={13} />
+                          </ActionBtn>
+                          <ActionBtn
+                            title="Voorbeeld"
+                            loading={previewing === template.id}
+                            onClick={() => void handlePreview(template)}
+                          >
+                            {previewing === template.id ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />}
+                          </ActionBtn>
+                          <ActionBtn
+                            title="Test e-mail verzenden"
+                            loading={testSending === template.id}
+                            onClick={() => void handleTestSend(template)}
+                          >
+                            {testSending === template.id ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                          </ActionBtn>
+                          <ActionBtn
+                            title="Dupliceren"
+                            loading={duplicating === template.id}
+                            onClick={() => void handleDuplicate(template)}
+                          >
+                            {duplicating === template.id ? <Loader2 size={13} className="animate-spin" /> : <Copy size={13} />}
+                          </ActionBtn>
+                          {!template.is_archived && (
+                            <ActionBtn
+                              title="Archiveren"
+                              loading={archiving === template.id}
+                              onClick={() => void handleArchive(template)}
+                              danger
+                            >
+                              {archiving === template.id ? <Loader2 size={13} className="animate-spin" /> : <Archive size={13} />}
+                            </ActionBtn>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
                   ))}
-                </div>
-              </div>
-            ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -289,101 +494,46 @@ export default function EmailTemplatesPage() {
   );
 }
 
-function TemplateCard({
-  template,
-  typeLabel,
-  root,
-  locale,
-  onDuplicate,
-  onArchive,
-  duplicating,
-  archiving,
-}: {
-  template: EmailTemplate;
-  typeLabel: string;
-  root: string;
-  locale: string;
-  onDuplicate: () => void;
-  onArchive: () => void;
-  duplicating: boolean;
-  archiving: boolean;
-}) {
-  const router = useRouter();
-  const t = useTranslations("EmailTemplates");
-
+function Th({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
   return (
-    <div
+    <th
+      onClick={onClick}
       className={cn(
-        "group relative rounded-2xl border bg-white p-5 transition hover:shadow-md cursor-pointer dark:bg-slate-900",
-        template.is_archived
-          ? "border-slate-200 opacity-60 dark:border-slate-700"
-          : template.is_global
-            ? "border-[#003566]/20 dark:border-blue-900/40"
-            : "border-slate-200 dark:border-slate-700",
+        "px-4 py-3 text-left text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 select-none",
+        onClick && "cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 transition-colors",
       )}
-      onClick={() => router.push(`${root}/email-templates/${template.id}`)}
     >
-      {/* Badges */}
-      <div className="mb-3 flex flex-wrap items-center gap-1.5">
-        {template.is_global ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
-            <Globe2 size={9} /> {t("global")}
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            <MapPin size={9} /> {template.location?.name ?? t("locationFallback")}
-          </span>
-        )}
-        <span className="inline-flex items-center rounded-full border border-slate-100 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-400">
-          {LANG_LABELS[template.language_default] ?? template.language_default}
-        </span>
-        {template.is_archived && (
-          <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-orange-700">
-            {t("archived")}
-          </span>
-        )}
-      </div>
+      {children}
+    </th>
+  );
+}
 
-      {/* Name & type */}
-      <p className="font-semibold text-slate-900 dark:text-slate-100 leading-tight">{template.name}</p>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{typeLabel}</p>
-      {template.description && (
-        <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500 line-clamp-2">{template.description}</p>
+function ActionBtn({
+  children,
+  title,
+  onClick,
+  loading,
+  danger,
+}: {
+  children: React.ReactNode;
+  title: string;
+  onClick: () => void;
+  loading?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      title={title}
+      disabled={loading}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={cn(
+        "rounded-lg p-1.5 transition-colors disabled:opacity-40",
+        danger
+          ? "text-slate-400 hover:bg-orange-100 hover:text-orange-700 dark:hover:bg-orange-950/40 dark:hover:text-orange-300"
+          : "text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200",
       )}
-
-      {/* Footer */}
-      <div className="mt-4 flex items-center justify-between gap-2">
-        <span className="text-[10px] text-slate-400 dark:text-slate-500">
-          v{template.current_version} · {new Date(template.updated_at).toLocaleDateString(locale)}
-        </span>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => { e.stopPropagation(); router.push(`${root}/email-templates/${template.id}`); }}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-            title={t("edit")}
-          >
-            <Eye size={14} />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-            disabled={duplicating}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 disabled:opacity-50"
-            title={t("duplicateTitle")}
-          >
-            {duplicating ? <Loader2 size={14} className="animate-spin" /> : <Copy size={14} />}
-          </button>
-          {!template.is_archived && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onArchive(); }}
-              disabled={archiving}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-orange-100 hover:text-orange-700 dark:hover:bg-orange-950/40 dark:hover:text-orange-300 disabled:opacity-50"
-              title={t("archiveTitle")}
-            >
-              {archiving ? <Loader2 size={14} className="animate-spin" /> : <Archive size={14} />}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    >
+      {children}
+    </button>
   );
 }

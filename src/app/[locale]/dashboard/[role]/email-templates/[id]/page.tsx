@@ -893,14 +893,20 @@ function VersionsPanel({
 // ─── Tags panel ───────────────────────────────────────────────────────────────
 
 const CATEGORY_LABELS: Record<string, string> = {
-  general: "Algemeen",
-  user: "Gebruiker",
-  boat: "Boot",
-  location: "Vestiging",
-  offer: "Bod",
-  contract: "Contract",
+  User:     "Gebruiker",
+  Buyer:    "Koper",
+  Seller:   "Verkoper",
+  Boat:     "Boot",
+  Location: "Vestiging",
+  Deal:     "Transactie",
+  Contract: "Contract",
+  Invoice:  "Factuur",
+  Payment:  "Betaling",
+  Company:  "Bedrijf",
+  System:   "Systeem",
+  Other:    "Overig",
 };
-const CATEGORY_ORDER = ["general", "user", "boat", "location", "offer", "contract"];
+const CATEGORY_ORDER = ["User", "Buyer", "Seller", "Boat", "Location", "Deal", "Contract", "Invoice", "Payment", "Company", "System"];
 
 function TagsPanel({ tags }: { tags: TagInfo[] }) {
   const [search, setSearch] = useState("");
@@ -984,10 +990,12 @@ export default function EmailTemplateEditorPage() {
   const [template, setTemplate] = useState<EmailTemplate | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [subject, setSubject] = useState<LocalizedString>({ nl: "", en: "", de: "", fr: "" });
+  const [preheader, setPreheader] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [templateType, setTemplateType] = useState("");
   const [languageDefault, setLanguageDefault] = useState<Lang>("nl");
+  const [isActive, setIsActive] = useState(true);
   const [senderName, setSenderName] = useState("");
   const [senderEmail, setSenderEmail] = useState("");
   const [replyTo, setReplyTo] = useState("");
@@ -1024,10 +1032,12 @@ export default function EmailTemplateEditorPage() {
       setTemplate(t);
       setBlocks(Array.isArray(t.blocks) ? t.blocks : []);
       setSubject(t.subject ?? { nl: "", en: "", de: "", fr: "" });
+      setPreheader((t as unknown as { preheader?: string }).preheader ?? "");
       setName(t.name ?? "");
       setDescription(t.description ?? "");
       setTemplateType(t.type ?? "");
       setLanguageDefault(t.language_default ?? "nl");
+      setIsActive(t.is_active ?? true);
       setSenderName(t.sender_name_override ?? "");
       setSenderEmail(t.sender_email_override ?? "");
       setReplyTo(t.reply_to_override ?? "");
@@ -1048,9 +1058,14 @@ export default function EmailTemplateEditorPage() {
         api.get("/admin/email-templates/tags"),
       ]);
       const rawTypes = typesRes.data;
-      setTypes(Array.isArray(rawTypes) ? rawTypes as TemplateType[] : []);
+      setTypes(Array.isArray(rawTypes) ? (rawTypes as TemplateType[]) : []);
       const rawTags = tagsRes.data;
-      setTags(Array.isArray(rawTags) ? rawTags as TagInfo[] : []);
+      // New format: { tags: TagInfo[], categories: string[] }; old format: TagInfo[]
+      if (Array.isArray(rawTags)) {
+        setTags(rawTags as TagInfo[]);
+      } else if (rawTags && typeof rawTags === "object" && Array.isArray((rawTags as { tags?: TagInfo[] }).tags)) {
+        setTags((rawTags as { tags: TagInfo[] }).tags);
+      }
     } catch {
       // non-fatal
     }
@@ -1099,11 +1114,13 @@ export default function EmailTemplateEditorPage() {
         type: templateType,
         language_default: languageDefault,
         subject,
+        preheader: preheader || null,
         blocks,
         sender_name_override: senderName || null,
         sender_email_override: senderEmail || null,
         reply_to_override: replyTo || null,
         primary_color_override: primaryColor || null,
+        is_active: isActive,
         is_global: isGlobal,
         change_note: note || null,
       });
@@ -1256,17 +1273,84 @@ export default function EmailTemplateEditorPage() {
 
         {/* Center: Canvas */}
         <div className="flex-1 overflow-y-auto p-6">
-          {/* Subject input */}
-          <div className="mb-4 rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3">
-            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
-              Onderwerp ({LANG_LABELS[activeLang]})
-            </label>
-            <input
-              value={subject[activeLang] ?? ""}
-              onChange={(e) => { setSubject((prev) => ({ ...prev, [activeLang]: e.target.value })); markDirty(); }}
-              className="w-full bg-transparent text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300"
-              placeholder="E-mailonderwerp..."
-            />
+          {/* Event / location / status info bar */}
+          <div className="mb-3 rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3 flex flex-wrap items-center gap-3 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Gebeurtenis:</span>
+              <select
+                value={templateType}
+                onChange={(e) => { setTemplateType(e.target.value); markDirty(); }}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              >
+                {types.length === 0 && <option value={templateType}>{templateType || "— kies —"}</option>}
+                {types.map((tp) => <option key={tp.value} value={tp.value}>{tp.label}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {template?.is_global ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
+                  <Globe2 size={9} /> Globaal
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                  <MapPin size={9} /> {template?.location?.name ?? "Geen vestiging"}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Taal:</span>
+              <select
+                value={languageDefault}
+                onChange={(e) => { setLanguageDefault(e.target.value as Lang); markDirty(); }}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              >
+                {LANGS.map((l) => <option key={l} value={l}>{LANG_LABELS[l]}</option>)}
+              </select>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                <span className={cn("text-[10px] font-black uppercase tracking-wider", isActive ? "text-emerald-600" : "text-slate-400")}>
+                  {isActive ? "Actief" : "Concept"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setIsActive((p) => !p); markDirty(); }}
+                  className={cn(
+                    "relative h-5 w-9 rounded-full transition-colors",
+                    isActive ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600",
+                  )}
+                >
+                  <span className={cn("absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform", isActive && "translate-x-4")} />
+                </button>
+              </label>
+            </div>
+          </div>
+
+          {/* Subject + preheader */}
+          <div className="mb-4 rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 space-y-3">
+            <div>
+              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Onderwerp ({LANG_LABELS[activeLang]})
+              </label>
+              <input
+                value={subject[activeLang] ?? ""}
+                onChange={(e) => { setSubject((prev) => ({ ...prev, [activeLang]: e.target.value })); markDirty(); }}
+                className="w-full bg-transparent text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300"
+                placeholder="E-mailonderwerp..."
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Preheader (voorvertoningtekst)
+              </label>
+              <input
+                value={preheader}
+                onChange={(e) => { setPreheader(e.target.value); markDirty(); }}
+                className="w-full bg-transparent text-sm text-slate-600 dark:text-slate-300 outline-none placeholder:text-slate-300"
+                placeholder="Korte beschrijving zichtbaar in inbox naast het onderwerp…"
+                maxLength={200}
+              />
+            </div>
           </div>
 
           {/* Blocks */}
@@ -1342,17 +1426,6 @@ export default function EmailTemplateEditorPage() {
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
               <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Sjablooninstellingen</p>
               <div>
-                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Type</label>
-                <select
-                  value={templateType}
-                  onChange={(e) => { setTemplateType(e.target.value); markDirty(); }}
-                  className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                >
-                  {types.length === 0 && <option value={templateType}>{templateType || "— kies type —"}</option>}
-                  {types.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
-              <div>
                 <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Beschrijving</label>
                 <textarea
                   rows={2}
@@ -1362,29 +1435,16 @@ export default function EmailTemplateEditorPage() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Standaardtaal</label>
-                <select
-                  value={languageDefault}
-                  onChange={(e) => { setLanguageDefault(e.target.value as Lang); markDirty(); }}
-                  className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                >
-                  {LANGS.map((l) => <option key={l} value={l}>{LANG_LABELS[l]}</option>)}
-                </select>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Naam afzender</label>
+                <Input value={senderName} onChange={(e) => { setSenderName(e.target.value); markDirty(); }} className="rounded-xl text-sm" placeholder="{{location_name}}" />
               </div>
-              <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Afzenderinstellingen</p>
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Naam afzender</label>
-                  <Input value={senderName} onChange={(e) => { setSenderName(e.target.value); markDirty(); }} className="rounded-xl text-sm" placeholder="Schepenkring {{location_name}}" />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">E-mailadres afzender</label>
-                  <Input value={senderEmail} onChange={(e) => { setSenderEmail(e.target.value); markDirty(); }} className="rounded-xl text-sm" type="email" />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Antwoord-naar</label>
-                  <Input value={replyTo} onChange={(e) => { setReplyTo(e.target.value); markDirty(); }} className="rounded-xl text-sm" type="email" />
-                </div>
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">E-mailadres afzender</label>
+                <Input value={senderEmail} onChange={(e) => { setSenderEmail(e.target.value); markDirty(); }} className="rounded-xl text-sm" type="email" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Antwoord-naar</label>
+                <Input value={replyTo} onChange={(e) => { setReplyTo(e.target.value); markDirty(); }} className="rounded-xl text-sm" type="email" />
               </div>
               <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-4">
                 <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Stijl</p>
