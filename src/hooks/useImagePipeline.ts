@@ -82,6 +82,11 @@ export function useImagePipeline(
     const [isUploading, setIsUploading] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const pollRef = useRef<NodeJS.Timeout | null>(null);
+    // Monotonic counter: bumped every time setImagesDirectly writes local state.
+    // refreshImages only commits its response if the counter hasn't moved since
+    // the request was dispatched, preventing stale GET responses from wiping a
+    // concurrent optimistic/upload update.
+    const localWriteSeqRef = useRef(0);
 
     const isProcessing = stats.processing > 0;
 
@@ -89,9 +94,15 @@ export function useImagePipeline(
     const refreshImages = useCallback(async () => {
         if (!yachtId || yachtId === "new") return;
 
+        // Snapshot the counter at dispatch time.
+        const seqAtDispatch = localWriteSeqRef.current;
+
         try {
             const res = await api.get(`/yachts/${yachtId}/images`);
             const data = res.data;
+
+            // Discard if a local write happened while we were in-flight.
+            if (localWriteSeqRef.current !== seqAtDispatch) return;
 
             setImages(data.images || []);
             setStats(data.stats || { total: 0, approved: 0, processing: 0, ready: 0, min_required: 1 });
@@ -258,8 +269,10 @@ export function useImagePipeline(
         return { step2_unlocked: res.data.step2_unlocked || false };
     }, [yachtId, refreshImages]);
 
-    // Direct injection for bypassing stale closures after creation
+    // Direct injection for bypassing stale closures after creation.
+    // Bumps localWriteSeqRef so any in-flight refreshImages() response is discarded.
     const setImagesDirectly = useCallback((data: { images: PipelineImage[]; stats: PipelineStats; step2_unlocked: boolean }) => {
+        localWriteSeqRef.current += 1;
         setImages(data.images || []);
         if (data.stats) setStats(data.stats);
         if (data.step2_unlocked !== undefined) setIsStep2Unlocked(data.step2_unlocked);
