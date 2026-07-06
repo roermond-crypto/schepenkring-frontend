@@ -781,82 +781,6 @@
       "actionWithReason": "{action} - {reason}"
     }
   },
-  "DashboardAdminHarborPerformance": {
-    "hero": {
-      "kicker": "Analyse des ventes",
-      "title": "Entonnoir de vente",
-      "description": "Suivez les performances de l'entonnoir à l'échelle de la plateforme grâce à des informations basées sur la localisation."
-    },
-    "actions": {
-      "refresh": "Actualiser"
-    },
-    "stats": {
-      "users": "Utilisateurs",
-      "impressions": "Impressions",
-      "clicks": "Clics",
-      "deals": "Affaires",
-      "commission": "Commission"
-    },
-    "filters": {
-      "range": {
-        "7d": "7 derniers jours",
-        "30d": "30 derniers jours",
-        "90d": "90 derniers jours"
-      },
-      "allCountries": "Tous les pays",
-      "allLocations": "Tous les emplacements",
-      "allDevices": "Tous les appareils",
-      "allSources": "Toutes les sources",
-      "countries": {
-        "nl": "Pays-Bas (NL)",
-        "de": "Allemagne (DE)",
-        "be": "Belgique (BE)"
-      },
-      "devices": {
-        "mobile": "Mobile",
-        "desktop": "Ordinateur de bureau",
-        "tablet": "Tablette"
-      },
-      "sources": {
-        "googleOrganic": "Google organique",
-        "googleAds": "Google Ads",
-        "facebookPaid": "Facebook Publicité",
-        "instagramPaid": "Instagram Publicité",
-        "direct": "Direct"
-      }
-    },
-    "table": {
-      "location": "Emplacement",
-      "users": "Utilisateurs",
-      "impressions": "Impressions",
-      "clicks": "Clics",
-      "forms": "Formulaires",
-      "submitted": "Soumis",
-      "deals": "Affaires",
-      "commission": "Commission",
-      "benchmark": "Benchmark",
-      "rank": "Classement",
-      "avgCtr": "CTR moyen {value}"
-    },
-    "states": {
-      "error": "Impossible de charger les performances de l'entonnoir de vente.",
-      "empty": "Aucune donnée de l'entonnoir de vente disponible pour les filtres actuels."
-    },
-    "panels": {
-      "reach": {
-        "title": "Portée",
-        "description": "GA4 reste la source pour les utilisateurs, les sessions et les tendances d'interaction sur les campagnes de sites."
-      },
-      "funnel": {
-        "title": "Entonnoir",
-        "description": "Les métriques de l'entonnoir combinent les impressions et les clics des widgets avec les soumissions sur la plateforme et les transactions conclues."
-      },
-      "revenue": {
-        "title": "Vérité des revenus",
-        "description": "Le classement des commissions utilise l'attribution des revenus de votre base de données, pas GA4, afin de garantir la précision des comparaisons de paiements aux partenaires."
-      }
-    }
-  },
   "DashboardAdminLocations": {
     "header": {
       "kicker": "Gestion des sites",
@@ -2596,7 +2520,6 @@
       "date": "Date"
     },
     "blocking": "Bloque",
-    "blocksDetail": "⛔ Bloque le deal",
     "questionnaire": "Questionnaire",
     "blocksDeal": "⛔ Bloque le deal",
     "detail": {
