@@ -217,7 +217,7 @@ export default function DashboardBookingsPage() {
   }, []);
 
   const loadBookings = useCallback(
-    async (showRefreshState = false) => {
+    async (filtersArg: Filters, showRefreshState = false) => {
       if (showRefreshState) {
         setRefreshing(true);
       } else {
@@ -228,9 +228,9 @@ export default function DashboardBookingsPage() {
         setError(null);
         const response = await api.get<BookingListResponse>("/admin/bookings", {
           params: {
-            search: appliedFilters.search || undefined,
-            status: appliedFilters.status || undefined,
-            location_id: appliedFilters.locationId || undefined,
+            search: filtersArg.search || undefined,
+            status: filtersArg.status || undefined,
+            location_id: filtersArg.locationId || undefined,
           },
         });
 
@@ -245,21 +245,15 @@ export default function DashboardBookingsPage() {
         setRefreshing(false);
       }
     },
-    [appliedFilters.locationId, appliedFilters.search, appliedFilters.status, loadErrorText],
+    [loadErrorText],
   );
 
   useEffect(() => {
     if (role !== "admin") return;
     if (hasLoadedInitialData.current) return;
     hasLoadedInitialData.current = true;
-    void loadBookings();
+    void loadBookings({ search: "", status: "", locationId: "" });
   }, [loadBookings, role]);
-
-  useEffect(() => {
-    if (role !== "admin") return;
-    if (!hasLoadedInitialData.current) return;
-    void loadBookings();
-  }, [appliedFilters, loadBookings, role]);
 
   const openBooking = useCallback(
     async (bookingId: number) => {
@@ -325,7 +319,7 @@ export default function DashboardBookingsPage() {
 
           <Button
             type="button"
-            onClick={() => void loadBookings(true)}
+            onClick={() => void loadBookings(appliedFilters, true)}
             disabled={refreshing}
             className="h-12 rounded-2xl bg-[#003566] px-6 text-[10px] font-black uppercase tracking-[0.26em] text-white hover:bg-[#00284d]"
           >
@@ -452,8 +446,10 @@ export default function DashboardBookingsPage() {
             variant="outline"
             className="mt-auto h-11 rounded-2xl border-slate-200"
             onClick={() => {
-              setFilters({ search: "", status: "", locationId: "" });
-              setAppliedFilters({ search: "", status: "", locationId: "" });
+              const empty: Filters = { search: "", status: "", locationId: "" };
+              setFilters(empty);
+              setAppliedFilters(empty);
+              void loadBookings(empty, true);
             }}
           >
             {t("filters.reset")}
@@ -463,6 +459,7 @@ export default function DashboardBookingsPage() {
             className="mt-auto h-11 rounded-2xl bg-[#003566] px-5 text-[10px] font-black uppercase tracking-[0.22em] hover:bg-[#00284d]"
             onClick={() => {
               setAppliedFilters(filters);
+              void loadBookings(filters, true);
             }}
             disabled={loading || refreshing}
           >
@@ -701,7 +698,7 @@ export default function DashboardBookingsPage() {
               <Button
                 type="button"
                 className="h-11 rounded-2xl bg-[#003566] px-5 text-[10px] font-black uppercase tracking-[0.22em] hover:bg-[#00284d]"
-                onClick={() => void loadBookings(true)}
+                onClick={() => void loadBookings(appliedFilters, true)}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 {t("errorState.retry")}
