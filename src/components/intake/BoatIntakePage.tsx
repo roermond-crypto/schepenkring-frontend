@@ -148,12 +148,18 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
   // loaded successfully (key present + domain authorised). If not, address
   // fields remain plain text inputs with no error shown to the visitor.
   useEffect(() => {
-    const setup = () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const g = (window as any).google;
-      if (!g?.maps?.places?.Autocomplete || !addressInputRef.current) return;
+    if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY) return;
+
+    let active = true;
+
+    const setup = async () => {
+      if (!active || !addressInputRef.current) return;
       try {
-        const ac = new g.maps.places.Autocomplete(addressInputRef.current, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const places = await (window as any).google.maps.importLibrary("places");
+        if (!active || !addressInputRef.current) return;
+
+        const ac = new places.Autocomplete(addressInputRef.current, {
           fields: ["address_components"],
           types: ["address"],
         });
@@ -187,24 +193,22 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
       }
     };
 
-    // Only attempt autocomplete if the Maps script was loaded with a key
-    if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY) return;
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window as any).google?.maps?.places?.Autocomplete) {
+    if ((window as any).google?.maps?.importLibrary) {
       setup();
     } else {
       const timer = setInterval(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((window as any).google?.maps?.places) {
+        if ((window as any).google?.maps?.importLibrary) {
           clearInterval(timer);
           setup();
         }
       }, 500);
-      // Stop polling after 10 s — Maps script may never load
       const abort = setTimeout(() => clearInterval(timer), 10_000);
-      return () => { clearInterval(timer); clearTimeout(abort); };
+      return () => { active = false; clearInterval(timer); clearTimeout(abort); };
     }
+
+    return () => { active = false; };
   }, []);
 
   function setField(key: keyof IntakeForm, value: string | number) {
