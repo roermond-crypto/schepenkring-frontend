@@ -477,6 +477,7 @@ export default function ContractTemplateEditorPage() {
   const tTop = useTranslations("ContractTemplateEditor.topBar");
   const tMeta = useTranslations("ContractTemplateEditor.meta");
   const tModal = useTranslations("ContractTemplateEditor.saveModal");
+  const tTypeLabels = useTranslations("ContractTemplateEditor.typeLabels");
 
   const params = useParams<{ role?: string; id?: string }>();
   const role = params?.role ?? "admin";
@@ -699,7 +700,11 @@ export default function ContractTemplateEditorPage() {
     );
   }
 
-  const typeLabel = types.find((tp) => tp.value === templateType)?.label ?? templateType;
+  // Prefer locale-specific label; fall back to the DB label (for custom types)
+  const typeLabel = (() => {
+    try { return tTypeLabels(templateType as Parameters<typeof tTypeLabels>[0]); } catch { /* unknown type */ }
+    return types.find((tp) => tp.value === templateType)?.label ?? templateType;
+  })();
 
   const panelTitles: Record<"tags" | "preview" | "versions" | "meta", string> = {
     tags: tTop("panelTags"),

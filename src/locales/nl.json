@@ -2822,7 +2822,15 @@
     },
     "loadFailed": "Sjabloon laden mislukt.",
     "notFound": "Sjabloon niet gevonden.",
-    "pdfFailed": "PDF downloaden mislukt."
+    "pdfFailed": "PDF downloaden mislukt.",
+    "typeLabels": {
+      "purchase_contract": "Koopovereenkomst",
+      "seller_assignment": "Verkoopopdracht",
+      "viewing_agreement": "Bezichtigingsovereenkomst",
+      "offer_agreement": "Bodovereenkomst",
+      "delivery_document": "Leveringsdocument",
+      "brokerage_agreement": "Makelaarsovereenkomst"
+    }
   },
   "EmailTemplates": {
     "title": "E-mailsjablonen",

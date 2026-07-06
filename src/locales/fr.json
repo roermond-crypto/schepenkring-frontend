@@ -2822,7 +2822,15 @@
     },
     "loadFailed": "Échec du chargement du modèle.",
     "notFound": "Modèle introuvable.",
-    "pdfFailed": "Échec du téléchargement du PDF."
+    "pdfFailed": "Échec du téléchargement du PDF.",
+    "typeLabels": {
+      "purchase_contract": "Contrat d'achat",
+      "seller_assignment": "Mandat vendeur",
+      "viewing_agreement": "Convention de visite",
+      "offer_agreement": "Convention d'offre",
+      "delivery_document": "Document de livraison",
+      "brokerage_agreement": "Contrat de courtage"
+    }
   },
   "EmailTemplates": {
     "title": "Modèles d'e-mail",

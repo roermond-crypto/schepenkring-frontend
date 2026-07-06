@@ -2822,7 +2822,15 @@
     },
     "loadFailed": "Vorlage konnte nicht geladen werden.",
     "notFound": "Vorlage nicht gefunden.",
-    "pdfFailed": "PDF-Download fehlgeschlagen."
+    "pdfFailed": "PDF-Download fehlgeschlagen.",
+    "typeLabels": {
+      "purchase_contract": "Kaufvertrag",
+      "seller_assignment": "Verkäuferauftrag",
+      "viewing_agreement": "Besichtigungsvereinbarung",
+      "offer_agreement": "Angebotsvereinbarung",
+      "delivery_document": "Lieferdokument",
+      "brokerage_agreement": "Maklervertrag"
+    }
   },
   "EmailTemplates": {
     "title": "E-Mail-Vorlagen",

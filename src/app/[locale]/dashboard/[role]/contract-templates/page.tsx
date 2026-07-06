@@ -62,6 +62,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function ContractTemplatesPage() {
   const t = useTranslations("ContractTemplates");
+  const tTypeLabels = useTranslations("ContractTemplateEditor.typeLabels");
   const locale = useLocale();
   const params = useParams<{ role?: string }>();
   const role = params?.role ?? "admin";
@@ -179,7 +180,10 @@ export default function ContractTemplatesPage() {
     }
   };
 
-  const typeLabel = (type: string) => types.find((t) => t.value === type)?.label ?? type;
+  const typeLabel = (type: string) => {
+    try { return tTypeLabels(type as Parameters<typeof tTypeLabels>[0]); } catch { /* unknown type */ }
+    return types.find((tp) => tp.value === type)?.label ?? type;
+  };
 
   const filtered = templates.filter((t) => {
     if (!showArchived && t.is_archived) return false;
