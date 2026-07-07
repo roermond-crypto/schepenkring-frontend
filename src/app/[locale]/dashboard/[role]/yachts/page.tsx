@@ -680,7 +680,11 @@ export default function FleetManagementPage() {
               </>
             )}
             <Button
-              onClick={() => router.push(`/${locale}/dashboard/${role}/yachts/new?fresh=true`)}
+              onClick={() =>
+                role === "seller" || role === "buyer"
+                  ? router.push(`/${locale}/boot-aanmelden`)
+                  : router.push(`/${locale}/dashboard/${role}/yachts/new?fresh=true`)
+              }
               className="bg-[#003566] text-white hover:bg-blue-800 rounded-none h-12 px-8 font-black uppercase text-[10px] tracking-widest transition-all shadow-lg flex items-center gap-2"
             >
               <Plus size={14} />
@@ -895,7 +899,11 @@ export default function FleetManagementPage() {
               : t?.empty?.noVessels || "Register your first vessel to get started"}
           </p>
           <Button
-            onClick={() => router.push(`/${locale}/dashboard/${role}/yachts/new?fresh=true`)}
+            onClick={() =>
+              role === "seller" || role === "buyer"
+                ? router.push(`/${locale}/boot-aanmelden`)
+                : router.push(`/${locale}/dashboard/${role}/yachts/new?fresh=true`)
+            }
             className="bg-[#003566] text-white hover:bg-blue-800 rounded-none px-8 font-black uppercase text-[10px] tracking-widest"
           >
             <Plus className="mr-2 w-4 h-4" />

@@ -98,6 +98,16 @@ function obj(t: T, path: string): Record<string, string> {
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://app.schepen-kring.nl/api";
+const BACKEND_BASE = API.replace(/\/api\/?$/, "");
+
+// Rewrite any localhost storage URL to the real backend base so that
+// photos uploaded on a VPS whose APP_URL is still 'http://localhost:8000'
+// render correctly in the browser.
+function fixStorageUrl(url: string): string {
+  if (!url) return url;
+  if (!url.match(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/)) return url;
+  return url.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, BACKEND_BASE);
+}
 
 const emptyForm: IntakeForm = {
   seller_first_name: "", seller_last_name: "", seller_email: "", seller_phone: "",
@@ -327,7 +337,7 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
       const res = await fetch(`${API}/boat-intake/${resumeToken}/photos`, { method: "POST", body: fd });
       const json = await res.json();
       if (json.uploaded) {
-        setPhotos((prev) => [...prev, ...json.uploaded.map((u: { id: number; url: string }) => ({ id: u.id, url: u.url }))]);
+        setPhotos((prev) => [...prev, ...json.uploaded.map((u: { id: number; url: string }) => ({ id: u.id, url: fixStorageUrl(u.url) }))]);
         setPhotoCount(json.photo_count as number);
         if (json.score) setScore(json.score as ScoreData);
       }

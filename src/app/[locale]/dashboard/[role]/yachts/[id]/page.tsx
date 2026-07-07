@@ -3693,10 +3693,10 @@ function YachtEditorInner() {
   const { isOnline } = useNetworkStatus();
   const { user } = useClientSession();
 
-  // Sellers and buyers always already have a boat; block manual access to /yachts/new
+  // Sellers and buyers register boats via /boot-aanmelden, not the admin wizard
   useEffect(() => {
     if (isNewMode && (role === "seller" || role === "buyer")) {
-      router.replace(`/${locale}/dashboard/${role}`);
+      router.replace(`/${locale}/boot-aanmelden`);
     }
   }, [isNewMode, role, locale, router]);
   const draftStorageScope = useMemo(
