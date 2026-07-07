@@ -2351,19 +2351,22 @@ export function SignhostFlow({
     if (yachtId && signRequest?.status === "SENT") {
       interval = setInterval(async () => {
         try {
-          const res = await signhostApi.getYachtStatus(yachtId);
-          if (!res.transaction) return;
-          const nextRequest = mapTransactionToSignRequest(res.transaction);
-          if (nextRequest.status !== signRequest.status) {
-            setSignRequest(nextRequest);
-            if (nextRequest.status === "SIGNED") {
-              toast.success("Contract signed successfully.");
-            }
+          // Use the live Signhost API call (not the cached DB status) so that
+          // participant signing events and expiry are reflected immediately.
+          const res = await signhostApi.refreshYachtSignhostStatus(yachtId);
+          const next = res.sign_request ?? (res.transaction ? mapTransactionToSignRequest(res.transaction) : null);
+          if (!next) return;
+          if (next.status !== signRequest.status) {
+            setSignRequest(next);
+            if (next.status === "SIGNED") toast.success("Contract volledig ondertekend.");
+            if (next.status === "EXPIRED") toast.warning("Signhost transactie verlopen.");
           }
+          if (res.signhost_expires_at) setSignhostExpiresAt(res.signhost_expires_at);
+          if (res.signhost_last_checked_at) setSignhostLastChecked(res.signhost_last_checked_at);
         } catch {
           // Keep polling silent.
         }
-      }, 10000);
+      }, 30000);
     }
 
     return () => {
@@ -3349,6 +3352,22 @@ export function SignhostFlow({
     return s === 'EXPIRED' || s === 'FAILED';
   }, [signRequest?.status]);
 
+  // Required fields that must be present before sending to Signhost.
+  // Blocking on missing buyer/seller name/email and boat name.
+  const missingRequiredFields = useMemo(() => {
+    const missing: string[] = [];
+    const buyerName  = buyerData?.full_name  ?? buyerData?.name  ?? draft.clientName;
+    const buyerEmail = buyerData?.email;
+    const sellerName  = sellerData?.full_name  ?? sellerData?.name  ?? sellerData?.company_name ?? draft.companyName;
+    const sellerEmail = sellerData?.email;
+    if (!buyerName)  missing.push('Naam koper ({{buyer_name}})');
+    if (!buyerEmail) missing.push('E-mail koper ({{buyer_email}})');
+    if (!sellerName) missing.push('Naam verkoper ({{seller_name}})');
+    if (!sellerEmail) missing.push('E-mail verkoper ({{seller_email}})');
+    if (!yachtName)  missing.push('Naam vaartuig ({{boat_name}})');
+    return missing;
+  }, [buyerData, sellerData, draft.clientName, draft.companyName, yachtName]);
+
   const handleOpenSignhostLink = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
@@ -3559,14 +3578,50 @@ export function SignhostFlow({
           )}
         </div>
 
+        {/* Expiry countdown warning when transaction is still active but close to expiry */}
+        {signhostExpiresAt && !isExpiredOrFailed && (() => {
+          const expiresDate = new Date(signhostExpiresAt);
+          const daysLeft = Math.ceil((expiresDate.getTime() - Date.now()) / 86400000);
+          if (daysLeft > 7) return null;
+          return (
+            <div className="mt-3 flex items-start gap-3 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200">
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+              <div>
+                <p className="font-bold">Ondertekeningslink verloopt {daysLeft <= 0 ? 'vandaag' : `over ${daysLeft} dag${daysLeft === 1 ? '' : 'en'}`}</p>
+                <p className="mt-1">Verloopt op: {expiresDate.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Expired/Failed warning */}
         {isExpiredOrFailed && (
           <div className="mt-3 flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-800 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-200">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
-              <p className="font-bold">Signhost-transactie verlopen of mislukt</p>
-              <p className="mt-1">Verstuur de Signhost-link niet meer. Maak een nieuwe transactie aan om door te gaan.</p>
+              <p className="font-bold">Signhost-transactie {signRequest?.status === 'EXPIRED' ? 'verlopen' : 'mislukt'}</p>
+              <p className="mt-1">Verstuur de Signhost-link <strong>niet meer</strong>. Maak een nieuwe transactie aan om door te gaan.</p>
+              {signhostExpiresAt && (
+                <p className="mt-1 text-xs opacity-75">Verlopen op: {new Date(signhostExpiresAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+              )}
             </div>
+          </div>
+        )}
+
+        {/* Participant signing status */}
+        {signRequest?.signhost_transaction_id && (
+          <div className="mt-3 flex flex-wrap gap-3 text-xs">
+            {[
+              { label: 'Koper', field: 'buyer_signed_at' },
+              { label: 'Verkoper', field: 'seller_signed_at' },
+            ].map(({ label, field }) => {
+              const ts = (signRequest as Record<string, unknown>)[field] as string | null | undefined;
+              return (
+                <span key={field} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium ${ts ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                  {ts ? '✓' : '·'} {label} {ts ? `ondertekend ${new Date(ts).toLocaleDateString('nl-NL')}` : 'wacht op ondertekening'}
+                </span>
+              );
+            })}
           </div>
         )}
 
@@ -3582,7 +3637,34 @@ export function SignhostFlow({
           {signRequest?.signhost_transaction_id && (
             <Button type="button" onClick={() => void handleCheckSignhostStatus()} disabled={isCheckingStatus || !yachtId} variant="outline" className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50">
               {isCheckingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-              Signhost status controleren
+              Status controleren
+            </Button>
+          )}
+
+          {/* Resync transaction (fetch fresh data from Signhost without creating new) */}
+          {signRequest?.signhost_transaction_id && (
+            <Button
+              type="button"
+              onClick={async () => {
+                if (!yachtId) return;
+                setIsCheckingStatus(true);
+                try {
+                  const res = await signhostApi.resyncYachtSignhost(yachtId);
+                  const next = res.sign_request ?? (res.transaction ? mapTransactionToSignRequest(res.transaction) : null);
+                  if (next) setSignRequest(next);
+                  toast.success('Signhost transactie gesynchroniseerd.');
+                } catch (err: unknown) {
+                  toast.error(err instanceof Error ? err.message : 'Synchronisatie mislukt.');
+                } finally {
+                  setIsCheckingStatus(false);
+                }
+              }}
+              disabled={isCheckingStatus || !yachtId}
+              variant="outline"
+              className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              {isCheckingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              Signhost hersynchroniseren
             </Button>
           )}
 
@@ -3612,9 +3694,31 @@ export function SignhostFlow({
             {editorCopy.downloadPdf}
           </Button>
 
+          {/* Required fields warning — blocks Signhost send */}
+          {missingRequiredFields.length > 0 && (
+            <div className="w-full mt-1 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+              <p className="font-semibold mb-1">Ontbrekende verplichte velden voor Signhost:</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                {missingRequiredFields.map((f) => <li key={f}>{f}</li>)}
+              </ul>
+            </div>
+          )}
+
           {/* Create NEW Signhost transaction (requires confirmation) */}
           {resolvedRecipients.length > 0 && (
-            <Button type="button" onClick={() => { setSignhostCostConfirmed(false); setShowSignhostConfirm(true); }} disabled={isGenerating || !activeLocationId || !yachtId} className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50">
+            <Button
+              type="button"
+              onClick={() => {
+                if (missingRequiredFields.length > 0) {
+                  toast.error('Vul alle verplichte velden in voordat u naar Signhost stuurt.');
+                  return;
+                }
+                setSignhostCostConfirmed(false);
+                setShowSignhostConfirm(true);
+              }}
+              disabled={isGenerating || !activeLocationId || !yachtId || missingRequiredFields.length > 0}
+              className="rounded-xl bg-[#003566] text-white hover:bg-[#00284d] disabled:opacity-50"
+            >
               <Send className="mr-2 h-4 w-4" />
               {isExpiredOrFailed ? "Nieuwe Signhost-transactie aanmaken" : (contractTemplateKey === "escrow_form" ? editorCopy.sendEscrowToSignhost : editorCopy.sendToSignhost)}
             </Button>

@@ -26,6 +26,7 @@ import {
   FileText,
   Globe,
   Radio,
+  FileSignature,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -176,6 +177,11 @@ export function Sidebar({
         title: "Platform Netwerk",
         href: `${root}/platforms`,
         icon: Radio,
+      });
+      items.push({
+        title: "Signhost Monitor",
+        href: `${root}/signhost`,
+        icon: FileSignature,
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });

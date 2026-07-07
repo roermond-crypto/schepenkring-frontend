@@ -340,4 +340,14 @@ export const signhostApi = {
         }>(`/yachts/${yachtId}/signhost/refresh-status`);
         return response.data;
     },
+
+    resyncYachtSignhost: async (yachtId: number) => {
+        const response = await api.post<{
+            sign_request?: SignRequest;
+            transaction?: SignhostTransaction | null;
+            signhost_status?: string | null;
+            error?: string;
+        }>(`/yachts/${yachtId}/signhost/resync`);
+        return response.data;
+    },
 };
