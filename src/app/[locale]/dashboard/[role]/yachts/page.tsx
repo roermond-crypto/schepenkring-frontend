@@ -77,6 +77,7 @@ type YachtListItem = {
   status?: string | null;
   vessel_id?: string | null;
   main_image?: string | null;
+  fallback_image?: string | null;
   price?: number | string | null;
   year?: number | string | null;
   loa?: number | string | null;
@@ -278,16 +279,20 @@ export default function FleetManagementPage() {
       const rawYachts = Array.isArray(payload) ? payload : payload?.data || [];
 
       // Normalize status on all yachts before using them
-      const yachts: YachtListItem[] = rawYachts.map((y: any) => ({
+      const yachts: YachtListItem[] = rawYachts.map((y: any) => {
+        const galleryFallback = resolveFallbackImage(y) || null;
+        return {
         ...y,
         status: normalizeStatus(y.status),
-        main_image: y.main_image || resolveFallbackImage(y) || null,
+        main_image: y.main_image_url || y.main_image || galleryFallback || null,
+        fallback_image: galleryFallback,
         price: y.price ?? y.sale_price ?? y.min_bid_amount ?? null,
         loa: y.loa ?? y?.dimensions?.loa ?? null,
         beam: y.beam ?? y?.dimensions?.beam ?? null,
         where: y.where ?? y?.construction?.where ?? y.location_city ?? null,
         latest_signhost: normalizeLatestSignhost(y.latest_signhost),
-      }));
+        };
+      });
       setFleet(yachts);
 
       const nextStats = Array.isArray(payload) ? deriveStats(yachts) : {
@@ -373,8 +378,15 @@ export default function FleetManagementPage() {
   }, [searchInput]);
 
   const handleImageError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.src = PLACEHOLDER_IMAGE;
-    e.currentTarget.classList.add("opacity-50", "grayscale");
+    const target = e.currentTarget;
+    const fallback = target.dataset.fallback || PLACEHOLDER_IMAGE;
+    if (target.src !== fallback) {
+      target.src = fallback;
+      target.dataset.fallback = PLACEHOLDER_IMAGE;
+    } else {
+      target.src = PLACEHOLDER_IMAGE;
+      target.classList.add("opacity-50", "grayscale");
+    }
   };
 
   const handleDelete = (yacht: any) => {
@@ -927,6 +939,7 @@ export default function FleetManagementPage() {
                 <div className="h-64 bg-slate-100 overflow-hidden relative">
                   <img
                     src={getImageUrl(yacht.main_image)}
+                    data-fallback={getImageUrl(yacht.fallback_image) || PLACEHOLDER_IMAGE}
                     onError={handleImageError}
                     alt={getYachtName(yacht)}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1173,6 +1186,7 @@ export default function FleetManagementPage() {
                   <div className="w-16 h-12 bg-slate-100 overflow-hidden flex-shrink-0">
                     <img
                       src={getImageUrl(yacht.main_image)}
+                      data-fallback={getImageUrl(yacht.fallback_image) || PLACEHOLDER_IMAGE}
                       onError={handleImageError}
                       alt={getYachtName(yacht)}
                       className="w-full h-full object-cover"
