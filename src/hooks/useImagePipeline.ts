@@ -168,21 +168,13 @@ export function useImagePipeline(
                     formData.append("images[]", file);
                 });
 
-                const res = await api.post(`/yachts/${yachtId}/images/upload`, formData);
-                const newImages = res.data.images || [];
-
-                // Merge with existing
-                setImages((prev) => [...prev, ...newImages]);
-                setStats((prev) => ({
-                    ...prev,
-                    total: prev.total + newImages.length,
-                    processing: prev.processing + newImages.length,
-                }));
+                await api.post(`/yachts/${yachtId}/images/upload`, formData);
+                await refreshImages();
             } finally {
                 setIsUploading(false);
             }
         },
-        [yachtId]
+        [yachtId, refreshImages]
     );
 
     const approveImage = useCallback(

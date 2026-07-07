@@ -5996,13 +5996,13 @@ function YachtEditorInner() {
           });
           restoredDraftRef.current = false;
         } else {
-          await syncDraftToServer("patch");
+          await syncDraftToServerRef.current("patch");
         }
       } catch (error: unknown) {
         const status = (error as { response?: { status?: number } })?.response
           ?.status;
         if (status === 404) {
-          await syncDraftToServer("upsert");
+          await syncDraftToServerRef.current("upsert");
         } else {
           console.warn("[DraftSync] Bootstrap failed:", error);
         }
@@ -6029,7 +6029,8 @@ function YachtEditorInner() {
     yachtId,
     getStepData,
     flushDraft,
-    syncDraftToServer,
+    // syncDraftToServer intentionally omitted — use syncDraftToServerRef.current
+    // to avoid re-running bootstrap whenever pipeline.images changes
   ]);
 
   // Debounced server patch whenever local draft changes.
