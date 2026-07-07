@@ -2876,7 +2876,35 @@
     "testSendPrompt": "Voer een e-mailadres in om de test te verzenden:",
     "testSendSuccess": "Test e-mail verzonden naar {email}",
     "testSendFailed": "Verzenden mislukt.",
-    "previewFailed": "Voorbeeld laden mislukt."
+    "previewFailed": "Voorbeeld laden mislukt.",
+    "types": {
+      "user_registration": "Gebruikersregistratie",
+      "email_verification": "E-mailverificatie",
+      "welcome_email": "Welkomstmail",
+      "password_reset": "Wachtwoord resetten",
+      "password_invite": "Wachtwoord uitnodiging",
+      "offer_received_buyer": "Bod ontvangen (koper)",
+      "offer_received_seller": "Bod ontvangen (verkoper)",
+      "seller_counter_offer": "Tegenbod van verkoper",
+      "seller_accept_offer": "Bod geaccepteerd",
+      "seller_reject_offer": "Bod afgewezen",
+      "viewing_request_buyer": "Bezichtigingsverzoek (koper)",
+      "viewing_request_location": "Bezichtigingsverzoek (vestiging)",
+      "booking_confirmation": "Boekingsbevestiging",
+      "boat_submitted": "Boot ingediend",
+      "boat_approved": "Boot goedgekeurd",
+      "boat_rejected": "Boot afgewezen",
+      "chat_message_email": "Chatbericht per e-mail",
+      "callback_request": "Terugbelverzoek",
+      "brochure_request": "Brochureverzoek",
+      "question_received": "Vraag ontvangen",
+      "seller_invite": "Uitnodiging verkoper",
+      "contract_signing": "Contract ondertekenen",
+      "signhost_request": "Signhost ondertekeningsverzoek",
+      "contract_signed": "Contract ondertekend",
+      "invoice_created": "Factuur aangemaakt",
+      "payment_received": "Betaling ontvangen"
+    }
   },
   "EmailTemplateEditor": {
     "blocks": {

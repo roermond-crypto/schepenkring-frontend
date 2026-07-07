@@ -2876,7 +2876,35 @@
     "testSendPrompt": "E-Mail-Adresse für den Testversand eingeben:",
     "testSendSuccess": "Test-E-Mail gesendet an {email}",
     "testSendFailed": "Senden fehlgeschlagen.",
-    "previewFailed": "Vorschau konnte nicht geladen werden."
+    "previewFailed": "Vorschau konnte nicht geladen werden.",
+    "types": {
+      "user_registration": "Benutzerregistrierung",
+      "email_verification": "E-Mail-Verifizierung",
+      "welcome_email": "Willkommens-E-Mail",
+      "password_reset": "Passwort zurücksetzen",
+      "password_invite": "Passworteinladung",
+      "offer_received_buyer": "Angebot erhalten (Käufer)",
+      "offer_received_seller": "Angebot erhalten (Verkäufer)",
+      "seller_counter_offer": "Gegenangebot vom Verkäufer",
+      "seller_accept_offer": "Angebot angenommen",
+      "seller_reject_offer": "Angebot abgelehnt",
+      "viewing_request_buyer": "Besichtigungsanfrage (Käufer)",
+      "viewing_request_location": "Besichtigungsanfrage (Standort)",
+      "booking_confirmation": "Buchungsbestätigung",
+      "boat_submitted": "Boot eingereicht",
+      "boat_approved": "Boot genehmigt",
+      "boat_rejected": "Boot abgelehnt",
+      "chat_message_email": "Chat-Nachricht per E-Mail",
+      "callback_request": "Rückrufanfrage",
+      "brochure_request": "Broschürenanfrage",
+      "question_received": "Frage erhalten",
+      "seller_invite": "Verkäufer-Einladung",
+      "contract_signing": "Vertragsunterzeichnung",
+      "signhost_request": "Signhost-Unterzeichnungsanfrage",
+      "contract_signed": "Vertrag unterzeichnet",
+      "invoice_created": "Rechnung erstellt",
+      "payment_received": "Zahlung erhalten"
+    }
   },
   "EmailTemplateEditor": {
     "blocks": {

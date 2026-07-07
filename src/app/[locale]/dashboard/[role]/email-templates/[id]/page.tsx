@@ -204,6 +204,17 @@ const BLOCK_DEFS: BlockDef[] = [
 const getBlockDef = (type: BlockType): BlockDef =>
   BLOCK_DEFS.find((d) => d.type === type) ?? BLOCK_DEFS[0];
 
+// Maps BlockType → "EmailTemplateEditor" i18n key for the block palette
+const BLOCK_TYPE_I18N: Record<BlockType, string> = {
+  logo: "blocks.logo", header: "blocks.header", text: "blocks.text",
+  rich_text: "blocks.richText", button: "blocks.button", image: "blocks.image",
+  divider: "blocks.divider", spacer: "blocks.spacer", footer: "blocks.footer",
+  signature: "blocks.signature", social_links: "blocks.socials",
+  boat_card: "blocks.boatCard", offer_card: "blocks.offerCard",
+  seller_card: "blocks.sellerCard", buyer_card: "blocks.buyerCard",
+  location_card: "blocks.locationCard", contract_card: "blocks.contractCard",
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 let _blockIdCounter = 0;
@@ -719,13 +730,23 @@ function PreviewPane({
   const [testEmail, setTestEmail] = useState("");
   const [sendingTest, setSendingTest] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const loadPreview = useCallback(async () => {
+    // Cancel any in-flight request before starting a new one
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
     setLoading(true);
     try {
-      const res = await api.post<{ html: string }>(`/admin/email-templates/${templateId}/preview`, { lang, blocks });
+      const res = await api.post<{ html: string }>(
+        `/admin/email-templates/${templateId}/preview`,
+        { lang, blocks },
+        { signal: abortRef.current.signal, timeout: 20000 },
+      );
       setHtml(res.data.html);
-    } catch {
+    } catch (err: unknown) {
+      // Ignore aborted requests (user navigated away or new request started)
+      if (err && typeof err === "object" && "code" in err && (err as { code?: string }).code === "ERR_CANCELED") return;
       setHtml(`<p style='color:red;padding:20px;'>${t("preview.loadFailed")}</p>`);
     } finally {
       setLoading(false);
@@ -999,6 +1020,7 @@ function TagsPanel({ tags }: { tags: TagInfo[] }) {
 
 export default function EmailTemplateEditorPage() {
   const t = useTranslations("EmailTemplateEditor");
+  const tTypes = useTranslations("EmailTemplates");
   const locale = useLocale();
   const params = useParams<{ role?: string; id?: string }>();
   const role = params?.role ?? "admin";
@@ -1283,7 +1305,7 @@ export default function EmailTemplateEditorPage() {
                 className="flex w-full items-center gap-2 rounded-xl border border-transparent px-2.5 py-2 text-left text-xs text-slate-600 hover:border-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800 transition"
               >
                 <span className="text-slate-400 dark:text-slate-500 flex-shrink-0">{def.icon}</span>
-                <span className="truncate">{def.label}</span>
+                <span className="truncate">{t(BLOCK_TYPE_I18N[def.type] as Parameters<typeof t>[0])}</span>
                 <Plus size={11} className="ml-auto flex-shrink-0 text-slate-300 dark:text-slate-600" />
               </button>
             ))}
@@ -1302,7 +1324,11 @@ export default function EmailTemplateEditorPage() {
                 className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               >
                 {types.length === 0 && <option value={templateType}>{templateType || t("infoBar.eventFallback")}</option>}
-                {types.map((tp) => <option key={tp.value} value={tp.value}>{tp.label}</option>)}
+                {types.map((tp) => {
+                  let label = tp.label;
+                  try { label = tTypes(`types.${tp.value}` as Parameters<typeof tTypes>[0]); } catch {}
+                  return <option key={tp.value} value={tp.value}>{label}</option>;
+                })}
               </select>
             </div>
             <div className="flex items-center gap-1.5">

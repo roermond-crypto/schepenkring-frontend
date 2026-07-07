@@ -2876,7 +2876,35 @@
     "testSendPrompt": "Enter an email address to send the test to:",
     "testSendSuccess": "Test email sent to {email}",
     "testSendFailed": "Send failed.",
-    "previewFailed": "Failed to load preview."
+    "previewFailed": "Failed to load preview.",
+    "types": {
+      "user_registration": "User Registration",
+      "email_verification": "Email Verification",
+      "welcome_email": "Welcome Email",
+      "password_reset": "Password Reset",
+      "password_invite": "Password Invitation",
+      "offer_received_buyer": "Offer Received (Buyer)",
+      "offer_received_seller": "Offer Received (Seller)",
+      "seller_counter_offer": "Counter Offer from Seller",
+      "seller_accept_offer": "Offer Accepted",
+      "seller_reject_offer": "Offer Rejected",
+      "viewing_request_buyer": "Viewing Request (Buyer)",
+      "viewing_request_location": "Viewing Request (Location)",
+      "booking_confirmation": "Booking Confirmation",
+      "boat_submitted": "Boat Submitted",
+      "boat_approved": "Boat Approved",
+      "boat_rejected": "Boat Rejected",
+      "chat_message_email": "Chat Message by Email",
+      "callback_request": "Callback Request",
+      "brochure_request": "Brochure Request",
+      "question_received": "Question Received",
+      "seller_invite": "Seller Invitation",
+      "contract_signing": "Contract Signing",
+      "signhost_request": "Signhost Signing Request",
+      "contract_signed": "Contract Signed",
+      "invoice_created": "Invoice Created",
+      "payment_received": "Payment Received"
+    }
   },
   "EmailTemplateEditor": {
     "blocks": {

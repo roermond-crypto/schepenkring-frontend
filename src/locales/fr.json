@@ -2876,7 +2876,35 @@
     "testSendPrompt": "Saisissez une adresse e-mail pour l'envoi du test :",
     "testSendSuccess": "E-mail de test envoyé à {email}",
     "testSendFailed": "Envoi échoué.",
-    "previewFailed": "Échec du chargement de l'aperçu."
+    "previewFailed": "Échec du chargement de l'aperçu.",
+    "types": {
+      "user_registration": "Inscription utilisateur",
+      "email_verification": "Vérification e-mail",
+      "welcome_email": "E-mail de bienvenue",
+      "password_reset": "Réinitialisation du mot de passe",
+      "password_invite": "Invitation de mot de passe",
+      "offer_received_buyer": "Offre reçue (acheteur)",
+      "offer_received_seller": "Offre reçue (vendeur)",
+      "seller_counter_offer": "Contre-offre du vendeur",
+      "seller_accept_offer": "Offre acceptée",
+      "seller_reject_offer": "Offre refusée",
+      "viewing_request_buyer": "Demande de visite (acheteur)",
+      "viewing_request_location": "Demande de visite (emplacement)",
+      "booking_confirmation": "Confirmation de réservation",
+      "boat_submitted": "Bateau soumis",
+      "boat_approved": "Bateau approuvé",
+      "boat_rejected": "Bateau refusé",
+      "chat_message_email": "Message de chat par e-mail",
+      "callback_request": "Demande de rappel",
+      "brochure_request": "Demande de brochure",
+      "question_received": "Question reçue",
+      "seller_invite": "Invitation vendeur",
+      "contract_signing": "Signature du contrat",
+      "signhost_request": "Demande de signature Signhost",
+      "contract_signed": "Contrat signé",
+      "invoice_created": "Facture créée",
+      "payment_received": "Paiement reçu"
+    }
   },
   "EmailTemplateEditor": {
     "blocks": {

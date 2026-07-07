@@ -252,7 +252,13 @@ export default function EmailTemplatesPage() {
       <ChevronDown size={12} className="ml-0.5 inline-block" />
     );
 
-  const typeLabel = (type: string) => types.find((tp) => tp.value === type)?.label ?? type;
+  const typeLabel = (type: string) => {
+    try {
+      return t(`types.${type}` as Parameters<typeof t>[0]);
+    } catch {
+      return types.find((tp) => tp.value === type)?.label ?? type;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -295,9 +301,11 @@ export default function EmailTemplatesPage() {
             className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
             <option value="all">{t("allTypes")}</option>
-            {types.map((tp) => (
-              <option key={tp.value} value={tp.value}>{tp.label}</option>
-            ))}
+            {types.map((tp) => {
+              let label = tp.label;
+              try { label = t(`types.${tp.value}` as Parameters<typeof t>[0]); } catch {}
+              return <option key={tp.value} value={tp.value}>{label}</option>;
+            })}
           </select>
           <select
             value={filterScope}
