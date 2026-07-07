@@ -731,27 +731,32 @@ function PreviewPane({
   const [sendingTest, setSendingTest] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // Keep t in a ref so it never needs to be a useCallback dep (avoids re-trigger loops)
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; });
 
   const loadPreview = useCallback(async () => {
-    // Cancel any in-flight request before starting a new one
     abortRef.current?.abort();
-    abortRef.current = new AbortController();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     try {
       const res = await api.post<{ html: string }>(
         `/admin/email-templates/${templateId}/preview`,
         { lang, blocks },
-        { signal: abortRef.current.signal, timeout: 20000 },
+        { signal: controller.signal, timeout: 20000 },
       );
+      if (controller.signal.aborted) return;
       setHtml(res.data.html);
-    } catch (err: unknown) {
-      // Ignore aborted requests (user navigated away or new request started)
-      if (err && typeof err === "object" && "code" in err && (err as { code?: string }).code === "ERR_CANCELED") return;
-      setHtml(`<p style='color:red;padding:20px;'>${t("preview.loadFailed")}</p>`);
+    } catch {
+      if (controller.signal.aborted) return;
+      setHtml(`<p style='color:red;padding:20px;'>${tRef.current("preview.loadFailed")}</p>`);
     } finally {
-      setLoading(false);
+      // Only clear loading for the request that is still "current" — not for aborted ones,
+      // because the aborting call already set loading=true for the next request.
+      if (!controller.signal.aborted) setLoading(false);
     }
-  }, [templateId, lang, blocks, t]);
+  }, [templateId, lang, blocks]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
