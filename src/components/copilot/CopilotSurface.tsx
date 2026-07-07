@@ -314,6 +314,9 @@ export function CopilotSurface({
   };
 
   const handleActionClick = (action: CopilotAction) => {
+    // AI-type actions have no deeplink; the answer panel already shows the response
+    if (action.target_type === "ai") return;
+
     const href = getActionHref(action);
     if (!href) return;
 
@@ -338,11 +341,12 @@ export function CopilotSurface({
       });
       setResponse(next);
 
-      // Auto-navigate for single low-risk page action
+      // Auto-navigate for single low-risk page action (skip AI-type actions — they stay in the panel)
       const singleAction = next.actions.length === 1 ? next.actions[0] : null;
       if (
         singleAction &&
         next.match_type !== "no_match" &&
+        singleAction.target_type !== "ai" &&
         (singleAction.risk_level ?? "low") === "low" &&
         !singleAction.confirmation_required &&
         !next.needs_confirmation
