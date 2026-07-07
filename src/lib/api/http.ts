@@ -13,19 +13,22 @@ export class ApiError extends Error {
 }
 
 function resolveBackendBaseUrl() {
+  // In the browser, always go through the Next.js proxy (/api/proxy).
+  // Calling the backend directly from the browser is cross-origin (schepen-kring.nl
+  // → app.schepen-kring.nl) and blocked by CORS. The proxy is same-origin.
+  if (typeof window !== "undefined") {
+    return window.location.hostname === "localhost"
+      ? "http://localhost:8000/api"
+      : "/api/proxy";
+  }
+
+  // Server-side (SSR / Server Actions): call the backend directly.
   const configured =
     process.env.NEXT_PUBLIC_BACKEND_API_URL ??
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.BACKEND_API_URL;
 
-  let finalUrl = "https://app.schepen-kring.nl/api";
-  if (configured) {
-    finalUrl = normalizeApiBaseUrl(configured);
-  } else if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-    finalUrl = "http://localhost:8000/api";
-  }
-
-  return finalUrl;
+  return configured ? normalizeApiBaseUrl(configured) : "https://app.schepen-kring.nl/api";
 }
 
 const httpClient = axios.create({

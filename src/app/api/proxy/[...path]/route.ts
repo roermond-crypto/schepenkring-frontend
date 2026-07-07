@@ -8,14 +8,8 @@ async function handleProxy(request: NextRequest, path: string[]) {
   const configuredBackendUrl =
     process.env.BACKEND_API_URL ??
     process.env.NEXT_PUBLIC_BACKEND_API_URL ??
-    process.env.NEXT_PUBLIC_API_BASE_URL;
-
-  if (!configuredBackendUrl) {
-    return NextResponse.json(
-      { message: "Backend API URL is not configured" },
-      { status: 500 },
-    );
-  }
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    "https://app.schepen-kring.nl/api";
 
   const backendUrl = normalizeApiBaseUrl(configuredBackendUrl);
 
