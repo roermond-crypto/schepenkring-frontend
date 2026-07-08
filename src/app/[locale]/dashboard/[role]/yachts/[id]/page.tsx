@@ -8489,8 +8489,8 @@ function YachtEditorInner() {
       );
 
       if (uploadedImages.length > 0) {
-        // Drop optimistic previews so the authoritative fetch below can
-        // replace them cleanly without a double-image flash.
+        // Drop optimistic previews — the merge below replaces them with the
+        // real records the upload endpoint just returned.
         setPendingUploadPreviews((previous) =>
           previous.filter(
             (image) =>
@@ -8498,25 +8498,54 @@ function YachtEditorInner() {
           ),
         );
 
-        // Fetch the authoritative image list directly via targetId rather
-        // than pipeline.refreshImages(). On the very first upload for a
-        // brand-new yacht, targetId was only just resolved above (via
-        // createBootstrapDraftYacht()) — pipeline.refreshImages is a
-        // useCallback closed over this render's activeYachtId, which is
-        // still null at this point (setCreatedYachtId below hasn't
-        // committed yet), so calling it here was a silent no-op and the
-        // just-uploaded image never appeared until something else (e.g. a
-        // manual page refresh) remounted the pipeline hook with a real id.
-        try {
-          const imagesRes = await api.get(`/yachts/${targetId}/images`);
-          pipeline.setImagesDirectly?.({
-            images: imagesRes.data?.images || [],
-            stats: imagesRes.data?.stats || pipeline.stats,
-            step2_unlocked: imagesRes.data?.step2_unlocked || false,
+        // Show the images the upload endpoint already returned immediately,
+        // without waiting on a second GET round-trip. The upload response
+        // (uploadedImages) already contains the created records — a
+        // follow-up GET has been unreliable here (and on the very first
+        // upload for a brand-new yacht, a naive pipeline.refreshImages()
+        // call is a stale no-op anyway, since it's bound to this render's
+        // activeYachtId, which is still null until setCreatedYachtId below
+        // commits). Merging what we already have in hand sidesteps that
+        // entirely instead of depending on the GET to display anything.
+        const existingIds = new Set(pipeline.images.map((img) => img.id));
+        const mergedImages = [
+          ...pipeline.images,
+          ...uploadedImages.filter((img) => !existingIds.has(img.id)),
+        ];
+        const approvedCount = mergedImages.filter((img) => img.status === "approved").length;
+        const processingCount = mergedImages.filter(
+          (img) => img.status === "processing" || img.enhancement_method === "pending",
+        ).length;
+        const readyCount = mergedImages.filter((img) => img.status === "ready_for_review").length;
+
+        pipeline.setImagesDirectly?.({
+          images: mergedImages,
+          stats: {
+            ...pipeline.stats,
+            total: mergedImages.length,
+            approved: approvedCount,
+            processing: processingCount,
+            ready: readyCount,
+          },
+          step2_unlocked:
+            pipeline.isStep2Unlocked || approvedCount >= pipeline.stats.min_required,
+        });
+
+        // Best-effort authoritative refresh in the background (picks up
+        // thumbnails/optimized URLs once processing finishes) — doesn't
+        // gate the visible update above on it succeeding.
+        api
+          .get(`/yachts/${targetId}/images`)
+          .then((imagesRes) => {
+            pipeline.setImagesDirectly?.({
+              images: imagesRes.data?.images || mergedImages,
+              stats: imagesRes.data?.stats || pipeline.stats,
+              step2_unlocked: imagesRes.data?.step2_unlocked ?? pipeline.isStep2Unlocked,
+            });
+          })
+          .catch((fetchErr) => {
+            console.error("[Upload] Background image list refresh failed:", fetchErr);
           });
-        } catch (fetchErr) {
-          console.error("[Upload] Failed to fetch authoritative image list:", fetchErr);
-        }
       }
 
       if (shouldSetCreatedYachtId) {
