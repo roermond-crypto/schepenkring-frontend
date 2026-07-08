@@ -2359,7 +2359,7 @@ export function SignhostFlow({
           if (next.status !== signRequest.status) {
             setSignRequest(next);
             if (next.status === "SIGNED") toast.success("Contract volledig ondertekend.");
-            if (next.status === "EXPIRED") toast.warning("Signhost transactie verlopen.");
+            if (next.status === "EXPIRED") toast("Signhost transactie verlopen.", { icon: "⚠️" });
           }
           if (res.signhost_expires_at) setSignhostExpiresAt(res.signhost_expires_at);
           if (res.signhost_last_checked_at) setSignhostLastChecked(res.signhost_last_checked_at);
@@ -3615,7 +3615,7 @@ export function SignhostFlow({
               { label: 'Koper', field: 'buyer_signed_at' },
               { label: 'Verkoper', field: 'seller_signed_at' },
             ].map(({ label, field }) => {
-              const ts = (signRequest as Record<string, unknown>)[field] as string | null | undefined;
+              const ts = (signRequest as unknown as Record<string, unknown>)[field] as string | null | undefined;
               return (
                 <span key={field} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium ${ts ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
                   {ts ? '✓' : '·'} {label} {ts ? `ondertekend ${new Date(ts).toLocaleDateString('nl-NL')}` : 'wacht op ondertekening'}
