@@ -31,7 +31,14 @@ export function LocationAutocomplete({
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const placesLibraryRef = useRef<any>(null);
+  // Uses the legacy google.maps.places JS surface (AutocompleteService +
+  // PlacesService), not the newer Places API (New) fetchAutocompleteSuggestions
+  // surface — the Google Cloud project only has the legacy Places API
+  // enabled, so the newer surface fails silently. Two other working
+  // implementations in this codebase (LocationFormPage.tsx, BoatIntakePage.tsx)
+  // already rely on this same legacy surface.
+  const autocompleteServiceRef = useRef<any>(null);
+  const placesServiceRef = useRef<any>(null);
   const sessionTokenRef = useRef<any>(null);
 
   useEffect(() => {
@@ -40,16 +47,15 @@ export function LocationAutocomplete({
 
   useEffect(() => {
     let active = true;
-    const initPlaces = async () => {
-      if (typeof window !== "undefined" && (window as any).google?.maps?.importLibrary) {
-        try {
-          const lib = (await (window as any).google.maps.importLibrary("places")) as any;
-          if (active) {
-            placesLibraryRef.current = lib;
-            sessionTokenRef.current = new lib.AutocompleteSessionToken();
-          }
-        } catch (error) {
-          console.error("Failed to load places library", error);
+    const initPlaces = () => {
+      const google = typeof window !== "undefined" ? (window as any).google : undefined;
+      if (google?.maps?.places) {
+        if (active) {
+          autocompleteServiceRef.current = new google.maps.places.AutocompleteService();
+          placesServiceRef.current = new google.maps.places.PlacesService(
+            document.createElement("div"),
+          );
+          sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken();
         }
       } else {
         setTimeout(initPlaces, 500);
@@ -64,7 +70,7 @@ export function LocationAutocomplete({
   // Debounced search
   useEffect(() => {
     if (
-      !placesLibraryRef.current ||
+      !autocompleteServiceRef.current ||
       !internalValue ||
       internalValue === value
     ) {
@@ -72,24 +78,20 @@ export function LocationAutocomplete({
       return;
     }
 
-    const { AutocompleteSuggestion } = placesLibraryRef.current;
-
-    const fetchTimer = setTimeout(async () => {
-      try {
-        setLoading(true);
-        const request = {
-          input: internalValue,
-          sessionToken: sessionTokenRef.current,
-        };
-        const { suggestions: results } =
-          await AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
-        setSuggestions(results || []);
-        setShowDropdown(true);
-      } catch (error) {
-        console.error("Autocomplete fetch error", error);
-      } finally {
-        setLoading(false);
-      }
+    const fetchTimer = setTimeout(() => {
+      setLoading(true);
+      autocompleteServiceRef.current.getPlacePredictions(
+        { input: internalValue, sessionToken: sessionTokenRef.current },
+        (predictions: any[] | null, status: string) => {
+          setLoading(false);
+          if (status !== "OK" || !predictions) {
+            setSuggestions([]);
+            return;
+          }
+          setSuggestions(predictions);
+          setShowDropdown(true);
+        },
+      );
     }, 300);
 
     return () => clearTimeout(fetchTimer);
@@ -110,50 +112,50 @@ export function LocationAutocomplete({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = async (suggestion: any) => {
+  const handleSelect = (suggestion: any) => {
     setShowDropdown(false);
 
-    const textContext =
-      suggestion.placePrediction?.text?.text ||
-      suggestion.placePrediction?.mainText?.text;
+    const textContext = suggestion.description;
     if (!textContext) return;
 
     setInternalValue(textContext);
     if (onChange) onChange(textContext);
 
-    if (!placesLibraryRef.current || !onSelectPlace) return;
+    const placeId = suggestion.place_id;
+    if (!placesServiceRef.current || !onSelectPlace || !placeId) return;
 
-    try {
-      const { Place } = placesLibraryRef.current;
-      const placeId = suggestion.placePrediction.placeId;
-      const place = new Place({ id: placeId });
-
-      await place.fetchFields({
-        fields: ["location", "displayName", "formattedAddress", "addressComponents"],
-      });
-
-      let city = place.displayName;
-      place.addressComponents?.forEach((component: any) => {
-        if (component.types.includes("locality")) {
-          city = component.longText;
+    placesServiceRef.current.getDetails(
+      {
+        placeId,
+        fields: ["geometry", "name", "formatted_address", "address_components"],
+        sessionToken: sessionTokenRef.current,
+      },
+      (place: any, status: string) => {
+        if (status !== "OK" || !place) {
+          console.error("Error fetching place details", status);
+          return;
         }
-      });
 
-      // Renew session token
-      sessionTokenRef.current = new (
-        placesLibraryRef.current as any
-      ).AutocompleteSessionToken();
+        let city = place.name;
+        place.address_components?.forEach((component: any) => {
+          if (component.types.includes("locality")) {
+            city = component.long_name;
+          }
+        });
 
-      onSelectPlace({
-        lat: place.location.lat(),
-        lng: place.location.lng(),
-        city: city || textContext,
-        formattedAddress: place.formattedAddress || textContext,
-        placeId: placeId,
-      });
-    } catch (e) {
-      console.error("Error fetching place details", e);
-    }
+        // Renew session token
+        const google = (window as any).google;
+        sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken();
+
+        onSelectPlace({
+          lat: place.geometry?.location?.lat() ?? 0,
+          lng: place.geometry?.location?.lng() ?? 0,
+          city: city || textContext,
+          formattedAddress: place.formatted_address || textContext,
+          placeId,
+        });
+      },
+    );
   };
 
   return (
@@ -190,9 +192,10 @@ export function LocationAutocomplete({
           className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
         >
           {suggestions.map((suggestion, idx) => {
-            const placeId = suggestion.placePrediction?.placeId;
-            const mainText = suggestion.placePrediction?.mainText?.text;
-            const secondaryText = suggestion.placePrediction?.secondaryText?.text;
+            const placeId = suggestion.place_id;
+            const mainText =
+              suggestion.structured_formatting?.main_text ?? suggestion.description;
+            const secondaryText = suggestion.structured_formatting?.secondary_text;
 
             return (
               <div
