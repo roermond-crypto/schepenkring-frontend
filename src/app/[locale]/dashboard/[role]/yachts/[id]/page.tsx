@@ -5794,8 +5794,17 @@ function YachtEditorInner() {
   ]);
 
   // Once the draft exists on the server, switch /yachts/new to the permanent id route.
+  // Deliberately waits for hasInFlightImageUploads to clear first: this effect
+  // fires the instant createdYachtId becomes truthy, which is the same tick
+  // the very first image upload finishes and gets merged into pipeline state.
+  // Racing the route swap against that state update let the navigation
+  // interrupt/discard the just-uploaded image before the user ever saw it —
+  // reported as "the page just refreshes and the image goes off" during
+  // upload. Letting uploads settle first means the URL only changes once
+  // there's nothing left to lose.
   useEffect(() => {
     if (!isNewMode || !createdYachtId || createdYachtId <= 0) return;
+    if (hasInFlightImageUploads) return;
     if (typeof window === "undefined") return;
 
     const currentPath = window.location.pathname;
@@ -5804,7 +5813,7 @@ function YachtEditorInner() {
     router.replace(
       `${localizedYachtsBasePath}/${createdYachtId}?step=${activeStep}&draftFlow=1`,
     );
-  }, [isNewMode, createdYachtId, activeStep, localizedYachtsBasePath, router]);
+  }, [isNewMode, createdYachtId, activeStep, localizedYachtsBasePath, router, hasInFlightImageUploads]);
 
   useEffect(() => {
     if (!isDraftLoaded) return;
