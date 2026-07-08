@@ -12,6 +12,7 @@ import {
   MapPin,
   Phone,
   Save,
+  Star,
   UserMinus,
   UserPlus,
   Users,
@@ -19,6 +20,15 @@ import {
 import { toast, Toaster } from "react-hot-toast";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { setClientSession } from "@/lib/auth/client-session";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
@@ -63,13 +73,16 @@ type FormState = {
   city: string;
   country: string;
   phone: string;
+  whatsapp_number: string;
   email: string;
+  sender_email: string;
   website: string;
   description_nl: string;
   description_en: string;
   description_de: string;
   opening_hours: Record<Day, { open: string; close: string; closed: boolean }>;
   default_seller_id: number | "";
+  lead_assignment_mode: "default_seller" | "round_robin" | "unassigned";
   seo_title: string;
   seo_description: string;
   seo_keywords: string;
@@ -87,7 +100,9 @@ const EMPTY_FORM: FormState = {
   city: "",
   country: "Netherlands",
   phone: "",
+  whatsapp_number: "",
   email: "",
+  sender_email: "",
   website: "",
   description_nl: "",
   description_en: "",
@@ -96,6 +111,7 @@ const EMPTY_FORM: FormState = {
     DAYS.map((d) => [d, { ...EMPTY_HOURS }]),
   ) as FormState["opening_hours"],
   default_seller_id: "",
+  lead_assignment_mode: "default_seller",
   seo_title: "",
   seo_description: "",
   seo_keywords: "",
@@ -114,7 +130,8 @@ declare global {
 function useGooglePlaces(
   inputRef: React.RefObject<HTMLInputElement | null>,
   onPlace: (data: {
-    address: string;
+    street: string;
+    streetNumber: string;
     city: string;
     postal: string;
     country: string;
@@ -144,7 +161,8 @@ function useGooglePlaces(
             c.types.includes(type),
           )?.short_name ?? "";
         onPlace({
-          address: `${get("route")} ${get("street_number")}`.trim(),
+          street: get("route"),
+          streetNumber: get("street_number"),
           city:
             get("locality") ||
             get("postal_town") ||
@@ -234,6 +252,26 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
   const [addingUser, setAddingUser] = useState(false);
   const [impersonating, setImpersonating] = useState(false);
 
+  // Impersonation dialog state
+  const [impersonateTarget, setImpersonateTarget] = useState<LocationUser | null>(null);
+  const [impersonatePassword, setImpersonatePassword] = useState("");
+  const [impersonateOtp, setImpersonateOtp] = useState("");
+
+  // Default seller state
+  const [settingDefaultSeller, setSettingDefaultSeller] = useState<number | null>(null);
+
+  // Create-user sub-form state
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+    type: "PARTNER",
+    phone: "",
+    status: "ACTIVE",
+  });
+
   // ── Load existing location ────────────────────────────────────────────────
 
   useEffect(() => {
@@ -269,13 +307,16 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
           city: loc.city ?? "",
           country: loc.country ?? "Netherlands",
           phone: loc.phone ?? "",
+          whatsapp_number: loc.whatsapp_number ?? "",
           email: loc.email ?? "",
+          sender_email: loc.sender_email ?? "",
           website: loc.website ?? "",
           description_nl: loc.description_nl ?? "",
           description_en: loc.description_en ?? "",
           description_de: loc.description_de ?? "",
           opening_hours: mergedHours,
           default_seller_id: loc.default_seller_id ?? "",
+          lead_assignment_mode: loc.lead_assignment_mode ?? "default_seller",
           seo_title: loc.seo_title ?? "",
           seo_description: loc.seo_description ?? "",
           seo_keywords: loc.seo_keywords ?? "",
@@ -323,10 +364,11 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
 
   // ── Google Places ─────────────────────────────────────────────────────────
 
-  useGooglePlaces(addressInputRef, ({ address, city, postal, country }) => {
+  useGooglePlaces(addressInputRef, ({ street, streetNumber, city, postal, country }) => {
     setForm((f) => ({
       ...f,
-      address_line1: address,
+      address_line1: street,
+      street_number: streetNumber,
       city,
       postal_code: postal,
       country,
@@ -354,13 +396,16 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
         city: form.city || null,
         country: form.country || null,
         phone: form.phone || null,
+        whatsapp_number: form.whatsapp_number || null,
         email: form.email || null,
+        sender_email: form.sender_email || null,
         website: form.website || null,
         description_nl: form.description_nl || null,
         description_en: form.description_en || null,
         description_de: form.description_de || null,
         opening_hours: form.opening_hours,
         default_seller_id: form.default_seller_id || null,
+        lead_assignment_mode: form.lead_assignment_mode,
         seo_title: form.seo_title || null,
         seo_description: form.seo_description || null,
         seo_keywords: form.seo_keywords || null,
@@ -418,17 +463,19 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
     }
   };
 
-  const handleImpersonate = async (u: LocationUser) => {
+  const handleImpersonate = (u: LocationUser) => {
+    setImpersonateTarget(u);
+    setImpersonatePassword("");
+    setImpersonateOtp("");
+  };
+
+  const executeImpersonation = async () => {
+    if (!impersonateTarget || !impersonatePassword.trim()) return;
     setImpersonating(true);
     try {
-      const password = prompt("Voer je beheerderswachtwoord in om te imiteren:");
-      if (!password) {
-        setImpersonating(false);
-        return;
-      }
       const res = await api.post(
-        `/admin/impersonate/${u.id}`,
-        { password },
+        `/admin/impersonate/${impersonateTarget.id}`,
+        { password: impersonatePassword.trim(), otp_code: impersonateOtp.trim() || undefined },
         { headers: { "Idempotency-Key": crypto.randomUUID() } },
       );
       const token = res.data?.token;
@@ -468,11 +515,55 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
         }),
       );
       toast.success(`Imitatie gestart: ${imp.name}`);
+      setImpersonateTarget(null);
       setTimeout(() => router.push(`/${locale}/dashboard/${nextRole}`), 300);
     } catch {
-      toast.error("Imitatie mislukt.");
+      toast.error("Imitatie mislukt. Controleer je wachtwoord of OTP.");
     } finally {
       setImpersonating(false);
+    }
+  };
+
+  const handleSetDefaultSeller = async (userId: number) => {
+    if (!locationId) return;
+    setSettingDefaultSeller(userId);
+    try {
+      await api.patch(`/admin/locations/${locationId}/default-seller`, { user_id: userId });
+      setForm((f) => ({ ...f, default_seller_id: userId }));
+      toast.success("Standaard verkoper ingesteld.");
+    } catch {
+      toast.error("Instellen mislukt.");
+    } finally {
+      setSettingDefaultSeller(null);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUser.name.trim() || !newUser.email.trim() || newUser.password.length < 8) {
+      toast.error("Naam, e-mail en wachtwoord (min. 8 tekens) zijn verplicht.");
+      return;
+    }
+    setCreatingUser(true);
+    try {
+      await api.post("/admin/users", {
+        name: newUser.name.trim(),
+        email: newUser.email.trim(),
+        password: newUser.password,
+        type: newUser.type,
+        phone: newUser.phone.trim() || null,
+        status: newUser.status,
+        location_id: locationId,
+        location_role: "LOCATION_EMPLOYEE",
+      });
+      toast.success("Gebruiker aangemaakt en gekoppeld.");
+      setShowCreateUser(false);
+      setNewUser({ name: "", email: "", password: "", type: "PARTNER", phone: "", status: "ACTIVE" });
+      await loadLocationUsers();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? "Aanmaken mislukt.");
+    } finally {
+      setCreatingUser(false);
     }
   };
 
@@ -769,6 +860,30 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-blue-400"
                 />
               </div>
+              <div>
+                <Label>WhatsApp-nummer</Label>
+                <input
+                  type="tel"
+                  value={form.whatsapp_number}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, whatsapp_number: e.target.value }))
+                  }
+                  placeholder="+31 6 12345678"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-blue-400"
+                />
+              </div>
+              <div>
+                <Label>Afzender e-mail (voor automatische mails)</Label>
+                <input
+                  type="email"
+                  value={form.sender_email}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, sender_email: e.target.value }))
+                  }
+                  placeholder="noreply@heeg.schepenkring.nl"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-blue-400"
+                />
+              </div>
               <div className="sm:col-span-2">
                 <Label>
                   <span className="flex items-center gap-1">
@@ -1045,6 +1160,27 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
 
           {/* User list */}
           <section className="rounded-[20px] border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="mb-1 text-[11px] font-black uppercase tracking-wider text-slate-400">
+              Lead-toewijzing
+            </p>
+            <p className="mb-3 text-xs text-slate-500">
+              Bepaalt wie een nieuwe lead, chat of boeking krijgt toegewezen wanneer de boot zelf geen eigen verkoper heeft.
+            </p>
+            <select
+              value={form.lead_assignment_mode}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  lead_assignment_mode: e.target.value as FormState["lead_assignment_mode"],
+                }))
+              }
+              className="mb-6 h-11 w-full max-w-sm rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-blue-400 sm:w-auto"
+            >
+              <option value="default_seller">Standaard verkoper (hieronder met ★ ingesteld)</option>
+              <option value="round_robin">Rondgaand verdelen over actieve medewerkers</option>
+              <option value="unassigned">Altijd onbeheerd — alleen in de locatie-inbox</option>
+            </select>
+
             <p className="mb-4 text-[11px] font-black uppercase tracking-wider text-slate-400">
               Gekoppelde medewerkers
             </p>
@@ -1105,10 +1241,30 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
                         type="button"
                         size="icon"
                         variant="outline"
+                        className={cn(
+                          "h-8 w-8 rounded-lg border-amber-200 hover:bg-amber-50",
+                          form.default_seller_id === u.id
+                            ? "bg-amber-50 text-amber-600"
+                            : "text-slate-400",
+                        )}
+                        title="Stel in als standaard verkoper"
+                        disabled={settingDefaultSeller === u.id}
+                        onClick={() => void handleSetDefaultSeller(u.id)}
+                      >
+                        {settingDefaultSeller === u.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Star className={cn("h-3.5 w-3.5", form.default_seller_id === u.id && "fill-amber-500")} />
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
                         className="h-8 w-8 rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50"
                         title="Imiteer gebruiker"
                         disabled={impersonating}
-                        onClick={() => void handleImpersonate(u)}
+                        onClick={() => handleImpersonate(u)}
                       >
                         <LogIn className="h-3.5 w-3.5" />
                       </Button>
@@ -1128,8 +1284,183 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
               </div>
             )}
           </section>
+
+          {/* Create new user section */}
+          <section className="rounded-[20px] border border-emerald-100 bg-emerald-50 p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-emerald-700">
+                <UserPlus className="h-3.5 w-3.5" /> Nieuwe gebruiker aanmaken
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 rounded-xl border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                onClick={() => setShowCreateUser((v) => !v)}
+              >
+                {showCreateUser ? "Sluiten" : "Formulier openen"}
+              </Button>
+            </div>
+
+            {showCreateUser && (
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Naam *</label>
+                    <Input
+                      value={newUser.name}
+                      onChange={(e) => setNewUser((u) => ({ ...u, name: e.target.value }))}
+                      placeholder="Volledige naam"
+                      className="h-10 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">E-mail *</label>
+                    <Input
+                      type="email"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser((u) => ({ ...u, email: e.target.value }))}
+                      placeholder="naam@voorbeeld.nl"
+                      className="h-10 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Wachtwoord * (min. 8)</label>
+                    <Input
+                      type="password"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser((u) => ({ ...u, password: e.target.value }))}
+                      placeholder="••••••••"
+                      className="h-10 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Telefoon</label>
+                    <Input
+                      value={newUser.phone}
+                      onChange={(e) => setNewUser((u) => ({ ...u, phone: e.target.value }))}
+                      placeholder="+31 6 12345678"
+                      className="h-10 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Rol</label>
+                    <select
+                      value={newUser.type}
+                      onChange={(e) => setNewUser((u) => ({ ...u, type: e.target.value }))}
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#003566]"
+                    >
+                      <option value="PARTNER">Vestigingsmanager</option>
+                      <option value="EMPLOYEE">Medewerker</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Status</label>
+                    <select
+                      value={newUser.status}
+                      onChange={(e) => setNewUser((u) => ({ ...u, status: e.target.value }))}
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#003566]"
+                    >
+                      <option value="ACTIVE">Actief</option>
+                      <option value="INACTIVE">Inactief</option>
+                    </select>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Locatie wordt automatisch ingesteld op <strong>{locationName}</strong>.
+                </p>
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-9 rounded-xl"
+                    onClick={() => setShowCreateUser(false)}
+                  >
+                    Annuleren
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={creatingUser}
+                    onClick={() => void handleCreateUser()}
+                    className="h-9 rounded-xl bg-[#003566] text-white hover:bg-[#00284d]"
+                  >
+                    {creatingUser ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <UserPlus className="mr-2 h-4 w-4" />
+                    )}
+                    Gebruiker aanmaken
+                  </Button>
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       )}
+
+      {/* ── Impersonation dialog ─────────────────────────────────────────────── */}
+      <Dialog
+        open={Boolean(impersonateTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setImpersonateTarget(null);
+            setImpersonatePassword("");
+            setImpersonateOtp("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md rounded-2xl border-slate-200">
+          <DialogHeader>
+            <DialogTitle className="text-[#003566]">Gebruiker imiteren</DialogTitle>
+            <DialogDescription className="text-slate-500">
+              {impersonateTarget
+                ? `Je staat op het punt om ${impersonateTarget.name} te imiteren.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-500">Beheerderswachtwoord</label>
+              <Input
+                type="password"
+                value={impersonatePassword}
+                onChange={(e) => setImpersonatePassword(e.target.value)}
+                className="h-10 rounded-xl border-slate-200"
+                placeholder="Jouw wachtwoord"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-500">OTP-code (optioneel)</label>
+              <Input
+                type="text"
+                value={impersonateOtp}
+                onChange={(e) => setImpersonateOtp(e.target.value)}
+                className="h-10 rounded-xl border-slate-200"
+                placeholder="123456"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setImpersonateTarget(null)}
+            >
+              Annuleren
+            </Button>
+            <Button
+              type="button"
+              disabled={!impersonatePassword.trim() || impersonating}
+              onClick={() => void executeImpersonation()}
+              className="bg-[#003566] text-white hover:bg-[#00284d]"
+            >
+              {impersonating ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Bezig…</>
+              ) : "Imiteren"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -380,7 +380,7 @@ export default function AdminPerformancePage() {
           </div>
           <div className="rounded-3xl border border-white/20 bg-white/85 p-4 shadow-sm backdrop-blur-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-              {t("stats.commission")}
+              Sessions
             </p>
             <p className="mt-2 text-2xl font-bold text-[#0B1F3A]">
               {totals.sessions.toLocaleString()}
@@ -498,7 +498,7 @@ export default function AdminPerformancePage() {
                   <th className="px-5 py-4">{t("table.openLeads")}</th>
                   <th className="px-5 py-4">{t("table.tasksCreated")}</th>
                   <th className="px-5 py-4">{t("table.tasksCompleted")}</th>
-                  <th className="px-5 py-4">{t("table.commission")}</th>
+                  <th className="px-5 py-4">Sessions</th>
                   <th className="px-5 py-4">{t("table.benchmark")}</th>
                   <th className="px-5 py-4">{t("table.rank")}</th>
                 </tr>
@@ -506,17 +506,17 @@ export default function AdminPerformancePage() {
               <tbody>
                 {rows.map((row, index) => {
                   const users = numberValue(row?.metrics?.active_users);
-                  const impressions = numberValue(row?.metrics?.leads_created);
-                  const clicks = numberValue(
+                  const leadsCreated = numberValue(row?.metrics?.leads_created);
+                  const conversations = numberValue(
                     row?.metrics?.conversations_created,
                   );
-                  const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
-                  const forms = numberValue(row?.metrics?.open_leads);
-                  const submitted = numberValue(
+                  const ctr = leadsCreated > 0 ? (conversations / leadsCreated) * 100 : 0;
+                  const openLeads = numberValue(row?.metrics?.open_leads);
+                  const tasksCreated = numberValue(
                     row?.metrics?.tasks_created,
                   );
-                  const deals = numberValue(row?.metrics?.tasks_completed);
-                  const commission = numberValue(row?.metrics?.sessions);
+                  const tasksCompleted = numberValue(row?.metrics?.tasks_completed);
+                  const sessions = numberValue(row?.metrics?.sessions);
                   const avgCtr = 0;
                   const rank = index + 1;
 
@@ -545,21 +545,21 @@ export default function AdminPerformancePage() {
                       </td>
                       <td className="px-5 py-4">{users.toLocaleString()}</td>
                       <td className="px-5 py-4">
-                        {impressions.toLocaleString()}
+                        {leadsCreated.toLocaleString()}
                       </td>
-                      <td className="px-5 py-4">{clicks.toLocaleString()}</td>
+                      <td className="px-5 py-4">{conversations.toLocaleString()}</td>
                       <td className="px-5 py-4">
                         <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
                           {percent(ctr)}
                         </span>
                       </td>
-                      <td className="px-5 py-4">{forms.toLocaleString()}</td>
+                      <td className="px-5 py-4">{openLeads.toLocaleString()}</td>
                       <td className="px-5 py-4">
-                        {submitted.toLocaleString()}
+                        {tasksCreated.toLocaleString()}
                       </td>
-                      <td className="px-5 py-4">{deals.toLocaleString()}</td>
+                      <td className="px-5 py-4">{tasksCompleted.toLocaleString()}</td>
                       <td className="px-5 py-4 font-semibold text-[#0B1F3A]">
-                        {commission.toLocaleString()}
+                        {sessions.toLocaleString()}
                       </td>
                       <td className="px-5 py-4 text-xs">
                         {t("table.avgCtr", { value: percent(avgCtr) })}

@@ -20,7 +20,7 @@ export default async function VerifyEmailPage({ params, searchParams }: VerifyEm
 
   return (
     <div className="min-h-screen flex flex-col bg-[#edf3f7] dark:bg-slate-950">
-      <PublicHeader locale={currentLocale} showBootAanmelden />
+      <PublicHeader locale={currentLocale} showBootAanmelden={false} />
       <div className="flex-1 flex items-center justify-center p-4">
         <VerifyEmailForm locale={currentLocale} email={email ?? ""} code={code ?? ""} />
       </div>

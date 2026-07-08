@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, MessageSquare, Sailboat, TrendingUp, CheckCircle2 } from "lucide-react";
+import { ArrowRight, MessageSquare, Sailboat, TrendingUp, CheckCircle2, Calendar, HelpCircle } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -43,6 +43,8 @@ export function SellerDashboardPanel({ locale, role }: { locale: AppLocale; role
     { label: t.stats.boats, value: stats.boat_count ?? 0, href: `${root}/yachts`, icon: Sailboat },
     { label: t.stats.bids, value: stats.open_bids ?? 0, href: `${root}/bids`, icon: TrendingUp },
     { label: t.stats.chats, value: stats.open_conversations ?? 0, href: `${root}/chat`, icon: MessageSquare },
+    { label: t.stats.viewings ?? "Bezichtigingen", value: (stats as Record<string, number>).pending_viewings ?? 0, href: `${root}/chat`, icon: Calendar },
+    { label: t.stats.questions ?? "Vragen", value: (stats as Record<string, number>).open_questions ?? 0, href: `${root}/chat`, icon: HelpCircle },
     { label: t.stats.contracts, value: stats.contracts ?? 0, href: `${root}/yachts`, icon: CheckCircle2 },
   ];
 
@@ -70,7 +72,7 @@ export function SellerDashboardPanel({ locale, role }: { locale: AppLocale; role
         </section>
       )}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         {statCards.map((card) => (
           <Link
             key={card.label}
@@ -160,8 +162,8 @@ export function SellerDashboardPanel({ locale, role }: { locale: AppLocale; role
 function SellerDashboardPanelSkeleton() {
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, index) => (
           <div
             key={index}
             className="rounded-2xl border border-[#CFDCF2] bg-white p-5 shadow-sm"

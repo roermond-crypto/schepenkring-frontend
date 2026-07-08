@@ -156,6 +156,7 @@ import {
   hasFilledFieldValue
 } from "@/components/yachts/wizard/WizardHelpers";
 import { matchBoat, type BoatMatchResult } from "@/lib/api/boat-match";
+import { BoatDetailTabs } from "@/components/yachts/BoatDetailTabs";
 
 // ALi
 // Wizard step config
@@ -9654,6 +9655,13 @@ function YachtEditorInner() {
         variant="destructive"
         onConfirm={handleDeleteFailedImages}
       />
+
+      {/* ── Boat detail tabs (offers, chats, questions, viewings, timeline) ── */}
+      {!isNewMode && yachtId && /^[0-9]+$/.test(String(yachtId)) && (
+        <div className="mx-auto max-w-[1600px] px-4 pb-16 xl:px-8">
+          <BoatDetailTabs yachtId={String(yachtId)} />
+        </div>
+      )}
     </div>
   );
 }

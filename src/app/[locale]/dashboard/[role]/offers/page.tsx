@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
   RefreshCw,
   Search,
   Ship,
+  Sparkles,
   TrendingDown,
   XCircle,
 } from "lucide-react";
@@ -155,12 +156,14 @@ function StatusBadge({ status }: { status: OfferStatus }) {
 function OfferFormDialog({
   open,
   editOffer,
+  prefill,
   locations,
   onClose,
   onSaved,
 }: {
   open: boolean;
   editOffer: OfferRecord | null;
+  prefill?: Partial<FormState>;
   locations: LocationOption[];
   onClose: () => void;
   onSaved: (o: OfferRecord) => void;
@@ -192,13 +195,13 @@ function OfferFormDialog({
       setYachtLabel(boatLabel(editOffer, t("row.boatFallback", { id: editOffer.yacht_id })));
       setYachtQuery("");
     } else {
-      setForm(EMPTY_FORM);
+      setForm({ ...EMPTY_FORM, ...prefill });
       setYachtLabel("");
       setYachtQuery("");
     }
     setYachtResults([]);
     setYachtOpen(false);
-  }, [open, editOffer, t]);
+  }, [open, editOffer, prefill, t]);
 
   useEffect(() => {
     if (!yachtQuery || yachtQuery.length < 2) { setYachtResults([]); setYachtOpen(false); return; }
@@ -386,17 +389,183 @@ function OfferFormDialog({
   );
 }
 
+// ── AI Bid-Extract Modal ──────────────────────────────────────
+
+type ExtractedBid = {
+  boat_name?: string | null;
+  buyer_name?: string | null;
+  buyer_email?: string | null;
+  buyer_phone?: string | null;
+  offer_amount?: number | null;
+  message?: string | null;
+};
+
+function BidExtractModal({
+  open,
+  onClose,
+  onExtracted,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onExtracted: (prefill: Partial<FormState>, imageUrl?: string | null) => void;
+}) {
+  const [text, setText] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) { setText(""); setImageFile(null); setImagePreview(null); }
+  }, [open]);
+
+  const applyImageFile = (file: File) => {
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const imageItem = Array.from(e.clipboardData.items).find((i) => i.type.startsWith("image/"));
+    if (imageItem) {
+      const file = imageItem.getAsFile();
+      if (file) { e.preventDefault(); applyImageFile(file); }
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file?.type.startsWith("image/")) applyImageFile(file);
+  };
+
+  const handleExtract = async () => {
+    if (!text.trim() && !imageFile) return;
+    setExtracting(true);
+    try {
+      const fd = new FormData();
+      if (text.trim()) fd.append("text", text.trim());
+      if (imageFile) fd.append("image", imageFile);
+      const res = await api.post("/admin/bids/extract", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const ex = (res.data as { extracted: ExtractedBid; stored_image?: string | null }).extracted;
+      const storedImage = (res.data as { stored_image?: string | null }).stored_image;
+      const prefill: Partial<FormState> = {
+        buyer_name:  ex.buyer_name  ?? "",
+        buyer_email: ex.buyer_email ?? "",
+        buyer_phone: ex.buyer_phone ?? "",
+        amount:      ex.offer_amount != null ? String(ex.offer_amount) : "",
+        message:     ex.message     ?? "",
+      };
+      onExtracted(prefill, storedImage);
+      onClose();
+    } catch {
+      toast.error("AI extractie mislukt. Controleer de configuratie.");
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const canExtract = !extracting && (text.trim().length > 0 || !!imageFile);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-xl rounded-[2rem] border-slate-200 p-0">
+        <DialogHeader className="border-b border-slate-200 px-6 py-5">
+          <DialogTitle className="text-xl font-semibold text-[#0B1F3A]">
+            Bieding extraheren uit tekst / afbeelding
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-500">
+            Plak een e-mail, WhatsApp-bericht of screenshot — de AI vult het formulier automatisch in.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="max-h-[70vh] overflow-y-auto px-6 py-5 space-y-4">
+          {/* Text area */}
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
+              Tekst (e-mail / bericht)
+            </label>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onPaste={handlePaste}
+              rows={6}
+              placeholder="Plak hier de tekst of e-mail van de koper..."
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-[#003566] resize-none"
+            />
+          </div>
+
+          {/* Image drop zone */}
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
+              Screenshot (optioneel)
+            </label>
+            <div
+              tabIndex={0}
+              role="button"
+              aria-label="Afbeelding uploaden"
+              onPaste={handlePaste}
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
+              className="flex min-h-[96px] cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-400 transition-colors hover:border-[#003566]/40 hover:bg-slate-100"
+            >
+              {imagePreview ? (
+                <img src={imagePreview} alt="Voorvertoning" className="max-h-40 max-w-full rounded-xl object-contain" />
+              ) : (
+                <span>Klik, sleep of plak (Ctrl+V) een afbeelding</span>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) applyImageFile(f); }}
+            />
+            {imageFile && (
+              <p className="text-xs font-medium text-emerald-600">✓ {imageFile.name}</p>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+            <Button type="button" variant="outline" className="h-10 rounded-2xl" onClick={onClose}>
+              Annuleren
+            </Button>
+            <Button
+              type="button"
+              disabled={!canExtract}
+              onClick={() => void handleExtract()}
+              className="h-10 rounded-2xl bg-[#003566] px-6 text-[10px] font-black uppercase tracking-[0.22em] text-white hover:bg-[#00284d] disabled:opacity-50"
+            >
+              {extracting
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Extraheren…</>
+                : <><Sparkles className="mr-2 h-4 w-4" />Extraheren</>}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────
 
 export default function AdminOffersPage() {
   const t = useTranslations("DashboardAdminOffers");
   const params = useParams<{ locale?: string; role?: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const locale = params?.locale ?? "nl";
   const role = params?.role ?? "admin";
+  const initialLocationId = searchParams.get("location") ?? "";
 
-  const [filters, setFilters] = useState<Filters>({ search: "", status: "", location_id: "" });
-  const [applied, setApplied] = useState<Filters>({ search: "", status: "", location_id: "" });
+  const [filters, setFilters] = useState<Filters>({ search: "", status: "", location_id: initialLocationId });
+  const [applied, setApplied] = useState<Filters>({ search: "", status: "", location_id: initialLocationId });
   const [offers, setOffers] = useState<OfferRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -413,6 +582,8 @@ export default function AdminOffersPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editOffer, setEditOffer] = useState<OfferRecord | null>(null);
+  const [formPrefill, setFormPrefill] = useState<Partial<FormState>>({});
+  const [extractOpen, setExtractOpen] = useState(false);
 
   const initialized = useRef(false);
 
@@ -516,8 +687,14 @@ export default function AdminOffersPage() {
     }
   }, [loadOffers, selected?.id, t]);
 
-  const openCreate = () => { setEditOffer(null); setFormOpen(true); };
+  const openCreate = () => { setFormPrefill({}); setEditOffer(null); setFormOpen(true); };
   const openEdit   = (o: OfferRecord) => { setEditOffer(o); setDetailOpen(false); setFormOpen(true); };
+
+  const handleExtracted = (prefill: Partial<FormState>, _imageUrl?: string | null) => {
+    setFormPrefill(prefill);
+    setEditOffer(null);
+    setFormOpen(true);
+  };
 
   const handleSaved = (saved: OfferRecord) => {
     setOffers((prev) => {
@@ -549,7 +726,7 @@ export default function AdminOffersPage() {
             <h1 className="mt-3 text-4xl font-serif italic text-[#003566] sm:text-5xl">{t("hero.title")}</h1>
             <p className="mt-3 max-w-3xl text-sm text-slate-500">{t("hero.subtitle")}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button
               type="button"
               onClick={() => void loadOffers(true)}
@@ -559,6 +736,15 @@ export default function AdminOffersPage() {
             >
               {refreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
               {t("hero.refresh")}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setExtractOpen(true)}
+              variant="outline"
+              className="h-12 rounded-2xl border-[#003566]/40 px-5 text-[10px] font-black uppercase tracking-[0.26em] text-[#003566] hover:bg-[#003566]/5"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              AI extraheren
             </Button>
             <Button
               type="button"
@@ -988,9 +1174,17 @@ export default function AdminOffersPage() {
       <OfferFormDialog
         open={formOpen}
         editOffer={editOffer}
+        prefill={formPrefill}
         locations={locations}
-        onClose={() => setFormOpen(false)}
+        onClose={() => { setFormOpen(false); setEditOffer(null); setFormPrefill({}); }}
         onSaved={handleSaved}
+      />
+
+      {/* ── AI Bid Extract modal ───────────────────────────────── */}
+      <BidExtractModal
+        open={extractOpen}
+        onClose={() => setExtractOpen(false)}
+        onExtracted={handleExtracted}
       />
     </div>
   );

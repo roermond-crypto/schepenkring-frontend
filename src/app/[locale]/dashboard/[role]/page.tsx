@@ -68,6 +68,8 @@ type DashboardData = {
   hasBoatListings: boolean;
   hasPlacedBids: boolean;
   brokerReviewCount: number;
+  unansweredQuestions: number;
+  pendingViewings: number;
   clientSignhostTask: DashboardYachtWithStatus | null;
   recentBids: DashboardYachtWithStatus[];
   recentRegistrations: DashboardYacht[];
@@ -304,6 +306,8 @@ export default function AdminDashboardHome() {
     hasBoatListings: false,
     hasPlacedBids: false,
     brokerReviewCount: 0,
+    unansweredQuestions: 0,
+    pendingViewings: 0,
     clientSignhostTask: null,
     recentBids: [],
     recentRegistrations: [],
@@ -344,6 +348,8 @@ export default function AdminDashboardHome() {
         logsRes,
         summaryRes,
         unreadCountRes,
+        questionsRes,
+        viewingsRes,
       ] = await Promise.allSettled([
         api.get("/yachts"),
         api.get("/tasks"),
@@ -359,6 +365,12 @@ export default function AdminDashboardHome() {
           ? api.get("/dashboard/seller/summary")
           : Promise.resolve({ data: null }),
         api.get("/notifications/unread-count"),
+        isAdminRole || isEmployeeRole
+          ? api.get("/chat/conversations?chat_type=question&status=open&limit=100")
+          : Promise.resolve({ data: { data: [] } }),
+        isAdminRole || isEmployeeRole
+          ? api.get("/chat/conversations?chat_type=plan_viewing&status=open&limit=100")
+          : Promise.resolve({ data: { data: [] } }),
       ]);
 
       const yachts: DashboardYacht[] =
@@ -544,6 +556,15 @@ export default function AdminDashboardHome() {
         )
         .slice(0, 4);
 
+      const unansweredQuestions =
+        questionsRes.status === "fulfilled"
+          ? normalizeList(questionsRes.value.data?.data ?? questionsRes.value.data).length
+          : 0;
+      const pendingViewings =
+        viewingsRes.status === "fulfilled"
+          ? normalizeList(viewingsRes.value.data?.data ?? viewingsRes.value.data).length
+          : 0;
+
       startTransition(() => {
         setUnreadNotificationCount(unreadCount);
         setData({
@@ -558,6 +579,8 @@ export default function AdminDashboardHome() {
           hasBoatListings: yachtsWithNormalizedStatus.length > 0,
           hasPlacedBids: Array.isArray(bidsRaw) && bidsRaw.length > 0,
           brokerReviewCount,
+          unansweredQuestions,
+          pendingViewings,
           clientSignhostTask,
           recentBids,
           recentRegistrations,
@@ -669,7 +692,7 @@ export default function AdminDashboardHome() {
       trendLabel: t("trends.thisWeek"),
       icon: TrendingUp,
       tone: "from-[#122746] to-[#1E3A8A]",
-      link: `${dashboardBase}/yachts`,
+      link: `${dashboardBase}/offers`,
       sparkline: data.trends.activeBids.sparkline,
       positive: data.trends.activeBids.change >= 0,
     },
@@ -691,7 +714,7 @@ export default function AdminDashboardHome() {
       trendLabel: t("trends.thisWeek"),
       icon: AlertCircle,
       tone: "from-[#122746] to-[#1E3A8A]",
-      link: `${dashboardBase}/yachts`,
+      link: `${dashboardBase}/yachts?status=intake`,
       sparkline: data.trends.fleetIntake.sparkline,
       positive: data.trends.fleetIntake.change >= 0,
     },
@@ -702,7 +725,7 @@ export default function AdminDashboardHome() {
       trendLabel: t("trends.thisMonth"),
       icon: CheckCircle2,
       tone: "from-[#0D2A4F] to-[#1E3A8A]",
-      link: `${dashboardBase}/yachts`,
+      link: `${dashboardBase}/yachts?status=sold`,
       sparkline: data.trends.completedSales.sparkline,
       positive: data.trends.completedSales.change >= 0,
       isCurrency: true,
@@ -922,7 +945,7 @@ export default function AdminDashboardHome() {
               </button>
               {isAdminRole && data.pendingRegistrations > 0 && (
                 <Link
-                  href={`${dashboardBase}/yachts`}
+                  href={`${dashboardBase}/users?status=pending`}
                   className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 transition hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-950/60"
                 >
                   <AlertCircle size={14} />
@@ -934,12 +957,32 @@ export default function AdminDashboardHome() {
               )}
               {isAdminRole && (
                 <Link
-                  href={`${dashboardBase}/bids`}
+                  href={`${dashboardBase}/offers`}
                   className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 font-semibold transition hover:bg-white dark:bg-slate-800/90 dark:text-slate-100 dark:hover:bg-slate-800"
                 >
                   {t("activeBiddingItems", {
                     count: data.activeBidsCount,
                   })}
+                  <ArrowRight size={14} />
+                </Link>
+              )}
+              {isAdminRole && data.unansweredQuestions > 0 && (
+                <Link
+                  href={`${dashboardBase}/chat?type=question&status=open`}
+                  className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 font-semibold text-red-700 transition hover:bg-red-100 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/60"
+                >
+                  <AlertCircle size={14} />
+                  {t("unansweredQuestions", { count: data.unansweredQuestions })}
+                  <ArrowRight size={14} />
+                </Link>
+              )}
+              {isAdminRole && data.pendingViewings > 0 && (
+                <Link
+                  href={`${dashboardBase}/chat?type=plan_viewing&status=open`}
+                  className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 font-semibold text-blue-700 transition hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-200 dark:hover:bg-blue-950/60"
+                >
+                  <AlertCircle size={14} />
+                  {t("pendingViewings", { count: data.pendingViewings })}
                   <ArrowRight size={14} />
                 </Link>
               )}

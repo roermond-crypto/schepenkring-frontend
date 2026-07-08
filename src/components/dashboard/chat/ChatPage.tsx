@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ConversationList } from "./ConversationList";
 import { ConversationMessages } from "./ConversationMessages";
@@ -28,6 +29,8 @@ import { AlertCircle, Menu } from "lucide-react";
 
 export function ChatPage() {
   const t = useTranslations("DashboardChat");
+  const searchParams = useSearchParams();
+  const locationFilter = searchParams.get("location");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
@@ -51,10 +54,11 @@ export function ChatPage() {
     const data = await getConversations({
       status: statusFilter,
       search: searchQuery,
+      locationId: locationFilter ?? undefined,
     });
     setConversations(data);
     setLoading(false);
-  }, [statusFilter, searchQuery]);
+  }, [statusFilter, searchQuery, locationFilter]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

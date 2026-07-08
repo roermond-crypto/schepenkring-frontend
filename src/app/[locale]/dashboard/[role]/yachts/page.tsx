@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, SyntheticEvent, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useLocale } from "next-intl";
 import { getDictionary } from "@/lib/i18n";
@@ -132,6 +132,8 @@ const statusConfig: Record<string, { color: string; bg: string; border: string }
 export default function FleetManagementPage() {
   const router = useRouter();
   const params = useParams<{ role?: string }>();
+  const searchParams = useSearchParams();
+  const locationFilter = searchParams.get("location");
   const locale = useLocale();
   const role = normalizeRole(params?.role) ?? "admin";
   const isClientRole = role === "client";
@@ -259,6 +261,7 @@ export default function FleetManagementPage() {
 
       if (searchQuery) params.set("search", searchQuery);
       if (selectedStatus !== "all") params.set("status", selectedStatus);
+      if (locationFilter) params.set("location_id", locationFilter);
 
       const res = await api.get(`/yachts?${params.toString()}`);
       const resolveFallbackImage = (yacht: any): string | null => {
@@ -357,6 +360,7 @@ export default function FleetManagementPage() {
     selectedStatus,
     sortBy,
     sortOrder,
+    locationFilter,
     t?.toasts?.loadFailed,
   ]);
 

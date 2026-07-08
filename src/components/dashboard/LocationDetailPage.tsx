@@ -8,8 +8,13 @@ import {
   Anchor,
   ArrowLeft,
   BarChart3,
+  Calendar as CalendarIcon,
+  CalendarCheck,
   CalendarDays,
+  Euro,
   Globe,
+  History,
+  Inbox as InboxIcon,
   Loader2,
   LogIn,
   Mail,
@@ -48,7 +53,9 @@ type Location = {
   city?: string | null;
   country?: string | null;
   phone?: string | null;
+  whatsapp_number?: string | null;
   email?: string | null;
+  sender_email?: string | null;
   website?: string | null;
   latitude?: number | null;
   longitude?: number | null;
@@ -60,6 +67,7 @@ type Location = {
   hero_image?: string | null;
   default_seller_id?: number | null;
   default_seller?: { id: number; name: string; email: string } | null;
+  lead_assignment_mode?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
   seo_keywords?: string | null;
@@ -76,14 +84,21 @@ type Location = {
 type Stats = {
   active_yachts: number;
   total_yachts: number;
+  sold_yachts: number;
+  revenue: number;
   active_boats: number;
   new_leads_month: number;
   open_leads: number;
   open_chats: number;
   total_chats: number;
+  open_viewing_requests: number;
+  open_offers: number;
+  upcoming_bookings: number;
   staff_count: number;
   client_count: number;
   open_tasks: number;
+  conversion_rate: number;
+  avg_response_time_minutes: number | null;
 };
 
 type LocationUser = {
@@ -107,7 +122,40 @@ type TimelineEntry = {
   created_at: string;
 };
 
-type Tab = "overview" | "employees" | "boats" | "leads" | "chats" | "stats" | "settings";
+type InboxLead = { id: number; name?: string | null; email?: string | null; phone?: string | null; yacht_id?: number | null; created_at: string };
+type InboxConversation = { id: string; boat_id?: number | null; status: string; created_at?: string; last_customer_message_at?: string };
+type InboxOffer = { id: number; yacht_id?: number | null; buyer_name?: string | null; amount?: number | null; status: string; created_at: string };
+
+type Inbox = {
+  counts: {
+    new_leads: number;
+    unread_chats: number;
+    viewing_requests: number;
+    questions: number;
+    callback_requests: number;
+    offers: number;
+  };
+  new_leads: InboxLead[];
+  unread_chats: InboxConversation[];
+  viewing_requests: InboxConversation[];
+  questions: InboxConversation[];
+  callback_requests: InboxConversation[];
+  offers: InboxOffer[];
+};
+
+type Tab =
+  | "overview"
+  | "employees"
+  | "boats"
+  | "leads"
+  | "chats"
+  | "offers"
+  | "bookings"
+  | "calendar"
+  | "stats"
+  | "timeline"
+  | "inbox"
+  | "settings";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 const DAY_LABELS: Record<string, string> = {
@@ -122,7 +170,7 @@ function roleLabel(type: string, locationRole?: string | null): string {
   if (locationRole === "LOCATION_EMPLOYEE") return "Medewerker";
   if (type === "ADMIN") return "Admin";
   if (type === "EMPLOYEE") return "Medewerker";
-  if (type === "PARTNER") return "Partner";
+  if (type === "PARTNER") return "Vestigingsmanager";
   return type;
 }
 
@@ -152,6 +200,7 @@ export function LocationDetailPage({
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<LocationUser[]>([]);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const [inbox, setInbox] = useState<Inbox | null>(null);
   const [allUsers, setAllUsers] = useState<Array<{ id: number; name: string; type: string }>>([]);
 
   const [loading, setLoading] = useState(true);
@@ -180,6 +229,11 @@ export function LocationDetailPage({
     setTimeline(Array.isArray(res.data?.data) ? res.data.data : []);
   }, [locationId]);
 
+  const loadInbox = useCallback(async () => {
+    const res = await api.get(`/admin/locations/${locationId}/inbox`);
+    setInbox(res.data ?? null);
+  }, [locationId]);
+
   const loadAllUsers = useCallback(async () => {
     const res = await api.get("/admin/users");
     const list = Array.isArray(res.data?.data) ? res.data.data : [];
@@ -188,10 +242,10 @@ export function LocationDetailPage({
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([loadStats(), loadUsers(), loadTimeline(), loadAllUsers()])
+    Promise.all([loadStats(), loadUsers(), loadTimeline(), loadInbox(), loadAllUsers()])
       .catch(() => toast.error("Laden mislukt."))
       .finally(() => setLoading(false));
-  }, [loadStats, loadUsers, loadTimeline, loadAllUsers]);
+  }, [loadStats, loadUsers, loadTimeline, loadInbox, loadAllUsers]);
 
   // ── User management ───────────────────────────────────────────────────────────
 
@@ -297,11 +351,16 @@ export function LocationDetailPage({
 
   const TABS: Array<{ key: Tab; label: string; icon: React.ReactNode }> = [
     { key: "overview",   label: "Overzicht",    icon: <Activity className="h-4 w-4" /> },
+    { key: "inbox",      label: "Inbox",        icon: <InboxIcon className="h-4 w-4" /> },
     { key: "employees",  label: "Medewerkers",  icon: <Users className="h-4 w-4" /> },
     { key: "boats",      label: "Boten",        icon: <Ship className="h-4 w-4" /> },
     { key: "leads",      label: "Leads",        icon: <MessageSquare className="h-4 w-4" /> },
     { key: "chats",      label: "Chats",        icon: <MessageSquare className="h-4 w-4" /> },
+    { key: "offers",     label: "Biedingen",    icon: <Euro className="h-4 w-4" /> },
+    { key: "bookings",   label: "Boekingen",    icon: <CalendarCheck className="h-4 w-4" /> },
+    { key: "calendar",   label: "Kalender",     icon: <CalendarIcon className="h-4 w-4" /> },
     { key: "stats",      label: "Statistieken", icon: <BarChart3 className="h-4 w-4" /> },
+    { key: "timeline",   label: "Tijdlijn",     icon: <History className="h-4 w-4" /> },
     { key: "settings",   label: "Instellingen", icon: <Settings className="h-4 w-4" /> },
   ];
 
@@ -380,7 +439,7 @@ export function LocationDetailPage({
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
-              <Button variant="outline" size="sm" className="rounded-xl border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={() => void Promise.all([loadStats(), loadUsers(), loadTimeline()])}>
+              <Button variant="outline" size="sm" className="rounded-xl border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={() => void Promise.all([loadStats(), loadUsers(), loadTimeline(), loadInbox()])}>
                 <RefreshCcw className="h-3.5 w-3.5 mr-1" />Verversen
               </Button>
               <Button asChild size="sm" className="rounded-xl bg-white text-slate-800 hover:bg-white/90">
@@ -583,6 +642,89 @@ export function LocationDetailPage({
         </div>
       )}
 
+      {/* ── Inbox ─────────────────────────────────────────────────── */}
+      {tab === "inbox" && (
+        <div className="space-y-6">
+          {inbox && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {[
+                { label: "Nieuwe leads",       value: inbox.counts.new_leads },
+                { label: "Ongelezen chats",    value: inbox.counts.unread_chats },
+                { label: "Bezichtigingen",     value: inbox.counts.viewing_requests },
+                { label: "Vragen",             value: inbox.counts.questions },
+                { label: "Terugbelverzoeken",  value: inbox.counts.callback_requests },
+                { label: "Biedingen",          value: inbox.counts.offers },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center">
+                  <p className={cn("text-2xl font-bold", value > 0 ? "text-[#003566]" : "text-slate-300")}>{value}</p>
+                  <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <InboxSection
+            title="Nieuwe leads"
+            emptyText="Geen nieuwe leads."
+            items={inbox?.new_leads ?? []}
+            renderItem={(lead) => (
+              <>
+                <span className="font-semibold text-slate-800">{lead.name || lead.email || `Lead #${lead.id}`}</span>
+                {lead.phone && <span className="text-slate-400"> · {lead.phone}</span>}
+              </>
+            )}
+            timestamp={(lead) => lead.created_at}
+          />
+
+          <InboxSection
+            title="Ongelezen chats"
+            emptyText="Geen ongelezen chats."
+            items={inbox?.unread_chats ?? []}
+            renderItem={(c) => <span className="font-semibold text-slate-800">Boot #{c.boat_id ?? "—"}</span>}
+            timestamp={(c) => c.last_customer_message_at ?? c.created_at ?? ""}
+          />
+
+          <InboxSection
+            title="Bezichtigingsverzoeken"
+            emptyText="Geen openstaande bezichtigingen."
+            items={inbox?.viewing_requests ?? []}
+            renderItem={(c) => <span className="font-semibold text-slate-800">Boot #{c.boat_id ?? "—"}</span>}
+            timestamp={(c) => c.created_at ?? ""}
+          />
+
+          <InboxSection
+            title="Vragen"
+            emptyText="Geen openstaande vragen."
+            items={inbox?.questions ?? []}
+            renderItem={(c) => <span className="font-semibold text-slate-800">Boot #{c.boat_id ?? "—"}</span>}
+            timestamp={(c) => c.created_at ?? ""}
+          />
+
+          <InboxSection
+            title="Terugbelverzoeken"
+            emptyText="Geen openstaande terugbelverzoeken."
+            items={inbox?.callback_requests ?? []}
+            renderItem={(c) => <span className="font-semibold text-slate-800">Boot #{c.boat_id ?? "—"}</span>}
+            timestamp={(c) => c.created_at ?? ""}
+          />
+
+          <InboxSection
+            title="Biedingen"
+            emptyText="Geen openstaande biedingen."
+            items={inbox?.offers ?? []}
+            renderItem={(o) => (
+              <>
+                <span className="font-semibold text-slate-800">{o.buyer_name || `Bod #${o.id}`}</span>
+                {o.amount != null && (
+                  <span className="text-slate-400"> · €{Number(o.amount).toLocaleString("nl-NL")}</span>
+                )}
+              </>
+            )}
+            timestamp={(o) => o.created_at}
+          />
+        </div>
+      )}
+
       {/* ── Boats ─────────────────────────────────────────────────── */}
       {tab === "boats" && (
         <div className="rounded-[24px] border border-slate-200 bg-white p-8 shadow-sm text-center">
@@ -616,25 +758,97 @@ export function LocationDetailPage({
         </div>
       )}
 
+      {/* ── Offers ────────────────────────────────────────────────── */}
+      {tab === "offers" && (
+        <div className="rounded-[24px] border border-slate-200 bg-white p-8 shadow-sm text-center">
+          <Euro className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+          <p className="text-slate-500 text-sm mb-4">Bekijk alle biedingen voor {location.name}.</p>
+          <Button asChild className="rounded-xl bg-[#003566] text-white">
+            <Link href={`/${locale}/dashboard/${role}/offers?location=${locationId}`}>Biedingen bekijken</Link>
+          </Button>
+        </div>
+      )}
+
+      {/* ── Bookings ──────────────────────────────────────────────── */}
+      {tab === "bookings" && (
+        <div className="rounded-[24px] border border-slate-200 bg-white p-8 shadow-sm text-center">
+          <CalendarCheck className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+          <p className="text-slate-500 text-sm mb-4">Bekijk alle boekingen en bezichtigingen voor {location.name}.</p>
+          <Button asChild className="rounded-xl bg-[#003566] text-white">
+            <Link href={`/${locale}/dashboard/${role}/bookings?location=${locationId}&view=list`}>Boekingen bekijken</Link>
+          </Button>
+        </div>
+      )}
+
+      {/* ── Calendar ──────────────────────────────────────────────── */}
+      {tab === "calendar" && (
+        <div className="rounded-[24px] border border-slate-200 bg-white p-8 shadow-sm text-center">
+          <CalendarIcon className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+          <p className="text-slate-500 text-sm mb-4">Open de kalenderweergave met bezichtigingen voor {location.name}.</p>
+          <Button asChild className="rounded-xl bg-[#003566] text-white">
+            <Link href={`/${locale}/dashboard/${role}/bookings?location=${locationId}&view=calendar`}>Kalender openen</Link>
+          </Button>
+        </div>
+      )}
+
       {/* ── Stats ─────────────────────────────────────────────────── */}
       {tab === "stats" && stats && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { label: "Totale jachten",      value: stats.total_yachts },
-            { label: "Actieve jachten",     value: stats.active_yachts },
-            { label: "Nieuwe leads (mnd)",  value: stats.new_leads_month },
-            { label: "Open leads",          value: stats.open_leads },
-            { label: "Totale chats",        value: stats.total_chats },
-            { label: "Open chats",          value: stats.open_chats },
-            { label: "Open taken",          value: stats.open_tasks },
-            { label: "Medewerkers",         value: stats.staff_count },
-            { label: "Klanten",             value: stats.client_count },
+            { label: "Totale jachten",      value: String(stats.total_yachts) },
+            { label: "Actieve jachten",     value: String(stats.active_yachts) },
+            { label: "Verkocht",            value: String(stats.sold_yachts) },
+            { label: "Omzet (verkocht)",    value: `€${stats.revenue.toLocaleString("nl-NL")}` },
+            { label: "Conversieratio",      value: `${stats.conversion_rate}%` },
+            {
+              label: "Gem. reactietijd",
+              value:
+                stats.avg_response_time_minutes == null
+                  ? "—"
+                  : stats.avg_response_time_minutes < 60
+                    ? `${stats.avg_response_time_minutes} min`
+                    : `${Math.floor(stats.avg_response_time_minutes / 60)}u ${stats.avg_response_time_minutes % 60}m`,
+            },
+            { label: "Nieuwe leads (mnd)",  value: String(stats.new_leads_month) },
+            { label: "Open leads",          value: String(stats.open_leads) },
+            { label: "Totale chats",        value: String(stats.total_chats) },
+            { label: "Open chats",          value: String(stats.open_chats) },
+            { label: "Open bezichtigingen", value: String(stats.open_viewing_requests) },
+            { label: "Open biedingen",      value: String(stats.open_offers) },
+            { label: "Aankomende boekingen",value: String(stats.upcoming_bookings) },
+            { label: "Open taken",          value: String(stats.open_tasks) },
+            { label: "Medewerkers",         value: String(stats.staff_count) },
+            { label: "Klanten",             value: String(stats.client_count) },
           ].map(({ label, value }) => (
             <div key={label} className="rounded-[20px] border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{label}</p>
               <p className="mt-2 text-4xl font-bold text-[#003566]">{value}</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Timeline ──────────────────────────────────────────────── */}
+      {tab === "timeline" && (
+        <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+          {timeline.length === 0 ? (
+            <p className="py-8 text-center text-sm text-slate-400">Nog geen activiteit voor deze locatie.</p>
+          ) : (
+            <div className="space-y-2">
+              {timeline.map((entry) => (
+                <div key={entry.id} className="flex items-center gap-3 border-b border-slate-50 py-2.5 text-sm last:border-0">
+                  <span className="shrink-0 w-36 text-xs text-slate-400 tabular-nums">{fmt(entry.created_at)}</span>
+                  <span className="text-slate-700">{actionLabel(entry.action)}</span>
+                  {entry.meta && typeof entry.meta === "object" && "name" in entry.meta && (
+                    <span className="text-slate-500 text-xs">· {String(entry.meta.name)}</span>
+                  )}
+                  {entry.result === "FAIL" && (
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase text-red-600">Mislukt</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -654,6 +868,18 @@ export function LocationDetailPage({
             <Field label="Slug" value={location.slug} />
             <Field label="Status" value={location.status} />
             <Field label="Standaard verkoper" value={location.default_seller?.name} />
+            <Field
+              label="Lead-toewijzing"
+              value={
+                location.lead_assignment_mode === "round_robin"
+                  ? "Rondgaand over medewerkers"
+                  : location.lead_assignment_mode === "unassigned"
+                    ? "Altijd onbeheerd (inbox)"
+                    : "Standaard verkoper"
+              }
+            />
+            <Field label="WhatsApp" value={location.whatsapp_number} />
+            <Field label="Afzender e-mail" value={location.sender_email} />
             <Field label="Publiek zichtbaar" value={location.public_visible ? "Ja" : "Nee"} />
             <Field label="Locatiekleur" value={location.location_color} color={location.location_color} />
           </div>
@@ -673,6 +899,43 @@ export function LocationDetailPage({
               <Field label="Trefwoorden" value={location.seo_keywords} />
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InboxSection<T extends { id: number | string }>({
+  title,
+  emptyText,
+  items,
+  renderItem,
+  timestamp,
+}: {
+  title: string;
+  emptyText: string;
+  items: T[];
+  renderItem: (item: T) => React.ReactNode;
+  timestamp: (item: T) => string;
+}) {
+  const fmtShort = (v: string) =>
+    v ? new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(new Date(v)) : "—";
+
+  return (
+    <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-slate-400">
+        {title} {items.length > 0 && <span className="text-slate-300">· {items.length}</span>}
+      </p>
+      {items.length === 0 ? (
+        <p className="py-4 text-center text-sm text-slate-400">{emptyText}</p>
+      ) : (
+        <div className="space-y-1.5">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-center justify-between gap-3 border-b border-slate-50 py-2 text-sm last:border-0">
+              <span>{renderItem(item)}</span>
+              <span className="shrink-0 text-xs text-slate-400 tabular-nums">{fmtShort(timestamp(item))}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>

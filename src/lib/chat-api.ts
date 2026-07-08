@@ -220,12 +220,17 @@ function mapBackendMessage(message: BackendMessage): SupportMessage {
 export async function getConversations(filters?: {
   status?: ConversationStatus | "all";
   search?: string;
+  locationId?: string | number;
 }): Promise<Conversation[]> {
   try {
     const params: Record<string, string> = { limit: "50" };
 
     if (filters?.status && filters.status !== "all") {
       params.status = filters.status;
+    }
+
+    if (filters?.locationId) {
+      params.location_id = String(filters.locationId);
     }
 
     const response = await apiRequest<{

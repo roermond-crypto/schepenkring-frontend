@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,18 +162,21 @@ export default function DashboardBookingsPage() {
   const t = useTranslations("DashboardBookings");
   const params = useParams<{ locale?: string; role?: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const locale = params?.locale ?? "en";
   const role = params?.role ?? "admin";
+  const initialLocationId = searchParams.get("location") ?? "";
+  const initialView = searchParams.get("view") === "list" ? "list" : "calendar";
 
   const [filters, setFilters] = useState<Filters>({
     search: "",
     status: "",
-    locationId: "",
+    locationId: initialLocationId,
   });
   const [appliedFilters, setAppliedFilters] = useState<Filters>({
     search: "",
     status: "",
-    locationId: "",
+    locationId: initialLocationId,
   });
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [meta, setMeta] = useState<BookingListResponse["meta"]>({
@@ -190,7 +193,7 @@ export default function DashboardBookingsPage() {
   );
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
+  const [viewMode, setViewMode] = useState<"list" | "calendar">(initialView);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [locationOptions, setLocationOptions] = useState<{ id: number; name: string }[]>([]);
   const hasLoadedInitialData = useRef(false);
@@ -252,8 +255,8 @@ export default function DashboardBookingsPage() {
     if (role !== "admin") return;
     if (hasLoadedInitialData.current) return;
     hasLoadedInitialData.current = true;
-    void loadBookings({ search: "", status: "", locationId: "" });
-  }, [loadBookings, role]);
+    void loadBookings({ search: "", status: "", locationId: initialLocationId });
+  }, [loadBookings, role, initialLocationId]);
 
   const openBooking = useCallback(
     async (bookingId: number) => {

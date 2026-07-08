@@ -19,6 +19,7 @@ type BoatContext = {
   model?: string | null;
   url?: string | null;
   seller_id?: number | null;
+  minimum_offer_amount?: number | null;
 };
 
 type LocationContext = {
@@ -74,6 +75,7 @@ type WidgetCopy = {
     callback: string;
     question: string;
   };
+  belowMinimumWarning?: string;
 };
 
 // ── Constants ───────────────────────────────────────────────────
@@ -625,6 +627,10 @@ function OfferForm({
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const parsedAmount = parseFloat(form.offer_amount.replace(/[^0-9.]/g, ""));
+  const minAmount = boat.minimum_offer_amount ?? null;
+  const isBelowMinimum = minAmount && parsedAmount > 0 && parsedAmount < minAmount;
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -633,7 +639,7 @@ function OfferForm({
       await widgetPost("widget/offer", {
         boat_id: boat.id,
         location_id: location?.id ?? null,
-        offer_amount: parseFloat(form.offer_amount.replace(/[^0-9.]/g, "")),
+        offer_amount: parsedAmount,
         name: form.name,
         phone: form.phone,
         email: form.email || undefined,
@@ -662,6 +668,14 @@ function OfferForm({
           onChange={set("offer_amount")}
           className={inputCls}
         />
+        {isBelowMinimum && (
+          <p className="mt-1 flex items-start gap-1.5 text-xs text-amber-700">
+            <AlertCircle size={13} className="mt-0.5 shrink-0" />
+            {copy.belowMinimumWarning
+              ? copy.belowMinimumWarning.replace("{min}", `€${minAmount!.toLocaleString()}`)
+              : `De verkoper overweegt waarschijnlijk geen biedingen onder €${minAmount!.toLocaleString()}.`}
+          </p>
+        )}
       </Field>
       <Field label={copy.fields.name} required>
         <input type="text" required placeholder={copy.fields.namePlaceholder} value={form.name} onChange={set("name")} className={inputCls} />
@@ -669,8 +683,8 @@ function OfferForm({
       <Field label={copy.fields.phone} required>
         <input type="tel" required placeholder={copy.fields.phonePlaceholder} value={form.phone} onChange={set("phone")} className={inputCls} />
       </Field>
-      <Field label={copy.fields.email}>
-        <input type="email" placeholder={copy.fields.emailPlaceholder} value={form.email} onChange={set("email")} className={inputCls} />
+      <Field label={copy.fields.email} required>
+        <input type="email" required placeholder={copy.fields.emailPlaceholder} value={form.email} onChange={set("email")} className={inputCls} />
       </Field>
       <Field label={copy.fields.messageOptionalLabel}>
         <textarea rows={2} placeholder={copy.fields.messagePlaceholderOffer} value={form.message} onChange={set("message")} className={inputCls} />

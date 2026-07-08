@@ -69,7 +69,7 @@ export function ResetPasswordClient({
   return (
     <div className="min-h-screen flex flex-col bg-[#edf3f7] dark:bg-slate-950 font-sans">
 
-      <PublicHeader locale={locale} showBootAanmelden />
+      <PublicHeader locale={locale} showBootAanmelden={false} />
 
       {/* Card */}
       <div className="flex-1 flex items-center justify-center p-4 py-8">

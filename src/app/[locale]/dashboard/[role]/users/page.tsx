@@ -312,7 +312,7 @@ export default function RoleManagementPage() {
       const { data } = await api.get(endpoint, {
         params: isEmployeeView
           ? { search: searchQuery || undefined, per_page: 25 }
-          : { per_page: 100 },
+          : { search: searchQuery || undefined, per_page: 100 },
       });
       const list = Array.isArray(data?.data)
         ? data.data
@@ -1137,6 +1137,9 @@ export default function RoleManagementPage() {
                   <div className={(newUser.role === "Buyer" || newUser.role === "Seller") ? "sm:col-span-2" : ""}>
                     <label className="mb-1.5 block text-xs font-semibold text-slate-500">
                       {t("fields.location")}
+                      {newUser.role === "Admin" || newUser.role === "Employee"
+                        ? ` (${t("fields.optional")})`
+                        : ""}
                     </label>
                     <select
                       className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition-all focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800"
@@ -1147,7 +1150,7 @@ export default function RoleManagementPage() {
                           location_id: e.target.value,
                         })
                       }
-                      required
+                      required={newUser.role === "Partner" || newUser.role === "Buyer" || newUser.role === "Seller"}
                       disabled={locationsLoading || locations.length === 0}
                     >
                       <option value="">{t("options.selectLocation")}</option>

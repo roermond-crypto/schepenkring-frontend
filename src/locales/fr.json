@@ -192,7 +192,7 @@
       "roleClient": "Client",
       "roleEmployee": "Vente",
       "roleLocation": "Emplacement",
-      "rolePartner": "Partenaire",
+      "rolePartner": "Responsable d'agence",
       "roleBuyer": "Acheteur",
       "roleSeller": "Vendeur",
       "bids": "Offres",
@@ -843,7 +843,7 @@
     "tabs": {
       "employee": "Employé",
       "admin": "Administrateur",
-      "partner": "Partenaire",
+      "partner": "Personnel du site",
       "customer": "Client",
       "buyer": "Acheteurs",
       "seller": "Vendeurs"
@@ -856,6 +856,7 @@
       "clientType": "Type de client",
       "onboarding": "Onboarding",
       "location": "Emplacement",
+      "optional": "facultatif",
       "clearance": "Habilitation",
       "accountStatus": "Statut du compte"
     },
@@ -3238,7 +3239,7 @@
     "impact_task_automation_templates": "Modèles d'automatisation",
     "type_ADMIN": "Admin",
     "type_EMPLOYEE": "Employé",
-    "type_PARTNER": "Partenaire",
+    "type_PARTNER": "Responsable d'agence",
     "type_CLIENT": "Client",
     "type_SELLER": "Vendeur",
     "type_BUYER": "Acheteur",

@@ -189,6 +189,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showVerifyActions, setShowVerifyActions] = useState(false);
+  const [showPendingApproval, setShowPendingApproval] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -245,6 +246,8 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
     event.preventDefault();
     setError("");
     setSuccess("");
+    setShowVerifyActions(false);
+    setShowPendingApproval(false);
     setIsLoading(true);
 
     try {
@@ -278,13 +281,24 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
         }
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : copy.authFailed;
+      const raw = err instanceof Error ? err.message : copy.authFailed;
+      // Map machine-readable error codes returned by the backend to Dutch copy.
+      const AUTH_MESSAGES: Record<string, string> = {
+        "auth.invalid_credentials": "Onjuist e-mailadres of wachtwoord.",
+        "auth.account_inactive": "Dit account is uitgeschakeld. Neem contact op met Schepenkring.",
+        "auth.email_not_verified": "Controleer je mailbox en klik op de verificatielink.",
+        "auth.pending_approval": "Je account is aangemaakt maar wacht nog op goedkeuring door Schepenkring.",
+      };
+      const message = AUTH_MESSAGES[raw] ?? raw;
       setError(message);
+      const isPendingApproval = raw === "auth.pending_approval";
       const needsVerification =
-        /verif/i.test(message) ||
-        /email.*(not|un)/i.test(message) ||
-        /geactiveerd/i.test(message);
-      setShowVerifyActions(mode === "login" && needsVerification);
+        raw === "auth.email_not_verified" ||
+        /verif/i.test(raw) ||
+        /email.*(not|un)/i.test(raw) ||
+        /geactiveerd/i.test(raw);
+      setShowPendingApproval(mode === "login" && isPendingApproval);
+      setShowVerifyActions(mode === "login" && needsVerification && !isPendingApproval);
     } finally {
       setIsLoading(false);
     }
@@ -310,7 +324,7 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
           register: copy.register || "Registreren",
           bootAanmelden: copy.intakeCtaLabel || "Boot aanmelden",
         }}
-        showBootAanmelden
+        showBootAanmelden={false}
       />
 
       {/* ── Auth card ── */}
@@ -398,6 +412,15 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
                   <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                   <div className="space-y-2">
                     <p>{error}</p>
+                    {showPendingApproval && (
+                      <p className="text-[12px] text-red-600">
+                        Neem contact op via{" "}
+                        <a href="mailto:info@schepenkring.nl" className="underline">
+                          info@schepenkring.nl
+                        </a>{" "}
+                        als je denkt dat dit een fout is.
+                      </p>
+                    )}
                     {showVerifyActions ? (
                       <div className="flex flex-wrap gap-2">
                         <Link
