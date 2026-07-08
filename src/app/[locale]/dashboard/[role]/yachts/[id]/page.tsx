@@ -8489,8 +8489,8 @@ function YachtEditorInner() {
       );
 
       if (uploadedImages.length > 0) {
-        // Drop optimistic previews so the refreshImages() response can replace
-        // them cleanly without a double-image flash.
+        // Drop optimistic previews so the authoritative fetch below can
+        // replace them cleanly without a double-image flash.
         setPendingUploadPreviews((previous) =>
           previous.filter(
             (image) =>
@@ -8498,12 +8498,25 @@ function YachtEditorInner() {
           ),
         );
 
-        // Fetch the authoritative image list from the backend.
-        // AbortController inside refreshImages() cancels any stale in-flight
-        // GET (e.g. the initial-mount request) so only this response commits.
-        // setIsUploading(false) runs in `finally` after this resolves, so the
-        // loading spinner stays visible until images are ready to display.
-        await pipeline.refreshImages();
+        // Fetch the authoritative image list directly via targetId rather
+        // than pipeline.refreshImages(). On the very first upload for a
+        // brand-new yacht, targetId was only just resolved above (via
+        // createBootstrapDraftYacht()) — pipeline.refreshImages is a
+        // useCallback closed over this render's activeYachtId, which is
+        // still null at this point (setCreatedYachtId below hasn't
+        // committed yet), so calling it here was a silent no-op and the
+        // just-uploaded image never appeared until something else (e.g. a
+        // manual page refresh) remounted the pipeline hook with a real id.
+        try {
+          const imagesRes = await api.get(`/yachts/${targetId}/images`);
+          pipeline.setImagesDirectly?.({
+            images: imagesRes.data?.images || [],
+            stats: imagesRes.data?.stats || pipeline.stats,
+            step2_unlocked: imagesRes.data?.step2_unlocked || false,
+          });
+        } catch (fetchErr) {
+          console.error("[Upload] Failed to fetch authoritative image list:", fetchErr);
+        }
       }
 
       if (shouldSetCreatedYachtId) {
