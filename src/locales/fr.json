@@ -1311,7 +1311,8 @@
         "all": "Tous",
         "open": "Ouvrir",
         "pending": "En attente",
-        "solved": "Résolu"
+        "solved": "Résolu",
+        "archived": "Archivé"
       },
       "time": {
         "now": "maintenant",
@@ -1346,6 +1347,11 @@
       "translating": "Traduction...",
       "translateFailed": "Impossible de traduire ce message. Réessayez.",
       "typePlaceholder": "Tapez votre message...",
+      "typePlaceholderInternalNote": "Rédigez une note interne (non visible pour le client)...",
+      "internalNoteToggle": "Note interne",
+      "internalNoteBadge": "Note interne",
+      "archiveAction": "Archiver la conversation",
+      "unarchiveAction": "Restaurer depuis les archives",
       "callAction": "Démarrer l'appel",
       "callUnavailable": "Aucun numéro de téléphone disponible",
       "callFailed": "Impossible de lancer l'appel. Réessayez.",

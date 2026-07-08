@@ -106,6 +106,7 @@ export function ConversationList({
         { label: t("list.tabs.open"), value: "open", color: "bg-emerald-500" },
         { label: t("list.tabs.pending"), value: "pending", color: "bg-amber-500" },
         { label: t("list.tabs.solved"), value: "solved", color: "bg-slate-400" },
+        { label: t("list.tabs.archived"), value: "archived", color: "bg-slate-300" },
     ]
     return (
         <div className="flex flex-col h-full bg-white/70 backdrop-blur-sm">

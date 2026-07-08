@@ -17,6 +17,9 @@ import {
   Info,
   Loader2,
   Languages,
+  StickyNote,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import type {
   ContactInfo,
@@ -32,7 +35,11 @@ interface ConversationMessagesProps {
   contact: ContactInfo | null;
   messages: SupportMessage[];
   loading: boolean;
-  onSendMessage: (text: string, attachments?: File[]) => void;
+  onSendMessage: (
+    text: string,
+    attachments?: File[],
+    isInternalNote?: boolean,
+  ) => void;
   onStartCall: (phoneNumber: string) => Promise<void>;
   onStatusChange: (status: ConversationStatus) => void;
   onOpenDetails?: () => void;
@@ -146,6 +153,7 @@ function MessageBubbleItem({
     hour: "2-digit",
     minute: "2-digit",
   });
+  const isInternalNote = Boolean(message.is_internal_note);
 
   return (
     <div
@@ -166,9 +174,11 @@ function MessageBubbleItem({
           <div
             className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm",
-              isAdmin
-                ? "bg-gradient-to-br from-blue-500 to-indigo-600"
-                : "bg-gradient-to-br from-slate-300 to-slate-400",
+              isInternalNote
+                ? "bg-gradient-to-br from-amber-400 to-amber-500"
+                : isAdmin
+                  ? "bg-gradient-to-br from-blue-500 to-indigo-600"
+                  : "bg-gradient-to-br from-slate-300 to-slate-400",
             )}
           >
             <span className="text-white text-xs font-bold">
@@ -187,18 +197,30 @@ function MessageBubbleItem({
       >
         <span
           className={cn(
-            "text-[11px] font-semibold mb-1 px-1",
-            isAdmin ? "text-blue-600" : "text-slate-500",
+            "text-[11px] font-semibold mb-1 px-1 inline-flex items-center gap-1",
+            isInternalNote
+              ? "text-amber-700"
+              : isAdmin
+                ? "text-blue-600"
+                : "text-slate-500",
           )}
         >
           {message.sender_name}
+          {isInternalNote && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+              <StickyNote size={9} />
+              {t("messages.internalNoteBadge")}
+            </span>
+          )}
         </span>
         <div
           className={cn(
             "rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed shadow-sm",
-            isAdmin
-              ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-br-md"
-              : "bg-white border border-slate-200/80 text-slate-800 rounded-bl-md",
+            isInternalNote
+              ? "bg-amber-50 border border-amber-200 text-amber-900 rounded-br-md"
+              : isAdmin
+                ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-br-md"
+                : "bg-white border border-slate-200/80 text-slate-800 rounded-bl-md",
           )}
         >
           {message.message_type === "call" && (
@@ -279,6 +301,7 @@ export function ConversationMessages({
   const t = useTranslations("DashboardChat");
   const locale = useLocale();
   const [input, setInput] = useState("");
+  const [isInternalNote, setIsInternalNote] = useState(false);
   const [callStarting, setCallStarting] = useState(false);
   const [callError, setCallError] = useState("");
   const [translateTarget, setTranslateTarget] = useState("en");
@@ -324,8 +347,9 @@ export function ConversationMessages({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    onSendMessage(input);
+    onSendMessage(input, undefined, isInternalNote);
     setInput("");
+    setIsInternalNote(false);
     if (inputRef.current) inputRef.current.style.height = "auto";
   };
 
@@ -375,9 +399,23 @@ export function ConversationMessages({
   };
 
   const cycleStatus = () => {
+    // Archived is a deliberate, separate action (see handleArchive) — the
+    // badge's quick-toggle only cycles between the two active working
+    // states. Clicking it while archived restores the conversation to open
+    // rather than routing it back into "solved".
+    if (conversation.status === "archived") {
+      onStatusChange("open");
+      return;
+    }
     const next: ConversationStatus =
       conversation.status === "solved" ? "open" : "solved";
     onStatusChange(next);
+  };
+
+  const handleArchive = () => {
+    onStatusChange(
+      conversation.status === "archived" ? "open" : "archived",
+    );
   };
 
   const handleStartCall = async () => {
@@ -430,6 +468,22 @@ export function ConversationMessages({
             onClick={cycleStatus}
             t={t}
           />
+          <button
+            type="button"
+            onClick={handleArchive}
+            title={
+              conversation.status === "archived"
+                ? t("messages.unarchiveAction")
+                : t("messages.archiveAction")
+            }
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors"
+          >
+            {conversation.status === "archived" ? (
+              <ArchiveRestore size={14} className="text-slate-500" />
+            ) : (
+              <Archive size={14} className="text-slate-500" />
+            )}
+          </button>
           <button
             type="button"
             onClick={handleStartCall}
@@ -627,6 +681,20 @@ export function ConversationMessages({
             >
               <ImageIcon size={16} className="text-slate-500" />
             </button>
+            <button
+              type="button"
+              onClick={() => setIsInternalNote((prev) => !prev)}
+              aria-pressed={isInternalNote}
+              title={t("messages.internalNoteToggle")}
+              className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                isInternalNote
+                  ? "bg-amber-400 text-white hover:bg-amber-500"
+                  : "bg-slate-100 text-slate-500 hover:bg-slate-200",
+              )}
+            >
+              <StickyNote size={16} />
+            </button>
           </div>
 
           {/* Text input */}
@@ -636,9 +704,18 @@ export function ConversationMessages({
               value={input}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
-              placeholder={t("messages.typePlaceholder")}
+              placeholder={
+                isInternalNote
+                  ? t("messages.typePlaceholderInternalNote")
+                  : t("messages.typePlaceholder")
+              }
               rows={1}
-              className="w-full resize-none rounded-xl bg-slate-100/80 border-0 px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white transition-all"
+              className={cn(
+                "w-full resize-none rounded-xl border-0 px-4 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all",
+                isInternalNote
+                  ? "bg-amber-50 text-amber-900 focus:ring-amber-400/40 focus:bg-amber-50"
+                  : "bg-slate-100/80 text-slate-800 focus:ring-blue-500/30 focus:bg-white",
+              )}
               style={{ minHeight: 42, maxHeight: 120 }}
             />
           </div>
@@ -657,9 +734,11 @@ export function ConversationMessages({
             disabled={!input.trim()}
             className={cn(
               "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
-              input.trim()
-                ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-blue-500/30 hover:shadow-blue-500/40 hover:scale-105"
-                : "bg-slate-100 text-slate-400 cursor-not-allowed",
+              !input.trim()
+                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                : isInternalNote
+                  ? "bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-amber-500/30 hover:shadow-amber-500/40 hover:scale-105"
+                  : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-blue-500/30 hover:shadow-blue-500/40 hover:scale-105",
             )}
           >
             <Send size={16} />

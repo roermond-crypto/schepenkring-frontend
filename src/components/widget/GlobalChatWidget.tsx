@@ -20,7 +20,12 @@ export function GlobalChatWidget() {
     return null;
   }
 
-  if (segments[0] === "dashboard" && segments[2] === "chat") {
+  // Path shape is /{locale}/dashboard/{role}/chat — the admin chat page
+  // builds its own UI and must never show the public-facing widget on top
+  // of it. (segments[0] is the locale, segments[1] "dashboard", segments[2]
+  // the role, segments[3] "chat" — previously checked the wrong indices and
+  // never matched, so the widget rendered here unconditionally.)
+  if (segments[1] === "dashboard" && segments[3] === "chat") {
     return null;
   }
 

@@ -1399,7 +1399,8 @@
         "all": "Alle",
         "open": "Open",
         "pending": "In afwachting",
-        "solved": "Opgelost"
+        "solved": "Opgelost",
+        "archived": "Gearchiveerd"
       },
       "time": {
         "now": "nu",
@@ -1434,6 +1435,11 @@
       "translating": "Vertalen...",
       "translateFailed": "Kon dit bericht niet vertalen. Probeer het opnieuw.",
       "typePlaceholder": "Typ je bericht...",
+      "typePlaceholderInternalNote": "Schrijf een interne notitie (niet zichtbaar voor de klant)...",
+      "internalNoteToggle": "Interne notitie",
+      "internalNoteBadge": "Interne notitie",
+      "archiveAction": "Gesprek archiveren",
+      "unarchiveAction": "Herstellen uit archief",
       "callAction": "Gesprek starten",
       "callUnavailable": "Geen telefoonnummer beschikbaar",
       "callFailed": "Kon gesprek niet starten. Probeer het opnieuw.",

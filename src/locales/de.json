@@ -1397,7 +1397,8 @@
         "all": "Alle",
         "open": "Offen",
         "pending": "Ausstehend",
-        "solved": "Gelöst"
+        "solved": "Gelöst",
+        "archived": "Archiviert"
       },
       "time": {
         "now": "jetzt",
@@ -1432,6 +1433,11 @@
       "translating": "Wird übersetzt...",
       "translateFailed": "Diese Nachricht konnte nicht übersetzt werden. Bitte erneut versuchen.",
       "typePlaceholder": "Nachricht eingeben...",
+      "typePlaceholderInternalNote": "Interne Notiz schreiben (für den Kunden nicht sichtbar)...",
+      "internalNoteToggle": "Interne Notiz",
+      "internalNoteBadge": "Interne Notiz",
+      "archiveAction": "Unterhaltung archivieren",
+      "unarchiveAction": "Aus Archiv wiederherstellen",
       "callAction": "Anruf starten",
       "callUnavailable": "Keine Telefonnummer verfügbar",
       "callFailed": "Anruf fehlgeschlagen. Versuchen Sie es erneut.",

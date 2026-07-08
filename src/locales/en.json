@@ -1399,7 +1399,8 @@
         "all": "All",
         "open": "Open",
         "pending": "Pending",
-        "solved": "Solved"
+        "solved": "Solved",
+        "archived": "Archived"
       },
       "time": {
         "now": "now",
@@ -1434,6 +1435,11 @@
       "translating": "Translating...",
       "translateFailed": "Could not translate this message. Try again.",
       "typePlaceholder": "Type your message...",
+      "typePlaceholderInternalNote": "Write an internal note (not visible to the customer)...",
+      "internalNoteToggle": "Internal note",
+      "internalNoteBadge": "Internal note",
+      "archiveAction": "Archive conversation",
+      "unarchiveAction": "Restore from archive",
       "callAction": "Start call",
       "callUnavailable": "No phone number available",
       "callFailed": "Could not start the call. Try again.",

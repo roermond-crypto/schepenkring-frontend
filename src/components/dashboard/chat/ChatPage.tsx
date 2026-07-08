@@ -79,6 +79,12 @@ export function ChatPage() {
       getContactInfo(conv.id),
     ]);
     setMessages(msgs);
+    // getMessages() hits the conversation detail endpoint, which marks
+    // unread visitor messages as read server-side — reflect that locally
+    // right away instead of waiting for the next conversation-list poll.
+    setConversations((prev) =>
+      prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
+    );
     const summary = await getConversationAiSummary(conv.id);
     setAiSummary(summary);
     const fallbackEvents: SystemEvent[] =
@@ -115,13 +121,14 @@ export function ChatPage() {
 
   // Send message
   const handleSendMessage = useCallback(
-    async (text: string, attachments?: File[]) => {
+    async (text: string, attachments?: File[], isInternalNote?: boolean) => {
       if (!selectedConv) return;
 
       const newMsg = await sendSupportMessage(
         selectedConv.id,
         text,
         attachments,
+        isInternalNote,
       );
       setMessages((prev) => [...prev, newMsg]);
     },

@@ -38,6 +38,7 @@ interface BackendConversation {
   boat_id?: number | null;
   offer_id?: number | null;
   booking_id?: number | null;
+  unread_count?: number;
   location?: {
     id: number;
     name: string;
@@ -138,7 +139,7 @@ function mapConversationToConversation(
     waiting_since: conversation.waiting_since
       ? new Date(conversation.waiting_since)
       : undefined,
-    unread_count: conversation.status === "open" ? 1 : 0,
+    unread_count: conversation.unread_count ?? 0,
     created_at: new Date(conversation.created_at),
     updated_at: new Date(conversation.updated_at),
     assigned_name:
@@ -243,6 +244,16 @@ export async function getConversations(filters?: {
     });
 
     let results = response.data.map(mapConversationToConversation);
+
+    // "all" means "everything still active" — archived conversations are
+    // deliberately excluded here and only surface under the dedicated
+    // "archived" tab, otherwise they'd pile up in the main inbox forever
+    // with no way to distinguish them from live conversations.
+    if (!filters?.status || filters.status === "all") {
+      results = results.filter(
+        (conversation) => conversation.status !== "archived",
+      );
+    }
 
     if (filters?.search) {
       const normalizedSearch = filters.search.toLowerCase();
@@ -399,7 +410,11 @@ export async function sendSupportMessage(
   conversationId: string,
   text: string,
   attachments?: File[],
+  isInternalNote?: boolean,
 ): Promise<SupportMessage> {
+  // TODO: attachments are accepted here but not yet uploaded/sent — the
+  // backend has no upload endpoint for chat attachments yet (see Chat Hub
+  // audit item 7).
   void attachments;
   const clientMessageId = `crm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -410,6 +425,7 @@ export async function sendSupportMessage(
       text,
       body: text,
       client_message_id: clientMessageId,
+      is_internal_note: isInternalNote ?? false,
     },
   });
 
