@@ -178,8 +178,7 @@ const EXTRACTION_PROGRESS_CAP = 95;
 
 // Configuration
 const STORAGE_URL = "https://app.schepen-kring.nl/storage/";
-const PLACEHOLDER_IMAGE =
-  "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=600&q=80";
+const PLACEHOLDER_IMAGE = "/schepenkring-logo.png";
 const YACHT_STATUS_LABELS: Record<string, string> = {
   draft: "Draft",
   "for sale": "For Sale",
@@ -1385,6 +1384,23 @@ const YACHT_FORM_TEXT = {
       loadYachtFailed: "Failed to load yacht details",
       uploadMp4Only: "Please upload an MP4 file.",
       creatingDraft: "Creating vessel draft...",
+      recoveredMissingDraft: "Your previous draft could not be found, so a new one was started. Re-check any images or fields you added before this point.",
+      imagesSortedInstantly: "Images sorted instantly.",
+      autoSortFailed: "Auto-sort failed.",
+      deletedImagesWithFailures: "Deleted {deleted} images, {failed} failed.",
+      deletedImagesCount: "Deleted {deleted} images.",
+      saveImagesLocallyFailed: "Failed to save images locally",
+      uploadingImagesCount: "Uploading {count} image(s)...",
+      uploadImagesFailed: "Failed to upload images",
+      speechNotSupported: "Speech recognition is not supported in this browser.",
+      listeningSpeakNow: "Listening... Speak now",
+      noConsensusFromCatalog: "No relevant consensus could be built from catalog.",
+      magicAutofillFailed: "Magic Autofill failed.",
+      checkRequiredFields: "Please check required fields",
+      permissionDenied: "Permission denied.",
+      serverErrorRetry: "Server error. Please try again.",
+      genericErrorPrefix: "Error",
+      systemError: "System Error",
       creatingDraftForDoc: "Creating vessel draft for document upload...",
       createDraftFailed: "Failed to initialize draft vessel.",
       saveBeforeVideo: "Save the vessel first before uploading a video.",
@@ -1976,6 +1992,23 @@ const YACHT_FORM_TEXT = {
       loadYachtFailed: "Laden van vaartuiggegevens mislukt",
       uploadMp4Only: "Upload een MP4-bestand.",
       creatingDraft: "Concept aanmaken...",
+      recoveredMissingDraft: "Uw vorige concept kon niet worden gevonden, er is een nieuw concept gestart. Controleer eventuele afbeeldingen of velden die u hiervoor heeft toegevoegd.",
+      imagesSortedInstantly: "Afbeeldingen direct gesorteerd.",
+      autoSortFailed: "Automatisch sorteren mislukt.",
+      deletedImagesWithFailures: "{deleted} afbeeldingen verwijderd, {failed} mislukt.",
+      deletedImagesCount: "{deleted} afbeeldingen verwijderd.",
+      saveImagesLocallyFailed: "Afbeeldingen lokaal opslaan mislukt",
+      uploadingImagesCount: "{count} afbeelding(en) uploaden...",
+      uploadImagesFailed: "Uploaden van afbeeldingen mislukt",
+      speechNotSupported: "Spraakherkenning wordt niet ondersteund in deze browser.",
+      listeningSpeakNow: "Luisteren... Spreek nu",
+      noConsensusFromCatalog: "Er kon geen relevante consensus worden opgebouwd uit de catalogus.",
+      magicAutofillFailed: "Magic Autofill mislukt.",
+      checkRequiredFields: "Controleer de verplichte velden",
+      permissionDenied: "Toegang geweigerd.",
+      serverErrorRetry: "Serverfout. Probeer het opnieuw.",
+      genericErrorPrefix: "Fout",
+      systemError: "Systeemfout",
       creatingDraftForDoc: "Concept aanmaken voor document upload...",
       createDraftFailed: "Aanmaken van concept mislukt.",
       saveBeforeVideo: "Sla eerst het vaartuig op voordat je een video uploadt.",
@@ -3837,6 +3870,10 @@ function YachtEditorInner() {
 
   // Image Pipeline Hook (server-side processing)
   const [createdYachtId, setCreatedYachtId] = useState<number | null>(null);
+  // Toasts are suppressed (and <Toaster> isn't even mounted) during steps 1-4
+  // of new-boat creation, so a plain toast() call here would be invisible —
+  // this banner renders unconditionally so the warning is never silent.
+  const [draftRecoveryWarning, setDraftRecoveryWarning] = useState<string | null>(null);
   const selectedYachtId =
     selectedYacht?.id && Number.isFinite(Number(selectedYacht.id))
       ? Number(selectedYacht.id)
@@ -6370,12 +6407,14 @@ function YachtEditorInner() {
         let targetId: number | string | null = isNewMode
           ? createdYachtId
           : yachtId;
+        let recoveredFromMissingDraft = false;
         if (isNewMode && targetId) {
           try {
             await api.get(`/yachts/${targetId}`);
           } catch (err: any) {
             if (err?.response?.status === 404) {
               targetId = null;
+              recoveredFromMissingDraft = true;
             } else {
               throw err;
             }
@@ -6383,6 +6422,14 @@ function YachtEditorInner() {
         }
         if (!targetId || targetId === "new") {
           targetId = await createBootstrapDraftYacht();
+          if (recoveredFromMissingDraft) {
+            setDraftRecoveryWarning(
+              labelText(
+                "recoveredMissingDraft",
+                "Your previous draft could not be found, so a new one was started. Re-check any images or fields you added before this point.",
+              ),
+            );
+          }
         }
 
         formData.append("yacht_id", String(targetId));
@@ -7696,7 +7743,7 @@ function YachtEditorInner() {
       setManualSortImages(optimisticPersistedImages);
 
       await pipeline.autoClassifyImages();
-      toast.success("Images sorted instantly.");
+      toast.success(labelText("imagesSortedInstantly", "Images sorted instantly."));
     } catch (error) {
       pipeline.setImagesDirectly?.({
         images: previousPipelineImages,
@@ -7705,7 +7752,7 @@ function YachtEditorInner() {
       });
       setReviewImages(previousReviewImages);
       setManualSortImages(previousManualSortImages);
-      toast.error("Auto-sort failed.");
+      toast.error(labelText("autoSortFailed", "Auto-sort failed."));
       console.error(error);
     } finally {
       setIsAutoSortingImages(false);
@@ -7732,13 +7779,20 @@ function YachtEditorInner() {
 
       if (result.failed > 0) {
         toast.error(
-          `Deleted ${result.deleted} images, ${result.failed} failed.`,
+          labelText("deletedImagesWithFailures", "Deleted {deleted} images, {failed} failed.")
+            .replace("{deleted}", String(result.deleted))
+            .replace("{failed}", String(result.failed)),
         );
       } else {
-        toast.success(`Deleted ${result.deleted} images.`);
+        toast.success(
+          labelText("deletedImagesCount", "Deleted {deleted} images.").replace(
+            "{deleted}",
+            String(result.deleted),
+          ),
+        );
       }
     } catch (error) {
-      toast.error("Failed to delete images.");
+      toast.error(labelText("deleteImagesFailed", "Failed to delete images."));
       console.error(error);
     } finally {
       setDeleteAllImagesDialogOpen(false);
@@ -8141,7 +8195,7 @@ function YachtEditorInner() {
         );
       } catch (err) {
         console.error("Offline image save failed:", err);
-        toast.error("Failed to save images locally", { id: toastId });
+        toast.error(labelText("saveImagesLocallyFailed", "Failed to save images locally"), { id: toastId });
       } finally {
         setIsUploading(false);
         e.target.value = "";
@@ -8159,7 +8213,12 @@ function YachtEditorInner() {
     }
 
     setIsUploading(true);
-    const toastId = toast.loading(`Uploading ${files.length} image(s)...`);
+    const toastId = toast.loading(
+      labelText("uploadingImagesCount", "Uploading {count} image(s)...").replace(
+        "{count}",
+        String(files.length),
+      ),
+    );
     const previousImages = pipeline.images;
     const previousStats = pipeline.stats;
     const previousStep2Unlocked = pipeline.isStep2Unlocked;
@@ -8224,6 +8283,7 @@ function YachtEditorInner() {
       // ---------------------------------------------------------------------
 
       // Recover from stale draft yacht IDs restored from local draft state only once.
+      let recoveredFromMissingDraft = false;
       if (isNewMode && targetId) {
         const numericTargetId = Number(targetId);
         if (
@@ -8237,6 +8297,7 @@ function YachtEditorInner() {
             if (err?.response?.status === 404) {
               targetId = null;
               verifiedDraftYachtIdRef.current = null;
+              recoveredFromMissingDraft = true;
             } else {
               throw err;
             }
@@ -8250,6 +8311,14 @@ function YachtEditorInner() {
         targetId = await createBootstrapDraftYacht();
         shouldSetCreatedYachtId = true;
         verifiedDraftYachtIdRef.current = Number(targetId);
+        if (recoveredFromMissingDraft) {
+          setDraftRecoveryWarning(
+            labelText(
+              "recoveredMissingDraft",
+              "Your previous draft could not be found, so a new one was started. Re-check any images or fields you added before this point.",
+            ),
+          );
+        }
       }
 
       if (!targetId) {
@@ -8348,7 +8417,7 @@ function YachtEditorInner() {
       }
     } catch (err) {
       console.error("Upload failed:", err);
-      toast.error("Failed to upload images", { id: toastId });
+      toast.error(labelText("uploadImagesFailed", "Failed to upload images"), { id: toastId });
 
       const optimisticUrls: string[] = optimisticImages
         .map((img: PipelineImage) => img.client_preview_url)
@@ -8421,7 +8490,7 @@ function YachtEditorInner() {
 
   const toggleDictation = () => {
     if (!recognition) {
-      toast.error("Speech recognition is not supported in this browser.");
+      toast.error(labelText("speechNotSupported", "Speech recognition is not supported in this browser."));
       return;
     }
 
@@ -8432,7 +8501,7 @@ function YachtEditorInner() {
       recognition.lang = DESCRIPTION_LANGUAGE_LOCALES[selectedLang];
       recognition.start();
       setIsDictating(true);
-      toast.success("Listening... Speak now");
+      toast.success(labelText("listeningSpeakNow", "Listening... Speak now"));
     }
   };
 
@@ -8501,11 +8570,11 @@ function YachtEditorInner() {
           `🪄 Magic Fill Success! (${consensus.confidence_score}% confidence)`,
         );
       } else {
-        toast.error("No relevant consensus could be built from catalog.");
+        toast.error(labelText("noConsensusFromCatalog", "No relevant consensus could be built from catalog."));
       }
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.response?.data?.error || "Magic Autofill failed.");
+      toast.error(e?.response?.data?.error || labelText("magicAutofillFailed", "Magic Autofill failed."));
     } finally {
       setIsExtracting(false);
       setShowExtractModal(false);
@@ -8949,16 +9018,18 @@ function YachtEditorInner() {
         toast.error(
           typeof serverMessage === "string" && serverMessage.trim()
             ? serverMessage
-            : "Please check required fields",
+            : labelText("checkRequiredFields", "Please check required fields"),
         );
       } else if (err.response?.status === 403) {
-        toast.error("Permission denied.");
+        toast.error(labelText("permissionDenied", "Permission denied."));
       } else if (err.response?.status === 500) {
         const serverMessage =
           err.response?.data?.message || err.response?.data?.error;
-        toast.error(serverMessage || "Server error. Please try again.");
+        toast.error(serverMessage || labelText("serverErrorRetry", "Server error. Please try again."));
       } else {
-        toast.error(`Error: ${err.response?.data?.message || "System Error"}`);
+        toast.error(
+          `${labelText("genericErrorPrefix", "Error")}: ${err.response?.data?.message || labelText("systemError", "System Error")}`,
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -8980,6 +9051,20 @@ function YachtEditorInner() {
   return (
     <div className="yacht-editor-theme bg-[#F8FAFC]">
       {!suppressCreationToasts && <Toaster position="top-right" />}
+
+      {draftRecoveryWarning && (
+        <div className="sticky top-0 z-[130] flex items-start gap-2.5 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <p className="flex-1">{draftRecoveryWarning}</p>
+          <button
+            type="button"
+            onClick={() => setDraftRecoveryWarning(null)}
+            className="shrink-0 font-semibold text-amber-700 hover:text-amber-900"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       {showExtractModal && (
         <div className="fixed inset-0 z-[120] bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4">
