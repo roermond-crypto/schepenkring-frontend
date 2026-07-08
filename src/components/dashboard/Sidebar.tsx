@@ -27,6 +27,7 @@ import {
   Globe,
   Radio,
   FileSignature,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -182,6 +183,11 @@ export function Sidebar({
         title: "Signhost Monitor",
         href: `${root}/signhost`,
         icon: FileSignature,
+      });
+      items.push({
+        title: "YachtShift Sync",
+        href: `${root}/yachtshift`,
+        icon: RefreshCw,
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });

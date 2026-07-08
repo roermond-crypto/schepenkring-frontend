@@ -13,9 +13,12 @@ import {
   Phone,
   Save,
   Star,
+  Trash2,
+  Upload,
   UserMinus,
   UserPlus,
   Users,
+  Video,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { api } from "@/lib/api";
@@ -260,6 +263,11 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
   // Default seller state
   const [settingDefaultSeller, setSettingDefaultSeller] = useState<number | null>(null);
 
+  // Video intro/outro state
+  const [videoIntroUrl, setVideoIntroUrl] = useState<string | null>(null);
+  const [videoOutroUrl, setVideoOutroUrl] = useState<string | null>(null);
+  const [uploadingVideoSlot, setUploadingVideoSlot] = useState<"intro" | "outro" | null>(null);
+
   // Create-user sub-form state
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
@@ -321,6 +329,8 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
           seo_description: loc.seo_description ?? "",
           seo_keywords: loc.seo_keywords ?? "",
         });
+        setVideoIntroUrl(loc.video_intro_media ?? null);
+        setVideoOutroUrl(loc.video_outro_media ?? null);
       })
       .catch(() => toast.error("Locatie laden mislukt."))
       .finally(() => setLoading(false));
@@ -535,6 +545,42 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
       toast.error("Instellen mislukt.");
     } finally {
       setSettingDefaultSeller(null);
+    }
+  };
+
+  const handleUploadVideoMedia = async (slot: "intro" | "outro", file: File) => {
+    if (!locationId) return;
+    setUploadingVideoSlot(slot);
+    try {
+      const fd = new FormData();
+      fd.append("slot", slot);
+      fd.append("file", file);
+      const res = await api.post(`/admin/locations/${locationId}/video-media`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (slot === "intro") setVideoIntroUrl(res.data?.url ?? null);
+      else setVideoOutroUrl(res.data?.url ?? null);
+      toast.success(slot === "intro" ? "Openingsvideo geüpload." : "Slotvideo geüpload.");
+    } catch {
+      toast.error("Uploaden mislukt.");
+    } finally {
+      setUploadingVideoSlot(null);
+    }
+  };
+
+  const handleRemoveVideoMedia = async (slot: "intro" | "outro") => {
+    if (!locationId) return;
+    setUploadingVideoSlot(slot);
+    try {
+      const field = slot === "intro" ? "video_intro_media" : "video_outro_media";
+      await api.patch(`/admin/locations/${locationId}`, { [field]: null });
+      if (slot === "intro") setVideoIntroUrl(null);
+      else setVideoOutroUrl(null);
+      toast.success("Verwijderd.");
+    } catch {
+      toast.error("Verwijderen mislukt.");
+    } finally {
+      setUploadingVideoSlot(null);
     }
   };
 
@@ -935,6 +981,70 @@ export function LocationFormPage({ locationId, locale, role }: Props) {
               ))}
             </div>
           </section>
+
+          {/* Video intro/outro */}
+          {isEditing && (
+            <section className="rounded-[20px] border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="mb-1 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-slate-400">
+                <Video className="h-3.5 w-3.5" /> Video-intro &amp; -outro
+              </p>
+              <p className="mb-4 text-xs text-slate-500">
+                Deze foto of korte video wordt automatisch toegevoegd aan het begin en einde van elke
+                gegenereerde bootvideo voor boten bij deze locatie.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(["intro", "outro"] as const).map((slot) => {
+                  const url = slot === "intro" ? videoIntroUrl : videoOutroUrl;
+                  const isUploading = uploadingVideoSlot === slot;
+                  return (
+                    <div key={slot} className="space-y-2">
+                      <Label>{slot === "intro" ? "Opening" : "Slot"}</Label>
+                      {url ? (
+                        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                          {/\.(mp4|mov|webm|m4v)$/i.test(url) ? (
+                            <video src={url} className="h-12 w-20 rounded-lg object-cover" muted />
+                          ) : (
+                            <img src={url} alt="" className="h-12 w-20 rounded-lg object-cover" />
+                          )}
+                          <span className="flex-1 truncate text-xs text-slate-500">{url.split("/").pop()}</span>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50"
+                            disabled={isUploading}
+                            onClick={() => void handleRemoveVideoMedia(slot)}
+                          >
+                            {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 text-xs font-semibold text-slate-500 hover:border-blue-400 hover:text-blue-600">
+                          {isUploading ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Upload className="h-3.5 w-3.5" />
+                          )}
+                          {isUploading ? "Uploaden…" : "Afbeelding of video uploaden"}
+                          <input
+                            type="file"
+                            accept="image/*,video/mp4,video/quicktime,video/webm"
+                            className="hidden"
+                            disabled={isUploading}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) void handleUploadVideoMedia(slot, file);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {/* Opening hours */}
           <section className="rounded-[20px] border border-slate-200 bg-white p-6 shadow-sm">
