@@ -20,6 +20,7 @@ import {
   Images,
   Trash,
   AlertCircle,
+  Send,
   Ship,
   Compass,
   Box,
@@ -145,6 +146,11 @@ import { WizardStep3 } from "@/components/yachts/wizard/WizardStep3";
 import { WizardStep4 } from "@/components/yachts/wizard/WizardStep4";
 import { WizardStep5 } from "@/components/yachts/wizard/WizardStep5";
 import { WizardStep6 } from "@/components/yachts/wizard/WizardStep6";
+import {
+  CompletenessScoreBadge,
+  CompletenessScoreCard,
+  type CompletenessBreakdown,
+} from "@/components/yachts/CompletenessScore";
 import { 
   FieldLabel, 
   WizardInput as Input, 
@@ -1401,6 +1407,14 @@ const YACHT_FORM_TEXT = {
       serverErrorRetry: "Server error. Please try again.",
       genericErrorPrefix: "Error",
       systemError: "System Error",
+      recalculateScoreFailed: "Failed to recalculate the completeness score.",
+      yachtShiftHeading: "YachtShift",
+      yachtShiftDescription: "Publish this listing to the YachtShift feed.",
+      publishToYachtShift: "Publish to YachtShift",
+      publishSuccess: "Published to YachtShift.",
+      publishMissingFields: "Required fields are missing.",
+      publishFailed: "Publishing to YachtShift failed.",
+      publishAnyway: "Publish anyway",
       creatingDraftForDoc: "Creating vessel draft for document upload...",
       createDraftFailed: "Failed to initialize draft vessel.",
       saveBeforeVideo: "Save the vessel first before uploading a video.",
@@ -2009,6 +2023,14 @@ const YACHT_FORM_TEXT = {
       serverErrorRetry: "Serverfout. Probeer het opnieuw.",
       genericErrorPrefix: "Fout",
       systemError: "Systeemfout",
+      recalculateScoreFailed: "Herberekenen van de volledigheidsscore is mislukt.",
+      yachtShiftHeading: "YachtShift",
+      yachtShiftDescription: "Publiceer deze advertentie naar de YachtShift-feed.",
+      publishToYachtShift: "Publiceren naar YachtShift",
+      publishSuccess: "Gepubliceerd naar YachtShift.",
+      publishMissingFields: "Verplichte velden ontbreken.",
+      publishFailed: "Publiceren naar YachtShift is mislukt.",
+      publishAnyway: "Toch publiceren",
       creatingDraftForDoc: "Concept aanmaken voor document upload...",
       createDraftFailed: "Aanmaken van concept mislukt.",
       saveBeforeVideo: "Sla eerst het vaartuig op voordat je een video uploadt.",
@@ -3883,6 +3905,78 @@ function YachtEditorInner() {
       ? String(createdYachtId)
       : null
     : (yachtId as string);
+
+  const [completenessScore, setCompletenessScore] = useState<number | null>(null);
+  const [completenessBreakdown, setCompletenessBreakdown] = useState<CompletenessBreakdown | null>(null);
+  const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
+  const [scoreLoading, setScoreLoading] = useState(false);
+
+  const loadCompletenessScore = useCallback(async (id: string | number) => {
+    try {
+      const res = await api.get(`/admin/yachts/${id}/score`);
+      setCompletenessScore(res.data?.score ?? null);
+      setCompletenessBreakdown(res.data?.breakdown ?? null);
+      setMissingRequiredFields(Array.isArray(res.data?.missing_required) ? res.data.missing_required : []);
+    } catch {
+      // Score endpoint is admin-only; silently skip for client/location roles.
+    }
+  }, []);
+
+  const recalculateCompletenessScore = useCallback(async () => {
+    if (!activeYachtId) return;
+    setScoreLoading(true);
+    try {
+      const res = await api.post(`/admin/yachts/${activeYachtId}/recalculate-score`);
+      setCompletenessScore(res.data?.score ?? null);
+      setCompletenessBreakdown(res.data?.breakdown ?? null);
+      setMissingRequiredFields(Array.isArray(res.data?.missing_required) ? res.data.missing_required : []);
+    } catch {
+      hotToast.error(labelText("recalculateScoreFailed", "Failed to recalculate the completeness score."));
+    } finally {
+      setScoreLoading(false);
+    }
+  }, [activeYachtId, labelText]);
+
+  useEffect(() => {
+    if (role !== "admin" || !activeYachtId) return;
+    void loadCompletenessScore(activeYachtId);
+  }, [role, activeYachtId, loadCompletenessScore]);
+
+  const [publishingToYachtShift, setPublishingToYachtShift] = useState(false);
+  const [yachtShiftPublishResult, setYachtShiftPublishResult] = useState<{
+    success: boolean;
+    message?: string;
+    missingRequired?: string[];
+  } | null>(null);
+
+  const publishToYachtShift = useCallback(
+    async (force = false) => {
+      if (!activeYachtId) return;
+      setPublishingToYachtShift(true);
+      setYachtShiftPublishResult(null);
+      try {
+        const res = await api.post(`/admin/yachts/${activeYachtId}/publish-yachtshift`, { force });
+        setYachtShiftPublishResult({ success: true, message: labelText("publishSuccess", "Published to YachtShift.") });
+        hotToast.success(labelText("publishSuccess", "Published to YachtShift."));
+        void loadCompletenessScore(activeYachtId);
+        void res;
+      } catch (err: any) {
+        const status = err?.response?.status;
+        const missing = Array.isArray(err?.response?.data?.missing_required)
+          ? (err.response.data.missing_required as string[])
+          : undefined;
+        const message =
+          status === 422
+            ? labelText("publishMissingFields", "Required fields are missing.")
+            : err?.response?.data?.message || labelText("publishFailed", "Publishing to YachtShift failed.");
+        setYachtShiftPublishResult({ success: false, message, missingRequired: missing });
+        hotToast.error(message);
+      } finally {
+        setPublishingToYachtShift(false);
+      }
+    },
+    [activeYachtId, labelText, loadCompletenessScore],
+  );
   const localizedYachtsBasePath = useMemo(
     () => `/${locale}/dashboard/${role}/yachts`,
     [locale, role],
@@ -9221,6 +9315,13 @@ function YachtEditorInner() {
             </div>
           </div>
           <div className="flex gap-2 items-center">
+            {role === "admin" && activeYachtId && completenessScore !== null && (
+              <CompletenessScoreBadge
+                score={completenessScore}
+                breakdown={completenessBreakdown}
+                className="mr-1"
+              />
+            )}
             {!isNewMode && role === "admin" && (
               <Button
                 type="button"
@@ -9468,6 +9569,71 @@ function YachtEditorInner() {
               locale={locale}
               t={t}
             />
+          )}
+
+          {activeStep === 5 && role === "admin" && activeYachtId && (
+            <CompletenessScoreCard
+              score={completenessScore}
+              breakdown={completenessBreakdown}
+              missingRequired={missingRequiredFields}
+              onRecalculate={() => void recalculateCompletenessScore()}
+              loading={scoreLoading}
+            />
+          )}
+
+          {activeStep === 5 && role === "admin" && activeYachtId && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+                    {labelText("yachtShiftHeading", "YachtShift")}
+                  </p>
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    {labelText("yachtShiftDescription", "Publish this listing to the YachtShift feed.")}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => void publishToYachtShift(false)}
+                  disabled={publishingToYachtShift}
+                  className="h-10 gap-2 rounded-lg bg-[#003566] px-4 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#00284f]"
+                >
+                  {publishingToYachtShift ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Send size={14} />
+                  )}
+                  {labelText("publishToYachtShift", "Publish to YachtShift")}
+                </Button>
+              </div>
+
+              {yachtShiftPublishResult && !yachtShiftPublishResult.success && (
+                <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  <p className="font-semibold">{yachtShiftPublishResult.message}</p>
+                  {yachtShiftPublishResult.missingRequired && yachtShiftPublishResult.missingRequired.length > 0 && (
+                    <>
+                      <ul className="mt-1.5 list-disc pl-5 text-xs">
+                        {yachtShiftPublishResult.missingRequired.map((field) => (
+                          <li key={field}>{field}</li>
+                        ))}
+                      </ul>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void publishToYachtShift(true)}
+                        disabled={publishingToYachtShift}
+                        className="mt-2 h-8 rounded-lg border-red-300 px-3 text-xs font-bold uppercase tracking-wider text-red-700 hover:bg-red-100"
+                      >
+                        {labelText("publishAnyway", "Publish anyway")}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
+              {yachtShiftPublishResult && yachtShiftPublishResult.success && (
+                <p className="mt-3 text-sm font-semibold text-emerald-600">{yachtShiftPublishResult.message}</p>
+              )}
+            </div>
           )}
 
           {activeStep === 5 && (
