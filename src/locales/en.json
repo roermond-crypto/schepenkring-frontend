@@ -3045,6 +3045,9 @@
       "empty": "No tags found.",
       "copied": "{tag} copied"
     },
+    "warnings": {
+      "unsupportedTags": "This template uses unknown variables that are not supported and will not be replaced: {tags}"
+    },
     "categories": {
       "User": "User",
       "Buyer": "Buyer",

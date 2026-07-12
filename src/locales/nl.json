@@ -3045,6 +3045,9 @@
       "empty": "Geen tags gevonden.",
       "copied": "{tag} gekopieerd"
     },
+    "warnings": {
+      "unsupportedTags": "Dit sjabloon gebruikt onbekende variabelen die niet worden ondersteund en dus niet worden vervangen: {tags}"
+    },
     "categories": {
       "User": "Gebruiker",
       "Buyer": "Koper",

@@ -3043,6 +3043,9 @@
       "empty": "Aucune balise trouvée.",
       "copied": "{tag} copié"
     },
+    "warnings": {
+      "unsupportedTags": "Ce modèle utilise des variables inconnues qui ne sont pas prises en charge et ne seront pas remplacées : {tags}"
+    },
     "categories": {
       "User": "Utilisateur",
       "Buyer": "Acheteur",

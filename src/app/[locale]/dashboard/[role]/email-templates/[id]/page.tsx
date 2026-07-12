@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -43,6 +43,7 @@ import {
   CreditCard,
   Sparkles,
   Search,
+  AlertTriangle,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -1064,6 +1065,20 @@ export default function EmailTemplateEditorPage() {
 
   const selectedBlock = blocks.find((b) => b.id === selectedBlockId) ?? null;
 
+  // Mirrors the backend's EmailTemplateRendererService::extractUsedTags() —
+  // any {{tag}} referenced in this template's blocks/subject that isn't in
+  // the known tag list will now (per the rendering fix) be silently
+  // stripped at send time rather than left raw in the email, but an admin
+  // should still know it's there and never gets replaced.
+  const unsupportedTags = useMemo(() => {
+    if (tags.length === 0) return [];
+    const known = new Set(tags.map((tag) => tag.key));
+    const haystack = JSON.stringify({ blocks, subject });
+    const found = haystack.match(/\{\{\s*([\w.]+)\s*\}\}/g) ?? [];
+    const used = new Set(found.map((m) => m.replace(/[{}\s]/g, "")));
+    return Array.from(used).filter((key) => !known.has(key));
+  }, [blocks, subject, tags]);
+
   useEffect(() => {
     if (!templateId) return;
     void loadTemplate();
@@ -1281,6 +1296,13 @@ export default function EmailTemplateEditorPage() {
           {t("topBar.saveButton")}
         </button>
       </div>
+
+      {unsupportedTags.length > 0 && (
+        <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300 flex-shrink-0">
+          <AlertTriangle size={14} className="flex-shrink-0" />
+          {t("warnings.unsupportedTags", { tags: unsupportedTags.map((tag) => `{{${tag}}}`).join(", ") })}
+        </div>
+      )}
 
       {/* Three-column layout */}
       <div className="flex flex-1 overflow-hidden">

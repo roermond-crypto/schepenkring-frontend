@@ -3043,6 +3043,9 @@
       "empty": "Keine Tags gefunden.",
       "copied": "{tag} kopiert"
     },
+    "warnings": {
+      "unsupportedTags": "Diese Vorlage verwendet unbekannte Variablen, die nicht unterstützt und nicht ersetzt werden: {tags}"
+    },
     "categories": {
       "User": "Benutzer",
       "Buyer": "Käufer",
