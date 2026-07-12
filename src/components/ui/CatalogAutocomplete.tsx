@@ -19,6 +19,15 @@ interface Props {
     showIcon?: boolean;
     /** Show inline archive/merge affordances — pass true only for admin/employee roles. */
     allowManage?: boolean;
+    /**
+     * Scopes results to values linked to this parent catalog_values id
+     * (e.g. pass the selected Brand's id here for a Model field). Values
+     * with no recorded parent still show — the backend filter is
+     * inclusive, not exclusive — and this id is also attached when a new
+     * value is created, so a Model created while a Brand is selected gets
+     * linked to it automatically.
+     */
+    parentValueId?: number | null;
 }
 
 interface CatalogValueItem {
@@ -98,6 +107,7 @@ export function CatalogAutocomplete({
     showAdminEditLink = true,
     showIcon = false,
     allowManage = false,
+    parentValueId = null,
 }: Props) {
     const locale = useLocale();
     const text = TEXT[locale as keyof typeof TEXT] ?? TEXT.en;
@@ -136,7 +146,14 @@ export function CatalogAutocomplete({
             try {
                 const res = await api.get<{ data: CatalogValueItem[]; meta: { field: { allow_new_values: boolean; allow_inline_archive: boolean } | null } }>(
                     "catalog-values",
-                    { params: { field_key: fieldKey, q: query, limit: 20 } },
+                    {
+                        params: {
+                            field_key: fieldKey,
+                            q: query,
+                            limit: 20,
+                            ...(parentValueId ? { parent_value_id: parentValueId } : {}),
+                        },
+                    },
                 );
                 setResults(Array.isArray(res.data?.data) ? res.data.data : []);
                 setMeta(res.data?.meta?.field ?? null);
@@ -148,7 +165,7 @@ export function CatalogAutocomplete({
         }, 300);
 
         return () => clearTimeout(delayDebounceFn);
-    }, [query, isOpen, fieldKey]);
+    }, [query, isOpen, fieldKey, parentValueId]);
 
     const highlighted = Boolean(needsConfirmation) || (query && query.trim().length > 0);
     const normalizedQuery = query.trim().toLowerCase();
@@ -170,6 +187,7 @@ export function CatalogAutocomplete({
                 field_key: fieldKey,
                 value: query.trim(),
                 force,
+                ...(parentValueId ? { parent_value_id: parentValueId } : {}),
             });
             setSuggestions(null);
             selectValue(res.data.data);

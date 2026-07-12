@@ -385,6 +385,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
               defaultValue={step1Model}
               onSelect={(_, name) => setStep1Model(name)}
               allowManage={role === "admin" || role === "employee"}
+              parentValueId={selectedBrandId}
             />
           </div>
 

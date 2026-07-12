@@ -279,6 +279,7 @@ export function WizardStep2({
               defaultValue={selectedYacht?.model}
               needsConfirmation={needsConfirm("model")}
               allowManage={allowCatalogManage}
+              parentValueId={selectedBrandId}
               onSelect={(_id, name) => {
                 // When model changes, we update the state so the assistant picks it up
                 setSelectedYacht((prev: any) => ({
@@ -359,6 +360,23 @@ export function WizardStep2({
                 </select>
               </>
             )}
+          </div>
+          <div className="space-y-2 group">
+            <FieldLabel
+              label={labelText("country", "Country")}
+              helpText={resolveFieldHelpText(
+                "location_country",
+                labelText("country", "Country"),
+              )}
+            />
+            <CatalogAutocomplete
+              fieldKey="location_country"
+              name="location_country"
+              defaultValue={selectedYacht?.location_country}
+              placeholder="e.g. Netherlands"
+              needsConfirmation={needsConfirm("location_country")}
+              allowManage={allowCatalogManage}
+            />
           </div>
 
           {/* ── AI ASSISTANT ── */}
