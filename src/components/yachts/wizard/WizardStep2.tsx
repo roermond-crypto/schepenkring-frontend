@@ -547,6 +547,23 @@ export function WizardStep2({
           </div>
           <div className="space-y-2 group">
             <FieldLabel
+              label={labelText("steeringSystem", "Steering")}
+              helpText={resolveFieldHelpText(
+                "steering_system",
+                labelText("steeringSystem", "Steering"),
+              )}
+            />
+            <CatalogAutocomplete
+              fieldKey="steering_system"
+              name="steering_system"
+              defaultValue={selectedYacht?.steering_system}
+              placeholder="e.g. Hydraulic wheel"
+              needsConfirmation={needsConfirm("steering_system")}
+              allowManage={allowCatalogManage}
+            />
+          </div>
+          <div className="space-y-2 group">
+            <FieldLabel
               label={labelText("ceCategory", "CE Category")}
               helpText={resolveFieldHelpText(
                 "ce_category",
