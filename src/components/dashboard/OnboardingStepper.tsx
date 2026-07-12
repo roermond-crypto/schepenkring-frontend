@@ -11,6 +11,13 @@ type StepItem = {
   clickable?: boolean;
 };
 
+// Colors here are tuned for the actual container this renders inside
+// (a white card, see SellerOnboardingPanel/BuyerVerificationPanel) — the
+// previous version used white-on-white styling (border-white, bg-white/5,
+// text-white/40) apparently written for a dark background, which made the
+// connecting lines and pending-step state nearly invisible. Completed
+// state also used emerald (green); changed to the brand blue (#003566)
+// per spec.
 export function OnboardingStepper({
   steps,
   onStepSelect,
@@ -25,7 +32,7 @@ export function OnboardingStepper({
           <div key={step.key} className={cn("flex flex-1 flex-col items-center", index === 0 ? "items-start" : index === steps.length - 1 ? "items-end" : "items-center")}>
             <div className="flex w-full items-center">
               {/* Connector Line - Left */}
-              <div className={cn("h-[2px] flex-1 rounded-full", index === 0 ? "bg-transparent" : (step.complete || step.active) ? "bg-white/40" : "bg-white/10")} />
+              <div className={cn("h-[3px] flex-1 rounded-full", index === 0 ? "bg-transparent" : (step.complete || step.active) ? "bg-[#003566]" : "bg-slate-200")} />
 
               <button
                 type="button"
@@ -38,13 +45,13 @@ export function OnboardingStepper({
               >
                 <div
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full border-2 text-[13px] font-black transition-all duration-300 shadow-lg",
+                    "flex h-9 w-9 items-center justify-center rounded-full border-2 text-[13px] font-black transition-all duration-300 shadow-md",
                     step.complete
-                      ? "border-emerald-400 bg-emerald-500 text-white"
+                      ? "border-[#003566] bg-[#003566] text-white"
                       : step.active
-                        ? "border-white bg-white text-[#003566] scale-110"
-                        : "border-white/20 bg-white/5 text-white/50 backdrop-blur-md",
-                    step.clickable && "hover:border-white hover:text-white hover:scale-105",
+                        ? "border-[#003566] bg-white text-[#003566] scale-110 ring-4 ring-[#003566]/15"
+                        : "border-slate-300 bg-slate-50 text-slate-400",
+                    step.clickable && "hover:border-[#003566] hover:scale-105",
                   )}
                 >
                   {step.complete ? <Check size={16} strokeWidth={4} /> : index + 1}
@@ -52,17 +59,17 @@ export function OnboardingStepper({
               </button>
 
               {/* Connector Line - Right */}
-              <div className={cn("h-[2px] flex-1 rounded-full", index === steps.length - 1 ? "bg-transparent" : step.complete ? "bg-white/40" : "bg-white/10")} />
+              <div className={cn("h-[3px] flex-1 rounded-full", index === steps.length - 1 ? "bg-transparent" : step.complete ? "bg-[#003566]" : "bg-slate-200")} />
             </div>
 
             <div
               className={cn(
                 "mt-3 text-[9px] font-black uppercase tracking-[0.2em] text-center px-1 whitespace-normal max-w-[80px]",
                 step.complete
-                  ? "text-emerald-300"
+                  ? "text-[#003566]"
                   : step.active
-                    ? "text-white"
-                    : "text-white/40",
+                    ? "text-slate-900"
+                    : "text-slate-400",
               )}
             >
               {step.label}

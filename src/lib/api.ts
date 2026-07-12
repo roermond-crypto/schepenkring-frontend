@@ -1,5 +1,6 @@
 import axios from "axios";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
+import { getLocaleOrDefault } from "@/lib/i18n";
 
 function resolveBaseUrl() {
   const configured =
@@ -36,6 +37,15 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // The backend has no other reliable way to know which of nl/en/de/fr the
+  // user actually has selected (the browser's own Accept-Language reflects
+  // OS/browser settings, not the in-app language switcher) — this is what
+  // lets Laravel's validator (lang/{locale}/validation.php) and anything
+  // else locale-dependent on the backend respond in the right language.
+  // See App\Http\Middleware\SetLocaleFromRequest.
+  const firstSegment = window.location.pathname.split("/").filter(Boolean)[0];
+  config.headers["Accept-Language"] = getLocaleOrDefault(firstSegment);
 
   return config;
 });

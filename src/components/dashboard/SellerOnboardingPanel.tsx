@@ -37,6 +37,11 @@ import {
   searchProfileAddresses,
   type AddressPrediction,
 } from "@/lib/api/profile-setup";
+import {
+  getOnboardingQuestions,
+  saveOnboardingQuestionAnswers,
+  type OnboardingQuestion,
+} from "@/lib/api/onboarding-questions";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
 
 const BANK_LOGOS = [
@@ -72,6 +77,16 @@ type PaymentPageContent = {
   amount_label?: string;
 };
 
+// Auto-formats digits as the user types: "13071987" -> "13-07-1987". Also
+// accepts manual "DD-MM-YYYY" typing since non-digit characters are
+// stripped before re-inserting the dashes at the right positions.
+function formatBirthDateLive(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
+}
+
 function formatBirthDateForInput(value: string): string {
   const normalized = String(value || "").trim();
   const isoMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -84,6 +99,11 @@ function normalizeBirthDateForSubmit(value: string): string {
   const displayMatch = normalized.match(/^(\d{2})-(\d{2})-(\d{4})$/);
   if (displayMatch) return `${displayMatch[3]}-${displayMatch[2]}-${displayMatch[1]}`;
   return normalized;
+}
+
+function resolveLocaleText(value: Record<string, string> | null | undefined, locale: string): string {
+  if (!value) return "";
+  return value[locale] || value.nl || value.en || Object.values(value)[0] || "";
 }
 
 function firstNonEmpty(...values: Array<string | null | undefined>) {
@@ -164,6 +184,8 @@ export function SellerOnboardingPanel({
   const [paymentContent, setPaymentContent] = useState<PaymentPageContent | null>(null);
   const [generatingContract, setGeneratingContract] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [dynamicQuestions, setDynamicQuestions] = useState<OnboardingQuestion[]>([]);
+  const [dynamicAnswers, setDynamicAnswers] = useState<Record<number, string>>({});
 
   const currentStep = status?.next_step ?? (status?.is_currently_valid ? "complete" : "profile");
 
@@ -309,6 +331,22 @@ export function SellerOnboardingPanel({
 
   useEffect(() => {
     if (visibleStepKey !== "profile") return;
+    async function loadDynamicQuestions() {
+      try {
+        const items = await getOnboardingQuestions();
+        setDynamicQuestions(items);
+        const nextAnswers: Record<number, string> = {};
+        items.forEach((q) => { if (q.answer) nextAnswers[q.id] = q.answer; });
+        setDynamicAnswers(nextAnswers);
+      } catch {
+        // Additive/optional section — a failure here shouldn't block the core profile form.
+      }
+    }
+    void loadDynamicQuestions();
+  }, [visibleStepKey]);
+
+  useEffect(() => {
+    if (visibleStepKey !== "profile") return;
     if (addressQuery.trim().length < 3 || selectedPlaceId) {
       if (addressQuery.trim().length < 3) setPredictions([]);
       return;
@@ -357,6 +395,9 @@ export function SellerOnboardingPanel({
         ...profile,
         birth_date: normalizeBirthDateForSubmit(profile.birth_date),
       });
+      if (dynamicQuestions.length) {
+        await saveOnboardingQuestionAnswers(dynamicAnswers).catch(() => null);
+      }
       setStatus(nextStatus);
       setSelectedStepKey(null);
       toast.success(t.toasts.profileSaved);
@@ -431,16 +472,95 @@ export function SellerOnboardingPanel({
   function renderInput(label: string, name: keyof ProfileForm, type = "text") {
     const errorList = errors[name];
     const hasError = !!errorList && errorList.length > 0;
+    const isBirthDate = name === "birth_date";
     return (
       <label className="flex flex-col gap-2.5 text-xs font-bold uppercase tracking-wider text-slate-500">
         {label}
         <input
-          type={type}
+          type={isBirthDate ? "text" : type}
+          inputMode={isBirthDate ? "numeric" : undefined}
+          maxLength={isBirthDate ? 10 : undefined}
+          placeholder={isBirthDate ? "DD-MM-YYYY" : undefined}
           className={cn("h-13 rounded-2xl border bg-white px-5 text-sm font-bold text-slate-700 outline-none transition shadow-sm focus:ring-4 focus:ring-blue-100/50", hasError ? "border-red-500" : "border-slate-100 focus:border-[#003566]")}
           value={profile[name]}
-          onChange={(e) => setProfile((c) => ({ ...c, [name]: e.target.value }))}
+          onChange={(e) =>
+            setProfile((c) => ({
+              ...c,
+              [name]: isBirthDate ? formatBirthDateLive(e.target.value) : e.target.value,
+            }))
+          }
         />
         {hasError && <p className="text-[10px] font-bold text-red-500 lowercase tracking-normal">{errorList[0]}</p>}
+      </label>
+    );
+  }
+
+  function renderDynamicQuestion(question: OnboardingQuestion) {
+    const label = resolveLocaleText(question.label, locale);
+    const help = resolveLocaleText(question.help_text, locale);
+    const placeholder = resolveLocaleText(question.placeholder, locale);
+    const value = dynamicAnswers[question.id] ?? "";
+    const setValue = (next: string) => setDynamicAnswers((prev) => ({ ...prev, [question.id]: next }));
+
+    const fieldClass = "h-13 rounded-2xl border border-slate-100 bg-white px-5 text-sm font-bold text-slate-700 outline-none transition shadow-sm focus:border-[#003566] focus:ring-4 focus:ring-blue-100/50";
+
+    return (
+      <label key={question.id} className="flex flex-col gap-2.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+        {label}
+        {question.required && <span className="text-red-500 normal-case">*</span>}
+        {question.field_type === "textarea" ? (
+          <textarea
+            className={cn(fieldClass, "min-h-24 py-3 normal-case tracking-normal font-medium")}
+            placeholder={placeholder}
+            value={value}
+            required={question.required}
+            onChange={(e) => setValue(e.target.value)}
+          />
+        ) : question.field_type === "select" ? (
+          <select
+            className={cn(fieldClass, "normal-case tracking-normal font-medium")}
+            value={value}
+            required={question.required}
+            onChange={(e) => setValue(e.target.value)}
+          >
+            <option value="">{placeholder || "—"}</option>
+            {(question.options ?? []).map((opt) => (
+              <option key={opt.value} value={opt.value}>{resolveLocaleText(opt.label, locale) || opt.value}</option>
+            ))}
+          </select>
+        ) : question.field_type === "radio" || question.field_type === "checkbox" ? (
+          <div className="flex flex-wrap gap-3 normal-case tracking-normal">
+            {(question.options ?? []).map((opt) => (
+              <label
+                key={opt.value}
+                className={cn(
+                  "cursor-pointer rounded-xl border px-4 py-2 text-sm font-semibold transition",
+                  value === opt.value ? "bg-blue-50 border-[#003566] text-[#003566]" : "bg-white border-slate-200 text-slate-600",
+                )}
+              >
+                <input
+                  type={question.field_type === "radio" ? "radio" : "checkbox"}
+                  className="hidden"
+                  checked={value === opt.value}
+                  onChange={() => setValue(value === opt.value ? "" : opt.value)}
+                />
+                {resolveLocaleText(opt.label, locale) || opt.value}
+              </label>
+            ))}
+          </div>
+        ) : (
+          <input
+            type={question.field_type === "date" ? "text" : "text"}
+            inputMode={question.field_type === "date" ? "numeric" : undefined}
+            maxLength={question.field_type === "date" ? 10 : undefined}
+            placeholder={question.field_type === "date" ? "DD-MM-YYYY" : placeholder}
+            className={fieldClass}
+            value={value}
+            required={question.required}
+            onChange={(e) => setValue(question.field_type === "date" ? formatBirthDateLive(e.target.value) : e.target.value)}
+          />
+        )}
+        {help && <p className="text-[10px] font-medium text-slate-400 normal-case tracking-normal">{help}</p>}
       </label>
     );
   }
@@ -522,6 +642,7 @@ export function SellerOnboardingPanel({
                 {renderInput(t.fields.postalCode, "postal_code")}
                 {renderInput(t.fields.country, "country")}
                 {renderInput(t.fields.birthDate, "birth_date")}
+                {dynamicQuestions.map((question) => renderDynamicQuestion(question))}
                 <div className="md:col-span-2">
                     <button type="submit" disabled={saving} className="rounded-2xl bg-[#003566] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
                         {saving ? t.actions.saving : t.actions.saveProfile}

@@ -37,6 +37,7 @@ import {
   AlertCircle,
   BookOpen,
   Phone,
+  ListChecks,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -252,6 +253,11 @@ export function Sidebar({
         title: "Media",
         href: `${root}/media`,
         icon: Images,
+      });
+      items.push({
+        title: "Onboarding Vragen",
+        href: `${root}/onboarding-questions`,
+        icon: ListChecks,
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
