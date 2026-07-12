@@ -231,6 +231,11 @@ export function Sidebar({
         href: `${root}/voice-ai/numbers`,
         icon: Phone,
       });
+      items.push({
+        title: "OpenMarine Integration",
+        href: `${root}/openmarine`,
+        icon: RefreshCw,
+      });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
       items.push({
