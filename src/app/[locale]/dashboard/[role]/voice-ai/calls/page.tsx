@@ -23,6 +23,16 @@ type CallRow = {
 
 type Paginated<T> = { data: T[]; current_page: number; last_page: number; total: number };
 
+type Analytics = {
+  total_calls: number;
+  total_spend_eur: number;
+  avg_cost_per_call_eur: number | null;
+  cost_per_seller_onboarding_eur: number | null;
+  cost_per_viewing_eur: number | null;
+  cost_per_completed_deal_eur: number | null;
+  completed_deals_count: number;
+};
+
 const fmt = (v?: string | null) =>
   v ? new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" }).format(new Date(v)) : "—";
 
@@ -33,18 +43,25 @@ const durationLabel = (seconds: number | null) => {
   return `${minutes}:${String(rest).padStart(2, "0")}`;
 };
 
+const euro = (v: number | null) => (v === null ? "—" : `€${v.toFixed(2)}`);
+
 export default function VoiceCallsPage() {
   const [page, setPage] = useState<Paginated<CallRow> | null>(null);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [provider, setProvider] = useState("");
 
   const load = useCallback(async (pageNum = 1, providerFilter = "") => {
     setLoading(true);
     try {
-      const res = await api.get<Paginated<CallRow>>("/admin/voice-ai/calls", {
-        params: { page: pageNum, ...(providerFilter ? { provider: providerFilter } : {}) },
-      });
-      setPage(res.data);
+      const [callsRes, analyticsRes] = await Promise.all([
+        api.get<Paginated<CallRow>>("/admin/voice-ai/calls", {
+          params: { page: pageNum, ...(providerFilter ? { provider: providerFilter } : {}) },
+        }),
+        api.get<Analytics>("/admin/voice-ai/analytics"),
+      ]);
+      setPage(callsRes.data);
+      setAnalytics(analyticsRes.data);
     } catch {
       toast.error("Kon gesprekken niet laden");
     } finally {
@@ -74,6 +91,24 @@ export default function VoiceCallsPage() {
           <option value="telnyx">Telnyx</option>
         </select>
       </div>
+
+      {analytics && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            { label: "Totale kosten", value: euro(analytics.total_spend_eur) },
+            { label: "Gem. kosten/gesprek", value: euro(analytics.avg_cost_per_call_eur) },
+            { label: "Kosten/verkoper-onboarding", value: euro(analytics.cost_per_seller_onboarding_eur) },
+            { label: "Kosten/bezichtiging", value: euro(analytics.cost_per_viewing_eur) },
+            { label: "Kosten/afgeronde deal", value: euro(analytics.cost_per_completed_deal_eur) },
+            { label: "Afgeronde deals", value: String(analytics.completed_deals_count) },
+          ].map((tile) => (
+            <div key={tile.label} className="rounded-xl border border-slate-200 bg-white p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{tile.label}</p>
+              <p className="text-lg font-bold text-slate-800 tabular-nums mt-1">{tile.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
         {loading ? (

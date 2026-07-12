@@ -9,6 +9,9 @@ import {
   CalendarClock,
   CheckCircle2,
   MessageSquare,
+  Mic,
+  Mail,
+  Gauge,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -27,6 +30,7 @@ type FollowUpRow = {
   ai_summary: string | null;
   assigned_employee: string | null;
   related_yacht: { id: number; boat_name: string | null } | null;
+  related_deal: { id: number; status: string; agreed_amount: string | null } | null;
   related_chat_thread_id: string | null;
 };
 
@@ -36,10 +40,15 @@ type PrioritizedLeadRow = {
   score: number;
   call_attempts: number;
   lead_id: number | null;
+  lead_status: string | null;
   name: string | null;
   phone: string | null;
   yacht_id: number | null;
+  yacht_name: string | null;
+  yacht_completeness_score: number | null;
   location_id: number | null;
+  email_opens: number;
+  email_clicks: number;
 };
 
 type RecentCallRow = {
@@ -48,8 +57,11 @@ type RecentCallRow = {
   direction: string | null;
   outcome: string | null;
   duration_seconds: number | null;
+  cost_eur: string | null;
   ended_at: string | null;
   summary: string | null;
+  transcript_preview: string | null;
+  has_recording: boolean;
   seller: string | null;
   yacht: string | null;
   conversation_id: string | null;
@@ -167,6 +179,17 @@ export default function SalesCommandCenterPage() {
                 <p className="text-sm text-slate-700 truncate">{f.ai_summary ?? `${f.subject_type} #${f.subject_id}`}</p>
                 <div className="text-xs text-slate-400 flex items-center gap-3 mt-1">
                   {f.related_yacht && <span>{f.related_yacht.boat_name}</span>}
+                  {f.related_deal && (
+                    <span
+                      className={cn(
+                        "font-semibold",
+                        f.related_deal.status === "closed" ? "text-emerald-600" : "text-amber-600",
+                      )}
+                    >
+                      Deal: {f.related_deal.status}
+                      {f.related_deal.agreed_amount ? ` (€${f.related_deal.agreed_amount})` : ""}
+                    </span>
+                  )}
                   {f.assigned_employee && <span>Toegewezen: {f.assigned_employee}</span>}
                 </div>
               </div>
@@ -216,10 +239,21 @@ export default function SalesCommandCenterPage() {
                   <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
                     score {lead.score}
                   </span>
+                  {lead.yacht_completeness_score !== null && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700">
+                      <Gauge className="h-3 w-3" /> {lead.yacht_completeness_score}% compleet
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-400">
                   {lead.campaign_name} · {lead.call_attempts} eerdere poging(en)
+                  {lead.yacht_name ? ` · ${lead.yacht_name}` : ""}
                 </p>
+                {(lead.email_opens > 0 || lead.email_clicks > 0) && (
+                  <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                    <Mail className="h-3 w-3" /> {lead.email_opens}x geopend, {lead.email_clicks}x geklikt
+                  </p>
+                )}
               </div>
               <Button
                 size="sm"
@@ -262,14 +296,23 @@ export default function SalesCommandCenterPage() {
                   </span>
                   <span className="text-xs text-slate-500">{call.direction}</span>
                   <span className="text-xs text-slate-400">{durationLabel(call.duration_seconds)}</span>
+                  {call.has_recording && (
+                    <span title="Opname beschikbaar">
+                      <Mic className="h-3 w-3 text-slate-400" />
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs text-slate-400">{fmt(call.ended_at)}</span>
               </div>
               {call.summary && <p className="text-sm text-slate-600 mt-1">{call.summary}</p>}
+              {call.transcript_preview && (
+                <p className="text-xs text-slate-400 italic mt-1 line-clamp-2">&ldquo;{call.transcript_preview}&hellip;&rdquo;</p>
+              )}
               <div className="text-xs text-slate-400 mt-1 flex items-center gap-3">
                 {call.seller && <span>Verkoper: {call.seller}</span>}
                 {call.yacht && <span>{call.yacht}</span>}
                 {call.outcome && <span className="font-semibold text-slate-500">{call.outcome}</span>}
+                {call.cost_eur && <span>€{call.cost_eur}</span>}
               </div>
             </div>
           ))}

@@ -155,7 +155,22 @@ type Tab =
   | "stats"
   | "timeline"
   | "inbox"
+  | "calls"
   | "settings";
+
+type CallRow = {
+  id: string;
+  provider: string | null;
+  direction: string | null;
+  status: string;
+  outcome: string | null;
+  duration_seconds: number | null;
+  cost_eur: string | null;
+  created_at: string;
+  seller?: { name: string } | null;
+  yacht?: { boat_name: string } | null;
+  campaign?: { name: string } | null;
+};
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 const DAY_LABELS: Record<string, string> = {
@@ -201,6 +216,7 @@ export function LocationDetailPage({
   const [users, setUsers] = useState<LocationUser[]>([]);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [inbox, setInbox] = useState<Inbox | null>(null);
+  const [calls, setCalls] = useState<CallRow[]>([]);
   const [allUsers, setAllUsers] = useState<Array<{ id: number; name: string; type: string }>>([]);
 
   const [loading, setLoading] = useState(true);
@@ -229,6 +245,11 @@ export function LocationDetailPage({
     setTimeline(Array.isArray(res.data?.data) ? res.data.data : []);
   }, [locationId]);
 
+  const loadCalls = useCallback(async () => {
+    const res = await api.get(`/admin/voice-ai/calls`, { params: { location_id: locationId, per_page: 25 } });
+    setCalls(Array.isArray(res.data?.data) ? res.data.data : []);
+  }, [locationId]);
+
   const loadInbox = useCallback(async () => {
     const res = await api.get(`/admin/locations/${locationId}/inbox`);
     setInbox(res.data ?? null);
@@ -242,10 +263,10 @@ export function LocationDetailPage({
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([loadStats(), loadUsers(), loadTimeline(), loadInbox(), loadAllUsers()])
+    Promise.all([loadStats(), loadUsers(), loadTimeline(), loadInbox(), loadAllUsers(), loadCalls()])
       .catch(() => toast.error("Laden mislukt."))
       .finally(() => setLoading(false));
-  }, [loadStats, loadUsers, loadTimeline, loadInbox, loadAllUsers]);
+  }, [loadStats, loadUsers, loadTimeline, loadInbox, loadAllUsers, loadCalls]);
 
   // ── User management ───────────────────────────────────────────────────────────
 
@@ -361,6 +382,7 @@ export function LocationDetailPage({
     { key: "calendar",   label: "Kalender",     icon: <CalendarIcon className="h-4 w-4" /> },
     { key: "stats",      label: "Statistieken", icon: <BarChart3 className="h-4 w-4" /> },
     { key: "timeline",   label: "Tijdlijn",     icon: <History className="h-4 w-4" /> },
+    { key: "calls",      label: "Voice calls",  icon: <Phone className="h-4 w-4" /> },
     { key: "settings",   label: "Instellingen", icon: <Settings className="h-4 w-4" /> },
   ];
 
@@ -439,7 +461,7 @@ export function LocationDetailPage({
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
-              <Button variant="outline" size="sm" className="rounded-xl border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={() => void Promise.all([loadStats(), loadUsers(), loadTimeline(), loadInbox()])}>
+              <Button variant="outline" size="sm" className="rounded-xl border-white/30 bg-white/10 text-white hover:bg-white/20" onClick={() => void Promise.all([loadStats(), loadUsers(), loadTimeline(), loadInbox(), loadCalls()])}>
                 <RefreshCcw className="h-3.5 w-3.5 mr-1" />Verversen
               </Button>
               <Button asChild size="sm" className="rounded-xl bg-white text-slate-800 hover:bg-white/90">
@@ -845,6 +867,44 @@ export function LocationDetailPage({
                   {entry.result === "FAIL" && (
                     <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase text-red-600">Mislukt</span>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Voice calls ───────────────────────────────────────────── */}
+      {tab === "calls" && (
+        <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+          {calls.length === 0 ? (
+            <p className="py-8 text-center text-sm text-slate-400">Nog geen gesprekken voor deze locatie.</p>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {calls.map((call) => (
+                <div key={call.id} className="flex items-center justify-between gap-4 py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className={cn(
+                        "text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full shrink-0",
+                        call.provider === "retell" ? "bg-violet-50 text-violet-700" : "bg-slate-100 text-slate-600",
+                      )}
+                    >
+                      {call.provider ?? "onbekend"}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">
+                        {call.seller?.name ?? call.yacht?.boat_name ?? "Onbekend"}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {call.direction} {call.campaign ? `· ${call.campaign.name}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-semibold text-slate-600">{call.outcome ?? call.status}</p>
+                    <p className="text-[11px] text-slate-400 tabular-nums">{fmt(call.created_at)}</p>
+                  </div>
                 </div>
               ))}
             </div>
