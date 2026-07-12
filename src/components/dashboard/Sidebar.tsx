@@ -236,6 +236,11 @@ export function Sidebar({
         href: `${root}/openmarine`,
         icon: RefreshCw,
       });
+      items.push({
+        title: "Content",
+        href: `${root}/content`,
+        icon: FileText,
+      });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
       items.push({
