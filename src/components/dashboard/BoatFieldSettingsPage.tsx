@@ -72,6 +72,13 @@ type BoatFieldFormState = {
   storage_column: string;
   ai_relevance: boolean;
   is_active: boolean;
+  enable_autocomplete: boolean;
+  value_source: "freetext" | "fixed" | "database" | "ai";
+  allow_new_values: boolean;
+  allow_inline_archive: boolean;
+  fuzzy_matching: boolean;
+  is_required: boolean;
+  is_searchable: boolean;
   priorities: BoatFieldPriorityRecord[];
 };
 
@@ -97,6 +104,13 @@ const DEFAULT_FORM_STATE: BoatFieldFormState = {
   storage_column: "",
   ai_relevance: true,
   is_active: true,
+  enable_autocomplete: false,
+  value_source: "freetext",
+  allow_new_values: true,
+  allow_inline_archive: true,
+  fuzzy_matching: true,
+  is_required: false,
+  is_searchable: true,
   priorities: [{ boat_type_key: "default", priority: "primary" }],
 };
 
@@ -132,6 +146,13 @@ function mapFieldToFormState(field: BoatFieldRecord): BoatFieldFormState {
     storage_column: field.storage_column ?? "",
     ai_relevance: Boolean(field.ai_relevance),
     is_active: Boolean(field.is_active),
+    enable_autocomplete: Boolean(field.enable_autocomplete),
+    value_source: field.value_source ?? "freetext",
+    allow_new_values: field.allow_new_values ?? true,
+    allow_inline_archive: field.allow_inline_archive ?? true,
+    fuzzy_matching: field.fuzzy_matching ?? true,
+    is_required: Boolean(field.is_required),
+    is_searchable: field.is_searchable ?? true,
     priorities:
       field.priorities.length > 0
         ? field.priorities.map((priority) => ({
@@ -1588,6 +1609,144 @@ export function BoatFieldSettingsPage() {
                       className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
                   </label>
+                </div>
+
+                <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">
+                      Autocomplete
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Smart database autocomplete for this field — fuzzy
+                      duplicate detection, inline value creation, and
+                      admin archive/merge from the dropdown.
+                    </p>
+                  </div>
+                  <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-3">
+                    <span className="text-sm font-medium text-slate-700">
+                      Enable autocomplete
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={fieldForm.enable_autocomplete}
+                      onChange={(event) =>
+                        handleFieldChange(
+                          "enable_autocomplete",
+                          event.target.checked,
+                        )
+                      }
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </label>
+
+                  {fieldForm.enable_autocomplete && (
+                    <>
+                      <label className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                        <span className="text-sm font-medium text-slate-700">
+                          Value source
+                        </span>
+                        <select
+                          value={fieldForm.value_source}
+                          onChange={(event) =>
+                            handleFieldChange(
+                              "value_source",
+                              event.target.value as BoatFieldFormState["value_source"],
+                            )
+                          }
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500"
+                        >
+                          <option value="database">
+                            Database (catalog_values, fuzzy matched)
+                          </option>
+                          <option value="fixed">
+                            Fixed dropdown (Select Options above)
+                          </option>
+                          <option value="ai">AI suggestions</option>
+                          <option value="freetext">Free text</option>
+                        </select>
+                      </label>
+                      <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-3">
+                        <span className="text-sm font-medium text-slate-700">
+                          Allow new values
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={fieldForm.allow_new_values}
+                          onChange={(event) =>
+                            handleFieldChange(
+                              "allow_new_values",
+                              event.target.checked,
+                            )
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </label>
+                      <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-3">
+                        <span className="text-sm font-medium text-slate-700">
+                          Allow inline archive/merge
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={fieldForm.allow_inline_archive}
+                          onChange={(event) =>
+                            handleFieldChange(
+                              "allow_inline_archive",
+                              event.target.checked,
+                            )
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </label>
+                      <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-3">
+                        <span className="text-sm font-medium text-slate-700">
+                          Fuzzy duplicate matching
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={fieldForm.fuzzy_matching}
+                          onChange={(event) =>
+                            handleFieldChange(
+                              "fuzzy_matching",
+                              event.target.checked,
+                            )
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </label>
+                      <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-3">
+                        <span className="text-sm font-medium text-slate-700">
+                          Required
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={fieldForm.is_required}
+                          onChange={(event) =>
+                            handleFieldChange(
+                              "is_required",
+                              event.target.checked,
+                            )
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </label>
+                      <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-3">
+                        <span className="text-sm font-medium text-slate-700">
+                          Searchable
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={fieldForm.is_searchable}
+                          onChange={(event) =>
+                            handleFieldChange(
+                              "is_searchable",
+                              event.target.checked,
+                            )
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </label>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

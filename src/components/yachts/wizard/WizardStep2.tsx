@@ -60,6 +60,8 @@ interface WizardStep2Props {
   formKey: number;
   setFormKey: React.Dispatch<React.SetStateAction<number>>;
   isClientRole: boolean;
+  /** Show inline catalog-value archive/merge affordances — admin/employee roles only. */
+  allowCatalogManage?: boolean;
   locations: any[];
   preferredLocationId: string | number | null;
   currentUserLocationName: string | null | undefined;
@@ -121,6 +123,7 @@ export function WizardStep2({
   formKey,
   setFormKey,
   isClientRole,
+  allowCatalogManage,
   locations,
   preferredLocationId,
   currentUserLocationName,
@@ -248,10 +251,11 @@ export function WizardStep2({
               )}
             />
             <CatalogAutocomplete
-              endpoint="/api/autocomplete/brands"
+              fieldKey="manufacturer"
               name="manufacturer"
               defaultValue={selectedYacht?.manufacturer}
               needsConfirmation={needsConfirm("manufacturer")}
+              allowManage={allowCatalogManage}
               onSelect={(id, name) => {
                 setSelectedBrandId(Number(id));
                 setSelectedYacht((prev: any) => ({
@@ -270,12 +274,11 @@ export function WizardStep2({
               )}
             />
             <CatalogAutocomplete
-              endpoint="/api/autocomplete/models"
+              fieldKey="model"
               name="model"
               defaultValue={selectedYacht?.model}
-              dependsOn="brand_id"
-              dependsOnValue={selectedBrandId}
               needsConfirmation={needsConfirm("model")}
+              allowManage={allowCatalogManage}
               onSelect={(_id, name) => {
                 // When model changes, we update the state so the assistant picks it up
                 setSelectedYacht((prev: any) => ({
@@ -459,10 +462,11 @@ export function WizardStep2({
               )}
             />
             <CatalogAutocomplete
-              endpoint="/api/autocomplete/types"
+              fieldKey="boat_type"
               name="boat_type"
               defaultValue={selectedYacht?.boat_type}
               needsConfirmation={needsConfirm("boat_type")}
+              allowManage={allowCatalogManage}
             />
           </div>
           <div className="space-y-2 group">
@@ -473,10 +477,12 @@ export function WizardStep2({
                 labelText("boatCategory", "Boat Category"),
               )}
             />
-            <Input
+            <CatalogAutocomplete
+              fieldKey="boat_category"
               name="boat_category"
               defaultValue={selectedYacht?.boat_category}
               needsConfirmation={needsConfirm("boat_category")}
+              allowManage={allowCatalogManage}
             />
           </div>
           <div className="space-y-2 group">
@@ -741,6 +747,7 @@ export function WizardStep2({
                 unknownLabel={(commonText as any)("unknown", "Unknown")}
                 confirmLabel={(commonText as any)("confirm", "confirm")}
                 resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+                allowCatalogManage={allowCatalogManage}
                 resolveOptionLabel={(f, o) => {
                   const label = String(o.label || "").toLowerCase();
                   if (label === "yes" || label === "true") return commonText("yes", "Yes");
@@ -847,20 +854,24 @@ export function WizardStep2({
                   </div>
                   <div className="space-y-1 group">
                     <FieldLabel label={labelText("designer", "Designer")} />
-                    <Input
+                    <CatalogAutocomplete
+                      fieldKey="designer"
                       name="designer"
                       defaultValue={selectedYacht?.designer}
                       placeholder="e.g. Philippe Briand"
                       needsConfirmation={needsConfirm("designer")}
+                      allowManage={allowCatalogManage}
                     />
                   </div>
                   <div className="space-y-1 group">
                     <FieldLabel label={labelText("builder", "Builder")} />
-                    <Input
+                    <CatalogAutocomplete
+                      fieldKey="builder"
                       name="builder"
                       defaultValue={selectedYacht?.builder}
                       placeholder="e.g. Beneteau"
                       needsConfirmation={needsConfirm("builder")}
+                      allowManage={allowCatalogManage}
                     />
                   </div>
                   <div className="space-y-1 group">
@@ -958,6 +969,7 @@ export function WizardStep2({
                 unknownLabel={(commonText as any)("unknown", "Unknown")}
                 confirmLabel={(commonText as any)("confirm", "confirm")}
                 resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+                allowCatalogManage={allowCatalogManage}
                 resolveOptionLabel={(f, o) => {
               const label = String(o.label || "").toLowerCase();
               if (label === "yes" || label === "true") return commonText("yes", "Yes");
@@ -983,24 +995,28 @@ export function WizardStep2({
                         "Engine Manufacturer",
                       )}
                     />
-                    <Input
+                    <CatalogAutocomplete
+                      fieldKey="engine_manufacturer"
                       name="engine_manufacturer"
                       defaultValue={selectedYacht?.engine_manufacturer}
                       placeholder="e.g. CAT / MTU"
                       needsConfirmation={needsConfirm(
                         "engine_manufacturer",
                       )}
+                      allowManage={allowCatalogManage}
                     />
                   </div>
                   <div className="space-y-1 group">
                     <FieldLabel
                       label={labelText("engineModel", "Engine Model")}
                     />
-                    <Input
+                    <CatalogAutocomplete
+                      fieldKey="engine_model"
                       name="engine_model"
                       defaultValue={selectedYacht?.engine_model}
                       placeholder="e.g. C32 ACERT"
                       needsConfirmation={needsConfirm("engine_model")}
+                      allowManage={allowCatalogManage}
                     />
                   </div>
                   <div className="space-y-1 group">
@@ -1042,11 +1058,13 @@ export function WizardStep2({
                   </div>
                   <div className="space-y-1 group">
                     <FieldLabel label={labelText("fuelType", "Fuel Type")} />
-                    <Input
+                    <CatalogAutocomplete
+                      fieldKey="fuel"
                       name="fuel"
                       defaultValue={selectedYacht?.fuel}
                       placeholder="Diesel"
                       needsConfirmation={needsConfirm("fuel")}
+                      allowManage={allowCatalogManage}
                     />
                   </div>
                   <div className="space-y-1 group">
@@ -1178,6 +1196,7 @@ export function WizardStep2({
             unknownLabel={(commonText as any)("unknown", "Unknown")}
             confirmLabel={(commonText as any)("confirm", "confirm")}
             resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            allowCatalogManage={allowCatalogManage}
             resolveOptionLabel={(f, o) => {
               const label = String(o.label || "").toLowerCase();
               if (label === "yes" || label === "true") return commonText("yes", "Yes");
@@ -1730,6 +1749,7 @@ export function WizardStep2({
             unknownLabel={(commonText as any)("unknown", "Unknown")}
             confirmLabel={(commonText as any)("confirm", "confirm")}
             resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            allowCatalogManage={allowCatalogManage}
             resolveOptionLabel={(f, o) => {
               const label = String(o.label || "").toLowerCase();
               if (label === "yes" || label === "true") return commonText("yes", "Yes");
@@ -1913,6 +1933,7 @@ export function WizardStep2({
             unknownLabel={(commonText as any)("unknown", "Unknown")}
             confirmLabel={(commonText as any)("confirm", "confirm")}
             resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            allowCatalogManage={allowCatalogManage}
             resolveOptionLabel={(f, o) => {
               const label = String(o.label || "").toLowerCase();
               if (label === "yes" || label === "true") return commonText("yes", "Yes");
@@ -2062,6 +2083,7 @@ export function WizardStep2({
             unknownLabel={(commonText as any)("unknown", "Unknown")}
             confirmLabel={(commonText as any)("confirm", "confirm")}
             resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            allowCatalogManage={allowCatalogManage}
             resolveOptionLabel={(f, o) => {
               const label = String(o.label || "").toLowerCase();
               if (label === "yes" || label === "true") return commonText("yes", "Yes");
@@ -2258,6 +2280,7 @@ export function WizardStep2({
             unknownLabel={(commonText as any)("unknown", "Unknown")}
             confirmLabel={(commonText as any)("confirm", "confirm")}
             resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            allowCatalogManage={allowCatalogManage}
             resolveOptionLabel={(f, o) => {
               const label = String(o.label || "").toLowerCase();
               if (label === "yes" || label === "true") return commonText("yes", "Yes");
@@ -2462,6 +2485,7 @@ export function WizardStep2({
             unknownLabel={(commonText as any)("unknown", "Unknown")}
             confirmLabel={(commonText as any)("confirm", "confirm")}
             resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            allowCatalogManage={allowCatalogManage}
             resolveOptionLabel={(f, o) => {
               const label = String(o.label || "").toLowerCase();
               if (label === "yes" || label === "true") return commonText("yes", "Yes");
@@ -2674,6 +2698,7 @@ export function WizardStep2({
             unknownLabel={(commonText as any)("unknown", "Unknown")}
             confirmLabel={(commonText as any)("confirm", "confirm")}
             resolveFieldLabel={(f) => localizeFieldLabel(f.internal_key, f.label)}
+            allowCatalogManage={allowCatalogManage}
             resolveOptionLabel={(f, o) => {
               const label = String(o.label || "").toLowerCase();
               if (label === "yes" || label === "true") return commonText("yes", "Yes");

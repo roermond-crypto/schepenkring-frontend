@@ -16,6 +16,7 @@ import {
   type CorrectionLabel,
 } from "@/components/yachts/FieldCorrectionControls";
 import { BoatFieldSettingsLink } from "@/components/yachts/BoatFieldSettingsLink";
+import { CatalogAutocomplete } from "@/components/ui/CatalogAutocomplete";
 
 type ConfigurableBoatFieldBlockProps = {
   block: BoatFormConfigBlock;
@@ -43,6 +44,8 @@ type ConfigurableBoatFieldBlockProps = {
     field: BoatFormConfigField,
     option: BoatFormConfigFieldOption,
   ) => string | undefined;
+  /** Show inline archive/merge affordances on database-backed fields — admin/employee roles only. */
+  allowCatalogManage?: boolean;
 };
 
 const NUMERIC_FIELD_TYPES = new Set(["number", "integer", "decimal", "float"]);
@@ -390,6 +393,7 @@ function DynamicField({
   confirmLabel,
   resolveFieldLabel,
   resolveOptionLabel,
+  allowCatalogManage,
 }: {
   field: BoatFormConfigField;
   value: unknown;
@@ -408,6 +412,7 @@ function DynamicField({
     field: BoatFormConfigField,
     option: BoatFormConfigFieldOption,
   ) => string | undefined;
+  allowCatalogManage?: boolean;
 }) {
   const locale = useLocale();
   const numeric =
@@ -463,6 +468,15 @@ function DynamicField({
           placeholder={selectPlaceholder}
           confirmLabel={confirmLabel}
         />
+      ) : field.enable_autocomplete && field.value_source === "database" ? (
+        <CatalogAutocomplete
+          fieldKey={field.internal_key}
+          name={field.internal_key}
+          defaultValue={value as any}
+          needsConfirmation={needsConfirmation}
+          showAdminEditLink={false}
+          allowManage={allowCatalogManage}
+        />
       ) : (
         <TextInput
           name={field.internal_key}
@@ -505,6 +519,7 @@ export function ConfigurableBoatFieldBlock({
   confirmLabel,
   resolveFieldLabel,
   resolveOptionLabel,
+  allowCatalogManage,
 }: ConfigurableBoatFieldBlockProps) {
   const secondaryHasValue = useMemo(
     () =>
@@ -553,6 +568,7 @@ export function ConfigurableBoatFieldBlock({
               confirmLabel={confirmLabel}
               resolveFieldLabel={resolveFieldLabel}
               resolveOptionLabel={resolveOptionLabel}
+              allowCatalogManage={allowCatalogManage}
             />
           );
         })}
@@ -583,6 +599,7 @@ export function ConfigurableBoatFieldBlock({
               confirmLabel={confirmLabel}
               resolveFieldLabel={resolveFieldLabel}
               resolveOptionLabel={resolveOptionLabel}
+              allowCatalogManage={allowCatalogManage}
             />
           );
         })}

@@ -22,6 +22,13 @@ export interface BoatFormConfigField {
   storage_relation: string | null;
   storage_column: string;
   ai_relevance: boolean;
+  enable_autocomplete: boolean;
+  value_source: "freetext" | "fixed" | "database" | "ai";
+  allow_new_values: boolean;
+  allow_inline_archive: boolean;
+  fuzzy_matching: boolean;
+  is_required: boolean;
+  is_searchable: boolean;
 }
 
 export interface BoatFormConfigBlock {

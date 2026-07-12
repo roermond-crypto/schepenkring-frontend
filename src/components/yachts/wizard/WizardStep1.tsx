@@ -324,11 +324,12 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
               {labelText("boatType", "Boat Type")}
             </Label>
             <CatalogAutocomplete
-              endpoint="/api/autocomplete/types"
+              fieldKey="boat_type"
               name="boat_type"
               placeholder="e.g. Motor Yacht, Sailing Boat"
               defaultValue={step1Type}
               onSelect={(_, name) => setStep1Type(name)}
+              allowManage={role === "admin" || role === "employee"}
             />
           </div>
 
@@ -358,7 +359,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
               {labelText("brand", "Brand")}
             </Label>
             <CatalogAutocomplete
-              endpoint="/api/autocomplete/brands"
+              fieldKey="manufacturer"
               name="brand"
               placeholder="e.g. Beneteau"
               defaultValue={step1Brand}
@@ -366,6 +367,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                 setStep1Brand(name);
                 setSelectedBrandId(Number(id));
               }}
+              allowManage={role === "admin" || role === "employee"}
             />
           </div>
 
@@ -374,13 +376,12 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
               {labelText("model", "Model")}
             </Label>
             <CatalogAutocomplete
-              endpoint="/api/autocomplete/models"
+              fieldKey="model"
               name="model"
               placeholder="e.g. Oceanis 38"
               defaultValue={step1Model}
-              dependsOn="brand_id"
-              dependsOnValue={selectedBrandId}
               onSelect={(_, name) => setStep1Model(name)}
+              allowManage={role === "admin" || role === "employee"}
             />
           </div>
 
