@@ -29,6 +29,12 @@ import {
   FileSignature,
   RefreshCw,
   PhoneCall,
+  Bot,
+  Megaphone,
+  PhoneIncoming,
+  AlertCircle,
+  BookOpen,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -194,6 +200,36 @@ export function Sidebar({
         title: "Sales Command Center",
         href: `${root}/sales-command-center`,
         icon: PhoneCall,
+      });
+      items.push({
+        title: "Voice AI — Agents",
+        href: `${root}/voice-ai/agents`,
+        icon: Bot,
+      });
+      items.push({
+        title: "Voice AI — Campagnes",
+        href: `${root}/voice-ai/campaigns`,
+        icon: Megaphone,
+      });
+      items.push({
+        title: "Voice AI — Gesprekken",
+        href: `${root}/voice-ai/calls`,
+        icon: PhoneIncoming,
+      });
+      items.push({
+        title: "Voice AI — Wachtrij",
+        href: `${root}/voice-ai/human-queue`,
+        icon: AlertCircle,
+      });
+      items.push({
+        title: "Voice AI — Kennisbank",
+        href: `${root}/voice-ai/knowledge`,
+        icon: BookOpen,
+      });
+      items.push({
+        title: "Voice AI — Nummers",
+        href: `${root}/voice-ai/numbers`,
+        icon: Phone,
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
