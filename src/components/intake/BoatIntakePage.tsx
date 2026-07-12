@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { getMe } from "@/lib/api/account";
 import { PublicHeader } from "@/components/common/PublicHeader";
+import { PublicFooter } from "@/components/common/PublicFooter";
 import type { AppLocale } from "@/lib/i18n";
 
 // ── Types ────────────────────────────────────────────────────
@@ -1007,6 +1008,8 @@ export function BoatIntakePage({
           <Anchor className="w-3.5 h-3.5" /> {s(t, "footer")}
         </p>
       </div>
+
+      <PublicFooter locale={locale} />
     </div>
   );
 }

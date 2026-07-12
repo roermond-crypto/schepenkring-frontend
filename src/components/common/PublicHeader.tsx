@@ -1,10 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { LanguageSwitcher } from "@/components/common/language-switcher";
+import { api } from "@/lib/api";
 import type { AppLocale } from "@/lib/i18n";
 import schepenkringLogo from "../../../public/schepenkring-logo.png";
+
+type NavItem = {
+  id: number;
+  label: Partial<Record<AppLocale, string>>;
+  url: string;
+  open_in_new_tab: boolean;
+};
 
 interface PublicHeaderProps {
   locale: AppLocale;
@@ -35,11 +44,40 @@ export function PublicHeader({
   const register = labels.register ?? "Registreren";
   const bootAanmelden = labels.bootAanmelden ?? "Boot aanmelden";
 
-  const navLinks = [
-    { label: supply, href: "https://www.schepenkring.nl/aanbod-boten/" },
-    { label: locations, href: "https://www.schepenkring.nl/vestigingen/" },
-    { label: about, href: "https://www.schepenkring.nl/boot-verkopen/schip-verkopen/" },
-  ];
+  // Starts with the current hardcoded links so there's no flash of an
+  // empty nav — /dashboard/admin/content's Navigation Builder can override
+  // these, but a slow/failed fetch just means the visitor sees exactly
+  // what they'd have seen before this existed.
+  const [navLinks, setNavLinks] = useState([
+    { label: supply, href: "https://www.schepenkring.nl/aanbod-boten/", newTab: false },
+    { label: locations, href: "https://www.schepenkring.nl/vestigingen/", newTab: false },
+    { label: about, href: "https://www.schepenkring.nl/boot-verkopen/schip-verkopen/", newTab: false },
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<{ data: { header: NavItem[] } }>("/navigation")
+      .then((res) => {
+        if (cancelled) return;
+        const header = res.data?.data?.header;
+        if (Array.isArray(header) && header.length > 0) {
+          setNavLinks(
+            header.map((item) => ({
+              label: item.label[locale] || item.label.nl || item.label.en || "",
+              href: item.url,
+              newTab: item.open_in_new_tab,
+            })),
+          );
+        }
+      })
+      .catch(() => {
+        // Keep the hardcoded defaults already set above.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
 
   return (
     <nav className="bg-white border-b border-slate-200 shadow-sm shrink-0">
@@ -61,10 +99,12 @@ export function PublicHeader({
         <div className="hidden md:flex items-center gap-6">
           {/* Nav links */}
           <div className="flex items-center gap-6 text-sm font-medium">
-            {navLinks.map(({ label, href }) => (
+            {navLinks.map(({ label, href, newTab }) => (
               <a
                 key={href}
                 href={href}
+                target={newTab ? "_blank" : undefined}
+                rel={newTab ? "noopener noreferrer" : undefined}
                 className="text-slate-600 hover:text-[#003566] transition-colors"
               >
                 {label}
