@@ -20,6 +20,7 @@ export type MeUser = {
   client_location_id: number | null;
   has_location_assignment: boolean;
   can_access_board: boolean;
+  can_manage_content: boolean;
   location: {
     id: number;
     name: string;

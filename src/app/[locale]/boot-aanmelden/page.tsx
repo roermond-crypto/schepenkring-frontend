@@ -11,6 +11,7 @@ type LocaleValue = Partial<Record<"nl" | "en" | "de" | "fr", string>>;
 type LocaleListValue = Partial<Record<"nl" | "en" | "de" | "fr", string[]>>;
 
 type CmsSection = {
+  id: number;
   component: string;
   is_enabled: boolean;
   content: {
@@ -22,6 +23,7 @@ type CmsSection = {
 };
 
 type CmsPageData = {
+  id: number;
   status: string;
   seo?: { title?: LocaleValue; description?: LocaleValue } | null;
   sections: CmsSection[];
@@ -65,6 +67,7 @@ function extractHero(page: CmsPageData | null, locale: string): CmsHeroContent |
     title: localeValue(hero.content.title, locale),
     subtitle: localeValue(hero.content.subtitle, locale),
     trustItems: localeList(hero.content.trust_items, locale),
+    sectionId: hero.id,
   };
 }
 
@@ -92,5 +95,5 @@ export default async function BootAanmeldenPage({ params }: Props) {
   const page = await fetchCmsPage(locale);
   const cmsHero = extractHero(page, locale);
 
-  return <BoatIntakePage locale={locale} t={t} cmsHero={cmsHero} />;
+  return <BoatIntakePage locale={locale} t={t} cmsHero={cmsHero} cmsPageId={page?.id} />;
 }

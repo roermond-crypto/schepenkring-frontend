@@ -18,10 +18,16 @@ import {
   MessageCircle,
   LogIn,
   Mail,
+  Pencil,
+  Loader2,
+  Save,
 } from "lucide-react";
+import { toast, Toaster } from "react-hot-toast";
 import { getMe } from "@/lib/api/account";
+import { api } from "@/lib/api";
 import { PublicHeader } from "@/components/common/PublicHeader";
 import { PublicFooter } from "@/components/common/PublicFooter";
+import { Button } from "@/components/ui/button";
 import type { AppLocale } from "@/lib/i18n";
 
 // ── Types ────────────────────────────────────────────────────
@@ -85,6 +91,7 @@ export type CmsHeroContent = {
   title?: string;
   subtitle?: string;
   trustItems?: string[];
+  sectionId?: number;
 };
 
 function s(t: T, path: string, fallback = ""): string {
@@ -137,12 +144,18 @@ export function BoatIntakePage({
   locale,
   t,
   cmsHero,
+  cmsPageId,
 }: {
   locale: AppLocale;
   t: T;
   cmsHero?: CmsHeroContent;
+  cmsPageId?: number;
 }) {
   const [step, setStep] = useState(0);
+  const [canManageContent, setCanManageContent] = useState(false);
+  const [editModeOn, setEditModeOn] = useState(false);
+  const [heroEditorOpen, setHeroEditorOpen] = useState(false);
+  const [liveCmsHero, setLiveCmsHero] = useState<CmsHeroContent | undefined>(cmsHero);
   const [form, setForm] = useState<IntakeForm>(emptyForm);
   const [locations, setLocations] = useState<Location[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -264,6 +277,17 @@ export function BoatIntakePage({
       }));
     }).catch(() => { /* not logged in — ignore */ });
   }, []);
+
+  // Global Edit Mode is only offered to admins with the content-manager
+  // permission (App\Models\User::canManageContent()) — a regular visitor,
+  // or even a regular admin, never sees this toggle. Silently no-ops for
+  // everyone else rather than showing/hiding based on a client-side guess.
+  useEffect(() => {
+    if (!cmsPageId) return;
+    getMe()
+      .then(({ data: user }) => setCanManageContent(Boolean(user.can_manage_content)))
+      .catch(() => setCanManageContent(false));
+  }, [cmsPageId]);
 
   function setField(key: keyof IntakeForm, value: string | number) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -419,6 +443,34 @@ export function BoatIntakePage({
 
   return (
     <div className="min-h-screen bg-[#edf3f7]">
+      {canManageContent && <Toaster position="top-right" />}
+
+      {/* ── Global Edit Mode toggle — content managers only ── */}
+      {canManageContent && (
+        <button
+          type="button"
+          onClick={() => setEditModeOn((v) => !v)}
+          className={[
+            "fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold shadow-xl transition-colors",
+            editModeOn ? "bg-[#C8102E] text-white" : "bg-white text-[#003566] border border-slate-200",
+          ].join(" ")}
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          {editModeOn ? "Bewerkmodus aan" : "Bewerkmodus"}
+        </button>
+      )}
+
+      {heroEditorOpen && liveCmsHero?.sectionId && cmsPageId && (
+        <HeroEditorModal
+          cmsPageId={cmsPageId}
+          sectionId={liveCmsHero.sectionId}
+          onClose={() => setHeroEditorOpen(false)}
+          onSaved={(updated) => {
+            setLiveCmsHero((prev) => ({ ...prev, ...updated }));
+            setHeroEditorOpen(false);
+          }}
+        />
+      )}
 
       {/* ── Nav — white header with logo ── */}
       <PublicHeader
@@ -479,15 +531,24 @@ export function BoatIntakePage({
           alt=""
           className="absolute inset-0 w-full h-full object-cover opacity-25 select-none pointer-events-none"
         />
+        {editModeOn && liveCmsHero?.sectionId && (
+          <button
+            type="button"
+            onClick={() => setHeroEditorOpen(true)}
+            className="absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-full bg-white text-[#003566] text-xs font-bold px-3 py-1.5 shadow-lg hover:bg-slate-100"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Bewerken
+          </button>
+        )}
         <div className="relative z-10 max-w-3xl mx-auto px-5 text-center">
           <div className="inline-block mb-4 px-4 py-1.5 rounded-full bg-white/10 text-xs font-bold tracking-widest uppercase">
-            {cmsHero?.badge || s(t, "hero.badge", "Gratis aanmelden")}
+            {liveCmsHero?.badge || s(t, "hero.badge", "Gratis aanmelden")}
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight mb-4">
-            {cmsHero?.title || s(t, "hero.title", "Verkoop uw boot via Schepenkring")}
+            {liveCmsHero?.title || s(t, "hero.title", "Verkoop uw boot via Schepenkring")}
           </h1>
           <p className="text-base sm:text-lg text-white/80 max-w-xl mx-auto">
-            {cmsHero?.subtitle || s(t, "hero.subtitle")}
+            {liveCmsHero?.subtitle || s(t, "hero.subtitle")}
           </p>
           <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {[
@@ -499,7 +560,7 @@ export function BoatIntakePage({
               <div key={key} className="flex flex-col items-center gap-2 text-white/80">
                 <Icon className="w-5 h-5 text-[#C8102E]" />
                 <span className="text-xs font-medium">
-                  {cmsHero?.trustItems?.[index] || s(t, `hero.trust.${key}`)}
+                  {liveCmsHero?.trustItems?.[index] || s(t, `hero.trust.${key}`)}
                 </span>
               </div>
             ))}
@@ -1010,6 +1071,203 @@ export function BoatIntakePage({
       </div>
 
       <PublicFooter locale={locale} />
+    </div>
+  );
+}
+
+// ── Global Edit Mode: hero section editor ──────────────────────
+//
+// A deliberate scoping choice: this saves directly via the same
+// PUT /admin/cms/pages/{id}/sections the full admin editor uses — there's
+// no separate draft-content-vs-live-content split in this CMS (page
+// `status` gates whether a page is publicly visible at all; version
+// history — with rollback — is what makes editing safe, not a staging
+// copy). Since this page is already published, saving here updates the
+// live public page immediately, matching how "quick edit from the live
+// page" is meant to work. It does not run through publish()'s language-
+// quality gate, since that gate is specifically for full page-status
+// transitions, not every micro-edit.
+
+const EDITOR_LOCALES = ["nl", "en", "de", "fr"] as const;
+type EditorLocale = (typeof EDITOR_LOCALES)[number];
+type EditorLocaleValue = Partial<Record<EditorLocale, string>>;
+
+type AdminCmsSection = {
+  id: number;
+  component: string;
+  variant: string | null;
+  content: Record<string, unknown>;
+  sort_order: number;
+  is_enabled: boolean;
+};
+
+function emptyEditorLocaleValue(): EditorLocaleValue {
+  return { nl: "", en: "", de: "", fr: "" };
+}
+
+function HeroEditorModal({
+  cmsPageId,
+  sectionId,
+  onClose,
+  onSaved,
+}: {
+  cmsPageId: number;
+  sectionId: number;
+  onClose: () => void;
+  onSaved: (hero: CmsHeroContent) => void;
+}) {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [allSections, setAllSections] = useState<AdminCmsSection[]>([]);
+  const [badge, setBadge] = useState<EditorLocaleValue>(emptyEditorLocaleValue());
+  const [title, setTitle] = useState<EditorLocaleValue>(emptyEditorLocaleValue());
+  const [subtitle, setSubtitle] = useState<EditorLocaleValue>(emptyEditorLocaleValue());
+  const [trustItems, setTrustItems] = useState<Partial<Record<EditorLocale, string[]>>>({});
+
+  useEffect(() => {
+    let active = true;
+    api
+      .get<{ data: { sections: AdminCmsSection[] } }>(`/admin/cms/pages/${cmsPageId}`)
+      .then((res) => {
+        if (!active) return;
+        const sections = res.data.data.sections;
+        setAllSections(sections);
+        const hero = sections.find((s) => s.id === sectionId);
+        if (hero) {
+          setBadge({ ...emptyEditorLocaleValue(), ...(hero.content.badge as EditorLocaleValue) });
+          setTitle({ ...emptyEditorLocaleValue(), ...(hero.content.title as EditorLocaleValue) });
+          setSubtitle({ ...emptyEditorLocaleValue(), ...(hero.content.subtitle as EditorLocaleValue) });
+          setTrustItems((hero.content.trust_items as Partial<Record<EditorLocale, string[]>>) ?? {});
+        }
+      })
+      .catch(() => toast.error("Kon sectie niet laden"))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [cmsPageId, sectionId]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const nextSections = allSections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              content: { ...section.content, badge, title, subtitle, trust_items: trustItems },
+            }
+          : section,
+      );
+
+      await api.put(`/admin/cms/pages/${cmsPageId}/sections`, {
+        sections: nextSections,
+        change_note: "Edited via Global Edit Mode",
+      });
+
+      toast.success("Opgeslagen — direct live");
+      onSaved({
+        badge: badge.nl,
+        title: title.nl,
+        subtitle: subtitle.nl,
+        trustItems: trustItems.nl,
+        sectionId,
+      });
+    } catch {
+      toast.error("Opslaan mislukt");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[85vh] overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <p className="text-sm font-semibold text-slate-800">Hero bewerken</p>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <div className="p-5 space-y-5">
+            <LocaleFieldGroup label="Badge" value={badge} onChange={setBadge} />
+            <LocaleFieldGroup label="Titel" value={title} onChange={setTitle} />
+            <LocaleFieldGroup label="Subtitel" value={subtitle} onChange={setSubtitle} textarea />
+            {[0, 1, 2, 3].map((i) => (
+              <LocaleFieldGroup
+                key={i}
+                label={`Vertrouwenspunt ${i + 1}`}
+                value={Object.fromEntries(
+                  EDITOR_LOCALES.map((loc) => [loc, trustItems[loc]?.[i] ?? ""]),
+                ) as EditorLocaleValue}
+                onChange={(updated) =>
+                  setTrustItems((prev) => {
+                    const next = { ...prev };
+                    for (const loc of EDITOR_LOCALES) {
+                      const list = [...(next[loc] ?? ["", "", "", ""])];
+                      list[i] = updated[loc] ?? "";
+                      next[loc] = list;
+                    }
+                    return next;
+                  })
+                }
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center justify-end px-5 py-4 border-t border-slate-100">
+          <Button onClick={() => void save()} disabled={saving || loading} className="bg-[#003566] hover:bg-[#00284d]">
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Save className="h-3.5 w-3.5 mr-2" />}
+            Opslaan
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LocaleFieldGroup({
+  label,
+  value,
+  onChange,
+  textarea = false,
+}: {
+  label: string;
+  value: EditorLocaleValue;
+  onChange: (value: EditorLocaleValue) => void;
+  textarea?: boolean;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-semibold text-slate-500">{label}</p>
+      {EDITOR_LOCALES.map((loc) => (
+        <div key={loc} className="grid grid-cols-[3rem_1fr] gap-2 items-center">
+          <span className="text-[10px] font-bold uppercase text-slate-400">{loc}</span>
+          {textarea ? (
+            <textarea
+              rows={2}
+              value={value[loc] ?? ""}
+              onChange={(e) => onChange({ ...value, [loc]: e.target.value })}
+              className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+            />
+          ) : (
+            <input
+              value={value[loc] ?? ""}
+              onChange={(e) => onChange({ ...value, [loc]: e.target.value })}
+              className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+            />
+          )}
+        </div>
+      ))}
     </div>
   );
 }
