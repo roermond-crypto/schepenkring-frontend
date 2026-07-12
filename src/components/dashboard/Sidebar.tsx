@@ -9,6 +9,7 @@ import {
   ClipboardList,
   ChevronLeft,
   ChevronRight,
+  Images,
   Menu,
   MessageSquare,
   Ship,
@@ -246,6 +247,11 @@ export function Sidebar({
         title: "Navigatie",
         href: `${root}/navigation`,
         icon: Menu,
+      });
+      items.push({
+        title: "Media",
+        href: `${root}/media`,
+        icon: Images,
       });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
