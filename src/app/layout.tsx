@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ServiceWorkerRegister } from "@/components/common/ServiceWorkerRegister";
 import Script from "next/script";
+import { DEFAULT_LOCALE } from "@/lib/i18n";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,17 @@ export const metadata: Metadata = {
     "Internal control center for boats, clients, leads, and operations.",
 
   manifest: "/manifest.json",
+  // The app has its own NL/EN/DE/FR i18n system — Chrome's automatic
+  // "Translate this page?" prompt has no business running on top of it,
+  // and (per a real production incident) can mangle already-correct
+  // translated text when it misfires. See [locale]/layout.tsx for the
+  // other half of this fix (a stale hardcoded <html lang="en"> was the
+  // actual trigger — corrected there via a synchronous inline script
+  // rather than here via headers(), which would force every route in the
+  // app to render dynamically and lose static generation entirely).
+  other: {
+    google: "notranslate",
+  },
 };
 
 export const viewport: Viewport = {
@@ -39,7 +51,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    // DEFAULT_LOCALE ("nl") as a static fallback — [locale]/layout.tsx
+    // corrects this to the real locale client-side before paint.
+    <html lang={DEFAULT_LOCALE} translate="no" suppressHydrationWarning>
+      <head>
+        <meta name="google" content="notranslate" />
+      </head>
       <body
         className={`${geistSans.variable} ${inter.variable} ${playfair.variable} antialiased`}
         suppressHydrationWarning
