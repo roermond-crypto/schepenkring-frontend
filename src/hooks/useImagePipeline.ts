@@ -26,6 +26,7 @@ export interface PipelineImage {
     } | null;
     quality_label: string;
     category: string;
+    caption: string | null;
     original_name: string | null;
     sort_order: number;
     optimized_url: string;
@@ -57,6 +58,9 @@ interface UseImagePipelineReturn {
     deleteImages: (imageIds: number[]) => Promise<{ deleted: number; failed: number }>;
     toggleKeepOriginal: (imageId: number) => Promise<void>;
     reorderImages: (imageIds: number[]) => Promise<void>;
+    rotateImage: (imageId: number, direction: "cw" | "ccw") => Promise<void>;
+    setMainImage: (imageId: number) => Promise<void>;
+    updateImageCaption: (imageId: number, caption: string) => Promise<void>;
     autoClassifyImages: () => Promise<PipelineImage[]>;
     approveAll: () => Promise<{ step2_unlocked: boolean }>;
     refreshImages: () => Promise<void>;
@@ -238,6 +242,33 @@ export function useImagePipeline(
         [yachtId, refreshImages]
     );
 
+    const rotateImage = useCallback(
+        async (imageId: number, direction: "cw" | "ccw") => {
+            if (!yachtId) return;
+            await api.post(`/yachts/${yachtId}/images/${imageId}/rotate`, { direction });
+            await refreshImages();
+        },
+        [yachtId, refreshImages]
+    );
+
+    const setMainImage = useCallback(
+        async (imageId: number) => {
+            if (!yachtId) return;
+            await api.post(`/yachts/${yachtId}/images/${imageId}/set-main`);
+            await refreshImages();
+        },
+        [yachtId, refreshImages]
+    );
+
+    const updateImageCaption = useCallback(
+        async (imageId: number, caption: string) => {
+            if (!yachtId) return;
+            await api.post(`/yachts/${yachtId}/images/${imageId}/caption`, { caption });
+            await refreshImages();
+        },
+        [yachtId, refreshImages]
+    );
+
     const autoClassifyImages = useCallback(async () => {
         if (!yachtId) return [];
 
@@ -290,6 +321,9 @@ export function useImagePipeline(
         deleteImages,
         toggleKeepOriginal,
         reorderImages,
+        rotateImage,
+        setMainImage,
+        updateImageCaption,
         autoClassifyImages,
         approveAll,
         refreshImages,

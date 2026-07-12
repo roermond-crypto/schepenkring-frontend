@@ -8354,6 +8354,7 @@ function YachtEditorInner() {
           quality_flags: null,
           quality_label: labelText("processingStatusLabel", "Processing..."),
           category: "general",
+          caption: null,
           original_name: file.name,
           sort_order: pipeline.images.length + index,
           optimized_url: previewUrl,

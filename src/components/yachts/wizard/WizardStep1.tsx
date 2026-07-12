@@ -25,6 +25,8 @@ import {
   Clock,
   Box,
   Play,
+  RotateCw,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -267,6 +269,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
   shouldRefreshAiExtraction,
   toast,
 }) => {
+  const [isDraggingImages, setIsDraggingImages] = useState(false);
   const imagesApproved = displayApprovedCount > 0 && displayApprovedCount === displayTotalImageCount;
 
   const boatCategoryLabel = (value: string) => {
@@ -481,10 +484,29 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
         <label
           className={cn(
             "h-64 lg:h-80 bg-white border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition-all group",
-            hasInFlightImageUploads
+            isDraggingImages
+              ? "border-blue-500 bg-blue-50/70"
+              : hasInFlightImageUploads
               ? "border-blue-400 bg-blue-50/40 cursor-wait"
               : "border-slate-300 cursor-pointer hover:border-blue-500 hover:bg-blue-50/50"
           )}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!hasInFlightImageUploads) setIsDraggingImages(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            setIsDraggingImages(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDraggingImages(false);
+            if (hasInFlightImageUploads) return;
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+              handleImageUpload({ target: { files } } as React.ChangeEvent<HTMLInputElement>);
+            }
+          }}
         >
           {hasInFlightImageUploads ? (
             <Loader2 size={48} className="text-blue-400 mb-4 animate-spin" />
@@ -678,6 +700,28 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                               <div className={`absolute top-2 left-2 ${sc.bg} ${sc.text} text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-20`}>
                                 {sc.label}
                               </div>
+                              {index === 0 ? (
+                                <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1 rounded-md bg-amber-400 px-2 py-1 text-[9px] font-bold text-white shadow-md">
+                                  <Star size={10} fill="currentColor" /> {labelText("mainImage", "Main")}
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => void pipeline.setMainImage(img.id)}
+                                  title={labelText("setMainImage", "Set as main image")}
+                                  className="absolute bottom-2 left-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-slate-500 shadow-md backdrop-blur hover:text-amber-500"
+                                >
+                                  <Star size={12} />
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => void pipeline.rotateImage(img.id, "cw")}
+                                title={labelText("rotateImage", "Rotate")}
+                                className="absolute right-2 top-9 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-slate-500 shadow-md backdrop-blur hover:text-blue-600"
+                              >
+                                <RotateCw size={12} />
+                              </button>
                               <div {...dragProvided.dragHandleProps} className="absolute right-2 bottom-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur active:cursor-grabbing">
                                 <GripVertical size={14} />
                               </div>
@@ -705,6 +749,18 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
                                   <div className={cn("w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform", img.keep_original ? "translate-x-4" : "translate-x-0.5")} />
                                 </button>
                               </div>
+                              <input
+                                type="text"
+                                defaultValue={img.caption ?? ""}
+                                placeholder={labelText("imageCaptionPlaceholder", "Add a caption...")}
+                                onBlur={(e) => {
+                                  const value = e.target.value.trim();
+                                  if (value !== (img.caption ?? "")) {
+                                    void pipeline.updateImageCaption(img.id, value);
+                                  }
+                                }}
+                                className="w-full rounded-md border border-slate-200 px-2 py-1 text-[10px] text-slate-700 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none"
+                              />
                               <div className="flex gap-2 mt-2">
                                 {img.status === "ready_for_review" && (
                                   <button onClick={() => pipeline.approveImage(img.id)} className="flex-1 bg-emerald-500 text-white text-[10px] font-bold py-1.5 rounded-md flex items-center justify-center gap-1"><Check size={12} /> {labelText("approveImage", "Approve")}</button>
