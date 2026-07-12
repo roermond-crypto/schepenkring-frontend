@@ -28,6 +28,7 @@ import {
   Radio,
   FileSignature,
   RefreshCw,
+  PhoneCall,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
@@ -189,12 +190,22 @@ export function Sidebar({
         href: `${root}/yachtshift`,
         icon: RefreshCw,
       });
+      items.push({
+        title: "Sales Command Center",
+        href: `${root}/sales-command-center`,
+        icon: PhoneCall,
+      });
     } else if (role === "employee") {
       items.push({ title: t.clients, href: `${root}/users`, icon: Users });
       items.push({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,
+      });
+      items.push({
+        title: "Sales Command Center",
+        href: `${root}/sales-command-center`,
+        icon: PhoneCall,
       });
     } else if (role === "client" || role === "buyer" || role === "seller") {
       if (role === "seller") {
