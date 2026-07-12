@@ -73,6 +73,19 @@ interface SubmitResponse {
 // T is the BoatIntake section of the locale dictionary
 type T = Record<string, unknown>;
 
+// CMS-driven hero content (from GET /cms/pages/boot-aanmelden) — takes
+// priority over the static dictionary when present, since it's what an
+// admin actually edited in /dashboard/admin/content. Any field left out
+// (CMS unavailable, page unpublished, or that field just not filled in)
+// falls through to the dictionary/hardcoded defaults below, so this page
+// can never render blank because of a CMS hiccup.
+export type CmsHeroContent = {
+  badge?: string;
+  title?: string;
+  subtitle?: string;
+  trustItems?: string[];
+};
+
 function s(t: T, path: string, fallback = ""): string {
   const parts = path.split(".");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -119,7 +132,15 @@ const emptyForm: IntakeForm = {
 
 // ── Main component ───────────────────────────────────────────
 
-export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
+export function BoatIntakePage({
+  locale,
+  t,
+  cmsHero,
+}: {
+  locale: AppLocale;
+  t: T;
+  cmsHero?: CmsHeroContent;
+}) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<IntakeForm>(emptyForm);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -459,13 +480,13 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
         />
         <div className="relative z-10 max-w-3xl mx-auto px-5 text-center">
           <div className="inline-block mb-4 px-4 py-1.5 rounded-full bg-white/10 text-xs font-bold tracking-widest uppercase">
-            {s(t, "hero.badge", "Gratis aanmelden")}
+            {cmsHero?.badge || s(t, "hero.badge", "Gratis aanmelden")}
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight mb-4">
-            {s(t, "hero.title", "Verkoop uw boot via Schepenkring")}
+            {cmsHero?.title || s(t, "hero.title", "Verkoop uw boot via Schepenkring")}
           </h1>
           <p className="text-base sm:text-lg text-white/80 max-w-xl mx-auto">
-            {s(t, "hero.subtitle")}
+            {cmsHero?.subtitle || s(t, "hero.subtitle")}
           </p>
           <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {[
@@ -473,10 +494,12 @@ export function BoatIntakePage({ locale, t }: { locale: AppLocale; t: T }) {
               { icon: TrendingUp, key: "valuation" },
               { icon: Award, key: "experience" },
               { icon: Phone, key: "personal" },
-            ].map(({ icon: Icon, key }) => (
+            ].map(({ icon: Icon, key }, index) => (
               <div key={key} className="flex flex-col items-center gap-2 text-white/80">
                 <Icon className="w-5 h-5 text-[#C8102E]" />
-                <span className="text-xs font-medium">{s(t, `hero.trust.${key}`)}</span>
+                <span className="text-xs font-medium">
+                  {cmsHero?.trustItems?.[index] || s(t, `hero.trust.${key}`)}
+                </span>
               </div>
             ))}
           </div>
