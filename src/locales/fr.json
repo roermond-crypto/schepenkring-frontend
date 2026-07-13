@@ -3021,6 +3021,7 @@
       "contractCard": "Carte contrat"
     },
     "canvas": {
+      "clickToEditHint": "Cliquer pour modifier",
       "logoPlaceholder": "LOGO (emplacement)",
       "headerPlaceholder": "En-tête...",
       "textPlaceholder": "Texte...",
@@ -3129,7 +3130,8 @@
       "copied": "{tag} copié"
     },
     "warnings": {
-      "unsupportedTags": "Ce modèle utilise des variables inconnues qui ne sont pas prises en charge et ne seront pas remplacées : {tags}"
+      "unsupportedTags": "Ce modèle utilise des variables inconnues qui ne sont pas prises en charge et ne seront pas remplacées : {tags}",
+      "missingRequiredTags": "Ce modèle omet des variables qui appartiennent normalement à cet événement : {tags}"
     },
     "categories": {
       "User": "Utilisateur",

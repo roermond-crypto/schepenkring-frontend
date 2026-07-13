@@ -3023,6 +3023,7 @@
       "contractCard": "Contract kaart"
     },
     "canvas": {
+      "clickToEditHint": "Klik om te bewerken",
       "logoPlaceholder": "LOGO (locatie)",
       "headerPlaceholder": "Koptekst...",
       "textPlaceholder": "Tekst...",
@@ -3131,7 +3132,8 @@
       "copied": "{tag} gekopieerd"
     },
     "warnings": {
-      "unsupportedTags": "Dit sjabloon gebruikt onbekende variabelen die niet worden ondersteund en dus niet worden vervangen: {tags}"
+      "unsupportedTags": "Dit sjabloon gebruikt onbekende variabelen die niet worden ondersteund en dus niet worden vervangen: {tags}",
+      "missingRequiredTags": "Dit sjabloon mist variabelen die normaal bij deze gebeurtenis horen: {tags}"
     },
     "categories": {
       "User": "Gebruiker",

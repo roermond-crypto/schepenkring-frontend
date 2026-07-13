@@ -80,8 +80,6 @@ export default function EmailTemplatesPage() {
   // Per-row action state
   const [duplicating, setDuplicating] = useState<number | null>(null);
   const [archiving, setArchiving] = useState<number | null>(null);
-  const [previewing, setPreviewing] = useState<number | null>(null);
-  const [testSending, setTestSending] = useState<number | null>(null);
 
   const root = `/${locale}/dashboard/${role}`;
 
@@ -133,41 +131,6 @@ export default function EmailTemplatesPage() {
       toast.error(t("archiveFailed"));
     } finally {
       setArchiving(null);
-    }
-  };
-
-  const handlePreview = async (template: EmailTemplate) => {
-    setPreviewing(template.id);
-    try {
-      const res = await api.post<{ html: string }>(`/admin/email-templates/${template.id}/preview`, {
-        lang: template.language_default ?? "nl",
-      });
-      const w = window.open("", "_blank", "width=700,height=600,scrollbars=yes");
-      if (w) {
-        w.document.write(res.data.html);
-        w.document.close();
-      }
-    } catch {
-      toast.error(t("previewFailed"));
-    } finally {
-      setPreviewing(null);
-    }
-  };
-
-  const handleTestSend = async (template: EmailTemplate) => {
-    const email = prompt(t("testSendPrompt"));
-    if (!email || !email.includes("@")) return;
-    setTestSending(template.id);
-    try {
-      await api.post(`/admin/email-templates/${template.id}/test-send`, {
-        email,
-        lang: template.language_default ?? "nl",
-      });
-      toast.success(t("testSendSuccess", { email }));
-    } catch {
-      toast.error(t("testSendFailed"));
-    } finally {
-      setTestSending(null);
     }
   };
 
@@ -459,17 +422,15 @@ export default function EmailTemplatesPage() {
                           </ActionBtn>
                           <ActionBtn
                             title={t("previewAction")}
-                            loading={previewing === template.id}
-                            onClick={() => void handlePreview(template)}
+                            onClick={() => router.push(`${root}/email-templates/${template.id}`)}
                           >
-                            {previewing === template.id ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />}
+                            <Eye size={13} />
                           </ActionBtn>
                           <ActionBtn
                             title={t("testSendAction")}
-                            loading={testSending === template.id}
-                            onClick={() => void handleTestSend(template)}
+                            onClick={() => router.push(`${root}/email-templates/${template.id}`)}
                           >
-                            {testSending === template.id ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                            <Send size={13} />
                           </ActionBtn>
                           <ActionBtn
                             title={t("duplicateTitle")}

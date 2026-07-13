@@ -3023,6 +3023,7 @@
       "contractCard": "Contract card"
     },
     "canvas": {
+      "clickToEditHint": "Click to edit",
       "logoPlaceholder": "LOGO (location)",
       "headerPlaceholder": "Header...",
       "textPlaceholder": "Text...",
@@ -3131,7 +3132,8 @@
       "copied": "{tag} copied"
     },
     "warnings": {
-      "unsupportedTags": "This template uses unknown variables that are not supported and will not be replaced: {tags}"
+      "unsupportedTags": "This template uses unknown variables that are not supported and will not be replaced: {tags}",
+      "missingRequiredTags": "This template is missing variables that normally belong to this event: {tags}"
     },
     "categories": {
       "User": "User",

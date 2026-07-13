@@ -27,7 +27,6 @@ import {
   Globe2,
   MapPin,
   Loader2,
-  X,
   Image as ImageIcon,
   Type,
   AlignLeft,
@@ -109,6 +108,7 @@ interface TemplateVersion {
 interface TemplateType {
   value: string;
   label: string;
+  required_tags?: string[];
 }
 
 interface TagInfo {
@@ -231,21 +231,146 @@ function localStr(val: unknown, lang: Lang, fallback = ""): string {
 }
 
 // ─── Block canvas item ────────────────────────────────────────────────────────
+//
+// Renders each block the way it will actually look in the sent email (not an
+// abstract settings-summary card), so the center canvas genuinely reads as
+// "the email itself" per the redesign. Clicking a block expands its edit
+// fields directly beneath it, in place — that's what makes text/logo/button/
+// image editing feel direct rather than routed through a separate far-away
+// panel, without the fragility of true contentEditable inside rendered HTML.
+
+function EmailBlockPreview({ block, lang }: { block: Block; lang: Lang }) {
+  const t = useTranslations("EmailTemplateEditor");
+  const s = block.settings;
+
+  switch (block.type) {
+    case "logo": {
+      const src = s.source === "custom_url" && s.custom_url ? String(s.custom_url) : null;
+      return (
+        <div className="flex justify-center py-2">
+          {src ? (
+            <img src={src} alt="Logo" className="h-14 max-w-[200px] object-contain" />
+          ) : (
+            <div className="flex h-14 w-40 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 text-xs text-slate-400 dark:border-slate-700">
+              {t("canvas.logoPlaceholder")}
+            </div>
+          )}
+        </div>
+      );
+    }
+    case "header":
+      return (
+        <p className="text-2xl font-bold leading-snug text-slate-800 dark:text-slate-100">
+          {localStr(s.content, lang) || <span className="text-slate-300 dark:text-slate-600">{t("canvas.headerPlaceholder")}</span>}
+        </p>
+      );
+    case "text":
+      return (
+        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-slate-600 dark:text-slate-300">
+          {localStr(s.content, lang) || <span className="text-slate-300 dark:text-slate-600">{t("canvas.textPlaceholder")}</span>}
+        </p>
+      );
+    case "rich_text":
+      return (
+        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400">
+          {localStr(s.html, lang) || t("canvas.richTextLabel")}
+        </div>
+      );
+    case "button":
+      return (
+        <div className="flex justify-center py-1">
+          <div
+            className="rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-sm"
+            style={{ backgroundColor: String(s.color ?? "#C8102E") }}
+          >
+            {localStr(s.label, lang, t("canvas.buttonFallback"))}
+          </div>
+        </div>
+      );
+    case "image":
+      return s.src ? (
+        <img src={String(s.src)} alt={String(s.alt || "")} className="max-h-64 w-full rounded-lg object-contain" />
+      ) : (
+        <div className="flex h-24 w-full items-center justify-center rounded-lg border-2 border-dashed border-slate-200 text-xs text-slate-400 dark:border-slate-700">
+          {t("canvas.imagePlaceholder")}
+        </div>
+      );
+    case "divider":
+      return <hr style={{ borderColor: String(s.color ?? "#eeeeee") }} />;
+    case "spacer":
+      return (
+        <div className="flex items-center justify-center text-[10px] text-slate-300 dark:text-slate-600" style={{ height: Number(s.height ?? 24) }}>
+          {Number(s.height ?? 24)}{t("canvas.spacerSuffix")}
+        </div>
+      );
+    case "footer":
+      return (
+        <p className="whitespace-pre-wrap text-center text-xs leading-relaxed text-slate-400 dark:text-slate-500">
+          {localStr(s.content, lang) || t("canvas.footerPlaceholder")}
+        </p>
+      );
+    case "signature":
+      return (
+        <div className="text-sm text-slate-600 dark:text-slate-300">
+          <p className="font-semibold">{String(s.name ?? "") || t("canvas.signatureName")}</p>
+          {!!s.title && <p className="text-slate-500 dark:text-slate-400">{String(s.title)}</p>}
+          {!!s.phone && <p className="text-slate-500 dark:text-slate-400">{String(s.phone)}</p>}
+        </div>
+      );
+    case "social_links":
+      return <p className="text-center text-xs text-slate-400">{t("canvas.socialLinksLabel")}</p>;
+    case "boat_card":
+      return <SmartCardPlaceholder icon={<Ship size={16} />} label={t("canvas.boatCardLabel")} tone="blue" />;
+    case "offer_card":
+      return <SmartCardPlaceholder icon={<Tag size={16} />} label={t("canvas.offerCardLabel")} tone="green" />;
+    case "seller_card":
+      return <SmartCardPlaceholder icon={<Phone size={16} />} label={t("canvas.sellerCardLabel")} tone="purple" />;
+    case "buyer_card":
+      return <SmartCardPlaceholder icon={<Phone size={16} />} label={t("canvas.buyerCardLabel")} tone="orange" />;
+    case "location_card":
+      return <SmartCardPlaceholder icon={<Building2 size={16} />} label={t("canvas.locationCardLabel")} tone="slate" />;
+    case "contract_card":
+      return <SmartCardPlaceholder icon={<CreditCard size={16} />} label={t("canvas.contractCardLabel")} tone="red" />;
+    default:
+      return null;
+  }
+}
+
+function SmartCardPlaceholder({ icon, label, tone }: { icon: React.ReactNode; label: string; tone: "blue" | "green" | "purple" | "orange" | "slate" | "red" }) {
+  const tones: Record<typeof tone, string> = {
+    blue: "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200",
+    green: "border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950/30 dark:text-green-200",
+    purple: "border-purple-200 bg-purple-50 text-purple-800 dark:border-purple-900 dark:bg-purple-950/30 dark:text-purple-200",
+    orange: "border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-200",
+    slate: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/30 dark:text-slate-200",
+    red: "border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200",
+  };
+  return (
+    <div className={cn("flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium", tones[tone])}>
+      {icon}
+      {label}
+    </div>
+  );
+}
 
 function BlockCanvasItem({
   block,
   index,
   isSelected,
   lang,
+  tags,
   onSelect,
   onRemove,
+  onChange,
 }: {
   block: Block;
   index: number;
   isSelected: boolean;
   lang: Lang;
+  tags: TagInfo[];
   onSelect: () => void;
   onRemove: () => void;
+  onChange: (settings: Record<string, unknown>) => void;
 }) {
   const t = useTranslations("EmailTemplateEditor");
   const def = getBlockDef(block.type);
@@ -260,40 +385,6 @@ function BlockCanvasItem({
     location_card: t("blocks.locationCard"), contract_card: t("blocks.contractCard"),
   };
 
-  const previewContent = () => {
-    const s = block.settings;
-    switch (block.type) {
-      case "logo": {
-        const src = s.source === "custom_url" && s.custom_url ? String(s.custom_url) : null;
-        return src
-          ? <img src={src} alt="Logo" className="h-10 max-w-[120px] object-contain rounded" />
-          : <div className="h-8 w-20 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">{t("canvas.logoPlaceholder")}</div>;
-      }
-      case "header": return <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{localStr(s.content, lang, t("canvas.headerPlaceholder"))}</p>;
-      case "text": return <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">{localStr(s.content, lang, t("canvas.textPlaceholder"))}</p>;
-      case "rich_text": return <p className="text-xs text-slate-500 dark:text-slate-400 italic">{t("canvas.richTextLabel")}</p>;
-      case "button": return (
-        <div className="inline-block rounded-lg px-4 py-2 text-xs font-semibold text-white" style={{ backgroundColor: String(s.color ?? "#C8102E") }}>
-          {localStr(s.label, lang, t("canvas.buttonFallback"))}
-        </div>
-      );
-      case "image": return s.src
-        ? <img src={String(s.src)} alt={String(s.alt || "")} className="max-h-24 w-full object-contain rounded" />
-        : <div className="h-12 w-full rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-400">{t("canvas.imagePlaceholder")}</div>;
-      case "divider": return <hr className="border-slate-200 dark:border-slate-700" />;
-      case "spacer": return <div className="h-3 text-[9px] text-slate-400 text-center">{Number(s.height ?? 24)}{t("canvas.spacerSuffix")}</div>;
-      case "footer": return <p className="text-[10px] text-slate-400 text-center line-clamp-2">{localStr(s.content, lang, t("canvas.footerPlaceholder"))}</p>;
-      case "signature": return <p className="text-xs text-slate-600 dark:text-slate-300">{String(s.name ?? t("canvas.signatureName"))} · {String(s.phone ?? "")}</p>;
-      case "social_links": return <p className="text-xs text-slate-500 dark:text-slate-400">{t("canvas.socialLinksLabel")}</p>;
-      case "boat_card": return <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30 px-3 py-2 text-xs text-blue-800 dark:text-blue-200"><Ship size={10} className="inline mr-1" />{t("canvas.boatCardLabel")}</div>;
-      case "offer_card": return <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 px-3 py-2 text-xs text-green-800 dark:text-green-200"><Tag size={10} className="inline mr-1" />{t("canvas.offerCardLabel")}</div>;
-      case "seller_card": return <div className="rounded-lg border border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-950/30 px-3 py-2 text-xs text-purple-800 dark:text-purple-200"><Phone size={10} className="inline mr-1" />{t("canvas.sellerCardLabel")}</div>;
-      case "buyer_card": return <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30 px-3 py-2 text-xs text-orange-800 dark:text-orange-200"><Phone size={10} className="inline mr-1" />{t("canvas.buyerCardLabel")}</div>;
-      case "location_card": return <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/30 px-3 py-2 text-xs text-slate-700 dark:text-slate-200"><Building2 size={10} className="inline mr-1" />{t("canvas.locationCardLabel")}</div>;
-      case "contract_card": return <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30 px-3 py-2 text-xs text-red-800 dark:text-red-200"><CreditCard size={10} className="inline mr-1" />{t("canvas.contractCardLabel")}</div>;
-    }
-  };
-
   return (
     <Draggable draggableId={block.id} index={index}>
       {(provided, snapshot) => (
@@ -301,34 +392,45 @@ function BlockCanvasItem({
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={cn(
-            "group flex items-start gap-2 rounded-xl border bg-white p-3 transition dark:bg-slate-900",
+            "group rounded-xl border bg-white transition dark:bg-slate-900",
             isSelected
               ? "border-[#003566] shadow-sm dark:border-blue-500"
-              : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600",
+              : "border-transparent hover:border-slate-200 dark:hover:border-slate-700",
             snapshot.isDragging && "shadow-lg ring-2 ring-[#003566]/20",
           )}
-          onClick={onSelect}
         >
           <div
-            {...provided.dragHandleProps}
-            className="mt-0.5 cursor-grab text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 active:cursor-grabbing"
-            onClick={(e) => e.stopPropagation()}
+            className="flex cursor-pointer items-start gap-2 px-4 py-3"
+            onClick={onSelect}
+            title={t("canvas.clickToEditHint")}
           >
-            <GripVertical size={16} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="text-slate-400 dark:text-slate-500">{def.icon}</span>
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">{BLOCK_LABELS[block.type] ?? def.label}</span>
+            <div
+              {...provided.dragHandleProps}
+              className="mt-1 cursor-grab text-slate-200 opacity-0 transition-opacity group-hover:opacity-100 dark:text-slate-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical size={15} />
             </div>
-            <div>{previewContent()}</div>
+            <div className="min-w-0 flex-1">
+              <EmailBlockPreview block={block} lang={lang} />
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              className="mt-1 rounded-lg p-1 text-slate-200 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:text-slate-700 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+            >
+              <Trash2 size={13} />
+            </button>
           </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="mt-0.5 rounded-lg p-1 text-slate-300 hover:bg-red-50 hover:text-red-500 dark:text-slate-700 dark:hover:bg-red-950/30 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <Trash2 size={13} />
-          </button>
+
+          {isSelected && (
+            <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-4 dark:border-slate-800 dark:bg-slate-800/30">
+              <div className="mb-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                <span className="text-slate-400 dark:text-slate-500">{def.icon}</span>
+                {BLOCK_LABELS[block.type] ?? def.label}
+              </div>
+              <BlockSettingsFields block={block} lang={lang} onChange={onChange} tags={tags} />
+            </div>
+          )}
         </div>
       )}
     </Draggable>
@@ -479,32 +581,19 @@ function ImageBlockSettings({
 
 // ─── Block settings panel ─────────────────────────────────────────────────────
 
-function BlockSettings({
+function BlockSettingsFields({
   block,
   lang,
   onChange,
-  onClose,
   tags,
 }: {
   block: Block;
   lang: Lang;
   onChange: (settings: Record<string, unknown>) => void;
-  onClose: () => void;
   tags: TagInfo[];
 }) {
   const t = useTranslations("EmailTemplateEditor");
   const s = block.settings;
-  const def = getBlockDef(block.type);
-
-  const BLOCK_LABELS: Record<BlockType, string> = {
-    logo: t("blocks.logo"), header: t("blocks.header"), text: t("blocks.text"),
-    rich_text: t("blocks.richText"), button: t("blocks.button"), image: t("blocks.image"),
-    divider: t("blocks.divider"), spacer: t("blocks.spacer"), footer: t("blocks.footer"),
-    signature: t("blocks.signature"), social_links: t("blocks.socials"),
-    boat_card: t("blocks.boatCard"), offer_card: t("blocks.offerCard"),
-    seller_card: t("blocks.sellerCard"), buyer_card: t("blocks.buyerCard"),
-    location_card: t("blocks.locationCard"), contract_card: t("blocks.contractCard"),
-  };
 
   const setField = (key: string, value: unknown) => onChange({ ...s, [key]: value });
   const setLocalizedField = (key: string, value: string) => {
@@ -681,27 +770,16 @@ function BlockSettings({
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <span className="text-slate-500">{def.icon}</span>
-          <span className="font-semibold text-sm text-slate-900 dark:text-white">{BLOCK_LABELS[block.type] ?? def.label} {t("blockSettings.panelSuffix")}</span>
-        </div>
-        <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
-          <X size={15} />
-        </button>
-      </div>
-      <div className="flex-1 overflow-y-auto p-5 space-y-5">
-        {renderFields()}
-        <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">{t("blockSettings.availableTags")}</p>
-          <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
-            {tags.map((t) => (
-              <span key={t.key} title={t.description} className="rounded px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 cursor-default">
-                {`{{${t.key}}}`}
-              </span>
-            ))}
-          </div>
+    <div className="space-y-5" onClick={(e) => e.stopPropagation()}>
+      {renderFields()}
+      <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
+        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">{t("blockSettings.availableTags")}</p>
+        <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
+          {tags.map((t) => (
+            <span key={t.key} title={t.description} className="rounded px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 cursor-default">
+              {`{{${t.key}}}`}
+            </span>
+          ))}
         </div>
       </div>
     </div>
@@ -1050,8 +1128,10 @@ export default function EmailTemplateEditorPage() {
   const [isGlobal, setIsGlobal] = useState(false);
 
   const [activeLang, setActiveLang] = useState<Lang>("nl");
+  // Selecting a block expands its edit fields inline, directly below it in
+  // the canvas — there's no separate "settings" right-panel mode anymore.
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [rightPanel, setRightPanel] = useState<"settings" | "preview" | "versions" | "meta" | "tags">("preview");
+  const [rightPanel, setRightPanel] = useState<"preview" | "versions" | "meta" | "tags">("preview");
 
   const [types, setTypes] = useState<TemplateType[]>([]);
   const [tags, setTags] = useState<TagInfo[]>([]);
@@ -1062,8 +1142,6 @@ export default function EmailTemplateEditorPage() {
   const [showChangeNoteModal, setShowChangeNoteModal] = useState(false);
   const [savingWithNote, setSavingWithNote] = useState(false);
   const [blockFilter, setBlockFilter] = useState<"standard" | "smart" | "all">("all");
-
-  const selectedBlock = blocks.find((b) => b.id === selectedBlockId) ?? null;
 
   // Mirrors the backend's EmailTemplateRendererService::extractUsedTags() —
   // any {{tag}} referenced in this template's blocks/subject that isn't in
@@ -1078,6 +1156,18 @@ export default function EmailTemplateEditorPage() {
     const used = new Set(found.map((m) => m.replace(/[{}\s]/g, "")));
     return Array.from(used).filter((key) => !known.has(key));
   }, [blocks, subject, tags]);
+
+  // The inverse check: tags the send-time code for *this* event type always
+  // populates (EmailTemplateRendererService::REQUIRED_TAGS_PER_TYPE) that
+  // this template never references — e.g. an offer-received email that
+  // never mentions {{offer_amount}}. A tag being globally "known" (checked
+  // above) doesn't mean it's actually relevant to the selected event.
+  const missingRequiredTags = useMemo(() => {
+    const required = types.find((tp) => tp.value === templateType)?.required_tags ?? [];
+    if (required.length === 0) return [];
+    const haystack = JSON.stringify({ blocks, subject });
+    return required.filter((key) => !haystack.includes(`{{${key}}}`));
+  }, [blocks, subject, templateType, types]);
 
   useEffect(() => {
     if (!templateId) return;
@@ -1142,7 +1232,6 @@ export default function EmailTemplateEditorPage() {
     };
     setBlocks((prev) => [...prev, newBlock]);
     setSelectedBlockId(newBlock.id);
-    setRightPanel("settings");
     markDirty();
   };
 
@@ -1304,6 +1393,13 @@ export default function EmailTemplateEditorPage() {
         </div>
       )}
 
+      {missingRequiredTags.length > 0 && (
+        <div className="flex items-center gap-2 border-b border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-800 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-300 flex-shrink-0">
+          <AlertTriangle size={14} className="flex-shrink-0" />
+          {t("warnings.missingRequiredTags", { tags: missingRequiredTags.map((tag) => `{{${tag}}}`).join(", ") })}
+        </div>
+      )}
+
       {/* Three-column layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Block palette */}
@@ -1399,7 +1495,7 @@ export default function EmailTemplateEditorPage() {
           </div>
 
           {/* Subject + preheader */}
-          <div className="mb-4 rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 space-y-3">
+          <div className="mx-auto mb-4 max-w-[640px] rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 space-y-3">
             <div>
               <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 {t("canvas.subjectLabel", { lang: LANG_LABELS[activeLang] })}
@@ -1425,14 +1521,16 @@ export default function EmailTemplateEditorPage() {
             </div>
           </div>
 
-          {/* Blocks */}
+          {/* Blocks — styled as the actual email body (white "paper", centered,
+              email-width) so this genuinely reads as the email itself rather
+              than a list of setting cards. */}
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="canvas">
               {(provided) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="space-y-2"
+                  className="mx-auto max-w-[640px] space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-6"
                 >
                   {blocks.length === 0 && (
                     <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 py-12 text-center">
@@ -1447,11 +1545,10 @@ export default function EmailTemplateEditorPage() {
                       index={i}
                       isSelected={selectedBlockId === block.id}
                       lang={activeLang}
-                      onSelect={() => {
-                        setSelectedBlockId(block.id);
-                        setRightPanel("settings");
-                      }}
+                      tags={tags}
+                      onSelect={() => setSelectedBlockId((prev) => (prev === block.id ? null : block.id))}
                       onRemove={() => handleRemoveBlock(block.id)}
+                      onChange={(settings) => handleBlockSettingsChange(block.id, settings)}
                     />
                   ))}
                   {provided.placeholder}
@@ -1467,16 +1564,7 @@ export default function EmailTemplateEditorPage() {
 
         {/* Right panel */}
         <div className="w-80 flex-shrink-0 flex flex-col border-l border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-          {rightPanel === "settings" && selectedBlock ? (
-            <BlockSettings
-              key={selectedBlock.id}
-              block={selectedBlock}
-              lang={activeLang}
-              onChange={(settings) => handleBlockSettingsChange(selectedBlock.id, settings)}
-              onClose={() => { setSelectedBlockId(null); setRightPanel("preview"); }}
-              tags={tags}
-            />
-          ) : rightPanel === "preview" ? (
+          {rightPanel === "preview" ? (
             <PreviewPane
               templateId={templateId}
               lang={activeLang}
