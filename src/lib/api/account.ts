@@ -275,6 +275,38 @@ export async function updateMePassword(payload: {
   return data;
 }
 
+export type MyAuditLogEntry = {
+  id: number;
+  action: string;
+  result: string | null;
+  created_at: string;
+  method: string | null;
+  endpoint: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  entity_type: string | null;
+  entity_id: number | string | null;
+  actor: { id: number; name: string; type: string | null } | null;
+};
+
+export type MyAuditLogResponse = {
+  data: MyAuditLogEntry[];
+  current_page: number;
+  last_page: number;
+  total: number;
+};
+
+export async function getMyAuditLog(params: {
+  date_from?: string;
+  date_to?: string;
+  errors_only?: boolean;
+  page?: number;
+  per_page?: number;
+}) {
+  const { data } = await api.get<MyAuditLogResponse>("/me/audit", { params });
+  return data;
+}
+
 export async function stopImpersonation() {
   const { data } = await api.post<{
     token: string;

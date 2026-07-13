@@ -1102,7 +1102,8 @@
       "personal": "Personlich",
       "address": "Adresse",
       "security": "Sicherheit",
-      "password": "Passwort"
+      "password": "Passwort",
+      "audit": "Audit"
     },
     "fields": {
       "fullName": "Vollstandiger Name",
@@ -1170,6 +1171,24 @@
       "avatarUploadFailed": "Hochladen des Profilbilds fehlgeschlagen.",
       "avatarTooLarge": "Dieses Bild ist zu groß. Bitte wählen Sie eine Datei kleiner als 5MB.",
       "avatarCompressing": "Bild wird komprimiert…"
+    },
+    "audit": {
+      "filters": {
+        "all": "Alle",
+        "today": "Heute",
+        "last7": "Letzte 7 Tage",
+        "last30": "Letzte 30 Tage",
+        "errorsOnly": "Nur Fehler"
+      },
+      "columns": {
+        "time": "Zeit",
+        "action": "Aktion",
+        "endpoint": "Endpunkt",
+        "status": "Status",
+        "ip": "IP"
+      },
+      "loadFailed": "Audit-Verlauf konnte nicht geladen werden.",
+      "emptyState": "Für dieses Konto wurde noch keine Aktivität gefunden."
     }
   },
   "DashboardAdminSocial": {

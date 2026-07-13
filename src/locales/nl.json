@@ -1104,7 +1104,8 @@
       "personal": "Persoonlijk",
       "address": "Adres",
       "security": "Beveiliging",
-      "password": "Wachtwoord"
+      "password": "Wachtwoord",
+      "audit": "Audit"
     },
     "fields": {
       "fullName": "Volledige naam",
@@ -1172,6 +1173,24 @@
       "avatarUploadFailed": "Uploaden van profielfoto mislukt.",
       "avatarTooLarge": "Deze afbeelding is te groot. Kies een bestand kleiner dan 5MB.",
       "avatarCompressing": "Afbeelding wordt gecomprimeerd…"
+    },
+    "audit": {
+      "filters": {
+        "all": "Alles",
+        "today": "Vandaag",
+        "last7": "Laatste 7 dagen",
+        "last30": "Laatste 30 dagen",
+        "errorsOnly": "Alleen fouten"
+      },
+      "columns": {
+        "time": "Tijd",
+        "action": "Actie",
+        "endpoint": "Endpoint",
+        "status": "Status",
+        "ip": "IP"
+      },
+      "loadFailed": "Kon audit-geschiedenis niet laden.",
+      "emptyState": "Nog geen activiteit gevonden voor dit account."
     }
   },
   "DashboardAdminSocial": {

@@ -36,6 +36,7 @@ import {
   type AddressPrediction,
 } from "@/lib/api/profile-setup";
 import { Button } from "@/components/ui/button";
+import { AccountAuditTab } from "@/components/account/AccountAuditTab";
 import { cn } from "@/lib/utils";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -48,7 +49,7 @@ import { SUPPORTED_LOCALES, type AppLocale } from "@/lib/i18n";
 import { normalizeRole } from "@/lib/auth/roles";
 import type { SessionUser } from "@/lib/auth/session";
 
-type AccountTab = "profile" | "personal" | "address" | "security" | "password";
+type AccountTab = "profile" | "personal" | "address" | "security" | "password" | "audit";
 
 function extractErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message || fallback;
@@ -278,6 +279,12 @@ export default function DashboardAccountPage() {
     { id: "address", label: t("tabs.address") },
     { id: "security", label: t("tabs.security") },
     { id: "password", label: t("tabs.password") },
+    // The Audit tab always shows the logged-in session's own events (never
+    // a client-selectable user_id, by design) — hidden when an admin is
+    // viewing someone else's account here, since it would otherwise show
+    // the admin's own audit trail under what looks like the viewed user's
+    // tabs. Admins already have /audit?user_id= for that.
+    ...(isAdminSelectedUserView ? [] : [{ id: "audit" as const, label: t("tabs.audit") }]),
   ];
 
   const localeOptions: Array<{ value: AppLocale; label: string }> =
@@ -1296,21 +1303,25 @@ export default function DashboardAccountPage() {
                   </fieldset>
                 ) : null}
 
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    onClick={() => void saveCurrentTab()}
-                    disabled={saving}
-                    className="h-11 rounded-2xl bg-[#003566] px-5 text-xs font-bold uppercase tracking-[0.16em] text-white hover:bg-[#00284d]"
-                  >
-                    {saving ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="mr-2 h-4 w-4" />
-                    )}
-                    {saving ? t("actions.saving") : t("actions.syncProfile")}
-                  </Button>
-                </div>
+                {activeTab === "audit" ? <AccountAuditTab /> : null}
+
+                {activeTab !== "audit" ? (
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      onClick={() => void saveCurrentTab()}
+                      disabled={saving}
+                      className="h-11 rounded-2xl bg-[#003566] px-5 text-xs font-bold uppercase tracking-[0.16em] text-white hover:bg-[#00284d]"
+                    >
+                      {saving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      {saving ? t("actions.saving") : t("actions.syncProfile")}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
