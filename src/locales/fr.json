@@ -892,7 +892,8 @@
       "rejectSeller": "Rejeter le vendeur",
       "viewAccount": "Voir le compte",
       "setInactive": "Désactiver",
-      "setActive": "Activer"
+      "setActive": "Activer",
+      "cancel": "Annuler"
     },
     "labels": {
       "status": "Statut",
@@ -923,7 +924,9 @@
       "subtitle": "Créer un nouveau compte utilisateur"
     },
     "confirm": {
-      "terminate": "Terminer ce compte ?"
+      "terminate": "Terminer ce compte ?",
+      "activateUser": "Êtes-vous sûr de vouloir activer {name} ?",
+      "deactivateUser": "Êtes-vous sûr de vouloir désactiver {name} ?"
     },
     "empty": {
       "title": "Aucun utilisateur trouvé",
@@ -944,7 +947,12 @@
       "permissionUpdated": "Permission mise à jour",
       "permissionUpdateFailed": "Échec de la mise à jour des permissions",
       "permissionsReset": "Permissions réinitialisées",
-      "permissionsResetFailed": "Échec de la réinitialisation des permissions"
+      "permissionsResetFailed": "Échec de la réinitialisation des permissions",
+      "activating": "Activation de l'utilisateur...",
+      "deactivating": "Désactivation de l'utilisateur...",
+      "activated": "Utilisateur activé",
+      "deactivated": "Utilisateur désactivé",
+      "statusUpdateFailed": "Échec de la mise à jour du statut de l'utilisateur"
     }
   },
   "DashboardAccount": {

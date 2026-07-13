@@ -980,7 +980,8 @@
       "rejectSeller": "Verkoper afwijzen",
       "viewAccount": "Bekijk account",
       "setInactive": "Deactiveren",
-      "setActive": "Activeren"
+      "setActive": "Activeren",
+      "cancel": "Annuleren"
     },
     "labels": {
       "status": "Status",
@@ -1011,7 +1012,9 @@
       "subtitle": "Maak een nieuw gebruikersaccount"
     },
     "confirm": {
-      "terminate": "Deze account beeindigen?"
+      "terminate": "Deze account beeindigen?",
+      "activateUser": "Weet je zeker dat je {name} wilt activeren?",
+      "deactivateUser": "Weet je zeker dat je {name} wilt deactiveren?"
     },
     "empty": {
       "title": "Geen gebruikers gevonden",
@@ -1032,7 +1035,12 @@
       "permissionUpdated": "Recht bijgewerkt",
       "permissionUpdateFailed": "Bijwerken van recht mislukt",
       "permissionsReset": "Rechten gereset",
-      "permissionsResetFailed": "Resetten van rechten mislukt"
+      "permissionsResetFailed": "Resetten van rechten mislukt",
+      "activating": "Gebruiker wordt geactiveerd...",
+      "deactivating": "Gebruiker wordt gedeactiveerd...",
+      "activated": "Gebruiker geactiveerd",
+      "deactivated": "Gebruiker gedeactiveerd",
+      "statusUpdateFailed": "Bijwerken van gebruikersstatus mislukt"
     }
   },
   "DashboardAccount": {

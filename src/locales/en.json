@@ -980,7 +980,8 @@
       "rejectSeller": "Reject seller",
       "viewAccount": "View account",
       "setInactive": "Set inactive",
-      "setActive": "Set active"
+      "setActive": "Set active",
+      "cancel": "Cancel"
     },
     "labels": {
       "status": "Status",
@@ -1011,7 +1012,9 @@
       "subtitle": "Create a new user account"
     },
     "confirm": {
-      "terminate": "Terminate this account?"
+      "terminate": "Terminate this account?",
+      "activateUser": "Are you sure you want to activate {name}?",
+      "deactivateUser": "Are you sure you want to deactivate {name}?"
     },
     "empty": {
       "title": "No users found",
@@ -1032,7 +1035,12 @@
       "permissionUpdated": "Permission updated",
       "permissionUpdateFailed": "Failed to update permission",
       "permissionsReset": "Permissions reset",
-      "permissionsResetFailed": "Failed to reset permissions"
+      "permissionsResetFailed": "Failed to reset permissions",
+      "activating": "Activating user...",
+      "deactivating": "Deactivating user...",
+      "activated": "User activated",
+      "deactivated": "User deactivated",
+      "statusUpdateFailed": "Failed to update user status"
     }
   },
   "DashboardAccount": {

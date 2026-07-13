@@ -978,7 +978,8 @@
       "rejectSeller": "Verkäufer ablehnen",
       "viewAccount": "Konto anzeigen",
       "setInactive": "Deaktivieren",
-      "setActive": "Aktivieren"
+      "setActive": "Aktivieren",
+      "cancel": "Abbrechen"
     },
     "labels": {
       "status": "Status",
@@ -1009,7 +1010,9 @@
       "subtitle": "Neues Benutzerkonto erstellen"
     },
     "confirm": {
-      "terminate": "Dieses Konto beenden?"
+      "terminate": "Dieses Konto beenden?",
+      "activateUser": "Sind Sie sicher, dass Sie {name} aktivieren möchten?",
+      "deactivateUser": "Sind Sie sicher, dass Sie {name} deaktivieren möchten?"
     },
     "empty": {
       "title": "Keine Benutzer gefunden",
@@ -1030,7 +1033,12 @@
       "permissionUpdated": "Berechtigung aktualisiert",
       "permissionUpdateFailed": "Aktualisierung fehlgeschlagen",
       "permissionsReset": "Berechtigungen zuruckgesetzt",
-      "permissionsResetFailed": "Zurucksetzen fehlgeschlagen"
+      "permissionsResetFailed": "Zurucksetzen fehlgeschlagen",
+      "activating": "Benutzer wird aktiviert...",
+      "deactivating": "Benutzer wird deaktiviert...",
+      "activated": "Benutzer aktiviert",
+      "deactivated": "Benutzer deaktiviert",
+      "statusUpdateFailed": "Aktualisierung des Benutzerstatus fehlgeschlagen"
     }
   },
   "DashboardAccount": {

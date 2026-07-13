@@ -272,6 +272,7 @@ export default function RoleManagementPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [openActionId, setOpenActionId] = useState<number | null>(null);
   const [terminateTarget, setTerminateTarget] = useState<UserRecord | null>(null);
+  const [statusToggleTarget, setStatusToggleTarget] = useState<UserRecord | null>(null);
   const [impersonateTarget, setImpersonateTarget] = useState<UserRecord | null>(null);
   const [adminPassword, setAdminPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -454,8 +455,8 @@ export default function RoleManagementPage() {
     try {
       toast.loading(
         nextStatus === "ACTIVE"
-          ? "Activating user..."
-          : "Deactivating user...",
+          ? t("toasts.activating")
+          : t("toasts.deactivating"),
         { id: `status-${user.id}` },
       );
 
@@ -472,13 +473,13 @@ export default function RoleManagementPage() {
 
       toast.success(
         nextStatus === "ACTIVE"
-          ? "User activated"
-          : "User deactivated",
+          ? t("toasts.activated")
+          : t("toasts.deactivated"),
         { id: `status-${user.id}` },
       );
     } catch (err: unknown) {
       toast.error(
-        extractErrorMessage(err, "Failed to update user status"),
+        extractErrorMessage(err, t("toasts.statusUpdateFailed")),
         { id: `status-${user.id}` },
       );
     }
@@ -853,6 +854,24 @@ export default function RoleManagementPage() {
                           <Clock size={11} />
                           {t("labels.waitingApproval")}
                         </button>
+                      ) : canManageUsers ? (
+                        <button
+                          type="button"
+                          onClick={() => setStatusToggleTarget(user)}
+                          title={
+                            user.status === "ACTIVE"
+                              ? t("actions.setInactive")
+                              : t("actions.setActive")
+                          }
+                          className={cn(
+                            "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-opacity hover:opacity-75",
+                            status.bg,
+                            status.color,
+                          )}
+                        >
+                          <StatusIcon size={11} />
+                          {statusLabels[mapStatusToUi(user.status)]}
+                        </button>
                       ) : (
                         <span
                           className={cn(
@@ -902,24 +921,6 @@ export default function RoleManagementPage() {
                                   <span className="inline-flex items-center gap-3">
                                     <UserCircle size={15} className="text-blue-500" />
                                     {t("actions.viewAccount")}
-                                  </span>
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    void handleStatusToggle(user);
-                                    setOpenActionId(null);
-                                  }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                                >
-                                  <span className="inline-flex items-center gap-3">
-                                    {user.status === "ACTIVE" ? (
-                                      <XCircle size={15} className="text-red-500" />
-                                    ) : (
-                                      <CheckCircle2 size={15} className="text-emerald-500" />
-                                    )}
-                                    {user.status === "ACTIVE"
-                                      ? t("actions.setInactive")
-                                      : t("actions.setActive")}
                                   </span>
                                 </button>
                                 <button
@@ -1311,7 +1312,7 @@ export default function RoleManagementPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setTerminateTarget(null)}>
-              Cancel
+              {t("actions.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
@@ -1322,6 +1323,51 @@ export default function RoleManagementPage() {
               className="bg-red-600 text-white hover:bg-red-700"
             >
               {t("actions.terminate")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(statusToggleTarget)}
+        onOpenChange={(open) => {
+          if (!open) setStatusToggleTarget(null);
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#003566] dark:text-slate-100">
+              {statusToggleTarget?.status === "ACTIVE"
+                ? t("actions.setInactive")
+                : t("actions.setActive")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500 dark:text-slate-400">
+              {statusToggleTarget
+                ? statusToggleTarget.status === "ACTIVE"
+                  ? t("confirm.deactivateUser", { name: statusToggleTarget.name })
+                  : t("confirm.activateUser", { name: statusToggleTarget.name })
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStatusToggleTarget(null)}>
+              {t("actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!statusToggleTarget) return;
+                void handleStatusToggle(statusToggleTarget);
+                setStatusToggleTarget(null);
+              }}
+              className={
+                statusToggleTarget?.status === "ACTIVE"
+                  ? "bg-red-600 text-white hover:bg-red-700"
+                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+              }
+            >
+              {statusToggleTarget?.status === "ACTIVE"
+                ? t("actions.setInactive")
+                : t("actions.setActive")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
