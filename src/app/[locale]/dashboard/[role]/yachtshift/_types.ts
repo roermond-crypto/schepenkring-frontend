@@ -46,3 +46,51 @@ export type Platform = {
 
 export const fmt = (v?: string | null) =>
   v ? new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" }).format(new Date(v)) : "—";
+
+export type MappingRow = {
+  id: number;
+  schepenkring_field: string;
+  openmarine_xml_path: string;
+  default_value: string | null;
+  group_label: string | null;
+  is_required: boolean;
+  notes: string | null;
+};
+
+export type MappingSuggestion = {
+  schepenkring_field: string;
+  source: string;
+  suggested_group_label: string;
+  suggested_openmarine_xml_path: string;
+  confidence: number;
+};
+
+export type MappingVersion = {
+  id: number;
+  version: number;
+  change_note: string | null;
+  created_by_id: number | null;
+  created_by?: { id: number; name: string } | null;
+  created_at: string;
+  mappings_snapshot?: MappingRow[];
+};
+
+export type TestYacht = {
+  id: number;
+  boat_name: string | null;
+  boat_type: string | null;
+  manufacturer: string | null;
+  model: string | null;
+  price: number | null;
+  created_at: string;
+};
+
+export type GenerateResult = {
+  xml: string;
+  validation: {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+    missing_required: string[];
+  };
+};

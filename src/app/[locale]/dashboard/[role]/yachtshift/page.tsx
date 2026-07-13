@@ -21,6 +21,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { OverviewTab } from "./_components/OverviewTab";
 import { ConnectionsTab } from "./_components/ConnectionsTab";
+import { MappingEditorTab } from "./_components/MappingEditorTab";
 import { ConflictsTab } from "./_components/ConflictsTab";
 import { RunsTab } from "./_components/RunsTab";
 import { ComingSoonTab } from "./_components/ComingSoonTab";
@@ -118,9 +119,7 @@ export default function IntegrationCenterPage() {
         <>
           {tab === "overview" && <OverviewTab status={status} onSynced={() => void loadStatus()} />}
           {tab === "connections" && <ConnectionsTab />}
-          {tab === "mapping" && (
-            <ComingSoonTab icon={GitBranch} title={t("comingSoon.mapping.title")} body={t("comingSoon.mapping.body")} />
-          )}
+          {tab === "mapping" && <MappingEditorTab />}
           {tab === "preview" && (
             <ComingSoonTab icon={Telescope} title={t("comingSoon.preview.title")} body={t("comingSoon.preview.body")} />
           )}
