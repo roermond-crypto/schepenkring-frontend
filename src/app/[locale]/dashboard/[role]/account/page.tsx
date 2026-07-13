@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import { useTranslations } from "next-intl";
@@ -16,6 +16,7 @@ import {
   Loader2,
   ChevronLeft,
   ShieldCheck,
+  Search,
 } from "lucide-react";
 import {
   getAdminUser,
@@ -29,6 +30,11 @@ import {
   updateAvatar,
   type MeUser,
 } from "@/lib/api/account";
+import {
+  searchProfileAddresses,
+  resolveProfileAddress,
+  type AddressPrediction,
+} from "@/lib/api/profile-setup";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -37,6 +43,7 @@ import { setClientSession, getClientToken } from "@/lib/auth/client-session";
 import { normalizeApiBaseUrl } from "@/lib/api/base-url";
 import { api } from "@/lib/api";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
+import { convertToWebP } from "@/lib/convertToWebP";
 import { SUPPORTED_LOCALES, type AppLocale } from "@/lib/i18n";
 import { normalizeRole } from "@/lib/auth/roles";
 import type { SessionUser } from "@/lib/auth/session";
@@ -90,41 +97,10 @@ function normalizeLocaleValue(
   return matched ?? fallback;
 }
 
-type GoogleAddressComponent = {
-  long_name: string;
-  short_name: string;
-  types: string[];
-};
-
-type GooglePlaceResult = {
-  address_components?: GoogleAddressComponent[];
-};
-
-type GooglePlacesAutocomplete = {
-  addListener: (eventName: string, handler: () => void) => void;
-  getPlace: () => GooglePlaceResult;
-};
-
 type LocationOption = {
   id: number;
   name: string;
   code?: string | null;
-};
-
-type GoogleWindow = Window & {
-  google?: {
-    maps?: {
-      places?: {
-        Autocomplete: new (
-          input: HTMLInputElement,
-          options: {
-            fields: string[];
-            types: string[];
-          },
-        ) => GooglePlacesAutocomplete;
-      };
-    };
-  };
 };
 
 export default function DashboardAccountPage() {
@@ -138,8 +114,6 @@ export default function DashboardAccountPage() {
   const normalizedRouteLocale = normalizeLocaleValue(locale, "nl");
   const selectedUserId = searchParams.get("userId");
   const isAdminSelectedUserView = (role === "admin" || role === "employee") && Boolean(selectedUserId);
-
-  const placeInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<AccountTab>("profile");
   // Admin and employee (location manager) can edit all fields of selected users.
@@ -169,17 +143,36 @@ export default function DashboardAccountPage() {
     }
   }
 
+  const MAX_AVATAR_UPLOAD_BYTES = 5 * 1024 * 1024; // matches backend's max:5120 (KB)
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isAdminSelectedUserView) return;
     if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-
-    const formData = new FormData();
-    formData.append("avatar", file);
+    const originalFile = e.target.files[0];
+    e.target.value = "";
 
     setUploadingAvatar(true);
     setError(null);
     setSuccess(null);
+
+    let file = originalFile;
+    try {
+      // Compress client-side before upload so typical phone-camera photos
+      // (often 8-20MB) don't hit the server's post_max_size/upload limits.
+      file = await convertToWebP(originalFile, 0.82, 1600);
+    } catch {
+      // If compression fails for any reason, fall back to the original file
+      // — the size check below still guards against oversized uploads.
+    }
+
+    if (file.size > MAX_AVATAR_UPLOAD_BYTES) {
+      setError(t("toasts.avatarTooLarge"));
+      setUploadingAvatar(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("avatar", file);
 
     try {
       const response = await updateAvatar(formData);
@@ -188,7 +181,7 @@ export default function DashboardAccountPage() {
         avatar: normalizeAvatarUrl(response.data.avatar),
       };
       setUser(normalizedUser);
-      setSuccess("Profile picture updated successfully!");
+      setSuccess(t("toasts.avatarUploaded"));
 
       const token = getClientToken();
       if (token && normalizedUser) {
@@ -230,7 +223,7 @@ export default function DashboardAccountPage() {
 
       router.refresh();
     } catch (err: unknown) {
-      setError(extractErrorMessage(err, "Failed to upload profile picture."));
+      setError(extractErrorMessage(err, t("toasts.avatarUploadFailed")));
     } finally {
       setUploadingAvatar(false);
     }
@@ -258,6 +251,9 @@ export default function DashboardAccountPage() {
     postal_code: "",
     country: "",
   });
+  const [addressQuery, setAddressQuery] = useState("");
+  const [addressPredictions, setAddressPredictions] = useState<AddressPrediction[]>([]);
+  const [resolvingAddress, setResolvingAddress] = useState(false);
   const [security, setSecurity] = useState({
     two_factor_enabled: false,
     otp_secret: "",
@@ -394,110 +390,47 @@ export default function DashboardAccountPage() {
     };
   }, [isAdminSelectedUserView]);
 
+  // Same Google-Places search/resolve flow the onboarding forms use
+  // (backend-proxied, no exposed client-side API key) instead of the old
+  // ad-hoc window.google.maps.places.Autocomplete implementation, which
+  // silently no-op'd whenever NEXT_PUBLIC_GOOGLE_MAPS_KEY wasn't configured.
   useEffect(() => {
     if (activeTab !== "address") return;
-    if (typeof window === "undefined") return;
-    if (!placeInputRef.current) return;
-
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
-    if (!apiKey) return;
-
-    let cancelled = false;
-
-    const setupAutocomplete = () => {
-      const googleRef = (window as GoogleWindow).google;
-      if (!googleRef?.maps?.places?.Autocomplete || !placeInputRef.current)
-        return;
-
-      const autocomplete = new googleRef.maps.places.Autocomplete(
-        placeInputRef.current,
-        {
-          fields: ["address_components", "formatted_address"],
-          types: ["address"],
-        },
-      );
-
-      autocomplete.addListener("place_changed", () => {
-        const place = autocomplete.getPlace();
-        if (!place.address_components) return;
-
-        let street = "";
-        let houseNumber = "";
-        let city = "";
-        let state = "";
-        let postal = "";
-        let countryObj = "";
-
-        place.address_components.forEach(
-          (component: GoogleAddressComponent) => {
-            const types = component.types;
-            if (types.includes("street_number")) {
-              houseNumber = component.long_name;
-            }
-            if (types.includes("route")) {
-              street = component.short_name;
-            }
-            if (types.includes("locality")) {
-              city = component.long_name;
-            }
-            if (types.includes("administrative_area_level_1")) {
-              state = component.long_name;
-            }
-            if (types.includes("postal_code")) {
-              postal = component.long_name;
-            }
-            if (types.includes("country")) {
-              countryObj = component.short_name;
-            }
-          },
-        );
-
-        setAddress((prev) => ({
-          ...prev,
-          street: street || placeInputRef.current?.value || prev.street,
-          house_number: houseNumber || prev.house_number,
-          city: city || prev.city,
-          state: state || prev.state,
-          postal_code: postal || prev.postal_code,
-          country: countryObj || prev.country,
-        }));
-      });
-    };
-
-    const existingGoogle = (window as GoogleWindow).google;
-    if (existingGoogle?.maps?.places?.Autocomplete) {
-      setupAutocomplete();
+    if (addressQuery.trim().length < 3) {
+      setAddressPredictions([]);
       return;
     }
+    const handle = window.setTimeout(async () => {
+      try {
+        const result = await searchProfileAddresses(addressQuery.trim());
+        setAddressPredictions(result.items);
+      } catch {
+        setAddressPredictions([]);
+      }
+    }, 250);
+    return () => window.clearTimeout(handle);
+  }, [activeTab, addressQuery]);
 
-    const scriptId = "google-places-script";
-    let script = document.getElementById(scriptId) as HTMLScriptElement;
-
-    const handleLoad = () => {
-      if (!cancelled) setupAutocomplete();
-    };
-
-    if (script) {
-      script.addEventListener("load", handleLoad);
-      return () => {
-        cancelled = true;
-        script?.removeEventListener("load", handleLoad);
-      };
+  const handleAddressPredictionSelect = async (prediction: AddressPrediction) => {
+    setAddressQuery(prediction.description || prediction.main_text || "");
+    setAddressPredictions([]);
+    setResolvingAddress(true);
+    try {
+      const resolved = await resolveProfileAddress(prediction.place_id);
+      setAddress((prev) => ({
+        street: resolved.street || prev.street,
+        house_number: resolved.house_number || prev.house_number,
+        city: resolved.city || prev.city,
+        state: resolved.region || prev.state,
+        postal_code: resolved.postal_code || prev.postal_code,
+        country: resolved.country || prev.country,
+      }));
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, t("toasts.updateFailed")));
+    } finally {
+      setResolvingAddress(false);
     }
-
-    script = document.createElement("script");
-    script.id = scriptId;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.addEventListener("load", handleLoad);
-    document.head.appendChild(script);
-
-    return () => {
-      cancelled = true;
-      script?.removeEventListener("load", handleLoad);
-    };
-  }, [activeTab]);
+  };
 
   const completion = useMemo(() => {
     const fields = [
@@ -1140,13 +1073,49 @@ export default function DashboardAccountPage() {
 
                 {activeTab === "address" ? (
                   <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="sm:col-span-2 rounded-2xl border border-blue-100/50 bg-blue-50/50 p-6 dark:border-slate-700 dark:bg-slate-800/60">
+                      <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-[#003566] dark:text-slate-100">
+                        <Search size={16} />
+                        {t("fields.addressSearch") || "Zoek je adres"}
+                      </h3>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          autoComplete="off"
+                          className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-6 pr-10 text-sm font-bold text-slate-700 outline-none transition shadow-sm focus:border-[#003566] focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                          value={addressQuery}
+                          onChange={(e) => setAddressQuery(e.target.value)}
+                          placeholder={t("fields.addressSearchPlaceholder") || "Begin met typen…"}
+                        />
+                        {resolvingAddress ? (
+                          <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />
+                        ) : null}
+                        {addressPredictions.length > 0 ? (
+                          <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+                            {addressPredictions.map((prediction) => (
+                              <button
+                                key={prediction.place_id}
+                                type="button"
+                                onClick={() => void handleAddressPredictionSelect(prediction)}
+                                className="block w-full border-b border-slate-50 px-5 py-4 text-left text-sm font-semibold text-slate-600 last:border-b-0 hover:bg-blue-50 hover:text-[#003566] dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+                              >
+                                {prediction.description}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                        {t("fields.addressSearchHelp") ||
+                          "Kies een adres uit de zoekresultaten om onderstaande velden automatisch in te vullen, of vul ze handmatig aan."}
+                      </p>
+                    </div>
                     {/* Street + house number on the same row */}
                     <label className="space-y-2" style={{ gridColumn: "1 / span 1" }}>
                       <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
                         <MapPin size={12} /> {t("fields.street") || "Straat"}
                       </span>
                       <input
-                        ref={placeInputRef}
                         autoComplete="off"
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-[#003566] outline-none focus:border-[#003566] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         value={address.street}

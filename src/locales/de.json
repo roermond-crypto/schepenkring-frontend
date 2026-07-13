@@ -528,6 +528,8 @@
     "title": "Admin-Übersicht",
     "title_admin": "Admin-Übersicht",
     "title_client": "Kundenübersicht",
+    "title_seller": "Verkäufer-Dashboard",
+    "title_buyer": "Käufer-Dashboard",
     "title_employee": "Team-Übersicht",
     "welcomeBack": "Willkommen zurück, {name}",
     "todayWeather": "Heute: 18° Sonnig in Eindhoven",
@@ -1052,6 +1054,9 @@
       "timezone": "Zeitzone",
       "addressLine1": "Adresszeile 1",
       "addressLine2": "Adresszeile 2",
+      "addressSearch": "Adresse suchen",
+      "addressSearchPlaceholder": "Tippen zum Suchen…",
+      "addressSearchHelp": "Wählen Sie eine Adresse aus den Suchergebnissen, um die untenstehenden Felder automatisch auszufüllen, oder füllen Sie sie manuell aus.",
       "street": "Straße",
       "houseNumber": "Hausnummer",
       "city": "Stadt",
@@ -1099,7 +1104,11 @@
       "loadFailed": "Kontoprofil konnte nicht geladen werden.",
       "updateFailed": "Konto konnte nicht aktualisiert werden.",
       "saved": "Konto erfolgreich aktualisiert.",
-      "passwordMismatch": "Passwortbestatigung stimmt nicht uberein."
+      "passwordMismatch": "Passwortbestatigung stimmt nicht uberein.",
+      "avatarUploaded": "Profilbild erfolgreich aktualisiert!",
+      "avatarUploadFailed": "Hochladen des Profilbilds fehlgeschlagen.",
+      "avatarTooLarge": "Dieses Bild ist zu groß. Bitte wählen Sie eine Datei kleiner als 5MB.",
+      "avatarCompressing": "Bild wird komprimiert…"
     }
   },
   "DashboardAdminSocial": {

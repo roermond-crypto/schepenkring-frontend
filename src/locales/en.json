@@ -528,6 +528,8 @@
     "title": "Dashboard Overview",
     "title_admin": "Admin Overview",
     "title_client": "Client Overview",
+    "title_seller": "Seller Dashboard",
+    "title_buyer": "Buyer Dashboard",
     "title_employee": "Sales Dashboard",
     "welcomeBack": "Welcome back, {name}",
     "todayWeather": "Today: 18° Sunny in Eindhoven",
@@ -1054,6 +1056,9 @@
       "timezone": "Timezone",
       "addressLine1": "Address Line 1",
       "addressLine2": "Address Line 2",
+      "addressSearch": "Search your address",
+      "addressSearchPlaceholder": "Start typing…",
+      "addressSearchHelp": "Choose an address from the search results to auto-fill the fields below, or fill them in manually.",
       "street": "Street",
       "houseNumber": "House Number",
       "city": "City",
@@ -1101,7 +1106,11 @@
       "loadFailed": "Failed to load account profile.",
       "updateFailed": "Failed to update account.",
       "saved": "Account updated successfully.",
-      "passwordMismatch": "Password confirmation does not match."
+      "passwordMismatch": "Password confirmation does not match.",
+      "avatarUploaded": "Profile picture updated successfully!",
+      "avatarUploadFailed": "Failed to upload profile picture.",
+      "avatarTooLarge": "This image is too large. Please choose a file smaller than 5MB.",
+      "avatarCompressing": "Compressing image…"
     }
   },
   "DashboardAdminSocial": {

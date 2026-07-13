@@ -54,3 +54,28 @@ export async function saveProfileAddress(placeId: string): Promise<ProfileSetupS
 
   return res.data?.data as ProfileSetupStatus;
 }
+
+export type ResolvedAddress = {
+  formatted_address?: string | null;
+  street?: string | null;
+  house_number?: string | null;
+  city?: string | null;
+  region?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  place_id?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+};
+
+// Resolves a place_id to its address components without persisting anything
+// — for pages (like the account address tab) that need onboarding's
+// Google-Places search/resolve flow but must save into their own record
+// rather than the seller/buyer-only profile tables saveProfileAddress() writes to.
+export async function resolveProfileAddress(placeId: string): Promise<ResolvedAddress> {
+  const res = await api.get("/profile-setup/address/resolve", {
+    params: { place_id: placeId },
+  });
+
+  return res.data?.data as ResolvedAddress;
+}

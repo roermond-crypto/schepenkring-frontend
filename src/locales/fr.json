@@ -528,6 +528,8 @@
     "title": "Aperçu du tableau de bord",
     "title_admin": "Aperçu Admin",
     "title_client": "Aperçu Client",
+    "title_seller": "Tableau de bord vendeur",
+    "title_buyer": "Tableau de bord acheteur",
     "title_employee": "Tableau de bord des ventes",
     "welcomeBack": "Bon retour, {name}",
     "todayWeather": "Aujourd'hui : 18° Ensoleillé à Eindhoven",
@@ -966,6 +968,9 @@
       "timezone": "Fuseau horaire",
       "addressLine1": "Adresse ligne 1",
       "addressLine2": "Adresse ligne 2",
+      "addressSearch": "Rechercher votre adresse",
+      "addressSearchPlaceholder": "Commencez à taper…",
+      "addressSearchHelp": "Choisissez une adresse dans les résultats pour remplir automatiquement les champs ci-dessous, ou complétez-les manuellement.",
       "street": "Rue",
       "houseNumber": "Numéro",
       "city": "Ville",
@@ -1013,7 +1018,11 @@
       "loadFailed": "Échec du chargement du profil du compte.",
       "updateFailed": "Échec de la mise à jour du compte.",
       "saved": "Compte mis à jour avec succès.",
-      "passwordMismatch": "La confirmation du mot de passe ne correspond pas."
+      "passwordMismatch": "La confirmation du mot de passe ne correspond pas.",
+      "avatarUploaded": "Photo de profil mise à jour avec succès !",
+      "avatarUploadFailed": "Échec du téléchargement de la photo de profil.",
+      "avatarTooLarge": "Cette image est trop volumineuse. Choisissez un fichier de moins de 5 Mo.",
+      "avatarCompressing": "Compression de l'image…"
     }
   },
   "DashboardAdminSocial": {

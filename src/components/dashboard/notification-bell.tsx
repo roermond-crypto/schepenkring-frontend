@@ -5,7 +5,7 @@ import { Bell, BellOff, CheckCheck, Trash2 } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDictionary, type AppLocale } from "@/lib/i18n";
-import type { UserRole } from "@/lib/auth/roles";
+import { USER_ROLES, type UserRole } from "@/lib/auth/roles";
 import { apiRequest } from "@/lib/api/http";
 import { cn } from "@/lib/utils";
 import {
@@ -99,6 +99,20 @@ const resolveNotificationHref = (
 
   if (rawUrl === "/dashboard/tasks") {
     return `/dashboard/${role}/tasks`;
+  }
+
+  // Some backend notifications (e.g. account-disabled, location-assignment)
+  // still emit bare "/dashboard/xyz" URLs with no role segment, which 404s
+  // against this app's /dashboard/[role]/xyz route structure. Inject the
+  // viewing user's own role whenever the URL is missing one.
+  const dashboardMatch = rawUrl.match(/^\/dashboard\/([^/?#]+)(.*)$/);
+  if (dashboardMatch) {
+    const firstSegment = dashboardMatch[1];
+    const rest = dashboardMatch[2] ?? "";
+    if (!USER_ROLES.includes(firstSegment as UserRole)) {
+      return `/dashboard/${role}/${firstSegment}${rest}`;
+    }
+    return rawUrl;
   }
 
   if (rawUrl.startsWith("/")) {

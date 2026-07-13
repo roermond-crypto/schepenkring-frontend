@@ -528,6 +528,8 @@
     "title": "Dashboard Overzicht",
     "title_admin": "Admin-overzicht",
     "title_client": "Klantenoverzicht",
+    "title_seller": "Verkopersdashboard",
+    "title_buyer": "Kopersdashboard",
     "title_employee": "Verkoopdashboard",
     "welcomeBack": "Welkom terug, {name}",
     "todayWeather": "Vandaag: 18° zonnig in Eindhoven",
@@ -1054,6 +1056,9 @@
       "timezone": "Tijdzone",
       "addressLine1": "Adresregel 1",
       "addressLine2": "Adresregel 2",
+      "addressSearch": "Zoek je adres",
+      "addressSearchPlaceholder": "Begin met typen…",
+      "addressSearchHelp": "Kies een adres uit de zoekresultaten om onderstaande velden automatisch in te vullen, of vul ze handmatig aan.",
       "street": "Straat",
       "houseNumber": "Huisnummer",
       "city": "Stad",
@@ -1101,7 +1106,11 @@
       "loadFailed": "Laden van accountprofiel mislukt.",
       "updateFailed": "Bijwerken van account mislukt.",
       "saved": "Account succesvol bijgewerkt.",
-      "passwordMismatch": "Wachtwoordbevestiging komt niet overeen."
+      "passwordMismatch": "Wachtwoordbevestiging komt niet overeen.",
+      "avatarUploaded": "Profielfoto succesvol bijgewerkt!",
+      "avatarUploadFailed": "Uploaden van profielfoto mislukt.",
+      "avatarTooLarge": "Deze afbeelding is te groot. Kies een bestand kleiner dan 5MB.",
+      "avatarCompressing": "Afbeelding wordt gecomprimeerd…"
     }
   },
   "DashboardAdminSocial": {

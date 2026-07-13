@@ -919,9 +919,9 @@ export default function AdminDashboardHome() {
             </p>
             <h1 className="text-3xl font-black text-[#0B1F3A] sm:text-4xl dark:text-slate-100">
               {isBuyerRole
-                ? "Buyer Dashboard"
+                ? t("title_buyer")
                 : isSellerRole
-                  ? "Seller Dashboard"
+                  ? t("title_seller")
                   : isClientRole
                     ? t("title_client")
                     : isEmployeeRole
