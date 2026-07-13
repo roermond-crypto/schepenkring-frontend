@@ -53,6 +53,7 @@ const ACTION_PHRASES: Record<string, Record<AppLocale, string>> = {
   "platform.publication.failed": { nl: "kon een boot niet synchroniseren met een platform", en: "failed to sync a boat to a platform", de: "konnte ein Boot nicht mit einer Plattform synchronisieren", fr: "n'a pas pu synchroniser un bateau avec une plateforme" },
   "platform.export.feed_generated": { nl: "heeft een testfeed gegenereerd", en: "generated a test feed", de: "hat einen Test-Feed generiert", fr: "a généré un flux de test" },
   "platform.export.feed_failed": { nl: "kon geen testfeed genereren", en: "failed to generate a test feed", de: "konnte keinen Test-Feed generieren", fr: "n'a pas pu générer de flux de test" },
+  "platform.export.validation_failed": { nl: "genereerde een feed die niet voldoet aan de OpenMarine-validatie", en: "generated a feed that fails OpenMarine validation", de: "hat einen Feed generiert, der die OpenMarine-Validierung nicht besteht", fr: "a généré un flux qui échoue à la validation OpenMarine" },
   "partner.created": { nl: "heeft een partneraccount aangemaakt", en: "created a partner account", de: "hat ein Partnerkonto erstellt", fr: "a créé un compte partenaire" },
   "signhost.cancel": { nl: "heeft een ondertekeningsverzoek geannuleerd", en: "cancelled a signing request", de: "hat eine Signaturanfrage storniert", fr: "a annulé une demande de signature" },
   "signhost.request": { nl: "heeft een ondertekeningsverzoek verstuurd", en: "sent a signing request", de: "hat eine Signaturanfrage gesendet", fr: "a envoyé une demande de signature" },
@@ -70,6 +71,14 @@ const ACTION_PHRASES: Record<string, Record<AppLocale, string>> = {
   "task.reschedule": { nl: "heeft een taak verzet", en: "rescheduled a task", de: "hat eine Aufgabe verschoben", fr: "a reprogrammé une tâche" },
   "task.status.update": { nl: "heeft een taakstatus bijgewerkt", en: "updated a task's status", de: "hat einen Aufgabenstatus aktualisiert", fr: "a mis à jour le statut d'une tâche" },
   "task.update": { nl: "heeft een taak bijgewerkt", en: "updated a task", de: "hat eine Aufgabe aktualisiert", fr: "a mis à jour une tâche" },
+  "yachtshift.import.failed": { nl: "kon YachtShift niet importeren", en: "failed to import from YachtShift", de: "konnte nicht von YachtShift importieren", fr: "n'a pas pu importer depuis YachtShift" },
+  "yachtshift.import.empty_response": { nl: "kreeg een lege reactie van YachtShift bij het importeren", en: "got an empty response from YachtShift on import", de: "erhielt beim Import eine leere Antwort von YachtShift", fr: "a reçu une réponse vide de YachtShift lors de l'import" },
+  "yachtshift.import.boat_synced": { nl: "heeft een boot gesynchroniseerd vanuit YachtShift", en: "synced a boat from YachtShift", de: "hat ein Boot von YachtShift synchronisiert", fr: "a synchronisé un bateau depuis YachtShift" },
+  "yachtshift.import.conflict": { nl: "kreeg een synchronisatieconflict bij het importeren", en: "hit a sync conflict on import", de: "hat beim Import einen Synchronisierungskonflikt festgestellt", fr: "a rencontré un conflit de synchronisation lors de l'import" },
+  "yachtshift.import.completed": { nl: "heeft een YachtShift-import afgerond", en: "completed a YachtShift import", de: "hat einen YachtShift-Import abgeschlossen", fr: "a terminé un import YachtShift" },
+  "yachtshift.export.boat_synced": { nl: "heeft een boot geëxporteerd naar YachtShift", en: "exported a boat to YachtShift", de: "hat ein Boot zu YachtShift exportiert", fr: "a exporté un bateau vers YachtShift" },
+  "yachtshift.export.failed": { nl: "kon niet exporteren naar YachtShift", en: "failed to export to YachtShift", de: "konnte nicht zu YachtShift exportieren", fr: "n'a pas pu exporter vers YachtShift" },
+  "yachtshift.conflict.resolved": { nl: "heeft een synchronisatieconflict opgelost", en: "resolved a sync conflict", de: "hat einen Synchronisierungskonflikt gelöst", fr: "a résolu un conflit de synchronisation" },
 } as const;
 
 // Generic subject used when an event has no actor (system/automated jobs).
@@ -147,6 +156,7 @@ const AUDIT_EVENT_LABELS: Record<string, Record<AppLocale, string>> = {
   "platform.publication.failed": { nl: "Synchronisatie met platform mislukt", en: "Platform sync failed", de: "Synchronisation mit Plattform fehlgeschlagen", fr: "Échec de la synchronisation avec la plateforme" },
   "platform.export.feed_generated": { nl: "Testfeed gegenereerd", en: "Test feed generated", de: "Test-Feed generiert", fr: "Flux de test généré" },
   "platform.export.feed_failed": { nl: "Genereren van testfeed mislukt", en: "Test feed generation failed", de: "Generierung des Test-Feeds fehlgeschlagen", fr: "Échec de la génération du flux de test" },
+  "platform.export.validation_failed": { nl: "Feed voldoet niet aan OpenMarine-validatie", en: "Feed fails OpenMarine validation", de: "Feed besteht OpenMarine-Validierung nicht", fr: "Le flux échoue à la validation OpenMarine" },
   "partner.created": { nl: "Partneraccount aangemaakt", en: "Partner account created", de: "Partnerkonto erstellt", fr: "Compte partenaire créé" },
   "signhost.cancel": { nl: "Ondertekeningsverzoek geannuleerd", en: "Signing request cancelled", de: "Signaturanfrage storniert", fr: "Demande de signature annulée" },
   "signhost.request": { nl: "Ondertekeningsverzoek verstuurd", en: "Signing request sent", de: "Signaturanfrage gesendet", fr: "Demande de signature envoyée" },
@@ -164,6 +174,14 @@ const AUDIT_EVENT_LABELS: Record<string, Record<AppLocale, string>> = {
   "task.reschedule": { nl: "Taak verzet", en: "Task rescheduled", de: "Aufgabe verschoben", fr: "Tâche reprogrammée" },
   "task.status.update": { nl: "Taakstatus bijgewerkt", en: "Task status updated", de: "Aufgabenstatus aktualisiert", fr: "Statut de tâche mis à jour" },
   "task.update": { nl: "Taak bijgewerkt", en: "Task updated", de: "Aufgabe aktualisiert", fr: "Tâche mise à jour" },
+  "yachtshift.import.failed": { nl: "YachtShift-import mislukt", en: "YachtShift import failed", de: "YachtShift-Import fehlgeschlagen", fr: "Échec de l'import YachtShift" },
+  "yachtshift.import.empty_response": { nl: "Lege reactie van YachtShift", en: "Empty response from YachtShift", de: "Leere Antwort von YachtShift", fr: "Réponse vide de YachtShift" },
+  "yachtshift.import.boat_synced": { nl: "Boot gesynchroniseerd vanuit YachtShift", en: "Boat synced from YachtShift", de: "Boot von YachtShift synchronisiert", fr: "Bateau synchronisé depuis YachtShift" },
+  "yachtshift.import.conflict": { nl: "Synchronisatieconflict bij import", en: "Sync conflict on import", de: "Synchronisierungskonflikt beim Import", fr: "Conflit de synchronisation à l'import" },
+  "yachtshift.import.completed": { nl: "YachtShift-import voltooid", en: "YachtShift import completed", de: "YachtShift-Import abgeschlossen", fr: "Import YachtShift terminé" },
+  "yachtshift.export.boat_synced": { nl: "Boot geëxporteerd naar YachtShift", en: "Boat exported to YachtShift", de: "Boot zu YachtShift exportiert", fr: "Bateau exporté vers YachtShift" },
+  "yachtshift.export.failed": { nl: "Export naar YachtShift mislukt", en: "YachtShift export failed", de: "YachtShift-Export fehlgeschlagen", fr: "Échec de l'export YachtShift" },
+  "yachtshift.conflict.resolved": { nl: "Synchronisatieconflict opgelost", en: "Sync conflict resolved", de: "Synchronisierungskonflikt gelöst", fr: "Conflit de synchronisation résolu" },
   updated: { nl: "Record bijgewerkt", en: "Record updated", de: "Datensatz aktualisiert", fr: "Enregistrement mis à jour" },
 };
 
@@ -219,6 +237,7 @@ const ENTITY_LABELS: Record<string, Record<AppLocale, string>> = {
   Contract: { nl: "Contract", en: "Contract", de: "Vertrag", fr: "Contrat" },
   SignRequest: { nl: "Ondertekeningsverzoek", en: "Signing request", de: "Signaturanfrage", fr: "Demande de signature" },
   Platform: { nl: "Platform", en: "Platform", de: "Plattform", fr: "Plateforme" },
+  yachtshift_sync: { nl: "YachtShift-synchronisatie", en: "YachtShift sync", de: "YachtShift-Synchronisierung", fr: "Synchronisation YachtShift" },
 };
 
 // Strips the PHP namespace off entity_type/target_type (e.g.
