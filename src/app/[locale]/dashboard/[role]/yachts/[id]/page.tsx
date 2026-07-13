@@ -1086,6 +1086,9 @@ const YACHT_FORM_TEXT = {
       scoreSuitabilityHelp:
         "This score reflects how suitable the image is for the public gallery after AI cleanup and classification.",
       extractionInProgress: "AI Extraction in Progress",
+      processingPhotos: "Processing your photos…",
+      processingPhotosBody:
+        "We're reading your photos and filling in the boat's details for you.",
       extractionAnalyzingPhotos:
         "AI is analyzing your yacht photos and preparing fields.",
       extractionSearchingKnowledge:
@@ -1707,6 +1710,9 @@ const YACHT_FORM_TEXT = {
       scoreSuitabilityHelp:
         "Deze score laat zien hoe geschikt de afbeelding is voor de publieke galerij na AI-opruiming en classificatie.",
       extractionInProgress: "AI-extractie bezig",
+      processingPhotos: "Je foto's worden verwerkt…",
+      processingPhotosBody:
+        "We lezen je foto's uit en vullen de bootgegevens voor je in.",
       extractionAnalyzingPhotos:
         "AI analyseert je jachtfoto's en bereidt de velden voor.",
       extractionSearchingKnowledge:
@@ -2317,6 +2323,9 @@ const YACHT_FORM_TEXT = {
       scoreSuitabilityHelp:
         "Diese Bewertung zeigt, wie gut das Bild nach KI-Bereinigung und Klassifizierung für die öffentliche Galerie geeignet ist.",
       extractionInProgress: "KI-Extraktion läuft",
+      processingPhotos: "Ihre Fotos werden verarbeitet…",
+      processingPhotosBody:
+        "Wir lesen Ihre Fotos aus und füllen die Bootsdetails für Sie aus.",
       extractionAnalyzingPhotos:
         "Die KI analysiert Ihre Yachtfotos und bereitet die Felder vor.",
       extractionSearchingKnowledge:
@@ -2855,6 +2864,9 @@ const YACHT_FORM_TEXT = {
       scoreSuitabilityHelp:
         "Ce score indique a quel point l'image convient a la galerie publique apres le nettoyage et la classification par IA.",
       extractionInProgress: "Extraction IA en cours",
+      processingPhotos: "Traitement de vos photos…",
+      processingPhotosBody:
+        "Nous lisons vos photos et remplissons les details du bateau pour vous.",
       extractionAnalyzingPhotos:
         "L'IA analyse les photos de votre bateau et prepare les champs.",
       extractionSearchingKnowledge:
@@ -3348,6 +3360,7 @@ function YachtEditorInner() {
   const locale = useLocale();
   const role = normalizeRole(params?.role) ?? "admin";
   const isClientRole = role === "client";
+  const isSellerRole = role === "seller";
   const dict = getDictionary(locale) as any;
   const t = dict?.YachtWizard || dict?.DashboardAdminYachtEditor || ({} as any);
   const router = useRouter();
@@ -3755,8 +3768,12 @@ function YachtEditorInner() {
   }));
   const visibleWizardSteps = useMemo(
     () =>
-      isClientRole ? wizardSteps.filter((step) => step.id !== 4) : wizardSteps,
-    [isClientRole, wizardSteps],
+      isSellerRole
+        ? wizardSteps.filter((step) => ![4, 5, 6].includes(step.id))
+        : isClientRole
+          ? wizardSteps.filter((step) => step.id !== 4)
+          : wizardSteps,
+    [isSellerRole, isClientRole, wizardSteps],
   );
   const weekdayOptions = [
     { value: 1, label: t?.weekdays?.monday || "Monday" },
@@ -9243,13 +9260,17 @@ function YachtEditorInner() {
               <Loader2 size={28} className="animate-spin text-blue-600" />
             </div>
             <h3 className="text-lg font-bold text-slate-900">
-              {labelText("extractionInProgress", "AI Extraction in Progress")}
+              {isSellerRole
+                ? labelText("processingPhotos", "Processing your photos…")
+                : labelText("extractionInProgress", "AI Extraction in Progress")}
             </h3>
             <p className="text-sm text-slate-500 mt-2 min-h-[40px]">
-              {extractionStatus ||
-                (extractionType === "gemini"
-                  ? labelText("extractionAnalyzingPhotos", "AI is analyzing your yacht photos and preparing fields.")
-                  : labelText("extractionSearchingKnowledge", "RAG Engine is searching Pinecone to find consensus and auto-filling details..."))}
+              {isSellerRole
+                ? labelText("processingPhotosBody", "We're reading your photos and filling in the boat's details for you.")
+                : extractionStatus ||
+                  (extractionType === "gemini"
+                    ? labelText("extractionAnalyzingPhotos", "AI is analyzing your yacht photos and preparing fields.")
+                    : labelText("extractionSearchingKnowledge", "RAG Engine is searching Pinecone to find consensus and auto-filling details..."))}
             </p>
             <div className="mt-5 space-y-3">
               <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -9632,7 +9653,7 @@ function YachtEditorInner() {
           )}
 
           {/* ── STEP 4: DISPLAY SETTINGS ─────────────────── */}
-          {activeStep === 4 && !isClientRole && (
+          {activeStep === 4 && !isClientRole && !isSellerRole && (
             <WizardStep4
               schedulingSettings={schedulingSettings}
               updateSchedulingSetting={updateSchedulingSetting}
@@ -9712,7 +9733,7 @@ function YachtEditorInner() {
             </div>
           )}
 
-          {activeStep === 5 && (
+          {activeStep === 5 && !isSellerRole && (
             <WizardStep5
               labelText={labelText}
               t={t}
@@ -9769,7 +9790,7 @@ function YachtEditorInner() {
               isSubmitting={isSubmitting}
             />
           )}
-          {activeStep === 6 && (
+          {activeStep === 6 && !isSellerRole && (
             <WizardStep6
               labelText={labelText}
               isClientRole={isClientRole}
