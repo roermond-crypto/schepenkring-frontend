@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Clock, Loader2, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { fmt, type SyncStatus } from "../_types";
+import { fmt, type ExportStatistics, type SyncStatus } from "../_types";
 
 export function OverviewTab({ status, onSynced }: { status: SyncStatus | null; onSynced: () => void }) {
   const t = useTranslations("IntegrationCenter.overview");
@@ -15,6 +15,23 @@ export function OverviewTab({ status, onSynced }: { status: SyncStatus | null; o
   const [dryRun, setDryRun] = useState(true);
   const [triggering, setTriggering] = useState(false);
   const [lastResult, setLastResult] = useState<unknown>(null);
+
+  const [stats, setStats] = useState<ExportStatistics | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    void (async () => {
+      setStatsLoading(true);
+      try {
+        const res = await api.get<ExportStatistics>("/admin/openmarine/export-statistics");
+        setStats(res.data);
+      } catch {
+        toast.error(t("widgetsLoadFailed"));
+      } finally {
+        setStatsLoading(false);
+      }
+    })();
+  }, [t]);
 
   const handleTrigger = async () => {
     setTriggering(true);
@@ -34,6 +51,40 @@ export function OverviewTab({ status, onSynced }: { status: SyncStatus | null; o
 
   return (
     <div className="space-y-6">
+      <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-slate-400">{t("widgetsTitle")}</p>
+        {statsLoading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
+          </div>
+        ) : !stats || stats.platforms.length === 0 ? (
+          <p className="py-4 text-center text-sm text-slate-400">{t("widgetsEmpty")}</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {stats.platforms.map((p) => (
+              <div key={p.platform_id} className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{p.platform_name}</p>
+                <div className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span>{t("lastExport")}</span>
+                  <span className="text-right tabular-nums">{fmt(p.last_successful_export)}</span>
+                  <span>{t("successRate")}</span>
+                  <span className="text-right tabular-nums">{p.success_rate_30d !== null ? `${p.success_rate_30d}%` : "—"}</span>
+                  <span>{t("waitingExports")}</span>
+                  <span className="text-right tabular-nums">{p.waiting_exports}</span>
+                  <span>{t("failedExportsShort")}</span>
+                  <span className={cn("text-right tabular-nums", p.failed_exports > 0 && "font-bold text-red-600")}>{p.failed_exports}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {stats && stats.overview.not_tracked.length > 0 && (
+          <p className="mt-3 text-[10px] text-slate-400">
+            {stats.overview.not_tracked.join(", ")} — {t("notTracked")}
+          </p>
+        )}
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: t("totalYachts"), value: status?.total_yachts ?? 0 },

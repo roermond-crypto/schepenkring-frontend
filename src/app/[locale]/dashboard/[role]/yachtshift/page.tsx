@@ -26,7 +26,7 @@ import { PreviewTab } from "./_components/PreviewTab";
 import { ValidationTab } from "./_components/ValidationTab";
 import { ConflictsTab } from "./_components/ConflictsTab";
 import { RunsTab } from "./_components/RunsTab";
-import { ComingSoonTab } from "./_components/ComingSoonTab";
+import { JourneyTab } from "./_components/JourneyTab";
 import type { SyncStatus } from "./_types";
 
 type TabId = "overview" | "connections" | "mapping" | "preview" | "validation" | "conflicts" | "runs" | "journey";
@@ -126,9 +126,7 @@ export default function IntegrationCenterPage() {
           {tab === "validation" && <ValidationTab onNavigateToMapping={() => changeTab("mapping")} />}
           {tab === "conflicts" && <ConflictsTab onResolved={() => void loadStatus()} />}
           {tab === "runs" && <RunsTab />}
-          {tab === "journey" && (
-            <ComingSoonTab icon={Route} title={t("comingSoon.journey.title")} body={t("comingSoon.journey.body")} />
-          )}
+          {tab === "journey" && <JourneyTab />}
         </>
       )}
     </div>

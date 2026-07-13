@@ -19,6 +19,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fmt } from "../_types";
+import { IntegrationTooltip } from "./IntegrationTooltip";
 import type { CompatibilityDrillDownYacht, CompatibilityRow, InspectResult, RegressionRun, TestYacht } from "../_types";
 
 const CATEGORY_MAP_PATTERN = /^No category mapping for boat type '([^']+)' on this platform\.$/;
@@ -352,7 +353,9 @@ export function ValidationTab({ onNavigateToMapping }: { onNavigateToMapping: ()
       {/* ── Regression testing ────────────────────────────────────── */}
       <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{t("regressionTitle")}</p>
+          <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-slate-400">
+            {t("regressionTitle")} <IntegrationTooltip field="regressionRun" />
+          </p>
           <Button size="sm" disabled={running} onClick={() => void runRegression()} className="gap-1.5 rounded-lg bg-[#003566] text-xs text-white hover:bg-[#00284f]">
             {running ? <Loader2 size={13} className="animate-spin" /> : null}
             {running ? t("running") : t("runButton")}

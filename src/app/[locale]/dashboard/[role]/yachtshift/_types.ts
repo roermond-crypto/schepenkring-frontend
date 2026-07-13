@@ -148,3 +148,49 @@ export type RegressionRun = {
   created_at: string;
   results?: { yacht_id: number; passed: boolean; errors: string[]; warnings: string[]; yacht?: { id: number; boat_name: string | null } }[];
 };
+
+export type FieldChange = {
+  id: number;
+  yacht_id: number;
+  platform_id: number | null;
+  field_name: string;
+  old_value: string | null;
+  new_value: string | null;
+  changed_by_type: string | null;
+  changed_by_id: number | null;
+  source_type: string | null;
+  confidence_before: number | null;
+  confidence_after: number | null;
+  reason: string | null;
+  correction_label: string | null;
+  created_at: string;
+  user?: { id: number; name: string; email: string } | null;
+};
+
+export type FieldHistoryResponse = {
+  field: string;
+  yacht_id: number;
+  history: FieldChange[];
+};
+
+export type ExportStatistics = {
+  platforms: {
+    platform_id: number;
+    platform_name: string;
+    last_successful_export: string | null;
+    last_sync: string | null;
+    total_exported_yachts: number;
+    waiting_exports: number;
+    failed_exports: number;
+    success_rate_30d: number | null;
+  }[];
+  overview: {
+    last_export: string | null;
+    last_synchronization: string | null;
+    total_exported_yachts: number;
+    waiting_exports: number;
+    failed_exports: number;
+    success_rate_30d: number | null;
+    not_tracked: string[];
+  };
+};

@@ -3818,6 +3818,13 @@
     "title": "Integration Center",
     "subtitle": "OpenMarine · YachtShift · Marktplaatsen",
     "refresh": "Verversen",
+    "tooltip": {
+      "ariaLabel": "Uitleg bij dit veld",
+      "example": "Voorbeeld",
+      "commonMistakes": "Veelgemaakte fouten",
+      "required": "Verplicht",
+      "optional": "Optioneel"
+    },
     "tabs": {
       "overview": "Overzicht",
       "connections": "Connecties",
@@ -3843,7 +3850,15 @@
       "syncButton": "Synchroniseren",
       "syncSuccessDry": "Proefsync voltooid.",
       "syncSuccess": "Synchronisatie voltooid.",
-      "syncFailed": "Synchronisatie mislukt."
+      "syncFailed": "Synchronisatie mislukt.",
+      "widgetsTitle": "Platformstatus",
+      "widgetsLoadFailed": "Platformstatus laden mislukt.",
+      "widgetsEmpty": "Nog geen actieve platforms.",
+      "lastExport": "Laatste export",
+      "successRate": "Slagingspercentage (30d)",
+      "waitingExports": "Wachtend",
+      "failedExportsShort": "Mislukt",
+      "notTracked": "niet bijgehouden"
     },
     "conflicts": {
       "loadFailed": "Conflicten laden mislukt.",
@@ -4022,11 +4037,24 @@
       "fixMissingField": "Verplicht veld '{value}' is niet gekoppeld.",
       "fixMissingFieldAction": "Open mapping-editor"
     },
-    "comingSoon": {
-      "journey": {
-        "title": "Datatraject volgt",
-        "body": "Klik-door veldgeschiedenis — wie wijzigde wat, wanneer, en met welke AI-zekerheid — wordt in de volgende fase toegevoegd."
-      }
+    "journey": {
+      "selectTestYacht": "Kies een test-jacht...",
+      "orYachtId": "of vul een jacht-ID in",
+      "fieldLabel": "Veldnaam",
+      "lookup": "Opzoeken",
+      "lookingUp": "Opzoeken...",
+      "lookupFailed": "Opzoeken mislukt.",
+      "currentValue": "Huidige waarde (database)",
+      "historyTitle": "Geschiedenis",
+      "historyEmpty": "Geen wijzigingen gevonden voor dit veld.",
+      "from": "van",
+      "to": "naar",
+      "byUser": "door",
+      "bySystem": "Systeem",
+      "byAi": "AI",
+      "byImport": "Import (YachtShift)",
+      "confidence": "zekerheid",
+      "reason": "Reden"
     }
   }
 }

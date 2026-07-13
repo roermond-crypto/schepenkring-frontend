@@ -3816,6 +3816,13 @@
     "title": "Integration Center",
     "subtitle": "OpenMarine · YachtShift · Places de marché",
     "refresh": "Actualiser",
+    "tooltip": {
+      "ariaLabel": "Explication de ce champ",
+      "example": "Exemple",
+      "commonMistakes": "Erreurs courantes",
+      "required": "Requis",
+      "optional": "Facultatif"
+    },
     "tabs": {
       "overview": "Aperçu",
       "connections": "Connexions",
@@ -3841,7 +3848,15 @@
       "syncButton": "Synchroniser",
       "syncSuccessDry": "Simulation terminée.",
       "syncSuccess": "Synchronisation terminée.",
-      "syncFailed": "Échec de la synchronisation."
+      "syncFailed": "Échec de la synchronisation.",
+      "widgetsTitle": "État des plateformes",
+      "widgetsLoadFailed": "Échec du chargement de l'état des plateformes.",
+      "widgetsEmpty": "Aucune plateforme active pour l'instant.",
+      "lastExport": "Dernier export",
+      "successRate": "Taux de réussite (30j)",
+      "waitingExports": "En attente",
+      "failedExportsShort": "Échoué",
+      "notTracked": "non suivi"
     },
     "conflicts": {
       "loadFailed": "Échec du chargement des conflits.",
@@ -4020,11 +4035,24 @@
       "fixMissingField": "Le champ requis '{value}' n'est pas mappé.",
       "fixMissingFieldAction": "Ouvrir l'éditeur de mapping"
     },
-    "comingSoon": {
-      "journey": {
-        "title": "Parcours des données à venir",
-        "body": "L'historique des champs en un clic — qui a modifié quoi, quand, et avec quelle confiance IA — sera ajouté lors de la prochaine phase."
-      }
+    "journey": {
+      "selectTestYacht": "Choisir un bateau de test...",
+      "orYachtId": "ou saisir un ID de bateau",
+      "fieldLabel": "Nom du champ",
+      "lookup": "Rechercher",
+      "lookingUp": "Recherche...",
+      "lookupFailed": "Échec de la recherche.",
+      "currentValue": "Valeur actuelle (base de données)",
+      "historyTitle": "Historique",
+      "historyEmpty": "Aucune modification trouvée pour ce champ.",
+      "from": "de",
+      "to": "à",
+      "byUser": "par",
+      "bySystem": "Système",
+      "byAi": "IA",
+      "byImport": "Import (YachtShift)",
+      "confidence": "confiance",
+      "reason": "Raison"
     }
   }
 }

@@ -3816,6 +3816,13 @@
     "title": "Integration Center",
     "subtitle": "OpenMarine · YachtShift · Marktplätze",
     "refresh": "Aktualisieren",
+    "tooltip": {
+      "ariaLabel": "Erklärung zu diesem Feld",
+      "example": "Beispiel",
+      "commonMistakes": "Häufige Fehler",
+      "required": "Erforderlich",
+      "optional": "Optional"
+    },
     "tabs": {
       "overview": "Übersicht",
       "connections": "Verbindungen",
@@ -3841,7 +3848,15 @@
       "syncButton": "Synchronisieren",
       "syncSuccessDry": "Testlauf abgeschlossen.",
       "syncSuccess": "Synchronisierung abgeschlossen.",
-      "syncFailed": "Synchronisierung fehlgeschlagen."
+      "syncFailed": "Synchronisierung fehlgeschlagen.",
+      "widgetsTitle": "Plattformstatus",
+      "widgetsLoadFailed": "Plattformstatus konnte nicht geladen werden.",
+      "widgetsEmpty": "Noch keine aktiven Plattformen.",
+      "lastExport": "Letzter Export",
+      "successRate": "Erfolgsquote (30 Tage)",
+      "waitingExports": "Wartend",
+      "failedExportsShort": "Fehlgeschlagen",
+      "notTracked": "nicht erfasst"
     },
     "conflicts": {
       "loadFailed": "Konflikte konnten nicht geladen werden.",
@@ -4020,11 +4035,24 @@
       "fixMissingField": "Erforderliches Feld '{value}' ist nicht zugeordnet.",
       "fixMissingFieldAction": "Mapping-Editor öffnen"
     },
-    "comingSoon": {
-      "journey": {
-        "title": "Datenverlauf folgt",
-        "body": "Klick-durch-Feldverlauf — wer hat was wann mit welcher KI-Sicherheit geändert — wird in der nächsten Phase hinzugefügt."
-      }
+    "journey": {
+      "selectTestYacht": "Test-Yacht wählen...",
+      "orYachtId": "oder Yacht-ID eingeben",
+      "fieldLabel": "Feldname",
+      "lookup": "Nachschlagen",
+      "lookingUp": "Nachschlagen...",
+      "lookupFailed": "Nachschlagen fehlgeschlagen.",
+      "currentValue": "Aktueller Wert (Datenbank)",
+      "historyTitle": "Verlauf",
+      "historyEmpty": "Keine Änderungen für dieses Feld gefunden.",
+      "from": "von",
+      "to": "zu",
+      "byUser": "von",
+      "bySystem": "System",
+      "byAi": "KI",
+      "byImport": "Import (YachtShift)",
+      "confidence": "Sicherheit",
+      "reason": "Grund"
     }
   }
 }

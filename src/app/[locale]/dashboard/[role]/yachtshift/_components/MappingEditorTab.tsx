@@ -21,6 +21,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fmt } from "../_types";
+import { IntegrationTooltip } from "./IntegrationTooltip";
 import type { GenerateResult, MappingRow, MappingSuggestion, MappingVersion, TestYacht } from "../_types";
 
 type Draft = {
@@ -291,8 +292,12 @@ export function MappingEditorTab() {
                 <tr className="border-b border-slate-100 text-left text-[10px] font-black uppercase tracking-wider text-slate-400 dark:border-slate-800">
                   <th className="py-2 pr-3">{t("groupColumn")}</th>
                   <th className="py-2 pr-3">{t("fieldColumn")}</th>
-                  <th className="py-2 pr-3">{t("pathColumn")}</th>
-                  <th className="py-2 pr-3">{t("defaultColumn")}</th>
+                  <th className="py-2 pr-3">
+                    <span className="inline-flex items-center gap-1">{t("pathColumn")} <IntegrationTooltip field="mappingPath" /></span>
+                  </th>
+                  <th className="py-2 pr-3">
+                    <span className="inline-flex items-center gap-1">{t("defaultColumn")} <IntegrationTooltip field="defaultValue" /></span>
+                  </th>
                   <th className="py-2 pr-3">{t("requiredColumn")}</th>
                   <th className="py-2 pr-3">{t("actionsColumn")}</th>
                 </tr>
@@ -349,7 +354,7 @@ export function MappingEditorTab() {
       {/* ── AI suggestions ────────────────────────────────────────── */}
       <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-slate-400">
-          <Sparkles size={13} /> {t("suggestionsTitle")}
+          <Sparkles size={13} /> {t("suggestionsTitle")} <IntegrationTooltip field="confidenceScore" />
         </p>
         <p className="mt-1 text-xs text-slate-400">{t("suggestionsBody")}</p>
 

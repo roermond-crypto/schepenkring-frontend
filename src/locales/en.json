@@ -3818,6 +3818,13 @@
     "title": "Integration Center",
     "subtitle": "OpenMarine · YachtShift · Marketplaces",
     "refresh": "Refresh",
+    "tooltip": {
+      "ariaLabel": "Explanation for this field",
+      "example": "Example",
+      "commonMistakes": "Common mistakes",
+      "required": "Required",
+      "optional": "Optional"
+    },
     "tabs": {
       "overview": "Overview",
       "connections": "Connections",
@@ -3843,7 +3850,15 @@
       "syncButton": "Synchronize",
       "syncSuccessDry": "Dry run completed.",
       "syncSuccess": "Synchronization completed.",
-      "syncFailed": "Synchronization failed."
+      "syncFailed": "Synchronization failed.",
+      "widgetsTitle": "Platform status",
+      "widgetsLoadFailed": "Failed to load platform status.",
+      "widgetsEmpty": "No active platforms yet.",
+      "lastExport": "Last export",
+      "successRate": "Success rate (30d)",
+      "waitingExports": "Waiting",
+      "failedExportsShort": "Failed",
+      "notTracked": "not tracked"
     },
     "conflicts": {
       "loadFailed": "Failed to load conflicts.",
@@ -4022,11 +4037,24 @@
       "fixMissingField": "Required field '{value}' is not mapped.",
       "fixMissingFieldAction": "Open mapping editor"
     },
-    "comingSoon": {
-      "journey": {
-        "title": "Data journey coming soon",
-        "body": "Click-through field history — who changed what, when, and with what AI confidence — will be added in the next phase."
-      }
+    "journey": {
+      "selectTestYacht": "Choose a test yacht...",
+      "orYachtId": "or enter a yacht ID",
+      "fieldLabel": "Field name",
+      "lookup": "Look up",
+      "lookingUp": "Looking up...",
+      "lookupFailed": "Failed to look up.",
+      "currentValue": "Current value (database)",
+      "historyTitle": "History",
+      "historyEmpty": "No changes found for this field.",
+      "from": "from",
+      "to": "to",
+      "byUser": "by",
+      "bySystem": "System",
+      "byAi": "AI",
+      "byImport": "Import (YachtShift)",
+      "confidence": "confidence",
+      "reason": "Reason"
     }
   }
 }

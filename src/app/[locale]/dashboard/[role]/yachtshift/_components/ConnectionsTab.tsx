@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { IntegrationTooltip } from "./IntegrationTooltip";
 import type { Platform } from "../_types";
 
 type ValidationIssue = { severity: "error" | "warning" | string; message: string };
@@ -186,6 +187,7 @@ export function ConnectionsTab() {
                             <Star size={10} className="fill-current" /> {t("default")}
                           </span>
                         )}
+                        <IntegrationTooltip field="isDefaultConnection" />
                         <span
                           className={cn(
                             "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
@@ -263,7 +265,9 @@ export function ConnectionsTab() {
                 )}
 
                 <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
-                  <p className="mb-2 text-[11px] font-black uppercase tracking-wider text-slate-400">{t("assignedMarketplaces")}</p>
+                  <p className="mb-2 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    {t("assignedMarketplaces")} <IntegrationTooltip field="feedSourceAssignment" />
+                  </p>
                   {marketplaces.length === 0 ? (
                     <p className="text-xs text-slate-400">—</p>
                   ) : (
