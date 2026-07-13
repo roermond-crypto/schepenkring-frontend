@@ -27,16 +27,34 @@ import type {
 } from "@/types/chat";
 import { AlertCircle, Menu } from "lucide-react";
 
+const VALID_STATUS_FILTERS: ReadonlyArray<ConversationStatus> = [
+  "open",
+  "pending",
+  "solved",
+  "archived",
+];
+
+function parseStatusParam(value: string | null): ConversationStatus | "all" {
+  if (value && VALID_STATUS_FILTERS.includes(value as ConversationStatus)) {
+    return value as ConversationStatus;
+  }
+  return "all";
+}
+
 export function ChatPage() {
   const t = useTranslations("DashboardChat");
   const searchParams = useSearchParams();
   const locationFilter = searchParams.get("location");
+  // Dashboard summary cards (e.g. "25 onbeantwoorde vragen") link here with
+  // ?type=question&status=open — these must be applied as real filters,
+  // otherwise the count that was clicked never matches what's shown.
+  const chatTypeFilter = searchParams.get("type");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [contact, setContact] = useState<ContactInfo | null>(null);
   const [statusFilter, setStatusFilter] = useState<ConversationStatus | "all">(
-    "all",
+    () => parseStatusParam(searchParams.get("status")),
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -55,10 +73,11 @@ export function ChatPage() {
       status: statusFilter,
       search: searchQuery,
       locationId: locationFilter ?? undefined,
+      chatType: chatTypeFilter ?? undefined,
     });
     setConversations(data);
     setLoading(false);
-  }, [statusFilter, searchQuery, locationFilter]);
+  }, [statusFilter, searchQuery, locationFilter, chatTypeFilter]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

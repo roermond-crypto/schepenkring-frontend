@@ -222,9 +222,10 @@ export async function getConversations(filters?: {
   status?: ConversationStatus | "all";
   search?: string;
   locationId?: string | number;
+  chatType?: string;
 }): Promise<Conversation[]> {
   try {
-    const params: Record<string, string> = { limit: "50" };
+    const params: Record<string, string> = { limit: "100" };
 
     if (filters?.status && filters.status !== "all") {
       params.status = filters.status;
@@ -232,6 +233,10 @@ export async function getConversations(filters?: {
 
     if (filters?.locationId) {
       params.location_id = String(filters.locationId);
+    }
+
+    if (filters?.chatType) {
+      params.chat_type = filters.chatType;
     }
 
     const response = await apiRequest<{

@@ -536,7 +536,7 @@
     "notificationSummary": "Je hebt {count} nieuwe melding{count, plural, one {} other {en}}.",
     "registrationSummary": "Je hebt {count} nieuwe registratie{count, plural, one {} other {s}} die wachten op controle.",
     "activeBiddingItems": "Je hebt {count} actieve bieding{count, plural, one {} other {en}}.",
-    "unansweredQuestions": "{count} onbeantwoorde vraag{count, plural, one {} other {en}}",
+    "unansweredQuestions": "{count} onbeantwoorde {count, plural, one {vraag} other {vragen}}",
     "pendingViewings": "{count} openstaande bezichtiging{count, plural, one {} other {en}}",
     "liveSync": "Live synchronisatie",
     "refresh": "Verversen",
