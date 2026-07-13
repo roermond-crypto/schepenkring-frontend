@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Check,
   ChevronRight,
@@ -169,8 +170,10 @@ export function BoatIntakePage({
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [emailSent, setEmailSent] = useState<boolean | null>(null);
   const [resendingEmail, setResendingEmail] = useState(false);
+  const [resumingSession, setResumingSession] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const STEPS = arr(t, "steps").length > 0 ? arr(t, "steps") : ["Uw gegevens", "Boot details", "Foto's & docs", "Overzicht"];
 
@@ -377,58 +380,114 @@ export function BoatIntakePage({
     if (!files || !resumeToken) return;
     const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
     setUploadingPhotos(true);
+    setErrors((prev) => ({ ...prev, _global: "" }));
     const fd = new FormData();
     list.forEach((f) => fd.append("photos[]", f));
     try {
       const res = await fetch(`${API}/boat-intake/${resumeToken}/photos`, { method: "POST", body: fd });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        const msg = j?.errors ? Object.values(j.errors).flat().join(" ") : null;
+        setErrors({ _global: msg || s(t, "errors.photoUploadFailed", "Uploaden van foto's is mislukt. Controleer het bestandsformaat en de bestandsgrootte (max. 20MB per foto) en probeer het opnieuw.") });
+        return;
+      }
       const json = await res.json();
       if (json.uploaded) {
         setPhotos((prev) => [...prev, ...json.uploaded.map((u: { id: number; url: string }) => ({ id: u.id, url: fixStorageUrl(u.url) }))]);
         setPhotoCount(json.photo_count as number);
         if (json.score) setScore(json.score as ScoreData);
       }
-    } catch { /* silent */ } finally { setUploadingPhotos(false); }
+    } catch {
+      setErrors({ _global: s(t, "errors.photoUploadFailed", "Uploaden van foto's is mislukt. Controleer je internetverbinding en probeer het opnieuw.") });
+    } finally { setUploadingPhotos(false); }
   }
 
   async function handleDeletePhoto(photoId: number) {
     if (!resumeToken) return;
     try {
       const res = await fetch(`${API}/boat-intake/${resumeToken}/photos/${photoId}`, { method: "DELETE" });
+      if (!res.ok) {
+        setErrors({ _global: s(t, "errors.photoDeleteFailed", "Verwijderen van de foto is mislukt. Probeer het opnieuw.") });
+        return;
+      }
       const json = await res.json();
       if (json.deleted) {
         setPhotos((prev) => prev.filter((p) => p.id !== photoId));
         setPhotoCount(json.photo_count as number);
         if (json.score) setScore(json.score as ScoreData);
       }
-    } catch { /* silent */ }
+    } catch {
+      setErrors({ _global: s(t, "errors.photoDeleteFailed", "Verwijderen van de foto is mislukt. Probeer het opnieuw.") });
+    }
   }
 
   async function handleDocFile(file: File, docType: string) {
     if (!resumeToken) return;
     setUploadingDocs(true);
+    setErrors((prev) => ({ ...prev, _global: "" }));
     const fd = new FormData();
     fd.append("documents[]", file);
     fd.append("document_type", docType);
     try {
       const res = await fetch(`${API}/boat-intake/${resumeToken}/documents`, { method: "POST", body: fd });
-      if (res.ok) {
-        const json = await res.json();
-        setDocuments((prev) => [...prev, { name: file.name, type: docType }]);
-        if (json.score) setScore(json.score as ScoreData);
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        const msg = j?.errors ? Object.values(j.errors).flat().join(" ") : null;
+        setErrors({ _global: msg || s(t, "errors.docUploadFailed", "Uploaden van het document is mislukt. Controleer het bestandsformaat en de bestandsgrootte en probeer het opnieuw.") });
+        return;
       }
-    } catch { /* silent */ } finally { setUploadingDocs(false); }
+      const json = await res.json();
+      setDocuments((prev) => [...prev, { name: file.name, type: docType }]);
+      if (json.score) setScore(json.score as ScoreData);
+    } catch {
+      setErrors({ _global: s(t, "errors.docUploadFailed", "Uploaden van het document is mislukt. Controleer je internetverbinding en probeer het opnieuw.") });
+    } finally { setUploadingDocs(false); }
   }
 
   async function handleResendEmail() {
     if (!resumeToken || resendingEmail) return;
     setResendingEmail(true);
+    setErrors((prev) => ({ ...prev, _global: "" }));
     try {
       const res = await fetch(`${API}/boat-intake/${resumeToken}/resend-confirmation`, { method: "POST" });
-      if (res.ok) {
-        const json = await res.json();
-        setEmailSent(json.confirmation_sent ?? false);
+      if (!res.ok) {
+        setErrors({ _global: s(t, "errors.resendFailed", "Opnieuw versturen van de bevestigingsmail is mislukt. Probeer het later opnieuw.") });
+        return;
       }
-    } catch { /* silent */ } finally { setResendingEmail(false); }
+      const json = await res.json();
+      setEmailSent(json.confirmation_sent ?? false);
+      if (!json.confirmation_sent) {
+        setErrors({ _global: s(t, "errors.resendFailed", "De bevestigingsmail kon niet worden verstuurd. Probeer het later opnieuw of neem contact op.") });
+      }
+    } catch {
+      setErrors({ _global: s(t, "errors.resendFailed", "Opnieuw versturen van de bevestigingsmail is mislukt. Probeer het later opnieuw.") });
+    } finally { setResendingEmail(false); }
+  }
+
+  // Exchanges the resume token for a real logged-in session on the seller
+  // account that was already auto-created when this intake was submitted —
+  // so the seller can continue straight into the dashboard instead of
+  // registering all over again. Calls the Next.js route (not the backend
+  // directly) because only a route handler can set the httpOnly auth cookies.
+  async function handleContinueToAccount() {
+    if (!resumeToken || resumingSession) return;
+    setResumingSession(true);
+    setErrors((prev) => ({ ...prev, _global: "" }));
+    try {
+      const res = await fetch("/api/auth/boat-intake-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resume_token: resumeToken }),
+      });
+      if (!res.ok) {
+        setErrors({ _global: s(t, "errors.autoLoginFailed", "Automatisch inloggen is mislukt. Maak hieronder een account aan om verder te gaan.") });
+        return;
+      }
+      const json = await res.json();
+      router.push(`/${locale}/dashboard/${json.user?.role ?? "seller"}`);
+    } catch {
+      setErrors({ _global: s(t, "errors.autoLoginFailed", "Automatisch inloggen is mislukt. Maak hieronder een account aan om verder te gaan.") });
+    } finally { setResumingSession(false); }
   }
 
   const scoreColor = (n: number) => n >= 70 ? "text-green-600" : n >= 50 ? "text-amber-600" : "text-red-600";
@@ -993,13 +1052,22 @@ export function BoatIntakePage({
                     ))}
                   </div>
 
-                  {/* Register / login CTA */}
+                  {/* Continue straight into the account created during intake —
+                      no re-registration. Falls back to a manual register link
+                      only if the auto-login call itself fails. */}
                   <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-100 flex flex-col gap-2.5">
+                    <button
+                      type="button"
+                      onClick={handleContinueToAccount}
+                      disabled={resumingSession || !resumeToken}
+                      className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full bg-[#C8102E] text-white text-sm font-bold hover:bg-[#a50d25] transition-colors disabled:opacity-60">
+                      {resumingSession ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+                      {s(t, "review.continueBtn", "Ga verder naar mijn account")}
+                    </button>
                     <Link
                       href={`/${locale}/auth?mode=register`}
-                      className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full bg-[#C8102E] text-white text-sm font-bold hover:bg-[#a50d25] transition-colors">
-                      <LogIn className="w-4 h-4" />
-                      {s(t, "review.registerBtn")}
+                      className="text-center text-xs text-slate-400 hover:underline">
+                      {s(t, "review.registerBtnFallback", "Lukt dit niet? Account handmatig aanmaken")}
                     </Link>
                     <Link
                       href={`/${locale}/auth?mode=login`}
