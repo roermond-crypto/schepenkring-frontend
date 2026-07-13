@@ -611,6 +611,34 @@
         "title": "Integrationen",
         "description": "Verwalten Sie verbundene Tools, Feeds und Admin-Plattformanbindungen."
       },
+      "emailTemplates": {
+        "title": "E-Mail-Vorlagen",
+        "description": "Verwalten und bearbeiten Sie die vom Plattform automatisch versendeten E-Mail-Vorlagen."
+      },
+      "contractTemplates": {
+        "title": "Vertragsvorlagen",
+        "description": "Verwalten Sie die Dokumentvorlagen zur Vertragserstellung."
+      },
+      "contractTypes": {
+        "title": "Vertragsarten",
+        "description": "Konfigurieren Sie die verfügbaren Vertragsarten und ihre Regeln."
+      },
+      "i18nQuality": {
+        "title": "Übersetzungsqualität",
+        "description": "Prüfen Sie Qualität und Vollständigkeit der Übersetzungen pro Sprache."
+      },
+      "platformNetwork": {
+        "title": "Plattformnetzwerk",
+        "description": "Verwalten Sie verbundene Marktplätze und das Plattformnetzwerk."
+      },
+      "signhostMonitor": {
+        "title": "Signhost-Monitor",
+        "description": "Verfolgen Sie den Status von Signaturanfragen über Signhost."
+      },
+      "yachtshiftSync": {
+        "title": "YachtShift-Synchronisierung",
+        "description": "Zeigen und verwalten Sie die Synchronisierung mit YachtShift."
+      },
       "knowledgeLibrary": {
         "title": "Wissensbibliothek",
         "description": "Erstellen und verwalten Sie Marken- oder Modellartikel für die KI-Beschreibungsgenerierung."

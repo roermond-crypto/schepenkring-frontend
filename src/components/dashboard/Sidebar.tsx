@@ -24,11 +24,7 @@ import {
   Handshake,
   ShieldCheck,
   LogOut,
-  Mail,
   FileText,
-  Globe,
-  Radio,
-  FileSignature,
   RefreshCw,
   PhoneCall,
   Bot,
@@ -163,41 +159,6 @@ export function Sidebar({
         title: t.interaction,
         href: `${root}/chat`,
         icon: MessageSquare,
-      });
-      items.push({
-        title: t.emailTemplates ?? "E-mailsjablonen",
-        href: `${root}/email-templates`,
-        icon: Mail,
-      });
-      items.push({
-        title: t.contractTemplates ?? "Contractsjablonen",
-        href: `${root}/contract-templates`,
-        icon: FileText,
-      });
-      items.push({
-        title: t.contractTypes ?? "Contracttypes",
-        href: `${root}/contract-types`,
-        icon: FileText,
-      });
-      items.push({
-        title: t.i18nQuality ?? "Vertalingskwaliteit",
-        href: `${root}/i18n`,
-        icon: Globe,
-      });
-      items.push({
-        title: "Platform Netwerk",
-        href: `${root}/platforms`,
-        icon: Radio,
-      });
-      items.push({
-        title: "Signhost Monitor",
-        href: `${root}/signhost`,
-        icon: FileSignature,
-      });
-      items.push({
-        title: "YachtShift Sync",
-        href: `${root}/yachtshift`,
-        icon: RefreshCw,
       });
       items.push({
         title: "Sales Command Center",

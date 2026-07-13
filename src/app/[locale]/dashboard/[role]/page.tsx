@@ -34,6 +34,13 @@ import {
   TriangleAlert,
   Plug,
   Library,
+  Mail,
+  FileText,
+  Files,
+  Globe,
+  Radio,
+  FileSignature,
+  RefreshCw,
 } from "lucide-react";
 import { BuyerVerificationPanel } from "@/components/dashboard/BuyerVerificationPanel";
 import { PublishingHealthWidget } from "@/components/dashboard/PublishingHealthWidget";
@@ -861,6 +868,76 @@ export default function AdminDashboardHome() {
       iconTone: "text-[#C2410C]",
       iconShell:
         "border-[#F7D0B5] bg-gradient-to-br from-[#FFF7ED] to-[#FFFBF5]",
+    },
+    {
+      key: "emailTemplates",
+      title: t("shortcuts.emailTemplates.title"),
+      description: t("shortcuts.emailTemplates.description"),
+      href: `${dashboardBase}/email-templates`,
+      icon: Mail,
+      iconTone: "text-[#0284C7]",
+      iconShell:
+        "border-[#BAE6FD] bg-gradient-to-br from-[#F0F9FF] to-[#F8FCFF]",
+    },
+    {
+      key: "contractTemplates",
+      title: t("shortcuts.contractTemplates.title"),
+      description: t("shortcuts.contractTemplates.description"),
+      href: `${dashboardBase}/contract-templates`,
+      icon: FileText,
+      iconTone: "text-[#4338CA]",
+      iconShell:
+        "border-[#C7D2FE] bg-gradient-to-br from-[#EEF2FF] to-[#F8F9FF]",
+    },
+    {
+      key: "contractTypes",
+      title: t("shortcuts.contractTypes.title"),
+      description: t("shortcuts.contractTypes.description"),
+      href: `${dashboardBase}/contract-types`,
+      icon: Files,
+      iconTone: "text-[#B45309]",
+      iconShell:
+        "border-[#FDE1B0] bg-gradient-to-br from-[#FFFBEB] to-[#FFFDF5]",
+    },
+    {
+      key: "i18nQuality",
+      title: t("shortcuts.i18nQuality.title"),
+      description: t("shortcuts.i18nQuality.description"),
+      href: `${dashboardBase}/i18n`,
+      icon: Globe,
+      iconTone: "text-[#0E7490]",
+      iconShell:
+        "border-[#A5E4EF] bg-gradient-to-br from-[#ECFEFF] to-[#F7FEFF]",
+    },
+    {
+      key: "platformNetwork",
+      title: t("shortcuts.platformNetwork.title"),
+      description: t("shortcuts.platformNetwork.description"),
+      href: `${dashboardBase}/platforms`,
+      icon: Radio,
+      iconTone: "text-[#A21CAF]",
+      iconShell:
+        "border-[#F3C6F5] bg-gradient-to-br from-[#FDF4FF] to-[#FEF9FF]",
+    },
+    {
+      key: "signhostMonitor",
+      title: t("shortcuts.signhostMonitor.title"),
+      description: t("shortcuts.signhostMonitor.description"),
+      href: `${dashboardBase}/signhost`,
+      icon: FileSignature,
+      iconTone: "text-[#BE123C]",
+      iconShell:
+        "border-[#FBCFDB] bg-gradient-to-br from-[#FFF1F4] to-[#FFF8F9]",
+    },
+    {
+      key: "yachtshiftSync",
+      title: t("shortcuts.yachtshiftSync.title"),
+      description: t("shortcuts.yachtshiftSync.description"),
+      href: `${dashboardBase}/yachtshift`,
+      icon: RefreshCw,
+      iconTone: "text-[#4D7C0F]",
+      iconShell:
+        "border-[#D5EDB2] bg-gradient-to-br from-[#F7FEE7] to-[#FCFFF5]",
     },
   ];
 

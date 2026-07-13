@@ -616,6 +616,34 @@
       "integrations": {
         "title": "Integrations",
         "description": "Manage connected tools, feeds, and admin-side platform links."
+      },
+      "emailTemplates": {
+        "title": "Email Templates",
+        "description": "Manage and edit the email templates the platform sends automatically."
+      },
+      "contractTemplates": {
+        "title": "Contract Templates",
+        "description": "Manage the document templates used to generate contracts."
+      },
+      "contractTypes": {
+        "title": "Contract Types",
+        "description": "Configure the available contract types and their rules."
+      },
+      "i18nQuality": {
+        "title": "Translation Quality",
+        "description": "Check translation quality and completeness per language."
+      },
+      "platformNetwork": {
+        "title": "Platform Network",
+        "description": "Manage connected marketplaces and the platform network."
+      },
+      "signhostMonitor": {
+        "title": "Signhost Monitor",
+        "description": "Track the status of signing requests via Signhost."
+      },
+      "yachtshiftSync": {
+        "title": "YachtShift Sync",
+        "description": "View and manage the synchronization with YachtShift."
       }
     },
     "schedule": {

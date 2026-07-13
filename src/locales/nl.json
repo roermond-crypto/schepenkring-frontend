@@ -613,6 +613,34 @@
         "title": "Integraties",
         "description": "Beheer gekoppelde tools, feeds en admin-koppelingen zonder omweg."
       },
+      "emailTemplates": {
+        "title": "E-mailsjablonen",
+        "description": "Beheer en bewerk de e-mailsjablonen die het platform automatisch verstuurt."
+      },
+      "contractTemplates": {
+        "title": "Contractsjablonen",
+        "description": "Beheer de documentsjablonen die worden gebruikt om contracten te genereren."
+      },
+      "contractTypes": {
+        "title": "Contracttypes",
+        "description": "Configureer de beschikbare contracttypes en hun regels."
+      },
+      "i18nQuality": {
+        "title": "Vertalingskwaliteit",
+        "description": "Controleer de kwaliteit en volledigheid van vertalingen per taal."
+      },
+      "platformNetwork": {
+        "title": "Platform Netwerk",
+        "description": "Beheer gekoppelde marketplaces en het platformnetwerk."
+      },
+      "signhostMonitor": {
+        "title": "Signhost Monitor",
+        "description": "Volg de status van ondertekeningsverzoeken via Signhost."
+      },
+      "yachtshiftSync": {
+        "title": "YachtShift Sync",
+        "description": "Bekijk en beheer de synchronisatie met YachtShift."
+      },
       "knowledgeLibrary": {
         "title": "Kennisbibliotheek",
         "description": "Maak en beheer merk- of modelartikelen voor AI-beschrijvingsgeneratie."

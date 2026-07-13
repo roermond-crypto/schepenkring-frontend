@@ -611,6 +611,34 @@
         "title": "Intégrations",
         "description": "Gérez les outils connectés, flux et connexions plateforme côté admin."
       },
+      "emailTemplates": {
+        "title": "Modèles d'e-mail",
+        "description": "Gérez et modifiez les modèles d'e-mail envoyés automatiquement par la plateforme."
+      },
+      "contractTemplates": {
+        "title": "Modèles de contrat",
+        "description": "Gérez les modèles de documents utilisés pour générer les contrats."
+      },
+      "contractTypes": {
+        "title": "Types de contrat",
+        "description": "Configurez les types de contrat disponibles et leurs règles."
+      },
+      "i18nQuality": {
+        "title": "Qualité des traductions",
+        "description": "Vérifiez la qualité et l'exhaustivité des traductions par langue."
+      },
+      "platformNetwork": {
+        "title": "Réseau de plateformes",
+        "description": "Gérez les places de marché connectées et le réseau de plateformes."
+      },
+      "signhostMonitor": {
+        "title": "Moniteur Signhost",
+        "description": "Suivez le statut des demandes de signature via Signhost."
+      },
+      "yachtshiftSync": {
+        "title": "Synchronisation YachtShift",
+        "description": "Consultez et gérez la synchronisation avec YachtShift."
+      },
       "knowledgeLibrary": {
         "title": "Bibliothèque de connaissances",
         "description": "Créez et gérez des articles de marque ou de modèle pour la génération de descriptions IA."
