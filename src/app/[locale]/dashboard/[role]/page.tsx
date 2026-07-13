@@ -1233,8 +1233,23 @@ export default function AdminDashboardHome() {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-slate-200 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              {t("empty.noNewRegistrations")}
+            <div className="rounded-2xl border border-dashed border-[#C6D6F2] bg-gradient-to-b from-[#F8FBFF] to-white p-10 text-center dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#0B1F3A]/10">
+                <Anchor className="text-[#1E3A8A]" size={26} />
+              </div>
+              <p className="text-lg font-bold text-[#0B1F3A] dark:text-slate-100">
+                {t("empty.noNewRegistrationsTitle")}
+              </p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {t("empty.noNewRegistrationsSubtitle")}
+              </p>
+              <Link
+                href={`${dashboardBase}/yachts`}
+                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#112f58]"
+              >
+                {t("actions.reviewRegistrations")}
+                <ArrowRight size={14} />
+              </Link>
             </div>
           )}
         </section>

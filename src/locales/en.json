@@ -651,6 +651,8 @@
     "empty": {
       "noRecentBiddingTitle": "No recent bidding activity",
       "noRecentBiddingSubtitle": "Start a bidding process to see live updates here.",
+      "noNewRegistrationsTitle": "No new registrations",
+      "noNewRegistrationsSubtitle": "As soon as a boat is submitted, it will appear here for review.",
       "brokerReviewTitle": "Broker review status",
       "brokerReviewHeadingOne": "You have {count} boat under review with the broker",
       "brokerReviewHeadingOther": "You have {count} boats under review with the broker",

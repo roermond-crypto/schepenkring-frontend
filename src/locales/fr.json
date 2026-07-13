@@ -649,6 +649,8 @@
     "empty": {
       "noRecentBiddingTitle": "Aucune activité d'enchères récente",
       "noRecentBiddingSubtitle": "Démarrez un processus d'enchères pour voir les mises à jour en direct ici.",
+      "noNewRegistrationsTitle": "Aucune nouvelle inscription",
+      "noNewRegistrationsSubtitle": "Dès qu'un bateau est soumis, il apparaîtra ici pour vérification.",
       "brokerReviewTitle": "Vérification du courtier",
       "brokerReviewHeadingOne": "Vous avez {count} bateau en cours de vérification chez le courtier",
       "brokerReviewHeadingOther": "Vous avez {count} bateaux en cours de vérification chez le courtier",

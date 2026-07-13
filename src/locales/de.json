@@ -649,6 +649,8 @@
     "empty": {
       "noRecentBiddingTitle": "Keine kürzliche Gebotsaktivität",
       "noRecentBiddingSubtitle": "Starten Sie einen Gebotsprozess, um hier Echtzeit-Updates zu sehen.",
+      "noNewRegistrationsTitle": "Keine neuen Registrierungen",
+      "noNewRegistrationsSubtitle": "Sobald ein Boot angemeldet wird, erscheint es hier zur Prüfung.",
       "brokerReviewTitle": "Maklerprüfung",
       "brokerReviewHeadingOne": "Sie haben {count} Boot zur Prüfung beim Makler",
       "brokerReviewHeadingOther": "Sie haben {count} Boote zur Prüfung beim Makler",
