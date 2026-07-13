@@ -256,7 +256,8 @@
       "boatAudit": "Audit bateau",
       "edit": "Modifier",
       "view": "Voir",
-      "delete": "Supprimer"
+      "delete": "Supprimer",
+      "updateBoat": "Mettre à jour le bateau"
     },
     "stats": {
       "total": "Total",
@@ -346,6 +347,9 @@
       "nextPage": "Page suivante",
       "lastPage": "Derniere page",
       "pageOf": "Page {current} sur {total}"
+    },
+    "infoRequest": {
+      "label": "Informations complémentaires demandées"
     }
   },
   "DashboardAdminCopilot": {
@@ -3778,5 +3782,15 @@
       "byPlatform": "Par plateforme",
       "confidence": "Confiance"
     }
+  },
+  "YachtInfoRequest": {
+    "title": "Demander des informations au vendeur",
+    "openRequestLabel": "Demande en cours",
+    "itemPlaceholder": "p. ex. Téléverser une photo du moteur",
+    "addItem": "Ajouter un élément",
+    "send": "Envoyer la demande",
+    "sendSuccess": "Demande envoyée au vendeur.",
+    "sendFailed": "Échec de l'envoi de la demande.",
+    "historyLabel": "Demandes précédentes"
   }
 }

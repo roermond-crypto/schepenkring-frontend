@@ -87,6 +87,7 @@ type YachtListItem = {
   completeness_score?: number | null;
   completeness_breakdown?: CompletenessBreakdown | null;
   yachtshift_publish_status?: string | null;
+  open_info_request?: { id: number; items: string[] } | null;
   [key: string]: unknown;
 };
 
@@ -137,6 +138,7 @@ export default function FleetManagementPage() {
   const locale = useLocale();
   const role = normalizeRole(params?.role) ?? "admin";
   const isClientRole = role === "client";
+  const isSellerRole = role === "seller";
   const dict = getDictionary(locale) as any;
   const t = dict.DashboardYachts || {} as any;
   const [fleet, setFleet] = useState<YachtListItem[]>([]);
@@ -1104,6 +1106,22 @@ export default function FleetManagementPage() {
                     </div>
                   ) : null}
 
+                  {isSellerRole && yacht.open_info_request ? (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-amber-600">
+                        {t?.infoRequest?.label || "Additional information requested"}
+                      </p>
+                      <ul className="mt-1.5 space-y-0.5">
+                        {yacht.open_info_request.items.map((item, i) => (
+                          <li key={i} className="text-[11px] text-amber-800 flex items-start gap-1.5">
+                            <span className="mt-1 h-1 w-1 rounded-full bg-amber-400 shrink-0" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
                   {/* FOOTER */}
                   <div className="pt-4 border-t border-slate-100 mt-auto space-y-2">
                     {/* Completeness score badge */}
@@ -1151,7 +1169,9 @@ export default function FleetManagementPage() {
                       }
                       className="w-full text-[9px] font-black uppercase text-blue-600 tracking-widest hover:text-blue-800 transition-colors flex items-center justify-center gap-1"
                     >
-                      {t?.actions?.manageVessel || "Manage Vessel"}
+                      {isSellerRole
+                        ? t?.actions?.updateBoat || "Update Boat"
+                        : t?.actions?.manageVessel || "Manage Vessel"}
                       <ChevronRight size={12} />
                     </button>
                   </div>
@@ -1307,7 +1327,11 @@ export default function FleetManagementPage() {
                       router.push(`/${locale}/dashboard/${role}/yachts/${yacht.id}`)
                     }
                     className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
-                    title={t?.actions?.edit || "Edit"}
+                    title={
+                      isSellerRole
+                        ? t?.actions?.updateBoat || "Update Boat"
+                        : t?.actions?.edit || "Edit"
+                    }
                   >
                     <Edit3 size={16} />
                   </button>

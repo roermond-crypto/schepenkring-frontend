@@ -151,6 +151,7 @@ import {
   CompletenessScoreCard,
   type CompletenessBreakdown,
 } from "@/components/yachts/CompletenessScore";
+import { YachtInfoRequestPanel } from "@/components/yachts/YachtInfoRequestPanel";
 import { 
   FieldLabel, 
   WizardInput as Input, 
@@ -9676,6 +9677,10 @@ function YachtEditorInner() {
               onRecalculate={() => void recalculateCompletenessScore()}
               loading={scoreLoading}
             />
+          )}
+
+          {activeStep === 5 && role === "admin" && activeYachtId && (
+            <YachtInfoRequestPanel yachtId={Number(activeYachtId)} />
           )}
 
           {activeStep === 5 && role === "admin" && activeYachtId && (

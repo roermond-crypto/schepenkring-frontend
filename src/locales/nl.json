@@ -256,7 +256,8 @@
       "boatAudit": "Bootaudit",
       "edit": "Bewerken",
       "view": "Bekijken",
-      "delete": "Verwijderen"
+      "delete": "Verwijderen",
+      "updateBoat": "Boot bijwerken"
     },
     "stats": {
       "total": "Totaal",
@@ -346,6 +347,9 @@
       "nextPage": "Volgende pagina",
       "lastPage": "Laatste pagina",
       "pageOf": "Pagina {current} van {total}"
+    },
+    "infoRequest": {
+      "label": "Aanvullende informatie gevraagd"
     }
   },
   "DashboardAdminCopilot": {
@@ -3780,5 +3784,15 @@
       "byPlatform": "Per platform",
       "confidence": "Zekerheid"
     }
+  },
+  "YachtInfoRequest": {
+    "title": "Informatie opvragen bij verkoper",
+    "openRequestLabel": "Openstaand verzoek",
+    "itemPlaceholder": "bijv. Motorfoto uploaden",
+    "addItem": "Item toevoegen",
+    "send": "Verzoek versturen",
+    "sendSuccess": "Verzoek verstuurd naar verkoper.",
+    "sendFailed": "Versturen van verzoek mislukt.",
+    "historyLabel": "Eerdere verzoeken"
   }
 }

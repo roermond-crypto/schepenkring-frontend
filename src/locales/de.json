@@ -256,7 +256,8 @@
       "boatAudit": "Boot-Audit",
       "edit": "Bearbeiten",
       "view": "Ansehen",
-      "delete": "Loschen"
+      "delete": "Loschen",
+      "updateBoat": "Boot aktualisieren"
     },
     "stats": {
       "total": "Gesamt",
@@ -346,6 +347,9 @@
       "nextPage": "Nachste Seite",
       "lastPage": "Letzte Seite",
       "pageOf": "Seite {current} von {total}"
+    },
+    "infoRequest": {
+      "label": "Zusätzliche Informationen angefordert"
     }
   },
   "DashboardAdminCopilot": {
@@ -3778,5 +3782,15 @@
       "byPlatform": "Nach Plattform",
       "confidence": "Sicherheit"
     }
+  },
+  "YachtInfoRequest": {
+    "title": "Informationen vom Verkäufer anfordern",
+    "openRequestLabel": "Offene Anfrage",
+    "itemPlaceholder": "z.B. Motorfoto hochladen",
+    "addItem": "Element hinzufügen",
+    "send": "Anfrage senden",
+    "sendSuccess": "Anfrage an den Verkäufer gesendet.",
+    "sendFailed": "Anfrage konnte nicht gesendet werden.",
+    "historyLabel": "Frühere Anfragen"
   }
 }
