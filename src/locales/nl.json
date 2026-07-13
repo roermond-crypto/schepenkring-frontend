@@ -1452,6 +1452,25 @@
       "title": "Welkom bij Chat",
       "description": "Selecteer een conversatie in het linkerpaneel om te beginnen met chatten. Je ziet hier berichten en contactgegevens."
     },
+    "simple": {
+      "emptyTitle": "Hulp nodig?",
+      "emptyDescription": "Stel ons gerust een vraag. We beantwoorden je bericht zo snel mogelijk.",
+      "topics": {
+        "buying": "Een boot kopen",
+        "selling": "Een boot verkopen",
+        "contracts": "Contracten",
+        "payments": "Betalingen",
+        "viewings": "Bezichtigingsafspraken",
+        "documentation": "Documentatie"
+      },
+      "messageLabel": "Bericht",
+      "messagePlaceholder": "Stel hier je vraag...",
+      "send": "Verstuur",
+      "sending": "Versturen...",
+      "sendError": "Versturen van je bericht is mislukt. Probeer het opnieuw.",
+      "newQuestion": "Nieuwe vraag stellen",
+      "newQuestionTitle": "Stel een nieuwe vraag"
+    },
     "list": {
       "title": "Berichten",
       "count": "{count} conversatie(s)",
@@ -1460,6 +1479,7 @@
       "emptySearch": "Probeer een andere zoekopdracht",
       "emptyDefault": "Helemaal bijgewerkt!",
       "widgetSource": "widget",
+      "statusLabel": "Status",
       "tabs": {
         "all": "Alle",
         "open": "Open",

@@ -1364,6 +1364,25 @@
       "title": "Bienvenue dans le chat",
       "description": "Sélectionnez une conversation dans le panneau de gauche pour commencer à discuter. Vous verrez les messages et les détails du contact ici."
     },
+    "simple": {
+      "emptyTitle": "Besoin d'aide ?",
+      "emptyDescription": "N'hésitez pas à nous poser votre question. Nous répondrons à votre message dès que possible.",
+      "topics": {
+        "buying": "Acheter un bateau",
+        "selling": "Vendre un bateau",
+        "contracts": "Contrats",
+        "payments": "Paiements",
+        "viewings": "Rendez-vous de visite",
+        "documentation": "Documentation"
+      },
+      "messageLabel": "Message",
+      "messagePlaceholder": "Posez votre question...",
+      "send": "Envoyer",
+      "sending": "Envoi en cours...",
+      "sendError": "Échec de l'envoi de votre message. Veuillez réessayer.",
+      "newQuestion": "Poser une nouvelle question",
+      "newQuestionTitle": "Poser une nouvelle question"
+    },
     "list": {
       "title": "Messages",
       "count": "{count} conversations",
@@ -1372,6 +1391,7 @@
       "emptySearch": "Essayez une autre recherche",
       "emptyDefault": "Tout est à jour !",
       "widgetSource": "widget",
+      "statusLabel": "Statut",
       "tabs": {
         "all": "Tous",
         "open": "Ouvrir",

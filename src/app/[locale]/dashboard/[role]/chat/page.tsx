@@ -10,13 +10,16 @@ export default async function ChatPageRoute({
   const { locale, role: rawRole } = await params;
   const role = normalizeRole(rawRole) ?? "client";
 
-  if (role === "client" || role === "buyer") {
+  // "client" has no support-inbox equivalent page today — only buyer/seller
+  // were carved out of this redirect, since those are the two roles this
+  // simplified chat experience is built for.
+  if (role === "client") {
     redirect(`/${locale}/dashboard/${role}`);
   }
 
   return (
     <div className="w-full">
-      <ChatPage />
+      <ChatPage role={role} />
     </div>
   );
 }

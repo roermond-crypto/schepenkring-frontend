@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { Search, Plus, MessageSquare, Inbox, AtSign, User } from "lucide-react"
+import { Search, Plus, MessageSquare, Inbox, AtSign, User, ChevronDown } from "lucide-react"
 import type { ChatType, Conversation, ConversationStatus, SendChannel } from "@/types/chat"
 import { cn } from "@/lib/utils"
 
@@ -15,6 +15,10 @@ interface ConversationListProps {
     onStatusFilterChange: (status: ConversationStatus | "all") => void
     onSearchChange: (query: string) => void
     onCreateConversation?: () => void
+    /** Staff get the floating "+" that opens the CRM composer; simplified
+     * roles (seller/buyer) don't — they get their own inline composer
+     * entry point instead, rendered by the parent ChatPage. */
+    showCreateButton?: boolean
 }
 
 function StatusDot({ status }: { status: ConversationStatus }) {
@@ -99,14 +103,15 @@ export function ConversationList({
     onStatusFilterChange,
     onSearchChange,
     onCreateConversation,
+    showCreateButton = true,
 }: ConversationListProps) {
     const t = useTranslations("DashboardChat")
-    const statusTabs: { label: string; value: ConversationStatus | "all"; color: string }[] = [
-        { label: t("list.tabs.all"), value: "all", color: "" },
-        { label: t("list.tabs.open"), value: "open", color: "bg-emerald-500" },
-        { label: t("list.tabs.pending"), value: "pending", color: "bg-amber-500" },
-        { label: t("list.tabs.solved"), value: "solved", color: "bg-slate-400" },
-        { label: t("list.tabs.archived"), value: "archived", color: "bg-slate-300" },
+    const statusOptions: { label: string; value: ConversationStatus | "all" }[] = [
+        { label: t("list.tabs.all"), value: "all" },
+        { label: t("list.tabs.open"), value: "open" },
+        { label: t("list.tabs.pending"), value: "pending" },
+        { label: t("list.tabs.solved"), value: "solved" },
+        { label: t("list.tabs.archived"), value: "archived" },
     ]
     return (
         <div className="flex flex-col h-full bg-white/70 backdrop-blur-sm">
@@ -124,12 +129,14 @@ export function ConversationList({
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={onCreateConversation}
-                        className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:scale-105 transition-all"
-                    >
-                        <Plus size={16} className="text-white" />
-                    </button>
+                    {showCreateButton && (
+                        <button
+                            onClick={onCreateConversation}
+                            className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:scale-105 transition-all"
+                        >
+                            <Plus size={16} className="text-white" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Search */}
@@ -143,26 +150,28 @@ export function ConversationList({
                     />
                 </div>
 
-                {/* Status filter tabs */}
-                <div className="flex gap-1 bg-slate-100/80 rounded-xl p-1">
-                    {statusTabs.map((tab) => (
-                        <button
-                            key={tab.value}
-                            onClick={() => onStatusFilterChange(tab.value)}
-                            className={cn(
-                                "flex-1 text-[11px] font-semibold uppercase tracking-wider py-2 rounded-lg transition-all",
-                                statusFilter === tab.value
-                                    ? "bg-white text-slate-800 shadow-sm"
-                                    : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-                            )}
+                {/* Status filter — a single dropdown instead of five squeezed
+                    buttons, so it never wraps/overlaps regardless of language
+                    length or sidebar width. */}
+                <label className="flex items-center gap-2">
+                    <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        {t("list.statusLabel")}
+                    </span>
+                    <span className="relative flex-1">
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => onStatusFilterChange(e.target.value as ConversationStatus | "all")}
+                            className="w-full appearance-none rounded-xl border-0 bg-slate-100/80 py-2.5 pl-3.5 pr-9 text-sm font-semibold text-slate-700 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-blue-500/30"
                         >
-                            <span className="flex items-center justify-center gap-1.5">
-                                {tab.color && <span className={cn("w-1.5 h-1.5 rounded-full", tab.color)} />}
-                                {tab.label}
-                            </span>
-                        </button>
-                    ))}
-                </div>
+                            {statusOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </span>
+                </label>
             </div>
 
             {/* Conversation List */}

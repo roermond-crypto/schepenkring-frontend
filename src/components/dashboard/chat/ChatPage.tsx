@@ -7,6 +7,7 @@ import { ConversationList } from "./ConversationList";
 import { ConversationMessages } from "./ConversationMessages";
 import { ContactDetailPanel } from "./ContactDetailPanel";
 import { NewChatComposer, type ComposerPayload } from "./NewChatComposer";
+import { SimpleSupportComposer } from "./SimpleSupportComposer";
 import {
   getConversations,
   getMessages,
@@ -25,7 +26,8 @@ import type {
   SystemEvent,
   SupportMessage,
 } from "@/types/chat";
-import { AlertCircle, Menu } from "lucide-react";
+import type { UserRole } from "@/lib/auth/roles";
+import { AlertCircle, Menu, MessageSquarePlus } from "lucide-react";
 
 const VALID_STATUS_FILTERS: ReadonlyArray<ConversationStatus> = [
   "open",
@@ -41,8 +43,14 @@ function parseStatusParam(value: string | null): ConversationStatus | "all" {
   return "all";
 }
 
-export function ChatPage() {
+export function ChatPage({ role }: { role: UserRole }) {
   const t = useTranslations("DashboardChat");
+  // Sellers and buyers get a simple support inbox — no recipient/channel/
+  // chat-type picking, no CRM popup. Admins and employees keep the full
+  // CRM tooling (proactive outreach, external contacts, email channel,
+  // manual routing) since they're the ones staffing that inbox, not just
+  // asking it a question.
+  const isSimplifiedRole = role === "seller" || role === "buyer";
   const searchParams = useSearchParams();
   const locationFilter = searchParams.get("location");
   // Dashboard summary cards (e.g. "25 onbeantwoorde vragen") link here with
@@ -257,6 +265,21 @@ export function ChatPage() {
     [handleSelectConversation],
   );
 
+  // Seller/buyer "just ask a question" flow — no recipient/channel/type
+  // fields. The backend already derives contact name+email and the
+  // assigned harbor from the authenticated user (ChatContactService::
+  // resolveContact / ChatConversationController::store's isClient() harbor
+  // fallback), so a bare initial_message is enough for it to auto-create
+  // the conversation, thread, and location assignment in one call.
+  const handleSendFirstMessage = useCallback(
+    async (message: string) => {
+      const newConv = await createConversation({ initial_message: message });
+      setConversations((prev) => [newConv, ...prev]);
+      void handleSelectConversation(newConv);
+    },
+    [handleSelectConversation],
+  );
+
   return (
     <div className="chat-page-theme space-y-6">
 
@@ -281,21 +304,34 @@ export function ChatPage() {
         {/* Left: Conversation List */}
         <div
           className={`
-        w-full lg:w-[340px] xl:w-[380px] flex-shrink-0 border-r border-slate-200/60
-        ${mobilePanel === "list" ? "block" : "hidden lg:block"}
+        w-full lg:w-[380px] xl:w-[440px] flex-shrink-0 border-r border-slate-200/60 flex flex-col
+        ${mobilePanel === "list" ? "flex" : "hidden lg:flex"}
       `}
         >
-          <ConversationList
-            conversations={conversations}
-            selectedId={selectedConv?.id}
-            loading={loading}
-            statusFilter={statusFilter}
-            searchQuery={searchQuery}
-            onSelectConversation={handleSelectConversation}
-            onStatusFilterChange={setStatusFilter}
-            onSearchChange={setSearchQuery}
-            onCreateConversation={handleCreateConversation}
-          />
+          {isSimplifiedRole && conversations.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedConv(null)}
+              className="mx-4 mt-4 flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50/80 px-4 py-2.5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+            >
+              <MessageSquarePlus size={15} />
+              {t("simple.newQuestion")}
+            </button>
+          )}
+          <div className="min-h-0 flex-1">
+            <ConversationList
+              conversations={conversations}
+              selectedId={selectedConv?.id}
+              loading={loading}
+              statusFilter={statusFilter}
+              searchQuery={searchQuery}
+              onSelectConversation={handleSelectConversation}
+              onStatusFilterChange={setStatusFilter}
+              onSearchChange={setSearchQuery}
+              onCreateConversation={isSimplifiedRole ? undefined : handleCreateConversation}
+              showCreateButton={!isSimplifiedRole}
+            />
+          </div>
         </div>
 
         {/* Center: Messages */}
@@ -318,6 +354,11 @@ export function ChatPage() {
               aiSummary={aiSummary}
               messageFilter={messageFilter}
               onMessageFilterChange={setMessageFilter}
+            />
+          ) : isSimplifiedRole ? (
+            <SimpleSupportComposer
+              onSend={handleSendFirstMessage}
+              hasConversations={conversations.length > 0}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center px-8">
@@ -371,8 +412,9 @@ export function ChatPage() {
         </div>
       )}
 
-      {/* New chat composer modal */}
-      {showComposer && (
+      {/* New chat composer modal — staff only; sellers/buyers never see this,
+          they get SimpleSupportComposer above instead. */}
+      {!isSimplifiedRole && showComposer && (
         <NewChatComposer
           onSubmit={handleComposerSubmit}
           onCancel={() => setShowComposer(false)}

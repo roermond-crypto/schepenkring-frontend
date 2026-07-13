@@ -233,7 +233,7 @@ export function Sidebar({
         icon: PhoneCall,
       });
     } else if (role === "client" || role === "buyer" || role === "seller") {
-      if (role === "seller") {
+      if (role === "seller" || role === "buyer") {
         items.push({ title: t.interaction, href: `${root}/chat`, icon: MessageSquare });
       }
       if (bidsPageEnabled) {

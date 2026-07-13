@@ -1450,6 +1450,25 @@
       "title": "Willkommen im Chat",
       "description": "Wählen Sie ein Gespräch aus dem linken Bereich aus, um zu chatten. Hier sehen Sie Nachrichten und Kontaktdetails."
     },
+    "simple": {
+      "emptyTitle": "Brauchen Sie Hilfe?",
+      "emptyDescription": "Stellen Sie uns gerne Ihre Frage. Wir beantworten Ihre Nachricht so schnell wie möglich.",
+      "topics": {
+        "buying": "Ein Boot kaufen",
+        "selling": "Ein Boot verkaufen",
+        "contracts": "Verträge",
+        "payments": "Zahlungen",
+        "viewings": "Besichtigungstermine",
+        "documentation": "Dokumentation"
+      },
+      "messageLabel": "Nachricht",
+      "messagePlaceholder": "Stellen Sie hier Ihre Frage...",
+      "send": "Senden",
+      "sending": "Wird gesendet...",
+      "sendError": "Ihre Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+      "newQuestion": "Neue Frage stellen",
+      "newQuestionTitle": "Neue Frage stellen"
+    },
     "list": {
       "title": "Nachrichten",
       "count": "{count} Gespräch(e)",
@@ -1458,6 +1477,7 @@
       "emptySearch": "Versuchen Sie eine andere Suche",
       "emptyDefault": "Alles auf dem neuesten Stand!",
       "widgetSource": "Widget",
+      "statusLabel": "Status",
       "tabs": {
         "all": "Alle",
         "open": "Offen",

@@ -1452,6 +1452,25 @@
       "title": "Welcome to Chat",
       "description": "Select a conversation from the left panel to start chatting. You will see messages and contact details here."
     },
+    "simple": {
+      "emptyTitle": "Need help?",
+      "emptyDescription": "Feel free to ask us anything. We'll answer your message as soon as possible.",
+      "topics": {
+        "buying": "Buying a boat",
+        "selling": "Selling a boat",
+        "contracts": "Contracts",
+        "payments": "Payments",
+        "viewings": "Viewing appointments",
+        "documentation": "Documentation"
+      },
+      "messageLabel": "Message",
+      "messagePlaceholder": "Ask your question...",
+      "send": "Send",
+      "sending": "Sending...",
+      "sendError": "Failed to send your message. Please try again.",
+      "newQuestion": "Ask a new question",
+      "newQuestionTitle": "Ask a new question"
+    },
     "list": {
       "title": "Messages",
       "count": "{count} conversation(s)",
@@ -1460,6 +1479,7 @@
       "emptySearch": "Try a different search",
       "emptyDefault": "All caught up!",
       "widgetSource": "widget",
+      "statusLabel": "Status",
       "tabs": {
         "all": "All",
         "open": "Open",
