@@ -48,7 +48,11 @@ export function ChatPage() {
   // Dashboard summary cards (e.g. "25 onbeantwoorde vragen") link here with
   // ?type=question&status=open — these must be applied as real filters,
   // otherwise the count that was clicked never matches what's shown.
+  // "plan_viewing" is a widget_flow_type value, not a chat_type value (the
+  // two are separate columns — see WidgetLeadController::chatTypeForFlow),
+  // so it comes through its own ?widget_flow_type= param instead.
   const chatTypeFilter = searchParams.get("type");
+  const widgetFlowTypeFilter = searchParams.get("widget_flow_type");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
@@ -74,10 +78,11 @@ export function ChatPage() {
       search: searchQuery,
       locationId: locationFilter ?? undefined,
       chatType: chatTypeFilter ?? undefined,
+      widgetFlowType: widgetFlowTypeFilter ?? undefined,
     });
     setConversations(data);
     setLoading(false);
-  }, [statusFilter, searchQuery, locationFilter, chatTypeFilter]);
+  }, [statusFilter, searchQuery, locationFilter, chatTypeFilter, widgetFlowTypeFilter]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

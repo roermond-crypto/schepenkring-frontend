@@ -223,6 +223,7 @@ export async function getConversations(filters?: {
   search?: string;
   locationId?: string | number;
   chatType?: string;
+  widgetFlowType?: string;
 }): Promise<Conversation[]> {
   try {
     const params: Record<string, string> = { limit: "100" };
@@ -237,6 +238,10 @@ export async function getConversations(filters?: {
 
     if (filters?.chatType) {
       params.chat_type = filters.chatType;
+    }
+
+    if (filters?.widgetFlowType) {
+      params.widget_flow_type = filters.widgetFlowType;
     }
 
     const response = await apiRequest<{

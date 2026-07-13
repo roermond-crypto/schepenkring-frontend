@@ -376,7 +376,7 @@ export default function AdminDashboardHome() {
           ? api.get("/chat/conversations?chat_type=question&status=open&limit=100")
           : Promise.resolve({ data: { data: [] } }),
         isAdminRole || isEmployeeRole
-          ? api.get("/chat/conversations?chat_type=plan_viewing&status=open&limit=100")
+          ? api.get("/chat/conversations?widget_flow_type=plan_viewing&status=open&limit=100")
           : Promise.resolve({ data: { data: [] } }),
       ]);
 
@@ -1055,7 +1055,7 @@ export default function AdminDashboardHome() {
               )}
               {isAdminRole && data.pendingViewings > 0 && (
                 <Link
-                  href={`${dashboardBase}/chat?type=plan_viewing&status=open`}
+                  href={`${dashboardBase}/chat?widget_flow_type=plan_viewing&status=open`}
                   className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 font-semibold text-blue-700 transition hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-200 dark:hover:bg-blue-950/60"
                 >
                   <AlertCircle size={14} />
