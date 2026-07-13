@@ -3943,11 +3943,44 @@
       "changeNotePlaceholder": "Änderungsnotiz (optional)",
       "byUser": "von"
     },
+    "preview": {
+      "generatorTitle": "Test-Yacht generieren",
+      "boatType": "Bootstyp",
+      "builder": "Werft",
+      "model": "Modell",
+      "engine": "Motor",
+      "length": "Länge (m)",
+      "price": "Preis (€)",
+      "generate": "Generieren",
+      "generating": "Generieren...",
+      "generateSuccess": "Test-Yacht erstellt.",
+      "generateFailed": "Generieren fehlgeschlagen.",
+      "testYachtsTitle": "Test-Yachten",
+      "testYachtsEmpty": "Noch keine Test-Yachten.",
+      "loadFailed": "Laden fehlgeschlagen.",
+      "delete": "Löschen",
+      "deleteConfirm": "Diese Test-Yacht löschen?",
+      "deleteSuccess": "Test-Yacht gelöscht.",
+      "deleteFailed": "Löschen fehlgeschlagen.",
+      "pickYacht": "Yacht für die Pipeline wählen",
+      "selectTestYacht": "Test-Yacht wählen...",
+      "orYachtId": "oder Yacht-ID eingeben",
+      "loadPipeline": "Pipeline laden",
+      "loading": "Laden...",
+      "pipelineTitle": "Vollständige Exportpipeline",
+      "stageBoatForm": "Bootsformular",
+      "stageDatabase": "Datenbank",
+      "stageOpenMarine": "OpenMarine",
+      "stageYachtShift": "YachtShift",
+      "stageMarketplace": "Marktplatz",
+      "sameDataNote": "Bootsformular und Datenbank zeigen identische Daten — in dieser Architektur gibt es keinen separaten Formular-Zwischenspeicher.",
+      "tabDatabase": "Datenbank",
+      "tabOpenMarine": "OpenMarine-XML",
+      "tabYachtShift": "YachtShift-JSON",
+      "tabApi": "Generisches API-JSON",
+      "noApiPlatform": "Keine aktive API-Plattform zum Vergleich konfiguriert."
+    },
     "comingSoon": {
-      "preview": {
-        "title": "Vorschau- & Testumgebung folgt",
-        "body": "Test-Yachten erzeugen, die vollständige Exportpipeline ansehen und Marktplatz-Vorschauen (Datenbank, OpenMarine, YachtShift, API) werden in der nächsten Phase hinzugefügt."
-      },
       "validation": {
         "title": "Validierung & Kompatibilität folgt",
         "body": "Die Validierungs-Engine in klarer Sprache, die Plattform-Kompatibilitätsmatrix, Regressionstests und die Ein-Klick-Fehlerbehebung werden in der nächsten Phase hinzugefügt."

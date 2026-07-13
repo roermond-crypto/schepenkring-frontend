@@ -3945,11 +3945,44 @@
       "changeNotePlaceholder": "Change note (optional)",
       "byUser": "by"
     },
+    "preview": {
+      "generatorTitle": "Generate test yacht",
+      "boatType": "Boat type",
+      "builder": "Builder",
+      "model": "Model",
+      "engine": "Engine",
+      "length": "Length (m)",
+      "price": "Price (€)",
+      "generate": "Generate",
+      "generating": "Generating...",
+      "generateSuccess": "Test yacht created.",
+      "generateFailed": "Failed to generate.",
+      "testYachtsTitle": "Test yachts",
+      "testYachtsEmpty": "No test yachts yet.",
+      "loadFailed": "Failed to load.",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this test yacht?",
+      "deleteSuccess": "Test yacht deleted.",
+      "deleteFailed": "Failed to delete.",
+      "pickYacht": "Choose a yacht for the pipeline",
+      "selectTestYacht": "Choose a test yacht...",
+      "orYachtId": "or enter a yacht ID",
+      "loadPipeline": "Load pipeline",
+      "loading": "Loading...",
+      "pipelineTitle": "Complete export pipeline",
+      "stageBoatForm": "Boat form",
+      "stageDatabase": "Database",
+      "stageOpenMarine": "OpenMarine",
+      "stageYachtShift": "YachtShift",
+      "stageMarketplace": "Marketplace",
+      "sameDataNote": "Boat form and database show identical data — there's no separate form-staging store in this architecture.",
+      "tabDatabase": "Database",
+      "tabOpenMarine": "OpenMarine XML",
+      "tabYachtShift": "YachtShift JSON",
+      "tabApi": "Generic API JSON",
+      "noApiPlatform": "No active API-type platform is configured to preview against."
+    },
     "comingSoon": {
-      "preview": {
-        "title": "Preview & test environment coming soon",
-        "body": "Generating test yachts, viewing the full export pipeline, and marketplace previews (database, OpenMarine, YachtShift, API) will be added in the next phase."
-      },
       "validation": {
         "title": "Validation & compatibility coming soon",
         "body": "The plain-language validation engine, platform compatibility matrix, regression testing and one-click troubleshooting will be added in the next phase."

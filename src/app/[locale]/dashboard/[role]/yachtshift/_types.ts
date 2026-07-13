@@ -94,3 +94,14 @@ export type GenerateResult = {
     missing_required: string[];
   };
 };
+
+export type RawGenerateResult = { xml: string; errors: string[]; warnings: string[]; valid: boolean };
+
+export type MarketplacePreview = {
+  yacht_id: number;
+  yacht_name: string | null;
+  database: Record<string, unknown>;
+  openmarine_xml: RawGenerateResult;
+  yachtshift_json: Record<string, unknown>;
+  generic_api_json: Record<string, unknown> | { error: string };
+};

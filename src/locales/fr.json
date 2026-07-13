@@ -3943,11 +3943,44 @@
       "changeNotePlaceholder": "Note de modification (facultatif)",
       "byUser": "par"
     },
+    "preview": {
+      "generatorTitle": "Générer un bateau de test",
+      "boatType": "Type de bateau",
+      "builder": "Chantier",
+      "model": "Modèle",
+      "engine": "Moteur",
+      "length": "Longueur (m)",
+      "price": "Prix (€)",
+      "generate": "Générer",
+      "generating": "Génération...",
+      "generateSuccess": "Bateau de test créé.",
+      "generateFailed": "Échec de la génération.",
+      "testYachtsTitle": "Bateaux de test",
+      "testYachtsEmpty": "Aucun bateau de test pour l'instant.",
+      "loadFailed": "Échec du chargement.",
+      "delete": "Supprimer",
+      "deleteConfirm": "Supprimer ce bateau de test ?",
+      "deleteSuccess": "Bateau de test supprimé.",
+      "deleteFailed": "Échec de la suppression.",
+      "pickYacht": "Choisir un bateau pour le pipeline",
+      "selectTestYacht": "Choisir un bateau de test...",
+      "orYachtId": "ou saisir un ID de bateau",
+      "loadPipeline": "Charger le pipeline",
+      "loading": "Chargement...",
+      "pipelineTitle": "Pipeline d'export complet",
+      "stageBoatForm": "Formulaire bateau",
+      "stageDatabase": "Base de données",
+      "stageOpenMarine": "OpenMarine",
+      "stageYachtShift": "YachtShift",
+      "stageMarketplace": "Place de marché",
+      "sameDataNote": "Le formulaire bateau et la base de données affichent les mêmes données — il n'existe pas de stockage intermédiaire de formulaire dans cette architecture.",
+      "tabDatabase": "Base de données",
+      "tabOpenMarine": "XML OpenMarine",
+      "tabYachtShift": "JSON YachtShift",
+      "tabApi": "JSON API générique",
+      "noApiPlatform": "Aucune plateforme de type API active n'est configurée pour cet aperçu."
+    },
     "comingSoon": {
-      "preview": {
-        "title": "Aperçu & environnement de test à venir",
-        "body": "La génération de bateaux de test, la visualisation du pipeline d'export complet et les aperçus des places de marché (base de données, OpenMarine, YachtShift, API) seront ajoutés lors de la prochaine phase."
-      },
       "validation": {
         "title": "Validation & compatibilité à venir",
         "body": "Le moteur de validation en langage clair, la matrice de compatibilité des plateformes, les tests de régression et le dépannage en un clic seront ajoutés lors de la prochaine phase."

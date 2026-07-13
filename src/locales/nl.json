@@ -3945,11 +3945,44 @@
       "changeNotePlaceholder": "Wijzigingsnotitie (optioneel)",
       "byUser": "door"
     },
+    "preview": {
+      "generatorTitle": "Test-jacht genereren",
+      "boatType": "Boottype",
+      "builder": "Bouwer",
+      "model": "Model",
+      "engine": "Motor",
+      "length": "Lengte (m)",
+      "price": "Prijs (€)",
+      "generate": "Genereren",
+      "generating": "Genereren...",
+      "generateSuccess": "Test-jacht aangemaakt.",
+      "generateFailed": "Genereren mislukt.",
+      "testYachtsTitle": "Test-jachten",
+      "testYachtsEmpty": "Nog geen test-jachten.",
+      "loadFailed": "Laden mislukt.",
+      "delete": "Verwijderen",
+      "deleteConfirm": "Dit test-jacht verwijderen?",
+      "deleteSuccess": "Test-jacht verwijderd.",
+      "deleteFailed": "Verwijderen mislukt.",
+      "pickYacht": "Kies een jacht voor de pijplijn",
+      "selectTestYacht": "Kies een test-jacht...",
+      "orYachtId": "of vul een jacht-ID in",
+      "loadPipeline": "Laad pijplijn",
+      "loading": "Laden...",
+      "pipelineTitle": "Volledige exportpijplijn",
+      "stageBoatForm": "Bootformulier",
+      "stageDatabase": "Database",
+      "stageOpenMarine": "OpenMarine",
+      "stageYachtShift": "YachtShift",
+      "stageMarketplace": "Marktplaats",
+      "sameDataNote": "Bootformulier en database tonen dezelfde gegevens — er bestaat geen aparte formulier-opslag in deze architectuur.",
+      "tabDatabase": "Database",
+      "tabOpenMarine": "OpenMarine XML",
+      "tabYachtShift": "YachtShift JSON",
+      "tabApi": "Generieke API JSON",
+      "noApiPlatform": "Geen actief API-platform geconfigureerd om tegen te previewen."
+    },
     "comingSoon": {
-      "preview": {
-        "title": "Preview & testomgeving volgt",
-        "body": "Test-yachts genereren, de volledige exportpijplijn bekijken en marktplaats-previews (database, OpenMarine, YachtShift, API) worden in de volgende fase toegevoegd."
-      },
       "validation": {
         "title": "Validatie & compatibiliteit volgt",
         "body": "De validatie-engine in gewone taal, de platformcompatibiliteitsmatrix, regressietests en één-klik probleemoplossing worden in de volgende fase toegevoegd."
