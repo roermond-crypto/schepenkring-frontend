@@ -202,14 +202,15 @@ export default function SystemAuditPage() {
   });
 
   // ── Filters ──
-  // user_id and action seed from the URL so links like
-  // /audit?user_id=36 or /audit?user_id=36&action=auth.login,auth.logout
-  // (e.g. from the users page's "View audit"/"Login" links) land on an
-  // already-scoped view instead of the generic unfiltered log.
+  // user_id, action, entity_type, entity_id and date range seed from the URL
+  // so links like /audit?entity_type=platform&entity_id=7&action=platform.publication.failed
+  // (e.g. from the Platform Configuration Statistics tab's "View X" links)
+  // land on an already-scoped view instead of the generic unfiltered log.
   const [filters, setFilters] = useState({
     event_type: (searchParams.get("action")?.split(",").filter(Boolean) ?? []) as string[],
-    entity_type: [] as string[],
-    dateRange: { from: "", to: "" },
+    entity_type: (searchParams.get("entity_type")?.split(",").filter(Boolean) ?? []) as string[],
+    entity_id: searchParams.get("entity_id") ?? "",
+    dateRange: { from: searchParams.get("date_from") ?? "", to: searchParams.get("date_to") ?? "" },
     search: "",
     risk_level: "",
     source: "",
@@ -283,6 +284,7 @@ export default function SystemAuditPage() {
       const params = new URLSearchParams();
       if (filters.event_type.length > 0) params.append("action", filters.event_type.join(","));
       if (filters.entity_type.length > 0) params.append("entity_type", filters.entity_type.join(","));
+      if (filters.entity_id) params.append("entity_id", filters.entity_id);
       if (filters.dateRange.from) params.append("date_from", filters.dateRange.from);
       if (filters.dateRange.to) params.append("date_to", filters.dateRange.to);
       if (filters.search) params.append("search", filters.search);
@@ -373,6 +375,7 @@ export default function SystemAuditPage() {
     setFilters({
       event_type: [],
       entity_type: [],
+      entity_id: "",
       dateRange: { from: "", to: "" },
       search: "",
       risk_level: "",
@@ -485,6 +488,7 @@ export default function SystemAuditPage() {
   const activeFilterCount =
     filters.event_type.length +
     filters.entity_type.length +
+    (filters.entity_id ? 1 : 0) +
     (filters.search ? 1 : 0) +
     (filters.dateRange.from ? 1 : 0) +
     (filters.dateRange.to ? 1 : 0) +
@@ -544,6 +548,25 @@ export default function SystemAuditPage() {
             <button
               onClick={() => setFilters((p) => ({ ...p, user_id: "", page: 1 }))}
               className="text-xs font-semibold text-blue-700 hover:text-blue-900"
+            >
+              {t("filters.clearSelection")}
+            </button>
+          </motion.div>
+        )}
+
+        {filters.entity_id && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3"
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold text-indigo-800">
+              <Database size={15} />
+              {t("filters.filteredByEntity", { type: filters.entity_type[0] ?? "?", id: filters.entity_id })}
+            </span>
+            <button
+              onClick={() => setFilters((p) => ({ ...p, entity_type: [], entity_id: "", page: 1 }))}
+              className="text-xs font-semibold text-indigo-700 hover:text-indigo-900"
             >
               {t("filters.clearSelection")}
             </button>

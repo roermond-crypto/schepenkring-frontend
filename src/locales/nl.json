@@ -781,7 +781,8 @@
         "last7": "Afgelopen 7 dagen",
         "last30": "Afgelopen 30 dagen",
         "thisMonth": "Deze maand"
-      }
+      },
+      "filteredByEntity": "Gefilterd op {type} #{id}"
     },
     "errors": {
       "title": "Fout bij laden van gegevens",
@@ -3669,7 +3670,31 @@
     },
     "statistics": {
       "comingSoonTitle": "Statistieken volgen in een volgende update",
-      "comingSoonBody": "Hier komen exportstatistieken, succespercentages en gekoppelde audit-links."
+      "comingSoonBody": "Hier komen exportstatistieken, succespercentages en gekoppelde audit-links.",
+      "never": "Nooit",
+      "noData": "Geen data",
+      "notTracked": "Niet gemeten",
+      "loadFailed": "Kon statistieken niet laden.",
+      "stats": {
+        "lastSuccessfulExport": "Laatste succesvolle export",
+        "lastSync": "Laatste synchronisatie",
+        "lastSuccessfulApiCall": "Laatste succesvolle API-aanroep",
+        "lastFailedSync": "Laatste mislukte synchronisatie",
+        "successRate7d": "Succespercentage (7 dagen)",
+        "successRate30d": "Succespercentage (30 dagen)",
+        "totalExported": "Totaal geëxporteerde boten",
+        "waitingExports": "Wachtende exports",
+        "failedExports": "Mislukte exports",
+        "avgDuration": "Gemiddelde exportduur",
+        "lastError": "Laatste foutmelding"
+      },
+      "deepLinks": {
+        "title": "Bekijk in audit",
+        "viewAllActivity": "Alle activiteit",
+        "viewFailedExports": "Mislukte exports",
+        "viewSyncHistory": "Synchronisatiegeschiedenis",
+        "viewConnectionTests": "Verbindingstests"
+      }
     },
     "audit": {
       "comingSoonTitle": "Audit-overzicht volgt in een volgende update",

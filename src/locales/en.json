@@ -781,7 +781,8 @@
         "last7": "Last 7 days",
         "last30": "Last 30 days",
         "thisMonth": "This month"
-      }
+      },
+      "filteredByEntity": "Filtered by {type} #{id}"
     },
     "errors": {
       "title": "Error Loading Data",
@@ -3669,7 +3670,31 @@
     },
     "statistics": {
       "comingSoonTitle": "Statistics coming in a future update",
-      "comingSoonBody": "Export statistics, success rates and linked audit views will appear here."
+      "comingSoonBody": "Export statistics, success rates and linked audit views will appear here.",
+      "never": "Never",
+      "noData": "No data",
+      "notTracked": "Not tracked",
+      "loadFailed": "Could not load statistics.",
+      "stats": {
+        "lastSuccessfulExport": "Last successful export",
+        "lastSync": "Last sync",
+        "lastSuccessfulApiCall": "Last successful API call",
+        "lastFailedSync": "Last failed sync",
+        "successRate7d": "Success rate (7 days)",
+        "successRate30d": "Success rate (30 days)",
+        "totalExported": "Total exported yachts",
+        "waitingExports": "Waiting exports",
+        "failedExports": "Failed exports",
+        "avgDuration": "Average export duration",
+        "lastError": "Last error"
+      },
+      "deepLinks": {
+        "title": "View in audit",
+        "viewAllActivity": "All activity",
+        "viewFailedExports": "Failed exports",
+        "viewSyncHistory": "Sync history",
+        "viewConnectionTests": "Connection tests"
+      }
     },
     "audit": {
       "comingSoonTitle": "Audit overview coming in a future update",

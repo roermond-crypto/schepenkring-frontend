@@ -26,6 +26,7 @@ import { OpenMarineTab } from "./_components/OpenMarineTab";
 import { ContactTab } from "./_components/ContactTab";
 import { AdvancedTab } from "./_components/AdvancedTab";
 import { ComingSoonTab } from "./_components/ComingSoonTab";
+import { StatisticsTab } from "./_components/StatisticsTab";
 
 type TabId = "general" | "export" | "openmarine" | "contact" | "advanced" | "statistics" | "audit";
 const TAB_IDS: TabId[] = ["general", "export", "openmarine", "contact", "advanced", "statistics", "audit"];
@@ -221,9 +222,7 @@ export default function PlatformDetailPage() {
       {tab === "openmarine" && <OpenMarineTab form={form} set={set} />}
       {tab === "contact" && <ContactTab form={form} set={set} />}
       {tab === "advanced" && <AdvancedTab form={form} set={set} platformId={platformId} />}
-      {tab === "statistics" && (
-        <ComingSoonTab icon={BarChart3} title={t("statistics.comingSoonTitle")} body={t("statistics.comingSoonBody")} />
-      )}
+      {tab === "statistics" && <StatisticsTab platformId={platformId} />}
       {tab === "audit" && (
         <ComingSoonTab icon={History} title={t("audit.comingSoonTitle")} body={t("audit.comingSoonBody")} />
       )}

@@ -779,7 +779,8 @@
         "last7": "7 derniers jours",
         "last30": "30 derniers jours",
         "thisMonth": "Ce mois-ci"
-      }
+      },
+      "filteredByEntity": "Filtré par {type} #{id}"
     },
     "errors": {
       "title": "Erreur lors du chargement des données",
@@ -3667,7 +3668,31 @@
     },
     "statistics": {
       "comingSoonTitle": "Statistiques disponibles dans une prochaine mise à jour",
-      "comingSoonBody": "Les statistiques d'export, taux de réussite et liens d'audit apparaîtront ici."
+      "comingSoonBody": "Les statistiques d'export, taux de réussite et liens d'audit apparaîtront ici.",
+      "never": "Jamais",
+      "noData": "Aucune donnée",
+      "notTracked": "Non suivi",
+      "loadFailed": "Impossible de charger les statistiques.",
+      "stats": {
+        "lastSuccessfulExport": "Dernier export réussi",
+        "lastSync": "Dernière synchronisation",
+        "lastSuccessfulApiCall": "Dernier appel API réussi",
+        "lastFailedSync": "Dernière synchronisation échouée",
+        "successRate7d": "Taux de réussite (7 jours)",
+        "successRate30d": "Taux de réussite (30 jours)",
+        "totalExported": "Total des bateaux exportés",
+        "waitingExports": "Exports en attente",
+        "failedExports": "Exports échoués",
+        "avgDuration": "Durée moyenne d'export",
+        "lastError": "Dernière erreur"
+      },
+      "deepLinks": {
+        "title": "Voir dans l'audit",
+        "viewAllActivity": "Toute l'activité",
+        "viewFailedExports": "Exports échoués",
+        "viewSyncHistory": "Historique de synchronisation",
+        "viewConnectionTests": "Tests de connexion"
+      }
     },
     "audit": {
       "comingSoonTitle": "Aperçu d'audit disponible dans une prochaine mise à jour",
