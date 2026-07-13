@@ -2839,7 +2839,20 @@
     "edit": "Edit",
     "setDefaultTitle": "Set as default",
     "duplicateTitle": "Duplicate",
-    "archiveTitle": "Archive"
+    "archiveTitle": "Archive",
+    "colType": "Type",
+    "colLocation": "Location",
+    "colLanguage": "Language",
+    "colUpdated": "Updated",
+    "colVersion": "Version",
+    "colStatus": "Status",
+    "colActions": "Actions",
+    "statusActive": "Active",
+    "statusDraft": "Draft",
+    "archived": "Archived",
+    "previewAction": "Preview",
+    "tableSubtitle": "{count} templates · manage contract templates",
+    "manageTypes": "Manage contract types"
   },
   "ContractTemplateEditor": {
     "toolbar": {

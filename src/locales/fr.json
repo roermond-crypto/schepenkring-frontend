@@ -2837,7 +2837,20 @@
     "edit": "Modifier",
     "setDefaultTitle": "Définir par défaut",
     "duplicateTitle": "Dupliquer",
-    "archiveTitle": "Archiver"
+    "archiveTitle": "Archiver",
+    "colType": "Type",
+    "colLocation": "Emplacement",
+    "colLanguage": "Langue",
+    "colUpdated": "Mis à jour",
+    "colVersion": "Version",
+    "colStatus": "Statut",
+    "colActions": "Actions",
+    "statusActive": "Actif",
+    "statusDraft": "Brouillon",
+    "archived": "Archivé",
+    "previewAction": "Aperçu",
+    "tableSubtitle": "{count} modèles · gérer les modèles de contrat",
+    "manageTypes": "Gérer les types de contrat"
   },
   "ContractTemplateEditor": {
     "toolbar": {

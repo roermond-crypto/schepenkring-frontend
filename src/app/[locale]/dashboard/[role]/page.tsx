@@ -35,7 +35,6 @@ import {
   Library,
   Mail,
   FileText,
-  Files,
   Globe,
   Radio,
   FileSignature,
@@ -898,16 +897,6 @@ export default function AdminDashboardHome() {
       iconTone: "text-[#4338CA]",
       iconShell:
         "border-[#C7D2FE] bg-gradient-to-br from-[#EEF2FF] to-[#F8F9FF]",
-    },
-    {
-      key: "contractTypes",
-      title: t("shortcuts.contractTypes.title"),
-      description: t("shortcuts.contractTypes.description"),
-      href: `${dashboardBase}/contract-types`,
-      icon: Files,
-      iconTone: "text-[#B45309]",
-      iconShell:
-        "border-[#FDE1B0] bg-gradient-to-br from-[#FFFBEB] to-[#FFFDF5]",
     },
     {
       key: "i18nQuality",

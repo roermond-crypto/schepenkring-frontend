@@ -2839,7 +2839,20 @@
     "edit": "Bewerken",
     "setDefaultTitle": "Als standaard instellen",
     "duplicateTitle": "Dupliceren",
-    "archiveTitle": "Archiveren"
+    "archiveTitle": "Archiveren",
+    "colType": "Type",
+    "colLocation": "Vestiging",
+    "colLanguage": "Taal",
+    "colUpdated": "Bijgewerkt",
+    "colVersion": "Versie",
+    "colStatus": "Status",
+    "colActions": "Acties",
+    "statusActive": "Actief",
+    "statusDraft": "Concept",
+    "archived": "Gearchiveerd",
+    "previewAction": "Voorbeeld",
+    "tableSubtitle": "{count} sjablonen · beheer contractsjablonen",
+    "manageTypes": "Contracttypes beheren"
   },
   "ContractTemplateEditor": {
     "toolbar": {

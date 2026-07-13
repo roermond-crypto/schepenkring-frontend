@@ -2837,7 +2837,20 @@
     "edit": "Bearbeiten",
     "setDefaultTitle": "Als Standard festlegen",
     "duplicateTitle": "Duplizieren",
-    "archiveTitle": "Archivieren"
+    "archiveTitle": "Archivieren",
+    "colType": "Typ",
+    "colLocation": "Standort",
+    "colLanguage": "Sprache",
+    "colUpdated": "Aktualisiert",
+    "colVersion": "Version",
+    "colStatus": "Status",
+    "colActions": "Aktionen",
+    "statusActive": "Aktiv",
+    "statusDraft": "Entwurf",
+    "archived": "Archiviert",
+    "previewAction": "Vorschau",
+    "tableSubtitle": "{count} Vorlagen · Vertragsvorlagen verwalten",
+    "manageTypes": "Vertragstypen verwalten"
   },
   "ContractTemplateEditor": {
     "toolbar": {
