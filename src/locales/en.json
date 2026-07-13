@@ -674,7 +674,18 @@
       "autoSystemEvent": "Auto-system event",
       "on": "on",
       "globalFleet": "Global Fleet",
-      "seeAll": "View audit"
+      "seeAll": "View audit",
+      "actorLabel": "User",
+      "roleLabel": "Role",
+      "relatedObjectLabel": "Related object",
+      "changedFieldsLabel": "Changed fields",
+      "viewUser": "View user",
+      "viewProfile": "View profile",
+      "showDetails": "Show details",
+      "hideDetails": "Hide details",
+      "eventLabel": "Event",
+      "technicalActionLabel": "Technical action",
+      "technicalObjectLabel": "Technical object"
     },
     "empty": {
       "noRecentBiddingTitle": "No recent bidding activity",
@@ -760,6 +771,7 @@
       "clearAll": "Clear all filters ({count})",
       "clearAllPlain": "Clear all filters",
       "clearSelection": "Clear selection",
+      "filteredByUser": "Filtered by user #{id}",
       "activeFilters": "Active filters",
       "dateShortcuts": "Date shortcuts",
       "customRange": "Custom range",

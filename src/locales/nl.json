@@ -674,7 +674,18 @@
       "autoSystemEvent": "Automatische systeemgebeurtenis",
       "on": "op",
       "globalFleet": "Wereldwijde vloot",
-      "seeAll": "Bekijk audit"
+      "seeAll": "Bekijk audit",
+      "actorLabel": "Gebruiker",
+      "roleLabel": "Rol",
+      "relatedObjectLabel": "Gerelateerd object",
+      "changedFieldsLabel": "Gewijzigde velden",
+      "viewUser": "Bekijk gebruiker",
+      "viewProfile": "Bekijk profiel",
+      "showDetails": "Toon details",
+      "hideDetails": "Verberg details",
+      "eventLabel": "Gebeurtenis",
+      "technicalActionLabel": "Technische actie",
+      "technicalObjectLabel": "Technisch object"
     },
     "empty": {
       "noRecentBiddingTitle": "Geen recente biedactiviteit",
@@ -760,6 +771,7 @@
       "clearAll": "Wis alle filters ({count})",
       "clearAllPlain": "Wis alle filters",
       "clearSelection": "Wis selectie",
+      "filteredByUser": "Gefilterd op gebruiker #{id}",
       "activeFilters": "Actieve filters",
       "dateShortcuts": "Datumkeuze",
       "customRange": "Aangepast bereik",

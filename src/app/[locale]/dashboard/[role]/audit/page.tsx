@@ -202,6 +202,9 @@ export default function SystemAuditPage() {
   });
 
   // ── Filters ──
+  // user_id seeds from the URL so links like /audit?user_id=36 (e.g. from
+  // the dashboard's "View audit" button) land on an already-scoped view
+  // instead of the generic unfiltered log.
   const [filters, setFilters] = useState({
     event_type: [] as string[],
     entity_type: [] as string[],
@@ -209,6 +212,7 @@ export default function SystemAuditPage() {
     search: "",
     risk_level: "",
     source: "",
+    user_id: searchParams.get("user_id") ?? "",
     page: 1,
   });
 
@@ -283,6 +287,7 @@ export default function SystemAuditPage() {
       if (filters.search) params.append("search", filters.search);
       if (filters.risk_level) params.append("risk_level", filters.risk_level);
       if (filters.source) params.append("source", filters.source);
+      if (filters.user_id) params.append("user_id", filters.user_id);
       params.append("per_page", String(pagination.per_page || 50));
       params.append("sort_by", "created_at");
       params.append("sort_dir", "desc");
@@ -371,6 +376,7 @@ export default function SystemAuditPage() {
       search: "",
       risk_level: "",
       source: "",
+      user_id: "",
       page: 1,
     });
   };
@@ -482,7 +488,8 @@ export default function SystemAuditPage() {
     (filters.dateRange.from ? 1 : 0) +
     (filters.dateRange.to ? 1 : 0) +
     (filters.risk_level ? 1 : 0) +
-    (filters.source ? 1 : 0);
+    (filters.source ? 1 : 0) +
+    (filters.user_id ? 1 : 0);
 
   // ── Render ─────────────────────────────────────────────
 
@@ -522,6 +529,25 @@ export default function SystemAuditPage() {
             </div>
           </div>
         </motion.div>
+
+        {filters.user_id && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3"
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold text-blue-800">
+              <User size={15} />
+              {t("filters.filteredByUser", { id: filters.user_id })}
+            </span>
+            <button
+              onClick={() => setFilters((p) => ({ ...p, user_id: "", page: 1 }))}
+              className="text-xs font-semibold text-blue-700 hover:text-blue-900"
+            >
+              {t("filters.clearSelection")}
+            </button>
+          </motion.div>
+        )}
 
         {/* Stats Cards */}
         <motion.div

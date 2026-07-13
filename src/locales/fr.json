@@ -672,7 +672,18 @@
       "autoSystemEvent": "Événement automatique du système",
       "on": "activé",
       "globalFleet": "Flotte mondiale",
-      "seeAll": "Voir l'audit"
+      "seeAll": "Voir l'audit",
+      "actorLabel": "Utilisateur",
+      "roleLabel": "Rôle",
+      "relatedObjectLabel": "Objet lié",
+      "changedFieldsLabel": "Champs modifiés",
+      "viewUser": "Voir l'utilisateur",
+      "viewProfile": "Voir le profil",
+      "showDetails": "Afficher les détails",
+      "hideDetails": "Masquer les détails",
+      "eventLabel": "Événement",
+      "technicalActionLabel": "Action technique",
+      "technicalObjectLabel": "Objet technique"
     },
     "empty": {
       "noRecentBiddingTitle": "Aucune activité d'enchères récente",
@@ -758,6 +769,7 @@
       "clearAll": "Effacer tous les filtres ({count})",
       "clearAllPlain": "Effacer tous les filtres",
       "clearSelection": "Effacer la sélection",
+      "filteredByUser": "Filtré par utilisateur n° {id}",
       "activeFilters": "Filtres actifs",
       "dateShortcuts": "Raccourcis de date",
       "customRange": "Période personnalisée",

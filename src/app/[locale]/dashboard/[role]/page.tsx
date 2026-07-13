@@ -22,7 +22,6 @@ import {
   ArrowRight,
   Sailboat,
   Activity,
-  AlertTriangle,
   CircleCheck,
   Sparkles,
   Anchor,
@@ -45,6 +44,7 @@ import {
 import { BuyerVerificationPanel } from "@/components/dashboard/BuyerVerificationPanel";
 import { PublishingHealthWidget } from "@/components/dashboard/PublishingHealthWidget";
 import { SellerOnboardingPanel } from "@/components/dashboard/SellerOnboardingPanel";
+import { AuditLogCard } from "@/components/dashboard/AuditLogCard";
 import { SellerDashboardPanel } from "@/components/dashboard/SellerDashboardPanel";
 import { ClientContractCard } from "@/components/dashboard/ClientContractCard";
 import { getProfileSetupStatus } from "@/lib/api/profile-setup";
@@ -101,6 +101,16 @@ type DashboardAuditItem = {
   status?: string;
   description?: string;
   title?: string;
+  result?: string | null;
+  actor_id?: number | null;
+  actor?: {
+    id: number;
+    name?: string | null;
+    type?: string | null;
+    email?: string | null;
+  } | null;
+  snapshot_before?: Record<string, unknown> | null;
+  snapshot_after?: Record<string, unknown> | null;
 };
 
 type DashboardTask = {
@@ -941,50 +951,6 @@ export default function AdminDashboardHome() {
     },
   ];
 
-  const auditStatus = (task: DashboardAuditItem) => {
-    const status = (task?.status || "").toLowerCase();
-    if (status.includes("done") || status.includes("completed")) {
-      return {
-        icon: CircleCheck,
-        dot: "bg-[#16A34A]",
-        text: "text-[#16A34A]",
-        label: t("audit.ok"),
-      };
-    }
-    if (
-      status.includes("warn") ||
-      status.includes("pending") ||
-      status.includes("progress")
-    ) {
-      return {
-        icon: AlertTriangle,
-        dot: "bg-[#F59E0B]",
-        text: "text-[#F59E0B]",
-        label: t("audit.warning"),
-      };
-    }
-    if (
-      status.includes("done") ||
-      status.includes("completed") ||
-      status.includes("created") ||
-      status.includes("updated") ||
-      status.includes("login")
-    ) {
-      return {
-        icon: CircleCheck,
-        dot: "bg-[#16A34A]",
-        text: "text-[#16A34A]",
-        label: t("audit.ok"),
-      };
-    }
-    return {
-      icon: CircleCheck,
-      dot: "bg-[#16A34A]",
-      text: "text-[#16A34A]",
-      label: t("audit.ok"),
-    };
-  };
-
   return (
     <div className="space-y-7 p-2 sm:p-4 lg:p-6">
       {onboardingComplete && (
@@ -1479,58 +1445,11 @@ export default function AdminDashboardHome() {
                   ))}
 
                 {!loading &&
-                  data.auditLogs.slice(0, 5).map((task: DashboardAuditItem) => {
-                    const status = auditStatus(task);
-                    const auditHref = `${dashboardBase}/audit?logId=${task.id}`;
-                    const StatusIcon = status.icon;
-                    return (
-                      <Link
-                        key={task.id}
-                        href={auditHref}
-                        className="block rounded-xl border border-slate-200 p-3 transition hover:border-[#BBD0F2] hover:bg-slate-50 dark:border-slate-700 dark:hover:border-slate-600"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={cn(
-                              "mt-0.5 rounded-full p-1.5 text-white",
-                              status.dot,
-                            )}
-                          >
-                            <StatusIcon size={12} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">
-                              {task.description ||
-                                task.title ||
-                                task.event_type ||
-                                task.action ||
-                                t("audit.taskUpdate")}
-                            </p>
-                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                              {task.entity_type ||
-                                (task.assigned_to
-                                  ? t("audit.operatorAction")
-                                  : t("audit.autoSystemEvent"))}{" "}
-                              {task.entity_id
-                                ? `#${task.entity_id}`
-                                : `${t("audit.on")} ${t("audit.globalFleet")}`}
-                            </p>
-                            <div className="mt-2 flex items-center justify-between">
-                              <span className={cn("text-xs font-semibold", status.text)}>
-                                {status.label}
-                              </span>
-                              <span className="text-xs text-slate-400 dark:text-slate-500">
-                                {formatDistanceToNow(
-                                  new Date(task.created_at || task.updated_at || Date.now()),
-                                  { addSuffix: true },
-                                )}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
+                  data.auditLogs
+                    .slice(0, 5)
+                    .map((task) => (
+                      <AuditLogCard key={task.id} item={task} dashboardBase={dashboardBase} />
+                    ))}
 
                 {!loading && data.auditLogs.length === 0 && (
                   <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -1749,69 +1668,11 @@ export default function AdminDashboardHome() {
                 ))}
 
               {!loading &&
-                data.auditLogs.slice(0, 5).map((task: DashboardAuditItem) => {
-                  const status = auditStatus(task);
-                  const auditHref = `${dashboardBase}/audit?logId=${task.id}`;
-                  const StatusIcon = status.icon;
-                  return (
-                    <Link
-                      key={task.id}
-                      href={auditHref}
-                      className="block rounded-xl border border-slate-200 p-3 transition hover:border-[#BBD0F2] hover:bg-slate-50 dark:border-slate-700 dark:hover:border-slate-600"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={cn(
-                            "mt-0.5 rounded-full p-1.5 text-white",
-                            status.dot,
-                          )}
-                        >
-                          <StatusIcon size={12} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-[#0B1F3A] dark:text-slate-100">
-                            {task.description ||
-                              task.title ||
-                              task.event_type ||
-                              task.action ||
-                              t("audit.taskUpdate")}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            {task.entity_type ||
-                              (task.assigned_to
-                                ? t("audit.operatorAction")
-                                : t("audit.autoSystemEvent"))}{" "}
-                            {task.entity_id
-                              ? `#${task.entity_id}`
-                              : `${t("audit.on")} ${t("audit.globalFleet")}`}
-                          </p>
-                          <div className="mt-2 flex items-center justify-between">
-                            <span
-                              className={cn(
-                                "text-xs font-semibold",
-                                status.text,
-                              )}
-                            >
-                              {status.label}
-                            </span>
-                            <span className="text-xs text-slate-400 dark:text-slate-500">
-                              {formatDistanceToNow(
-                                new Date(
-                                  task.created_at ||
-                                    task.updated_at ||
-                                    Date.now(),
-                                ),
-                                {
-                                  addSuffix: true,
-                                },
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
+                data.auditLogs
+                  .slice(0, 5)
+                  .map((task) => (
+                    <AuditLogCard key={task.id} item={task} dashboardBase={dashboardBase} />
+                  ))}
 
               {!loading && data.auditLogs.length === 0 && (
                 <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">

@@ -672,7 +672,18 @@
       "autoSystemEvent": "Auto-Systemereignis",
       "on": "Ein",
       "globalFleet": "Globale Flotte",
-      "seeAll": "Audit anzeigen"
+      "seeAll": "Audit anzeigen",
+      "actorLabel": "Benutzer",
+      "roleLabel": "Rolle",
+      "relatedObjectLabel": "Zugehöriges Objekt",
+      "changedFieldsLabel": "Geänderte Felder",
+      "viewUser": "Benutzer anzeigen",
+      "viewProfile": "Profil anzeigen",
+      "showDetails": "Details anzeigen",
+      "hideDetails": "Details ausblenden",
+      "eventLabel": "Ereignis",
+      "technicalActionLabel": "Technische Aktion",
+      "technicalObjectLabel": "Technisches Objekt"
     },
     "empty": {
       "noRecentBiddingTitle": "Keine kürzliche Gebotsaktivität",
@@ -758,6 +769,7 @@
       "clearAll": "Alle Filter löschen ({count})",
       "clearAllPlain": "Alle Filter löschen",
       "clearSelection": "Auswahl löschen",
+      "filteredByUser": "Gefiltert nach Benutzer #{id}",
       "activeFilters": "Aktive Filter",
       "dateShortcuts": "Datumsauswahl",
       "customRange": "Benutzerdefinierter Bereich",
