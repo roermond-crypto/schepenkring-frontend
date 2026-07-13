@@ -3552,5 +3552,117 @@
       "statusRejected": "Abgelehnt",
       "statusWithdrawn": "Zurückgezogen"
     }
+  },
+  "Platforms": {
+    "back": "Zurück",
+    "newTitle": "Neue Plattform",
+    "editTitle": "Plattform bearbeiten",
+    "save": "Speichern",
+    "saving": "Wird gespeichert...",
+    "saveSuccess": "Plattform gespeichert.",
+    "saveFailed": "Speichern fehlgeschlagen.",
+    "createSuccess": "Plattform erstellt.",
+    "createFailed": "Erstellen fehlgeschlagen.",
+    "loadFailed": "Plattform konnte nicht geladen werden.",
+    "nameRequired": "Name ist erforderlich.",
+    "slugRequired": "Slug ist erforderlich.",
+    "tabs": {
+      "general": "Allgemein",
+      "export": "Export",
+      "openmarine": "OpenMarine",
+      "contact": "Kontakt",
+      "advanced": "Erweitert",
+      "statistics": "Statistiken",
+      "audit": "Audit"
+    },
+    "tooltip": {
+      "ariaLabel": "Hilfe zu diesem Feld",
+      "example": "Beispiel",
+      "commonMistakes": "Häufige Fehler",
+      "required": "Erforderlich",
+      "optional": "Optional",
+      "docs": "Dokumentation"
+    },
+    "logo": {
+      "dropHint": "Logo hierher ziehen oder klicken zum Hochladen",
+      "fileHint": "PNG oder SVG, transparenter Hintergrund empfohlen, max. 2MB",
+      "invalidType": "Bitte wählen Sie eine Bilddatei.",
+      "uploadSuccess": "Logo hochgeladen.",
+      "uploadFailed": "Logo-Upload fehlgeschlagen."
+    },
+    "general": {
+      "nameLabel": "Plattformname",
+      "namePlaceholder": "z.B. Boat24",
+      "slugLabel": "Slug",
+      "slugHint": "Eindeutige Kennung, Kleinbuchstaben, Bindestriche",
+      "websiteLabel": "Website-URL",
+      "logoLabel": "Logo",
+      "categoryLabel": "Kategorie",
+      "priorityLabel": "Priorität",
+      "priorityHint": "Niedriger = höhere Priorität",
+      "statusLabel": "Status",
+      "statusActive": "Aktiv",
+      "statusInactive": "Inaktiv",
+      "countriesLabel": "Unterstützte Länder",
+      "countriesPlaceholder": "Länder auswählen...",
+      "countriesSearchPlaceholder": "Land suchen...",
+      "countriesEmpty": "Keine Länder gefunden.",
+      "languagesLabel": "Unterstützte Sprachen",
+      "languagesPlaceholder": "Sprachen auswählen...",
+      "languagesSearchPlaceholder": "Sprache suchen...",
+      "languagesEmpty": "Keine Sprachen gefunden.",
+      "logoNewHint": "Speichern Sie die Plattform zuerst, bevor Sie ein Logo hochladen."
+    },
+    "category": {
+      "marketplace": "Marktplatz",
+      "portal": "Portal",
+      "partner": "Partner",
+      "own_website": "Eigene Website"
+    },
+    "export": {
+      "methodLabel": "Exportmethode",
+      "methodOpenmarine": "OpenMarine 2.0",
+      "methodXml": "XML-Feed",
+      "methodApi": "API",
+      "methodManual": "Manuell / CSV",
+      "feedUrlLabel": "Feed-URL",
+      "feedUrlHint": "URL, unter der die Plattform unseren Feed abruft"
+    },
+    "contact": {
+      "nameLabel": "Ansprechpartner",
+      "emailLabel": "Kontakt-E-Mail",
+      "notesLabel": "Notizen & Anweisungen",
+      "notesPlaceholder": "Interne Notizen, Anweisungen oder Besonderheiten..."
+    },
+    "openmarine": {
+      "enabledLabel": "OpenMarine 2.0 Export aktiviert",
+      "versionLabel": "OpenMarine-Version",
+      "version2": "OpenMarine 2.0",
+      "version1": "OpenMarine 1.0 (veraltet)",
+      "dealerIdLabel": "Händler-ID",
+      "dealerIdHint": "Eindeutige Händler-ID bei dieser Plattform",
+      "categoryMapLabel": "Kategorie-Zuordnung (JSON)",
+      "categoryMapHint": "Ordnet interne Kategorien Plattform-Codes zu — ein visueller Editor folgt in einem zukünftigen Update"
+    },
+    "advanced": {
+      "apiUrlLabel": "API-URL",
+      "apiUrlHint": "Basis-URL für die API-Anbindung",
+      "apiKeyLabel": "API-Key / Benutzername",
+      "apiSecretLabel": "API-Secret / Passwort",
+      "secretSetHint": "Festgelegt — leer lassen, um es zu behalten",
+      "secretReplaceHint": "Neuen Wert eingeben, um es zu ersetzen",
+      "webhookUrlLabel": "Webhook-URL",
+      "webhookSecretLabel": "Webhook-Secret",
+      "debugModeLabel": "Debug-Modus",
+      "debugModeHint": "Zusätzliche Protokollierung beim Export zu dieser Plattform"
+    },
+    "statistics": {
+      "comingSoonTitle": "Statistiken folgen in einem zukünftigen Update",
+      "comingSoonBody": "Hier erscheinen Exportstatistiken, Erfolgsquoten und verknüpfte Audit-Ansichten."
+    },
+    "audit": {
+      "comingSoonTitle": "Audit-Übersicht folgt in einem zukünftigen Update",
+      "comingSoonBody": "Hier erscheint ein Verlauf aller Änderungen und Synchronisationen für diese Plattform."
+    }
   }
 }

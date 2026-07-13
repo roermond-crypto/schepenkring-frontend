@@ -3554,5 +3554,117 @@
       "statusRejected": "Afgewezen",
       "statusWithdrawn": "Ingetrokken"
     }
+  },
+  "Platforms": {
+    "back": "Terug",
+    "newTitle": "Nieuw platform",
+    "editTitle": "Platform bewerken",
+    "save": "Opslaan",
+    "saving": "Opslaan...",
+    "saveSuccess": "Platform opgeslagen.",
+    "saveFailed": "Opslaan mislukt.",
+    "createSuccess": "Platform aangemaakt.",
+    "createFailed": "Aanmaken mislukt.",
+    "loadFailed": "Kon platform niet laden.",
+    "nameRequired": "Naam is verplicht.",
+    "slugRequired": "Slug is verplicht.",
+    "tabs": {
+      "general": "Algemeen",
+      "export": "Export",
+      "openmarine": "OpenMarine",
+      "contact": "Contact",
+      "advanced": "Geavanceerd",
+      "statistics": "Statistieken",
+      "audit": "Audit"
+    },
+    "tooltip": {
+      "ariaLabel": "Uitleg bij dit veld",
+      "example": "Voorbeeld",
+      "commonMistakes": "Veelgemaakte fouten",
+      "required": "Verplicht",
+      "optional": "Optioneel",
+      "docs": "Documentatie"
+    },
+    "logo": {
+      "dropHint": "Sleep een logo hierheen of klik om te uploaden",
+      "fileHint": "PNG of SVG, transparante achtergrond aanbevolen, max 2MB",
+      "invalidType": "Kies een afbeeldingsbestand.",
+      "uploadSuccess": "Logo geüpload.",
+      "uploadFailed": "Uploaden van logo mislukt."
+    },
+    "general": {
+      "nameLabel": "Platformnaam",
+      "namePlaceholder": "bijv. Boat24",
+      "slugLabel": "Slug",
+      "slugHint": "Unieke identifier, kleine letters, koppeltekens",
+      "websiteLabel": "Website URL",
+      "logoLabel": "Logo",
+      "categoryLabel": "Categorie",
+      "priorityLabel": "Prioriteit",
+      "priorityHint": "Lager = hogere prioriteit",
+      "statusLabel": "Status",
+      "statusActive": "Actief",
+      "statusInactive": "Inactief",
+      "countriesLabel": "Ondersteunde landen",
+      "countriesPlaceholder": "Selecteer landen...",
+      "countriesSearchPlaceholder": "Zoek een land...",
+      "countriesEmpty": "Geen landen gevonden.",
+      "languagesLabel": "Ondersteunde talen",
+      "languagesPlaceholder": "Selecteer talen...",
+      "languagesSearchPlaceholder": "Zoek een taal...",
+      "languagesEmpty": "Geen talen gevonden.",
+      "logoNewHint": "Sla het platform eerst op voordat je een logo uploadt."
+    },
+    "category": {
+      "marketplace": "Marktplaats",
+      "portal": "Portaal",
+      "partner": "Partner",
+      "own_website": "Eigen website"
+    },
+    "export": {
+      "methodLabel": "Exportmethode",
+      "methodOpenmarine": "OpenMarine 2.0",
+      "methodXml": "XML Feed",
+      "methodApi": "API",
+      "methodManual": "Handmatig / CSV",
+      "feedUrlLabel": "Feed URL",
+      "feedUrlHint": "URL waarop het platform onze feed ophaalt"
+    },
+    "contact": {
+      "nameLabel": "Contactpersoon",
+      "emailLabel": "Contact e-mail",
+      "notesLabel": "Notities & instructies",
+      "notesPlaceholder": "Interne notities, instructies of bijzonderheden..."
+    },
+    "openmarine": {
+      "enabledLabel": "OpenMarine 2.0 export ingeschakeld",
+      "versionLabel": "OpenMarine versie",
+      "version2": "OpenMarine 2.0",
+      "version1": "OpenMarine 1.0 (legacy)",
+      "dealerIdLabel": "Dealer ID",
+      "dealerIdHint": "Unieke dealer-ID bij dit platform",
+      "categoryMapLabel": "Categorie mapping (JSON)",
+      "categoryMapHint": "Mapping van interne categorieën naar platform-codes — visuele editor volgt in een volgende update"
+    },
+    "advanced": {
+      "apiUrlLabel": "API URL",
+      "apiUrlHint": "Base URL voor API-koppeling",
+      "apiKeyLabel": "API Key / gebruikersnaam",
+      "apiSecretLabel": "API Secret / wachtwoord",
+      "secretSetHint": "Ingesteld — laat leeg om te behouden",
+      "secretReplaceHint": "Vul een nieuwe waarde in om te vervangen",
+      "webhookUrlLabel": "Webhook URL",
+      "webhookSecretLabel": "Webhook secret",
+      "debugModeLabel": "Debug-modus",
+      "debugModeHint": "Extra logging bij export naar dit platform"
+    },
+    "statistics": {
+      "comingSoonTitle": "Statistieken volgen in een volgende update",
+      "comingSoonBody": "Hier komen exportstatistieken, succespercentages en gekoppelde audit-links."
+    },
+    "audit": {
+      "comingSoonTitle": "Audit-overzicht volgt in een volgende update",
+      "comingSoonBody": "Hier komt een overzicht van alle wijzigingen en synchronisaties voor dit platform."
+    }
   }
 }

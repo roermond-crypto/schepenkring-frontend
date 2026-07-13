@@ -3554,5 +3554,117 @@
       "statusRejected": "Rejected",
       "statusWithdrawn": "Withdrawn"
     }
+  },
+  "Platforms": {
+    "back": "Back",
+    "newTitle": "New platform",
+    "editTitle": "Edit platform",
+    "save": "Save",
+    "saving": "Saving...",
+    "saveSuccess": "Platform saved.",
+    "saveFailed": "Failed to save.",
+    "createSuccess": "Platform created.",
+    "createFailed": "Failed to create.",
+    "loadFailed": "Could not load platform.",
+    "nameRequired": "Name is required.",
+    "slugRequired": "Slug is required.",
+    "tabs": {
+      "general": "General",
+      "export": "Export",
+      "openmarine": "OpenMarine",
+      "contact": "Contact",
+      "advanced": "Advanced",
+      "statistics": "Statistics",
+      "audit": "Audit"
+    },
+    "tooltip": {
+      "ariaLabel": "Help for this field",
+      "example": "Example",
+      "commonMistakes": "Common mistakes",
+      "required": "Required",
+      "optional": "Optional",
+      "docs": "Documentation"
+    },
+    "logo": {
+      "dropHint": "Drag a logo here or click to upload",
+      "fileHint": "PNG or SVG, transparent background recommended, max 2MB",
+      "invalidType": "Please choose an image file.",
+      "uploadSuccess": "Logo uploaded.",
+      "uploadFailed": "Failed to upload logo."
+    },
+    "general": {
+      "nameLabel": "Platform name",
+      "namePlaceholder": "e.g. Boat24",
+      "slugLabel": "Slug",
+      "slugHint": "Unique identifier, lowercase, hyphens",
+      "websiteLabel": "Website URL",
+      "logoLabel": "Logo",
+      "categoryLabel": "Category",
+      "priorityLabel": "Priority",
+      "priorityHint": "Lower = higher priority",
+      "statusLabel": "Status",
+      "statusActive": "Active",
+      "statusInactive": "Inactive",
+      "countriesLabel": "Supported countries",
+      "countriesPlaceholder": "Select countries...",
+      "countriesSearchPlaceholder": "Search a country...",
+      "countriesEmpty": "No countries found.",
+      "languagesLabel": "Supported languages",
+      "languagesPlaceholder": "Select languages...",
+      "languagesSearchPlaceholder": "Search a language...",
+      "languagesEmpty": "No languages found.",
+      "logoNewHint": "Save the platform first before uploading a logo."
+    },
+    "category": {
+      "marketplace": "Marketplace",
+      "portal": "Portal",
+      "partner": "Partner",
+      "own_website": "Own website"
+    },
+    "export": {
+      "methodLabel": "Export method",
+      "methodOpenmarine": "OpenMarine 2.0",
+      "methodXml": "XML Feed",
+      "methodApi": "API",
+      "methodManual": "Manual / CSV",
+      "feedUrlLabel": "Feed URL",
+      "feedUrlHint": "URL the platform fetches our feed from"
+    },
+    "contact": {
+      "nameLabel": "Contact person",
+      "emailLabel": "Contact email",
+      "notesLabel": "Notes & instructions",
+      "notesPlaceholder": "Internal notes, instructions or details..."
+    },
+    "openmarine": {
+      "enabledLabel": "OpenMarine 2.0 export enabled",
+      "versionLabel": "OpenMarine version",
+      "version2": "OpenMarine 2.0",
+      "version1": "OpenMarine 1.0 (legacy)",
+      "dealerIdLabel": "Dealer ID",
+      "dealerIdHint": "Unique dealer ID with this platform",
+      "categoryMapLabel": "Category mapping (JSON)",
+      "categoryMapHint": "Maps internal categories to platform codes — a visual editor is coming in a future update"
+    },
+    "advanced": {
+      "apiUrlLabel": "API URL",
+      "apiUrlHint": "Base URL for API integration",
+      "apiKeyLabel": "API Key / username",
+      "apiSecretLabel": "API Secret / password",
+      "secretSetHint": "Set — leave blank to keep it",
+      "secretReplaceHint": "Enter a new value to replace it",
+      "webhookUrlLabel": "Webhook URL",
+      "webhookSecretLabel": "Webhook secret",
+      "debugModeLabel": "Debug mode",
+      "debugModeHint": "Extra logging when exporting to this platform"
+    },
+    "statistics": {
+      "comingSoonTitle": "Statistics coming in a future update",
+      "comingSoonBody": "Export statistics, success rates and linked audit views will appear here."
+    },
+    "audit": {
+      "comingSoonTitle": "Audit overview coming in a future update",
+      "comingSoonBody": "A timeline of all changes and syncs for this platform will appear here."
+    }
   }
 }

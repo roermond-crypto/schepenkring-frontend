@@ -3552,5 +3552,117 @@
       "statusRejected": "Refusé",
       "statusWithdrawn": "Retiré"
     }
+  },
+  "Platforms": {
+    "back": "Retour",
+    "newTitle": "Nouvelle plateforme",
+    "editTitle": "Modifier la plateforme",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "saveSuccess": "Plateforme enregistrée.",
+    "saveFailed": "Échec de l'enregistrement.",
+    "createSuccess": "Plateforme créée.",
+    "createFailed": "Échec de la création.",
+    "loadFailed": "Impossible de charger la plateforme.",
+    "nameRequired": "Le nom est requis.",
+    "slugRequired": "Le slug est requis.",
+    "tabs": {
+      "general": "Général",
+      "export": "Export",
+      "openmarine": "OpenMarine",
+      "contact": "Contact",
+      "advanced": "Avancé",
+      "statistics": "Statistiques",
+      "audit": "Audit"
+    },
+    "tooltip": {
+      "ariaLabel": "Aide pour ce champ",
+      "example": "Exemple",
+      "commonMistakes": "Erreurs courantes",
+      "required": "Obligatoire",
+      "optional": "Optionnel",
+      "docs": "Documentation"
+    },
+    "logo": {
+      "dropHint": "Glissez un logo ici ou cliquez pour téléverser",
+      "fileHint": "PNG ou SVG, fond transparent recommandé, max 2 Mo",
+      "invalidType": "Veuillez choisir un fichier image.",
+      "uploadSuccess": "Logo téléversé.",
+      "uploadFailed": "Échec du téléversement du logo."
+    },
+    "general": {
+      "nameLabel": "Nom de la plateforme",
+      "namePlaceholder": "p. ex. Boat24",
+      "slugLabel": "Slug",
+      "slugHint": "Identifiant unique, minuscules, tirets",
+      "websiteLabel": "URL du site web",
+      "logoLabel": "Logo",
+      "categoryLabel": "Catégorie",
+      "priorityLabel": "Priorité",
+      "priorityHint": "Plus bas = priorité plus élevée",
+      "statusLabel": "Statut",
+      "statusActive": "Actif",
+      "statusInactive": "Inactif",
+      "countriesLabel": "Pays pris en charge",
+      "countriesPlaceholder": "Sélectionner des pays...",
+      "countriesSearchPlaceholder": "Rechercher un pays...",
+      "countriesEmpty": "Aucun pays trouvé.",
+      "languagesLabel": "Langues prises en charge",
+      "languagesPlaceholder": "Sélectionner des langues...",
+      "languagesSearchPlaceholder": "Rechercher une langue...",
+      "languagesEmpty": "Aucune langue trouvée.",
+      "logoNewHint": "Enregistrez d'abord la plateforme avant de téléverser un logo."
+    },
+    "category": {
+      "marketplace": "Place de marché",
+      "portal": "Portail",
+      "partner": "Partenaire",
+      "own_website": "Site propre"
+    },
+    "export": {
+      "methodLabel": "Méthode d'export",
+      "methodOpenmarine": "OpenMarine 2.0",
+      "methodXml": "Flux XML",
+      "methodApi": "API",
+      "methodManual": "Manuel / CSV",
+      "feedUrlLabel": "URL du flux",
+      "feedUrlHint": "URL à laquelle la plateforme récupère notre flux"
+    },
+    "contact": {
+      "nameLabel": "Personne de contact",
+      "emailLabel": "E-mail de contact",
+      "notesLabel": "Notes & instructions",
+      "notesPlaceholder": "Notes internes, instructions ou particularités..."
+    },
+    "openmarine": {
+      "enabledLabel": "Export OpenMarine 2.0 activé",
+      "versionLabel": "Version OpenMarine",
+      "version2": "OpenMarine 2.0",
+      "version1": "OpenMarine 1.0 (héritée)",
+      "dealerIdLabel": "ID revendeur",
+      "dealerIdHint": "ID revendeur unique chez cette plateforme",
+      "categoryMapLabel": "Correspondance de catégories (JSON)",
+      "categoryMapHint": "Associe les catégories internes aux codes de la plateforme — un éditeur visuel arrive dans une prochaine mise à jour"
+    },
+    "advanced": {
+      "apiUrlLabel": "URL de l'API",
+      "apiUrlHint": "URL de base pour l'intégration API",
+      "apiKeyLabel": "Clé API / nom d'utilisateur",
+      "apiSecretLabel": "Secret API / mot de passe",
+      "secretSetHint": "Défini — laissez vide pour le conserver",
+      "secretReplaceHint": "Saisissez une nouvelle valeur pour le remplacer",
+      "webhookUrlLabel": "URL du webhook",
+      "webhookSecretLabel": "Secret du webhook",
+      "debugModeLabel": "Mode débogage",
+      "debugModeHint": "Journalisation supplémentaire lors de l'export vers cette plateforme"
+    },
+    "statistics": {
+      "comingSoonTitle": "Statistiques disponibles dans une prochaine mise à jour",
+      "comingSoonBody": "Les statistiques d'export, taux de réussite et liens d'audit apparaîtront ici."
+    },
+    "audit": {
+      "comingSoonTitle": "Aperçu d'audit disponible dans une prochaine mise à jour",
+      "comingSoonBody": "Un historique de tous les changements et synchronisations pour cette plateforme apparaîtra ici."
+    }
   }
 }
