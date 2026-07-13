@@ -23,6 +23,7 @@ import { OverviewTab } from "./_components/OverviewTab";
 import { ConnectionsTab } from "./_components/ConnectionsTab";
 import { MappingEditorTab } from "./_components/MappingEditorTab";
 import { PreviewTab } from "./_components/PreviewTab";
+import { ValidationTab } from "./_components/ValidationTab";
 import { ConflictsTab } from "./_components/ConflictsTab";
 import { RunsTab } from "./_components/RunsTab";
 import { ComingSoonTab } from "./_components/ComingSoonTab";
@@ -122,9 +123,7 @@ export default function IntegrationCenterPage() {
           {tab === "connections" && <ConnectionsTab />}
           {tab === "mapping" && <MappingEditorTab />}
           {tab === "preview" && <PreviewTab />}
-          {tab === "validation" && (
-            <ComingSoonTab icon={ShieldCheck} title={t("comingSoon.validation.title")} body={t("comingSoon.validation.body")} />
-          )}
+          {tab === "validation" && <ValidationTab onNavigateToMapping={() => changeTab("mapping")} />}
           {tab === "conflicts" && <ConflictsTab onResolved={() => void loadStatus()} />}
           {tab === "runs" && <RunsTab />}
           {tab === "journey" && (

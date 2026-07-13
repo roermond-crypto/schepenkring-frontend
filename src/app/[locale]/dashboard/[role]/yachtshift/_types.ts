@@ -105,3 +105,46 @@ export type MarketplacePreview = {
   yachtshift_json: Record<string, unknown>;
   generic_api_json: Record<string, unknown> | { error: string };
 };
+
+export type InspectField = {
+  schepenkring_field: string;
+  openmarine_xml_path: string;
+  group_label: string | null;
+  is_required: boolean;
+  notes: string | null;
+  current_value: unknown;
+  populated: boolean;
+};
+
+export type InspectResult = {
+  yacht: { id: number; boat_name: string | null; status: string };
+  fields: InspectField[];
+  errors: string[];
+  warnings: string[];
+};
+
+export type CompatibilityRow = {
+  platform_id: number;
+  platform_name: string;
+  supported: number;
+  missing: number;
+  errors: number;
+};
+
+export type CompatibilityDrillDownYacht = {
+  yacht_id: number;
+  boat_name: string | null;
+  reasons: string[];
+};
+
+export type RegressionRun = {
+  id: number;
+  mapping_version: number | null;
+  total_yachts: number;
+  passed_count: number;
+  failed_count: number;
+  triggered_by_id: number | null;
+  triggered_by?: { id: number; name: string } | null;
+  created_at: string;
+  results?: { yacht_id: number; passed: boolean; errors: string[]; warnings: string[]; yacht?: { id: number; boat_name: string | null } }[];
+};
