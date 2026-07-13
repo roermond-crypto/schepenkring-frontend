@@ -902,7 +902,13 @@
       "location": "Emplacement",
       "optional": "facultatif",
       "clearance": "Habilitation",
-      "accountStatus": "Statut du compte"
+      "accountStatus": "Statut du compte",
+      "createdAt": "Créé le",
+      "audit": "Audit",
+      "loginAudit": "Connexion",
+      "timeline": "Chronologie",
+      "timelineTitle": "Chronologie d'audit pour {name}",
+      "timelineEmpty": "Aucun événement d'audit trouvé pour cet utilisateur."
     },
     "options": {
       "limited": "Limité",

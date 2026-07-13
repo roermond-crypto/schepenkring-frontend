@@ -990,7 +990,13 @@
       "location": "Locatie",
       "optional": "optioneel",
       "clearance": "Toegang",
-      "accountStatus": "Accountstatus"
+      "accountStatus": "Accountstatus",
+      "createdAt": "Aangemaakt op",
+      "audit": "Audit",
+      "loginAudit": "Login",
+      "timeline": "Tijdlijn",
+      "timelineTitle": "Audit-tijdlijn voor {name}",
+      "timelineEmpty": "Geen audit-gebeurtenissen gevonden voor deze gebruiker."
     },
     "options": {
       "limited": "Beperkt",

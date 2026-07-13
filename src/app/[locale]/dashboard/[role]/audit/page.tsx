@@ -202,11 +202,12 @@ export default function SystemAuditPage() {
   });
 
   // ── Filters ──
-  // user_id seeds from the URL so links like /audit?user_id=36 (e.g. from
-  // the dashboard's "View audit" button) land on an already-scoped view
-  // instead of the generic unfiltered log.
+  // user_id and action seed from the URL so links like
+  // /audit?user_id=36 or /audit?user_id=36&action=auth.login,auth.logout
+  // (e.g. from the users page's "View audit"/"Login" links) land on an
+  // already-scoped view instead of the generic unfiltered log.
   const [filters, setFilters] = useState({
-    event_type: [] as string[],
+    event_type: (searchParams.get("action")?.split(",").filter(Boolean) ?? []) as string[],
     entity_type: [] as string[],
     dateRange: { from: "", to: "" },
     search: "",

@@ -990,7 +990,13 @@
       "location": "Location",
       "optional": "optional",
       "clearance": "Clearance",
-      "accountStatus": "Account Status"
+      "accountStatus": "Account Status",
+      "createdAt": "Created at",
+      "audit": "Audit",
+      "loginAudit": "Login",
+      "timeline": "Timeline",
+      "timelineTitle": "Audit timeline for {name}",
+      "timelineEmpty": "No audit events found for this user."
     },
     "options": {
       "limited": "Limited",

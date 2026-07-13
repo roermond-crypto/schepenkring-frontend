@@ -23,13 +23,16 @@ import {
   UsersRound,
   ShieldCheck,
   ShoppingBag,
+  History,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, Toaster } from "react-hot-toast";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { AuditLogCard, type AuditLogCardItem } from "@/components/dashboard/AuditLogCard";
 import { api } from "@/lib/api";
 import { setClientSession } from "@/lib/auth/client-session";
 import { useClientSession } from "@/components/session/ClientSessionProvider";
@@ -132,6 +135,11 @@ const statusConfig: Record<
     bg: "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900",
   },
 };
+
+// Shared between the header row and each data row so the columns can never
+// drift out of alignment with each other.
+const USER_TABLE_GRID_COLS =
+  "grid-cols-[1fr_1.1fr_150px_120px_100px_110px_120px_130px_56px]";
 
 const tabConfig: { id: UserCategory; icon: LucideIcon }[] = [
   { id: "Employee", icon: Briefcase },
@@ -256,6 +264,7 @@ export default function RoleManagementPage() {
   };
   const { user: sessionUser } = useClientSession();
   const routeRole = params.role;
+  const dashboardBase = `/${locale}/dashboard/${routeRole}`;
   const isEmployeeView = routeRole === "employee" || sessionUser.role === "employee";
   const canManageUsers = !isEmployeeView;
   const hasEmployeeLocation = Boolean(sessionUser.location_id);
@@ -273,6 +282,9 @@ export default function RoleManagementPage() {
   const [openActionId, setOpenActionId] = useState<number | null>(null);
   const [terminateTarget, setTerminateTarget] = useState<UserRecord | null>(null);
   const [statusToggleTarget, setStatusToggleTarget] = useState<UserRecord | null>(null);
+  const [auditTimelineUserId, setAuditTimelineUserId] = useState<number | null>(null);
+  const [auditTimelineItems, setAuditTimelineItems] = useState<AuditLogCardItem[]>([]);
+  const [auditTimelineLoading, setAuditTimelineLoading] = useState(false);
   const [impersonateTarget, setImpersonateTarget] = useState<UserRecord | null>(null);
   const [adminPassword, setAdminPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -485,6 +497,32 @@ export default function RoleManagementPage() {
     }
   };
 
+  const toggleAuditTimeline = async (user: UserRecord) => {
+    if (auditTimelineUserId === user.id) {
+      setAuditTimelineUserId(null);
+      return;
+    }
+
+    setAuditTimelineUserId(user.id);
+    setAuditTimelineLoading(true);
+    try {
+      const response = await api.get("/audit", {
+        params: {
+          user_id: user.id,
+          per_page: 15,
+          sort_by: "created_at",
+          sort_dir: "desc",
+        },
+      });
+      const items = (response.data?.data ?? []) as AuditLogCardItem[];
+      setAuditTimelineItems(items);
+    } catch {
+      setAuditTimelineItems([]);
+    } finally {
+      setAuditTimelineLoading(false);
+    }
+  };
+
   const impersonateUser = async (
     user: UserRecord,
     password: string,
@@ -588,7 +626,7 @@ export default function RoleManagementPage() {
   }, [users, isEmployeeView]);
 
   return (
-    <div className="min-h-screen max-w-[1400px] p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
       <Toaster position="top-right" />
 
       <div className="mb-8 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
@@ -640,7 +678,7 @@ export default function RoleManagementPage() {
         </div>
       ) : null}
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {(isEmployeeView
           ? tabConfig.filter(({ id }) => id === "Buyer" || id === "Seller")
           : tabConfig
@@ -652,7 +690,7 @@ export default function RoleManagementPage() {
               key={id}
               onClick={() => setActiveTab(id)}
               className={cn(
-                "flex items-center gap-3 rounded-xl border p-4 text-left transition-all",
+                "flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all",
                 isActive
                   ? "border-[#003566] bg-[#003566] text-white shadow-lg shadow-[#003566]/20"
                   : "border-slate-200 bg-white text-slate-600 hover:border-[#003566]/30 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
@@ -660,12 +698,12 @@ export default function RoleManagementPage() {
             >
               <div
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
                   isActive ? "bg-white/20" : "bg-slate-100 dark:bg-slate-800",
                 )}
               >
                 <Icon
-                  size={18}
+                  size={16}
                   className={
                     isActive
                       ? "text-white"
@@ -673,10 +711,10 @@ export default function RoleManagementPage() {
                   }
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p
                   className={cn(
-                    "text-2xl font-bold leading-none",
+                    "text-xl font-bold leading-none",
                     isActive
                       ? "text-white"
                       : "text-[#003566] dark:text-slate-100",
@@ -686,7 +724,7 @@ export default function RoleManagementPage() {
                 </p>
                 <p
                   className={cn(
-                    "mt-0.5 text-[10px] font-bold uppercase tracking-wider",
+                    "mt-0.5 truncate text-[10px] font-bold uppercase tracking-wider",
                     isActive
                       ? "text-white/70"
                       : "text-slate-400 dark:text-slate-500",
@@ -701,7 +739,12 @@ export default function RoleManagementPage() {
       </div>
 
       <div className="overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="hidden grid-cols-[1fr_1.25fr_190px_180px_120px_80px] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 md:grid dark:border-slate-700 dark:bg-slate-800/70">
+        <div
+          className={cn(
+            "hidden gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 md:grid dark:border-slate-700 dark:bg-slate-800/70",
+            USER_TABLE_GRID_COLS,
+          )}
+        >
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {t("fields.fullName")}
           </p>
@@ -716,6 +759,15 @@ export default function RoleManagementPage() {
           </p>
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {t("labels.status")}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {t("fields.createdAt")}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {t("labels.lastLogin")}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {t("fields.audit")}
           </p>
           <p className="text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {canManageUsers ? t("actions.terminate") : t("actions.refresh")}
@@ -761,7 +813,12 @@ export default function RoleManagementPage() {
                   transition={{ delay: i * 0.03 }}
                   className="group"
                 >
-                  <div className="hidden grid-cols-[1fr_1.25fr_190px_180px_120px_80px] items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/80 md:grid dark:hover:bg-slate-800/40">
+                  <div
+                    className={cn(
+                      "hidden items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/80 md:grid dark:hover:bg-slate-800/40",
+                      USER_TABLE_GRID_COLS,
+                    )}
+                  >
                     <div className="flex min-w-0 items-center gap-3">
                       <div
                         className={cn(
@@ -886,6 +943,39 @@ export default function RoleManagementPage() {
                       )}
                     </div>
 
+                    <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                      {formatDateTime(user.created_at, "—")}
+                    </div>
+
+                    <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                      {formatDateTime(user.last_login_at, t("labels.never"))}
+                    </div>
+
+                    <div className="flex flex-col items-start gap-1">
+                      <a
+                        href={`${dashboardBase}/audit?user_id=${user.id}`}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1E3A8A] hover:text-[#152a63] dark:text-sky-300"
+                      >
+                        <History size={11} />
+                        {t("fields.audit")}
+                      </a>
+                      <a
+                        href={`${dashboardBase}/audit?user_id=${user.id}&action=auth.login,auth.logout`}
+                        className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                      >
+                        <LogIn size={11} />
+                        {t("fields.loginAudit")}
+                      </a>
+                      <label className="mt-0.5 flex items-center gap-1.5">
+                        <Switch
+                          checked={auditTimelineUserId === user.id}
+                          onCheckedChange={() => void toggleAuditTimeline(user)}
+                          className="scale-[0.7] origin-left"
+                        />
+                        <span className="text-[10px] text-slate-400">{t("fields.timeline")}</span>
+                      </label>
+                    </div>
+
                     <div className="relative flex justify-end">
                       {canManageUsers ? (
                         <>
@@ -976,6 +1066,35 @@ export default function RoleManagementPage() {
                       )}
                     </div>
                   </div>
+
+                  <AnimatePresence>
+                    {auditTimelineUserId === user.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden border-t border-slate-100 bg-slate-50/60 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/40"
+                      >
+                        <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          {t("fields.timelineTitle", { name: user.name })}
+                        </p>
+                        {auditTimelineLoading ? (
+                          <div className="flex items-center gap-2 py-4 text-sm text-slate-400">
+                            <Loader2 size={14} className="animate-spin" />
+                            {t("labels.loadingUsers")}
+                          </div>
+                        ) : auditTimelineItems.length > 0 ? (
+                          <div className="space-y-2">
+                            {auditTimelineItems.map((item) => (
+                              <AuditLogCard key={item.id} item={item} dashboardBase={dashboardBase} />
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="py-4 text-sm text-slate-400">{t("fields.timelineEmpty")}</p>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               );
             })}

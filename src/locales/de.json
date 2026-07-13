@@ -988,7 +988,13 @@
       "location": "Standort",
       "optional": "optional",
       "clearance": "Berechtigung",
-      "accountStatus": "Kontostatus"
+      "accountStatus": "Kontostatus",
+      "createdAt": "Erstellt am",
+      "audit": "Audit",
+      "loginAudit": "Anmeldung",
+      "timeline": "Zeitachse",
+      "timelineTitle": "Audit-Zeitachse für {name}",
+      "timelineEmpty": "Keine Audit-Ereignisse für diesen Benutzer gefunden."
     },
     "options": {
       "limited": "Begrenzt",
