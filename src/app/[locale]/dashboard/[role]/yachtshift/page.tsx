@@ -1,199 +1,113 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
-  RefreshCw,
-  Loader2,
   AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  ArrowLeftRight,
-  Clock,
+  GitBranch,
+  History,
+  LayoutDashboard,
+  Loader2,
+  Plug,
+  RefreshCw,
+  Route,
+  ShieldCheck,
+  Telescope,
 } from "lucide-react";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { OverviewTab } from "./_components/OverviewTab";
+import { ConnectionsTab } from "./_components/ConnectionsTab";
+import { ConflictsTab } from "./_components/ConflictsTab";
+import { RunsTab } from "./_components/RunsTab";
+import { ComingSoonTab } from "./_components/ComingSoonTab";
+import type { SyncStatus } from "./_types";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+type TabId = "overview" | "connections" | "mapping" | "preview" | "validation" | "conflicts" | "runs" | "journey";
+const TAB_IDS: TabId[] = ["overview", "connections", "mapping", "preview", "validation", "conflicts", "runs", "journey"];
 
-type SyncStatus = {
-  total_yachts: number;
-  synced_to_yachtshift: number;
-  pending_export: number;
-  last_sync_at: string | null;
-  publish_statuses: Record<string, number>;
-  failed_exports: number;
-  pending_conflicts: number;
+const TAB_ICONS: Record<TabId, typeof LayoutDashboard> = {
+  overview: LayoutDashboard,
+  connections: Plug,
+  mapping: GitBranch,
+  preview: Telescope,
+  validation: ShieldCheck,
+  conflicts: AlertTriangle,
+  runs: History,
+  journey: Route,
 };
 
-type Conflict = {
-  id: number;
-  yacht_id: number;
-  external_id: string;
-  field_name: string;
-  local_value: string | null;
-  remote_value: string | null;
-  status: string;
-  yacht?: { id: number; boat_name: string | null; vessel_id: string | null } | null;
-};
+export default function IntegrationCenterPage() {
+  const searchParams = useSearchParams();
+  const t = useTranslations("IntegrationCenter");
 
-type SyncRun = {
-  id: number;
-  action: string;
-  result: string;
-  meta: Record<string, unknown> | null;
-  created_at: string;
-};
-
-type Paginated<T> = { data: T[]; current_page: number; last_page: number; total: number };
-
-const fmt = (v?: string | null) =>
-  v ? new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" }).format(new Date(v)) : "—";
-
-const ACTION_LABELS: Record<string, string> = {
-  "yachtshift.import.completed": "Import voltooid",
-  "yachtshift.import.failed": "Import mislukt",
-  "yachtshift.import.empty_response": "Import geblokkeerd (lege respons)",
-  "yachtshift.import.boat_synced": "Boot gesynchroniseerd (import)",
-  "yachtshift.import.conflict": "Conflict gedetecteerd",
-  "yachtshift.export.completed": "Export voltooid",
-  "yachtshift.export.completed_with_errors": "Export voltooid met fouten",
-  "yachtshift.export.failed": "Export mislukt",
-  "yachtshift.export.boat_synced": "Boot gesynchroniseerd (export)",
-  "yachtshift.conflict.resolved": "Conflict opgelost",
-};
-
-// ── Component ────────────────────────────────────────────────────────────────
-
-export default function YachtShiftSyncPage() {
-  const [tab, setTab] = useState<"overview" | "conflicts" | "runs">("overview");
+  const initialTab = TAB_IDS.includes(searchParams?.get("tab") as TabId) ? (searchParams!.get("tab") as TabId) : "overview";
+  const [tab, setTab] = useState<TabId>(initialTab);
   const [status, setStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [direction, setDirection] = useState<"import" | "export" | "both">("both");
-  const [dryRun, setDryRun] = useState(true);
-  const [triggering, setTriggering] = useState(false);
-  const [lastResult, setLastResult] = useState<any>(null);
-
-  const [conflicts, setConflicts] = useState<Conflict[]>([]);
-  const [conflictsLoading, setConflictsLoading] = useState(false);
-  const [resolvingId, setResolvingId] = useState<number | null>(null);
-
-  const [runs, setRuns] = useState<SyncRun[]>([]);
-  const [runsLoading, setRunsLoading] = useState(false);
 
   const loadStatus = useCallback(async () => {
     try {
       const res = await api.get<SyncStatus>("/admin/yachtshift/sync/status");
       setStatus(res.data);
     } catch {
-      toast.error("Status laden mislukt.");
+      toast.error(t("overview.statusLoadFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const loadConflicts = useCallback(async () => {
-    setConflictsLoading(true);
-    try {
-      const res = await api.get<Paginated<Conflict>>("/admin/yachtshift/conflicts", {
-        params: { status: "pending" },
-      });
-      setConflicts(res.data.data ?? []);
-    } catch {
-      toast.error("Conflicten laden mislukt.");
-    } finally {
-      setConflictsLoading(false);
-    }
-  }, []);
-
-  const loadRuns = useCallback(async () => {
-    setRunsLoading(true);
-    try {
-      const res = await api.get<Paginated<SyncRun>>("/admin/yachtshift/runs");
-      setRuns(res.data.data ?? []);
-    } catch {
-      toast.error("Sync-geschiedenis laden mislukt.");
-    } finally {
-      setRunsLoading(false);
-    }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
 
-  useEffect(() => {
-    if (tab === "conflicts") void loadConflicts();
-    if (tab === "runs") void loadRuns();
-  }, [tab, loadConflicts, loadRuns]);
-
-  const handleTrigger = async () => {
-    setTriggering(true);
-    setLastResult(null);
-    try {
-      const res = await api.post("/admin/yachtshift/sync", { direction, dry_run: dryRun });
-      setLastResult(res.data);
-      toast.success(dryRun ? "Proefsync voltooid." : "Synchronisatie voltooid.");
-      void loadStatus();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Synchronisatie mislukt.");
-    } finally {
-      setTriggering(false);
-    }
-  };
-
-  const handleResolve = async (conflictId: number, resolution: "local" | "remote") => {
-    setResolvingId(conflictId);
-    try {
-      await api.post(`/admin/yachtshift/conflicts/${conflictId}/resolve`, { resolution });
-      toast.success("Conflict opgelost.");
-      setConflicts((prev) => prev.filter((c) => c.id !== conflictId));
-      void loadStatus();
-    } catch {
-      toast.error("Oplossen mislukt.");
-    } finally {
-      setResolvingId(null);
-    }
+  const changeTab = (next: TabId) => {
+    setTab(next);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", next);
+    window.history.replaceState(null, "", url.toString());
   };
 
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
-      <Toaster position="top-right" />
-
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif italic text-[#003566] dark:text-slate-100">YachtShift Sync</h1>
+          <h1 className="text-2xl font-serif italic text-[#003566] dark:text-slate-100">{t("title")}</h1>
           <p className="mt-1 text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 dark:text-blue-300">
-            Import &middot; export &middot; conflicten
+            {t("subtitle")}
           </p>
         </div>
         <Button variant="outline" onClick={() => void loadStatus()} className="gap-2 rounded-lg">
-          <RefreshCw size={14} /> Verversen
+          <RefreshCw size={14} /> {t("refresh")}
         </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 dark:border-slate-800 dark:bg-slate-900">
-        {([
-          { id: "overview", label: "Overzicht" },
-          { id: "conflicts", label: `Conflicten${status?.pending_conflicts ? ` (${status.pending_conflicts})` : ""}` },
-          { id: "runs", label: "Geschiedenis" },
-        ] as const).map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={cn(
-              "rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
-              tab === t.id ? "bg-[#003566] text-white shadow-sm" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800",
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="mb-6 flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-white p-1.5 dark:border-slate-800 dark:bg-slate-900">
+        {TAB_IDS.map((id) => {
+          const Icon = TAB_ICONS[id];
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => changeTab(id)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors",
+                tab === id ? "bg-[#003566] text-white shadow-sm" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800",
+              )}
+            >
+              <Icon size={14} />
+              {t(`tabs.${id}`)}
+              {id === "conflicts" && (status?.pending_conflicts ?? 0) > 0 && (
+                <span className="rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-white">
+                  {status?.pending_conflicts}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (
@@ -202,180 +116,21 @@ export default function YachtShiftSyncPage() {
         </div>
       ) : (
         <>
-          {/* ── Overview ─────────────────────────────────────────── */}
-          {tab === "overview" && (
-            <div className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {[
-                  { label: "Totaal boten", value: status?.total_yachts ?? 0 },
-                  { label: "Gesynchroniseerd", value: status?.synced_to_yachtshift ?? 0 },
-                  { label: "Wacht op export", value: status?.pending_export ?? 0 },
-                  { label: "Mislukte exports", value: status?.failed_exports ?? 0, danger: (status?.failed_exports ?? 0) > 0 },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{s.label}</p>
-                    <p className={cn("mt-2 text-3xl font-bold", s.danger ? "text-red-600" : "text-[#003566] dark:text-slate-100")}>
-                      {s.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="rounded-[20px] border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                <Clock size={13} className="mr-1.5 inline" />
-                Laatste sync: <strong>{fmt(status?.last_sync_at)}</strong>
-              </div>
-
-              {/* Manual trigger */}
-              <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <p className="mb-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Handmatig synchroniseren</p>
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex rounded-xl border border-slate-200 p-1 dark:border-slate-700">
-                    {([
-                      { id: "import", label: "Import", icon: ArrowDownToLine },
-                      { id: "both", label: "Beide", icon: ArrowLeftRight },
-                      { id: "export", label: "Export", icon: ArrowUpFromLine },
-                    ] as const).map((d) => (
-                      <button
-                        key={d.id}
-                        type="button"
-                        onClick={() => setDirection(d.id)}
-                        className={cn(
-                          "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold",
-                          direction === d.id ? "bg-[#003566] text-white" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800",
-                        )}
-                      >
-                        <d.icon size={13} /> {d.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    <input type="checkbox" checked={dryRun} onChange={(e) => setDryRun(e.target.checked)} />
-                    Proefsync (geen wijzigingen opslaan)
-                  </label>
-
-                  <Button
-                    type="button"
-                    onClick={() => void handleTrigger()}
-                    disabled={triggering}
-                    className="ml-auto gap-2 rounded-lg bg-[#003566] text-white hover:bg-[#00284f]"
-                  >
-                    {triggering ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                    Synchroniseren
-                  </Button>
-                </div>
-
-                {lastResult && (
-                  <pre className="mt-4 max-h-64 overflow-auto rounded-xl bg-slate-50 p-4 text-xs text-slate-600 dark:bg-slate-950 dark:text-slate-300">
-                    {JSON.stringify(lastResult, null, 2)}
-                  </pre>
-                )}
-              </div>
-            </div>
+          {tab === "overview" && <OverviewTab status={status} onSynced={() => void loadStatus()} />}
+          {tab === "connections" && <ConnectionsTab />}
+          {tab === "mapping" && (
+            <ComingSoonTab icon={GitBranch} title={t("comingSoon.mapping.title")} body={t("comingSoon.mapping.body")} />
           )}
-
-          {/* ── Conflicts ────────────────────────────────────────── */}
-          {tab === "conflicts" && (
-            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              {conflictsLoading ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
-                </div>
-              ) : conflicts.length === 0 ? (
-                <p className="py-10 text-center text-sm text-slate-400">
-                  <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-400" />
-                  Geen openstaande conflicten.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {conflicts.map((c) => (
-                    <div key={c.id} className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle size={14} className="text-amber-600" />
-                          <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                            {c.yacht?.boat_name ?? `Boot #${c.yacht_id}`}
-                          </span>
-                          <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800">
-                            {c.field_name}
-                          </span>
-                        </div>
-                        <span className="text-xs text-slate-400">extern: {c.external_id}</span>
-                      </div>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                          <p className="text-[10px] font-bold uppercase text-slate-400">Lokale waarde</p>
-                          <p className="truncate text-sm text-slate-700 dark:text-slate-200">{c.local_value ?? "—"}</p>
-                        </div>
-                        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                          <p className="text-[10px] font-bold uppercase text-slate-400">YachtShift waarde</p>
-                          <p className="truncate text-sm text-slate-700 dark:text-slate-200">{c.remote_value ?? "—"}</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={resolvingId === c.id}
-                          onClick={() => void handleResolve(c.id, "local")}
-                          className="rounded-lg text-xs"
-                        >
-                          Lokale waarde behouden
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={resolvingId === c.id}
-                          onClick={() => void handleResolve(c.id, "remote")}
-                          className="rounded-lg text-xs"
-                        >
-                          YachtShift waarde overnemen
-                        </Button>
-                        {resolvingId === c.id && <Loader2 size={14} className="animate-spin text-slate-400" />}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          {tab === "preview" && (
+            <ComingSoonTab icon={Telescope} title={t("comingSoon.preview.title")} body={t("comingSoon.preview.body")} />
           )}
-
-          {/* ── Runs / history ───────────────────────────────────── */}
-          {tab === "runs" && (
-            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              {runsLoading ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
-                </div>
-              ) : runs.length === 0 ? (
-                <p className="py-10 text-center text-sm text-slate-400">Nog geen sync-activiteit.</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {runs.map((r) => {
-                    const failed = r.result?.toLowerCase() === "fail";
-                    return (
-                      <div key={r.id} className="flex items-center gap-3 border-b border-slate-50 py-2.5 text-sm last:border-0 dark:border-slate-800">
-                        {failed ? (
-                          <XCircle size={14} className="shrink-0 text-red-500" />
-                        ) : (
-                          <CheckCircle2 size={14} className="shrink-0 text-emerald-500" />
-                        )}
-                        <span className="w-40 shrink-0 text-xs tabular-nums text-slate-400">{fmt(r.created_at)}</span>
-                        <span className="text-slate-700 dark:text-slate-200">{ACTION_LABELS[r.action] ?? r.action}</span>
-                        {r.meta && typeof r.meta === "object" && "summary" in r.meta && (
-                          <span className="truncate text-xs text-slate-400">
-                            {JSON.stringify((r.meta as Record<string, unknown>).summary)}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+          {tab === "validation" && (
+            <ComingSoonTab icon={ShieldCheck} title={t("comingSoon.validation.title")} body={t("comingSoon.validation.body")} />
+          )}
+          {tab === "conflicts" && <ConflictsTab onResolved={() => void loadStatus()} />}
+          {tab === "runs" && <RunsTab />}
+          {tab === "journey" && (
+            <ComingSoonTab icon={Route} title={t("comingSoon.journey.title")} body={t("comingSoon.journey.body")} />
           )}
         </>
       )}

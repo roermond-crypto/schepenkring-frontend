@@ -3811,5 +3811,100 @@
     "sendSuccess": "Demande envoyée au vendeur.",
     "sendFailed": "Échec de l'envoi de la demande.",
     "historyLabel": "Demandes précédentes"
+  },
+  "IntegrationCenter": {
+    "title": "Integration Center",
+    "subtitle": "OpenMarine · YachtShift · Places de marché",
+    "refresh": "Actualiser",
+    "tabs": {
+      "overview": "Aperçu",
+      "connections": "Connexions",
+      "mapping": "Mapping",
+      "preview": "Aperçu & Test",
+      "validation": "Validation",
+      "conflicts": "Conflits",
+      "runs": "Historique",
+      "journey": "Parcours des données"
+    },
+    "overview": {
+      "statusLoadFailed": "Échec du chargement du statut.",
+      "totalYachts": "Total des bateaux",
+      "synced": "Synchronisés",
+      "pendingExport": "Export en attente",
+      "failedExports": "Exports échoués",
+      "lastSync": "Dernière synchronisation",
+      "manualSyncTitle": "Synchronisation manuelle",
+      "directionImport": "Import",
+      "directionBoth": "Les deux",
+      "directionExport": "Export",
+      "dryRun": "Simulation (aucune modification enregistrée)",
+      "syncButton": "Synchroniser",
+      "syncSuccessDry": "Simulation terminée.",
+      "syncSuccess": "Synchronisation terminée.",
+      "syncFailed": "Échec de la synchronisation."
+    },
+    "conflicts": {
+      "loadFailed": "Échec du chargement des conflits.",
+      "empty": "Aucun conflit en attente.",
+      "external": "externe",
+      "localValue": "Valeur locale",
+      "remoteValue": "Valeur YachtShift",
+      "keepLocal": "Conserver la valeur locale",
+      "keepRemote": "Utiliser la valeur YachtShift",
+      "resolveSuccess": "Conflit résolu.",
+      "resolveFailed": "Échec de la résolution."
+    },
+    "runs": {
+      "loadFailed": "Échec du chargement de l'historique.",
+      "empty": "Aucune activité de synchronisation pour l'instant."
+    },
+    "connections": {
+      "loadFailed": "Échec du chargement des connexions.",
+      "newButton": "Nouvelle connexion",
+      "empty": "Aucune connexion pour l'instant. Créez-en une via 'Nouvelle connexion'.",
+      "default": "Par défaut",
+      "setDefault": "Définir par défaut",
+      "setDefaultSuccess": "Connexion par défaut mise à jour.",
+      "setDefaultFailed": "Échec de la mise à jour.",
+      "testConnection": "Tester la connexion",
+      "testSuccess": "Connexion OK.",
+      "testFailed": "Échec de la connexion.",
+      "validate": "Valider la configuration",
+      "validateFailed": "Échec de la validation.",
+      "active": "Actif",
+      "inactive": "Inactif",
+      "assignedMarketplaces": "Places de marché associées",
+      "assignTo": "Associer à une connexion",
+      "noneSelected": "Aucune (connexion propre)",
+      "delete": "Supprimer",
+      "deleteConfirm": "Supprimer cette connexion ? Cette action est irréversible.",
+      "deleteSuccess": "Connexion supprimée.",
+      "deleteFailed": "Échec de la suppression.",
+      "manageInPlatforms": "Modifier entièrement dans Platforms",
+      "category": "Catégorie",
+      "exportMethod": "Méthode d'export",
+      "dealerId": "ID revendeur",
+      "openMarineVersion": "Version OpenMarine",
+      "issuesFound": "{count} problème(s) trouvé(s)",
+      "noIssues": "Configuration complète."
+    },
+    "comingSoon": {
+      "mapping": {
+        "title": "Éditeur de mapping à venir",
+        "body": "L'éditeur visuel de mapping de champs avec suggestions IA, test en direct et historique des versions sera ajouté lors de la prochaine phase de cette évolution."
+      },
+      "preview": {
+        "title": "Aperçu & environnement de test à venir",
+        "body": "La génération de bateaux de test, la visualisation du pipeline d'export complet et les aperçus des places de marché (base de données, OpenMarine, YachtShift, API) seront ajoutés lors de la prochaine phase."
+      },
+      "validation": {
+        "title": "Validation & compatibilité à venir",
+        "body": "Le moteur de validation en langage clair, la matrice de compatibilité des plateformes, les tests de régression et le dépannage en un clic seront ajoutés lors de la prochaine phase."
+      },
+      "journey": {
+        "title": "Parcours des données à venir",
+        "body": "L'historique des champs en un clic — qui a modifié quoi, quand, et avec quelle confiance IA — sera ajouté lors de la prochaine phase."
+      }
+    }
   }
 }

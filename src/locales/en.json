@@ -3813,5 +3813,100 @@
     "sendSuccess": "Request sent to seller.",
     "sendFailed": "Failed to send request.",
     "historyLabel": "Previous requests"
+  },
+  "IntegrationCenter": {
+    "title": "Integration Center",
+    "subtitle": "OpenMarine · YachtShift · Marketplaces",
+    "refresh": "Refresh",
+    "tabs": {
+      "overview": "Overview",
+      "connections": "Connections",
+      "mapping": "Mapping",
+      "preview": "Preview & Test",
+      "validation": "Validation",
+      "conflicts": "Conflicts",
+      "runs": "History",
+      "journey": "Data Journey"
+    },
+    "overview": {
+      "statusLoadFailed": "Failed to load status.",
+      "totalYachts": "Total yachts",
+      "synced": "Synced",
+      "pendingExport": "Pending export",
+      "failedExports": "Failed exports",
+      "lastSync": "Last sync",
+      "manualSyncTitle": "Manual synchronization",
+      "directionImport": "Import",
+      "directionBoth": "Both",
+      "directionExport": "Export",
+      "dryRun": "Dry run (no changes saved)",
+      "syncButton": "Synchronize",
+      "syncSuccessDry": "Dry run completed.",
+      "syncSuccess": "Synchronization completed.",
+      "syncFailed": "Synchronization failed."
+    },
+    "conflicts": {
+      "loadFailed": "Failed to load conflicts.",
+      "empty": "No pending conflicts.",
+      "external": "external",
+      "localValue": "Local value",
+      "remoteValue": "YachtShift value",
+      "keepLocal": "Keep local value",
+      "keepRemote": "Use YachtShift value",
+      "resolveSuccess": "Conflict resolved.",
+      "resolveFailed": "Failed to resolve."
+    },
+    "runs": {
+      "loadFailed": "Failed to load sync history.",
+      "empty": "No sync activity yet."
+    },
+    "connections": {
+      "loadFailed": "Failed to load connections.",
+      "newButton": "New connection",
+      "empty": "No connections yet. Create one via 'New connection'.",
+      "default": "Default",
+      "setDefault": "Set as default",
+      "setDefaultSuccess": "Default connection updated.",
+      "setDefaultFailed": "Failed to update.",
+      "testConnection": "Test connection",
+      "testSuccess": "Connection OK.",
+      "testFailed": "Connection failed.",
+      "validate": "Validate configuration",
+      "validateFailed": "Validation failed.",
+      "active": "Active",
+      "inactive": "Inactive",
+      "assignedMarketplaces": "Assigned marketplaces",
+      "assignTo": "Assign to connection",
+      "noneSelected": "None (own connection)",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this connection? This cannot be undone.",
+      "deleteSuccess": "Connection deleted.",
+      "deleteFailed": "Failed to delete.",
+      "manageInPlatforms": "Edit fully in Platforms",
+      "category": "Category",
+      "exportMethod": "Export method",
+      "dealerId": "Dealer ID",
+      "openMarineVersion": "OpenMarine version",
+      "issuesFound": "{count} issue(s) found",
+      "noIssues": "Configuration complete."
+    },
+    "comingSoon": {
+      "mapping": {
+        "title": "Mapping editor coming soon",
+        "body": "The visual field-mapping editor with AI suggestions, live testing and version history will be added in the next phase of this build."
+      },
+      "preview": {
+        "title": "Preview & test environment coming soon",
+        "body": "Generating test yachts, viewing the full export pipeline, and marketplace previews (database, OpenMarine, YachtShift, API) will be added in the next phase."
+      },
+      "validation": {
+        "title": "Validation & compatibility coming soon",
+        "body": "The plain-language validation engine, platform compatibility matrix, regression testing and one-click troubleshooting will be added in the next phase."
+      },
+      "journey": {
+        "title": "Data journey coming soon",
+        "body": "Click-through field history — who changed what, when, and with what AI confidence — will be added in the next phase."
+      }
+    }
   }
 }

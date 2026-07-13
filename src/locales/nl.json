@@ -3813,5 +3813,100 @@
     "sendSuccess": "Verzoek verstuurd naar verkoper.",
     "sendFailed": "Versturen van verzoek mislukt.",
     "historyLabel": "Eerdere verzoeken"
+  },
+  "IntegrationCenter": {
+    "title": "Integration Center",
+    "subtitle": "OpenMarine · YachtShift · Marktplaatsen",
+    "refresh": "Verversen",
+    "tabs": {
+      "overview": "Overzicht",
+      "connections": "Connecties",
+      "mapping": "Mapping",
+      "preview": "Preview & Test",
+      "validation": "Validatie",
+      "conflicts": "Conflicten",
+      "runs": "Geschiedenis",
+      "journey": "Datatraject"
+    },
+    "overview": {
+      "statusLoadFailed": "Status laden mislukt.",
+      "totalYachts": "Totaal boten",
+      "synced": "Gesynchroniseerd",
+      "pendingExport": "Wacht op export",
+      "failedExports": "Mislukte exports",
+      "lastSync": "Laatste sync",
+      "manualSyncTitle": "Handmatig synchroniseren",
+      "directionImport": "Import",
+      "directionBoth": "Beide",
+      "directionExport": "Export",
+      "dryRun": "Proefsync (geen wijzigingen opslaan)",
+      "syncButton": "Synchroniseren",
+      "syncSuccessDry": "Proefsync voltooid.",
+      "syncSuccess": "Synchronisatie voltooid.",
+      "syncFailed": "Synchronisatie mislukt."
+    },
+    "conflicts": {
+      "loadFailed": "Conflicten laden mislukt.",
+      "empty": "Geen openstaande conflicten.",
+      "external": "extern",
+      "localValue": "Lokale waarde",
+      "remoteValue": "YachtShift waarde",
+      "keepLocal": "Lokale waarde behouden",
+      "keepRemote": "YachtShift waarde overnemen",
+      "resolveSuccess": "Conflict opgelost.",
+      "resolveFailed": "Oplossen mislukt."
+    },
+    "runs": {
+      "loadFailed": "Sync-geschiedenis laden mislukt.",
+      "empty": "Nog geen sync-activiteit."
+    },
+    "connections": {
+      "loadFailed": "Connecties laden mislukt.",
+      "newButton": "Nieuwe connectie",
+      "empty": "Nog geen connecties. Maak er een aan via 'Nieuwe connectie'.",
+      "default": "Standaard",
+      "setDefault": "Maak standaard",
+      "setDefaultSuccess": "Standaardconnectie bijgewerkt.",
+      "setDefaultFailed": "Bijwerken mislukt.",
+      "testConnection": "Test verbinding",
+      "testSuccess": "Verbinding OK.",
+      "testFailed": "Verbinding mislukt.",
+      "validate": "Valideer configuratie",
+      "validateFailed": "Valideren mislukt.",
+      "active": "Actief",
+      "inactive": "Inactief",
+      "assignedMarketplaces": "Gekoppelde marktplaatsen",
+      "assignTo": "Koppel aan connectie",
+      "noneSelected": "Geen (eigen connectie)",
+      "delete": "Verwijderen",
+      "deleteConfirm": "Deze connectie verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      "deleteSuccess": "Connectie verwijderd.",
+      "deleteFailed": "Verwijderen mislukt.",
+      "manageInPlatforms": "Volledig bewerken in Platforms",
+      "category": "Categorie",
+      "exportMethod": "Exportmethode",
+      "dealerId": "Dealer-ID",
+      "openMarineVersion": "OpenMarine-versie",
+      "issuesFound": "{count} aandachtspunt(en) gevonden",
+      "noIssues": "Configuratie compleet."
+    },
+    "comingSoon": {
+      "mapping": {
+        "title": "Mapping-editor volgt",
+        "body": "De visuele veld-mapping editor met AI-suggesties, live testen en versiebeheer wordt in de volgende fase van deze uitbreiding toegevoegd."
+      },
+      "preview": {
+        "title": "Preview & testomgeving volgt",
+        "body": "Test-yachts genereren, de volledige exportpijplijn bekijken en marktplaats-previews (database, OpenMarine, YachtShift, API) worden in de volgende fase toegevoegd."
+      },
+      "validation": {
+        "title": "Validatie & compatibiliteit volgt",
+        "body": "De validatie-engine in gewone taal, de platformcompatibiliteitsmatrix, regressietests en één-klik probleemoplossing worden in de volgende fase toegevoegd."
+      },
+      "journey": {
+        "title": "Datatraject volgt",
+        "body": "Klik-door veldgeschiedenis — wie wijzigde wat, wanneer, en met welke AI-zekerheid — wordt in de volgende fase toegevoegd."
+      }
+    }
   }
 }

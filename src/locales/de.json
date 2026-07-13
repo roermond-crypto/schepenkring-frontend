@@ -3811,5 +3811,100 @@
     "sendSuccess": "Anfrage an den Verkäufer gesendet.",
     "sendFailed": "Anfrage konnte nicht gesendet werden.",
     "historyLabel": "Frühere Anfragen"
+  },
+  "IntegrationCenter": {
+    "title": "Integration Center",
+    "subtitle": "OpenMarine · YachtShift · Marktplätze",
+    "refresh": "Aktualisieren",
+    "tabs": {
+      "overview": "Übersicht",
+      "connections": "Verbindungen",
+      "mapping": "Mapping",
+      "preview": "Vorschau & Test",
+      "validation": "Validierung",
+      "conflicts": "Konflikte",
+      "runs": "Verlauf",
+      "journey": "Datenverlauf"
+    },
+    "overview": {
+      "statusLoadFailed": "Status konnte nicht geladen werden.",
+      "totalYachts": "Boote gesamt",
+      "synced": "Synchronisiert",
+      "pendingExport": "Export ausstehend",
+      "failedExports": "Fehlgeschlagene Exporte",
+      "lastSync": "Letzte Synchronisierung",
+      "manualSyncTitle": "Manuelle Synchronisierung",
+      "directionImport": "Import",
+      "directionBoth": "Beide",
+      "directionExport": "Export",
+      "dryRun": "Testlauf (keine Änderungen speichern)",
+      "syncButton": "Synchronisieren",
+      "syncSuccessDry": "Testlauf abgeschlossen.",
+      "syncSuccess": "Synchronisierung abgeschlossen.",
+      "syncFailed": "Synchronisierung fehlgeschlagen."
+    },
+    "conflicts": {
+      "loadFailed": "Konflikte konnten nicht geladen werden.",
+      "empty": "Keine offenen Konflikte.",
+      "external": "extern",
+      "localValue": "Lokaler Wert",
+      "remoteValue": "YachtShift-Wert",
+      "keepLocal": "Lokalen Wert behalten",
+      "keepRemote": "YachtShift-Wert übernehmen",
+      "resolveSuccess": "Konflikt gelöst.",
+      "resolveFailed": "Lösen fehlgeschlagen."
+    },
+    "runs": {
+      "loadFailed": "Synchronisierungsverlauf konnte nicht geladen werden.",
+      "empty": "Noch keine Synchronisierungsaktivität."
+    },
+    "connections": {
+      "loadFailed": "Verbindungen konnten nicht geladen werden.",
+      "newButton": "Neue Verbindung",
+      "empty": "Noch keine Verbindungen. Erstellen Sie eine über 'Neue Verbindung'.",
+      "default": "Standard",
+      "setDefault": "Als Standard festlegen",
+      "setDefaultSuccess": "Standardverbindung aktualisiert.",
+      "setDefaultFailed": "Aktualisierung fehlgeschlagen.",
+      "testConnection": "Verbindung testen",
+      "testSuccess": "Verbindung OK.",
+      "testFailed": "Verbindung fehlgeschlagen.",
+      "validate": "Konfiguration validieren",
+      "validateFailed": "Validierung fehlgeschlagen.",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "assignedMarketplaces": "Zugeordnete Marktplätze",
+      "assignTo": "Verbindung zuordnen",
+      "noneSelected": "Keine (eigene Verbindung)",
+      "delete": "Löschen",
+      "deleteConfirm": "Diese Verbindung löschen? Dies kann nicht rückgängig gemacht werden.",
+      "deleteSuccess": "Verbindung gelöscht.",
+      "deleteFailed": "Löschen fehlgeschlagen.",
+      "manageInPlatforms": "Vollständig in Platforms bearbeiten",
+      "category": "Kategorie",
+      "exportMethod": "Exportmethode",
+      "dealerId": "Händler-ID",
+      "openMarineVersion": "OpenMarine-Version",
+      "issuesFound": "{count} Problem(e) gefunden",
+      "noIssues": "Konfiguration vollständig."
+    },
+    "comingSoon": {
+      "mapping": {
+        "title": "Mapping-Editor folgt",
+        "body": "Der visuelle Feld-Mapping-Editor mit KI-Vorschlägen, Live-Test und Versionsverlauf wird in der nächsten Phase dieses Ausbaus hinzugefügt."
+      },
+      "preview": {
+        "title": "Vorschau- & Testumgebung folgt",
+        "body": "Test-Yachten erzeugen, die vollständige Exportpipeline ansehen und Marktplatz-Vorschauen (Datenbank, OpenMarine, YachtShift, API) werden in der nächsten Phase hinzugefügt."
+      },
+      "validation": {
+        "title": "Validierung & Kompatibilität folgt",
+        "body": "Die Validierungs-Engine in klarer Sprache, die Plattform-Kompatibilitätsmatrix, Regressionstests und die Ein-Klick-Fehlerbehebung werden in der nächsten Phase hinzugefügt."
+      },
+      "journey": {
+        "title": "Datenverlauf folgt",
+        "body": "Klick-durch-Feldverlauf — wer hat was wann mit welcher KI-Sicherheit geändert — wird in der nächsten Phase hinzugefügt."
+      }
+    }
   }
 }
