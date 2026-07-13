@@ -3717,5 +3717,66 @@
       "validateFailed": "Échec de la validation.",
       "saveFirstHint": "Enregistrez d'abord la plateforme pour utiliser ces outils."
     }
+  },
+  "AiCorrectionAudit": {
+    "title": "Audit des corrections IA",
+    "subtitle": "Suivez les modifications de champs en langage clair et surveillez la précision de l'extraction IA sur tous les yachts.",
+    "qualityDashboardLink": "Tableau de bord qualité IA",
+    "backToYachts": "Retour aux yachts",
+    "searchYachtPlaceholder": "Rechercher par nom de yacht...",
+    "searchFieldPlaceholder": "Rechercher par champ (ex. carburant)...",
+    "allActors": "Tous les acteurs",
+    "allFeedback": "Tous les retours",
+    "allPlatforms": "Toutes les plateformes",
+    "general": "Général",
+    "field": "Champ",
+    "aiDetected": "L'IA a détecté",
+    "correctedTo": "Corrigé en",
+    "changedBy": "Modifié par",
+    "reason": "Raison",
+    "aiConfidence": "Confiance IA",
+    "finalConfidence": "Confiance finale",
+    "empty": "vide",
+    "loading": "Chargement des journaux d'audit...",
+    "emptyState": "Aucune modification de champ trouvée correspondant à vos critères.",
+    "showingRange": "{from} à {to} sur {total} entrées",
+    "pageOf": "Page {page} sur {lastPage}",
+    "actorType": {
+      "ai": "Système IA",
+      "user": "Utilisateur (courtier)",
+      "admin": "Administrateur",
+      "import": "Import",
+      "scraper": "Scraper"
+    },
+    "labels": {
+      "wrongImageDetection": "Détection d'image incorrecte",
+      "wrongTextInterpretation": "Interprétation de texte incorrecte",
+      "guessedTooMuch": "Hallucination de l'IA",
+      "duplicateDataIssue": "Problème de données dupliquées",
+      "importMismatch": "Incohérence d'import",
+      "other": "Autre correction"
+    }
+  },
+  "AiQualityDashboard": {
+    "title": "Tableau de bord qualité IA",
+    "subtitle": "Voyez où l'extraction IA fonctionne bien et où la correction humaine est le plus souvent nécessaire.",
+    "backToAudit": "Retour à l'audit",
+    "allPlatforms": "Toutes les plateformes",
+    "general": "Général",
+    "loadFailed": "Impossible de charger les statistiques de qualité.",
+    "noData": "Aucune donnée pour le moment.",
+    "viewInAudit": "Voir dans l'audit",
+    "kpi": {
+      "avgConfidenceBefore": "Confiance IA moy. (avant)",
+      "avgConfidenceAfter": "Confiance moy. (après correction)",
+      "avgImprovement": "Amélioration moy.",
+      "manualCorrections": "Corrections manuelles"
+    },
+    "charts": {
+      "mostCorrected": "Champs les plus corrigés",
+      "lowestConfidence": "Champs à confiance la plus faible",
+      "byPlatform": "Par plateforme",
+      "confidence": "Confiance"
+    }
   }
 }

@@ -3719,5 +3719,66 @@
       "validateFailed": "Valideren mislukt.",
       "saveFirstHint": "Sla het platform eerst op om deze tools te gebruiken."
     }
+  },
+  "AiCorrectionAudit": {
+    "title": "AI-correctie audit",
+    "subtitle": "Bekijk veldwijzigingen in gewone taal en volg de nauwkeurigheid van AI-extractie per jacht.",
+    "qualityDashboardLink": "AI-kwaliteitsdashboard",
+    "backToYachts": "Terug naar jachten",
+    "searchYachtPlaceholder": "Zoek op jachtnaam...",
+    "searchFieldPlaceholder": "Zoek op veld (bijv. brandstof)...",
+    "allActors": "Alle actoren",
+    "allFeedback": "Alle feedback",
+    "allPlatforms": "Alle platforms",
+    "general": "Algemeen",
+    "field": "Veld",
+    "aiDetected": "AI detecteerde",
+    "correctedTo": "Gecorrigeerd naar",
+    "changedBy": "Gewijzigd door",
+    "reason": "Reden",
+    "aiConfidence": "AI-zekerheid",
+    "finalConfidence": "Uiteindelijke zekerheid",
+    "empty": "leeg",
+    "loading": "Auditlogs laden...",
+    "emptyState": "Geen veldwijzigingen gevonden die aan je criteria voldoen.",
+    "showingRange": "{from} tot {to} van {total} resultaten",
+    "pageOf": "Pagina {page} van {lastPage}",
+    "actorType": {
+      "ai": "AI-systeem",
+      "user": "Gebruiker (makelaar)",
+      "admin": "Beheerder",
+      "import": "Import",
+      "scraper": "Scraper"
+    },
+    "labels": {
+      "wrongImageDetection": "Verkeerde beelddetectie",
+      "wrongTextInterpretation": "Verkeerde tekstinterpretatie",
+      "guessedTooMuch": "AI-hallucinatie",
+      "duplicateDataIssue": "Dubbele data",
+      "importMismatch": "Import-mismatch",
+      "other": "Overige correctie"
+    }
+  },
+  "AiQualityDashboard": {
+    "title": "AI-kwaliteitsdashboard",
+    "subtitle": "Zie waar AI-extractie goed presteert en waar menselijke correctie het vaakst nodig is.",
+    "backToAudit": "Terug naar audit",
+    "allPlatforms": "Alle platforms",
+    "general": "Algemeen",
+    "loadFailed": "Kon kwaliteitsstatistieken niet laden.",
+    "noData": "Nog geen data.",
+    "viewInAudit": "Bekijk in audit",
+    "kpi": {
+      "avgConfidenceBefore": "Gem. AI-zekerheid (voor)",
+      "avgConfidenceAfter": "Gem. zekerheid (na correctie)",
+      "avgImprovement": "Gem. verbetering",
+      "manualCorrections": "Handmatige correcties"
+    },
+    "charts": {
+      "mostCorrected": "Meest gecorrigeerde velden",
+      "lowestConfidence": "Velden met laagste zekerheid",
+      "byPlatform": "Per platform",
+      "confidence": "Zekerheid"
+    }
   }
 }

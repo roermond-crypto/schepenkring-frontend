@@ -3719,5 +3719,66 @@
       "validateFailed": "Validation failed.",
       "saveFirstHint": "Save the platform first to use these tools."
     }
+  },
+  "AiCorrectionAudit": {
+    "title": "AI Correction Audit",
+    "subtitle": "Track field-level changes in plain language and monitor AI extraction accuracy across all yachts.",
+    "qualityDashboardLink": "AI Quality Dashboard",
+    "backToYachts": "Back to yachts",
+    "searchYachtPlaceholder": "Search by yacht name...",
+    "searchFieldPlaceholder": "Search by field (e.g. fuel)...",
+    "allActors": "All actors",
+    "allFeedback": "All feedback",
+    "allPlatforms": "All platforms",
+    "general": "General",
+    "field": "Field",
+    "aiDetected": "AI detected",
+    "correctedTo": "Corrected to",
+    "changedBy": "Changed by",
+    "reason": "Reason",
+    "aiConfidence": "AI confidence",
+    "finalConfidence": "Final confidence",
+    "empty": "empty",
+    "loading": "Loading audit logs...",
+    "emptyState": "No field changes found matching your criteria.",
+    "showingRange": "{from} to {to} of {total} entries",
+    "pageOf": "Page {page} of {lastPage}",
+    "actorType": {
+      "ai": "AI system",
+      "user": "User (broker)",
+      "admin": "Admin",
+      "import": "Import",
+      "scraper": "Scraper"
+    },
+    "labels": {
+      "wrongImageDetection": "Wrong image detection",
+      "wrongTextInterpretation": "Wrong text interpretation",
+      "guessedTooMuch": "AI hallucination",
+      "duplicateDataIssue": "Duplicate data issue",
+      "importMismatch": "Import mismatch",
+      "other": "Other correction"
+    }
+  },
+  "AiQualityDashboard": {
+    "title": "AI Quality Dashboard",
+    "subtitle": "See where AI extraction performs well and where human correction is needed most.",
+    "backToAudit": "Back to audit",
+    "allPlatforms": "All platforms",
+    "general": "General",
+    "loadFailed": "Could not load quality statistics.",
+    "noData": "No data yet.",
+    "viewInAudit": "View in audit",
+    "kpi": {
+      "avgConfidenceBefore": "Avg. AI confidence (before)",
+      "avgConfidenceAfter": "Avg. confidence (after correction)",
+      "avgImprovement": "Avg. improvement",
+      "manualCorrections": "Manual corrections"
+    },
+    "charts": {
+      "mostCorrected": "Most corrected fields",
+      "lowestConfidence": "Fields with lowest confidence",
+      "byPlatform": "By platform",
+      "confidence": "Confidence"
+    }
   }
 }

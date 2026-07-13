@@ -3717,5 +3717,66 @@
       "validateFailed": "Validierung fehlgeschlagen.",
       "saveFirstHint": "Speichern Sie die Plattform zuerst, um diese Tools zu nutzen."
     }
+  },
+  "AiCorrectionAudit": {
+    "title": "KI-Korrektur-Audit",
+    "subtitle": "Verfolgen Sie Feldänderungen in einfacher Sprache und überwachen Sie die Genauigkeit der KI-Extraktion über alle Yachten hinweg.",
+    "qualityDashboardLink": "KI-Qualitätsdashboard",
+    "backToYachts": "Zurück zu Yachten",
+    "searchYachtPlaceholder": "Nach Yachtname suchen...",
+    "searchFieldPlaceholder": "Nach Feld suchen (z. B. Kraftstoff)...",
+    "allActors": "Alle Akteure",
+    "allFeedback": "Alles Feedback",
+    "allPlatforms": "Alle Plattformen",
+    "general": "Allgemein",
+    "field": "Feld",
+    "aiDetected": "KI erkannte",
+    "correctedTo": "Korrigiert zu",
+    "changedBy": "Geändert von",
+    "reason": "Grund",
+    "aiConfidence": "KI-Sicherheit",
+    "finalConfidence": "Endgültige Sicherheit",
+    "empty": "leer",
+    "loading": "Audit-Logs werden geladen...",
+    "emptyState": "Keine Feldänderungen gefunden, die Ihren Kriterien entsprechen.",
+    "showingRange": "{from} bis {to} von {total} Einträgen",
+    "pageOf": "Seite {page} von {lastPage}",
+    "actorType": {
+      "ai": "KI-System",
+      "user": "Benutzer (Makler)",
+      "admin": "Administrator",
+      "import": "Import",
+      "scraper": "Scraper"
+    },
+    "labels": {
+      "wrongImageDetection": "Falsche Bilderkennung",
+      "wrongTextInterpretation": "Falsche Textinterpretation",
+      "guessedTooMuch": "KI-Halluzination",
+      "duplicateDataIssue": "Doppelte Daten",
+      "importMismatch": "Import-Diskrepanz",
+      "other": "Sonstige Korrektur"
+    }
+  },
+  "AiQualityDashboard": {
+    "title": "KI-Qualitätsdashboard",
+    "subtitle": "Sehen Sie, wo die KI-Extraktion gut funktioniert und wo menschliche Korrektur am häufigsten nötig ist.",
+    "backToAudit": "Zurück zum Audit",
+    "allPlatforms": "Alle Plattformen",
+    "general": "Allgemein",
+    "loadFailed": "Qualitätsstatistiken konnten nicht geladen werden.",
+    "noData": "Noch keine Daten.",
+    "viewInAudit": "Im Audit ansehen",
+    "kpi": {
+      "avgConfidenceBefore": "Ø KI-Sicherheit (vorher)",
+      "avgConfidenceAfter": "Ø Sicherheit (nach Korrektur)",
+      "avgImprovement": "Ø Verbesserung",
+      "manualCorrections": "Manuelle Korrekturen"
+    },
+    "charts": {
+      "mostCorrected": "Am häufigsten korrigierte Felder",
+      "lowestConfidence": "Felder mit geringster Sicherheit",
+      "byPlatform": "Nach Plattform",
+      "confidence": "Sicherheit"
+    }
   }
 }
