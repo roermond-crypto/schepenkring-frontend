@@ -3642,7 +3642,13 @@
       "dealerIdLabel": "Händler-ID",
       "dealerIdHint": "Eindeutige Händler-ID bei dieser Plattform",
       "categoryMapLabel": "Kategorie-Zuordnung (JSON)",
-      "categoryMapHint": "Ordnet interne Kategorien Plattform-Codes zu — ein visueller Editor folgt in einem zukünftigen Update"
+      "categoryMapHint": "Ordnen Sie Ihre eigenen Kategorien den von dieser Plattform erwarteten Codes zu.",
+      "mappingTable": {
+        "ourCategory": "Unsere Kategorie",
+        "platformCategory": "Plattformkategorie",
+        "empty": "Noch keine Zuordnungen hinzugefügt.",
+        "addRow": "Zeile hinzufügen"
+      }
     },
     "advanced": {
       "apiUrlLabel": "API-URL",
@@ -3654,7 +3660,10 @@
       "webhookUrlLabel": "Webhook-URL",
       "webhookSecretLabel": "Webhook-Secret",
       "debugModeLabel": "Debug-Modus",
-      "debugModeHint": "Zusätzliche Protokollierung beim Export zu dieser Plattform"
+      "debugModeHint": "Zusätzliche Protokollierung beim Export zu dieser Plattform",
+      "jsonEditorLabel": "Kategorie-Zuordnung als JSON",
+      "jsonEditorHint": "Erweitert: Bearbeiten Sie dieselbe Zuordnung direkt als JSON.",
+      "jsonInvalid": "Ungültiges JSON — Änderungen wurden nicht übernommen."
     },
     "statistics": {
       "comingSoonTitle": "Statistiken folgen in einem zukünftigen Update",
@@ -3663,6 +3672,25 @@
     "audit": {
       "comingSoonTitle": "Audit-Übersicht folgt in einem zukünftigen Update",
       "comingSoonBody": "Hier erscheint ein Verlauf aller Änderungen und Synchronisationen für diese Plattform."
+    },
+    "testTools": {
+      "title": "Testen & validieren",
+      "testConnection": "Verbindung testen",
+      "testing": "Wird getestet...",
+      "validate": "Konfiguration validieren",
+      "validating": "Wird validiert...",
+      "previewFeed": "XML/OpenMarine-Feed ansehen",
+      "previewingFeed": "Feed wird geladen...",
+      "previewPayload": "API-Payload ansehen",
+      "previewingPayload": "Payload wird geladen...",
+      "downloadFeed": "Test-Feed herunterladen",
+      "noIssues": "Keine Probleme gefunden.",
+      "issuesFound": "{count} Punkt(e) gefunden.",
+      "connectionSuccess": "Verbindung erfolgreich.",
+      "connectionFailed": "Verbindung fehlgeschlagen.",
+      "previewFailed": "Vorschau konnte nicht geladen werden.",
+      "validateFailed": "Validierung fehlgeschlagen.",
+      "saveFirstHint": "Speichern Sie die Plattform zuerst, um diese Tools zu nutzen."
     }
   }
 }

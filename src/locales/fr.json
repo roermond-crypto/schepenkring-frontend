@@ -3642,7 +3642,13 @@
       "dealerIdLabel": "ID revendeur",
       "dealerIdHint": "ID revendeur unique chez cette plateforme",
       "categoryMapLabel": "Correspondance de catégories (JSON)",
-      "categoryMapHint": "Associe les catégories internes aux codes de la plateforme — un éditeur visuel arrive dans une prochaine mise à jour"
+      "categoryMapHint": "Associez vos propres catégories aux codes attendus par cette plateforme.",
+      "mappingTable": {
+        "ourCategory": "Notre catégorie",
+        "platformCategory": "Catégorie plateforme",
+        "empty": "Aucune correspondance ajoutée pour le moment.",
+        "addRow": "Ajouter une ligne"
+      }
     },
     "advanced": {
       "apiUrlLabel": "URL de l'API",
@@ -3654,7 +3660,10 @@
       "webhookUrlLabel": "URL du webhook",
       "webhookSecretLabel": "Secret du webhook",
       "debugModeLabel": "Mode débogage",
-      "debugModeHint": "Journalisation supplémentaire lors de l'export vers cette plateforme"
+      "debugModeHint": "Journalisation supplémentaire lors de l'export vers cette plateforme",
+      "jsonEditorLabel": "Correspondance de catégories en JSON",
+      "jsonEditorHint": "Avancé : modifiez directement la même correspondance en JSON.",
+      "jsonInvalid": "JSON invalide — les modifications n'ont pas été appliquées."
     },
     "statistics": {
       "comingSoonTitle": "Statistiques disponibles dans une prochaine mise à jour",
@@ -3663,6 +3672,25 @@
     "audit": {
       "comingSoonTitle": "Aperçu d'audit disponible dans une prochaine mise à jour",
       "comingSoonBody": "Un historique de tous les changements et synchronisations pour cette plateforme apparaîtra ici."
+    },
+    "testTools": {
+      "title": "Tester & valider",
+      "testConnection": "Tester la connexion",
+      "testing": "Test en cours...",
+      "validate": "Valider la configuration",
+      "validating": "Validation en cours...",
+      "previewFeed": "Aperçu du flux XML/OpenMarine",
+      "previewingFeed": "Chargement du flux...",
+      "previewPayload": "Aperçu du payload API",
+      "previewingPayload": "Chargement du payload...",
+      "downloadFeed": "Télécharger le flux de test",
+      "noIssues": "Aucun problème trouvé.",
+      "issuesFound": "{count} point(s) trouvé(s).",
+      "connectionSuccess": "Connexion réussie.",
+      "connectionFailed": "Échec de la connexion.",
+      "previewFailed": "Échec du chargement de l'aperçu.",
+      "validateFailed": "Échec de la validation.",
+      "saveFirstHint": "Enregistrez d'abord la plateforme pour utiliser ces outils."
     }
   }
 }

@@ -220,7 +220,7 @@ export default function PlatformDetailPage() {
       {tab === "export" && <ExportTab form={form} set={set} />}
       {tab === "openmarine" && <OpenMarineTab form={form} set={set} />}
       {tab === "contact" && <ContactTab form={form} set={set} />}
-      {tab === "advanced" && <AdvancedTab form={form} set={set} />}
+      {tab === "advanced" && <AdvancedTab form={form} set={set} platformId={platformId} />}
       {tab === "statistics" && (
         <ComingSoonTab icon={BarChart3} title={t("statistics.comingSoonTitle")} body={t("statistics.comingSoonBody")} />
       )}

@@ -3644,7 +3644,13 @@
       "dealerIdLabel": "Dealer ID",
       "dealerIdHint": "Unieke dealer-ID bij dit platform",
       "categoryMapLabel": "Categorie mapping (JSON)",
-      "categoryMapHint": "Mapping van interne categorieën naar platform-codes — visuele editor volgt in een volgende update"
+      "categoryMapHint": "Koppel je eigen categorieën aan de codes die dit platform verwacht.",
+      "mappingTable": {
+        "ourCategory": "Onze categorie",
+        "platformCategory": "Platformcategorie",
+        "empty": "Nog geen mappings toegevoegd.",
+        "addRow": "Rij toevoegen"
+      }
     },
     "advanced": {
       "apiUrlLabel": "API URL",
@@ -3656,7 +3662,10 @@
       "webhookUrlLabel": "Webhook URL",
       "webhookSecretLabel": "Webhook secret",
       "debugModeLabel": "Debug-modus",
-      "debugModeHint": "Extra logging bij export naar dit platform"
+      "debugModeHint": "Extra logging bij export naar dit platform",
+      "jsonEditorLabel": "Categorie mapping als JSON",
+      "jsonEditorHint": "Geavanceerd: bewerk dezelfde mapping direct als JSON.",
+      "jsonInvalid": "Ongeldige JSON — wijzigingen zijn niet toegepast."
     },
     "statistics": {
       "comingSoonTitle": "Statistieken volgen in een volgende update",
@@ -3665,6 +3674,25 @@
     "audit": {
       "comingSoonTitle": "Audit-overzicht volgt in een volgende update",
       "comingSoonBody": "Hier komt een overzicht van alle wijzigingen en synchronisaties voor dit platform."
+    },
+    "testTools": {
+      "title": "Testen & valideren",
+      "testConnection": "Verbinding testen",
+      "testing": "Testen...",
+      "validate": "Configuratie valideren",
+      "validating": "Valideren...",
+      "previewFeed": "XML/OpenMarine feed bekijken",
+      "previewingFeed": "Feed laden...",
+      "previewPayload": "API payload bekijken",
+      "previewingPayload": "Payload laden...",
+      "downloadFeed": "Testfeed downloaden",
+      "noIssues": "Geen problemen gevonden.",
+      "issuesFound": "{count} aandachtspunt(en) gevonden.",
+      "connectionSuccess": "Verbinding gelukt.",
+      "connectionFailed": "Verbinding mislukt.",
+      "previewFailed": "Voorbeeld ophalen mislukt.",
+      "validateFailed": "Valideren mislukt.",
+      "saveFirstHint": "Sla het platform eerst op om deze tools te gebruiken."
     }
   }
 }

@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Rss } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { CategoryMappingTable } from "@/components/platforms/CategoryMappingTable";
 import { cn } from "@/lib/utils";
 import type { PlatformTabProps } from "../_types";
 import { FormSection, Field } from "./shared";
@@ -47,12 +48,9 @@ export function OpenMarineTab({ form, set }: PlatformTabProps) {
             />
           </Field>
           <Field label={t("openmarine.categoryMapLabel")} hint={t("openmarine.categoryMapHint")} className="sm:col-span-2">
-            <textarea
+            <CategoryMappingTable
               value={form.openmarine_category_map}
-              onChange={(e) => set("openmarine_category_map", e.target.value)}
-              placeholder='{"motorboat": "MB", "sailboat": "SB", "catamaran": "CAT"}'
-              rows={3}
-              className="w-full text-xs font-mono rounded-md border border-slate-200 bg-white px-3 py-2 focus:outline-none focus:border-blue-400 resize-none"
+              onChange={(json) => set("openmarine_category_map", json)}
             />
           </Field>
         </div>

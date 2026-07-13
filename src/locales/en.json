@@ -3644,7 +3644,13 @@
       "dealerIdLabel": "Dealer ID",
       "dealerIdHint": "Unique dealer ID with this platform",
       "categoryMapLabel": "Category mapping (JSON)",
-      "categoryMapHint": "Maps internal categories to platform codes — a visual editor is coming in a future update"
+      "categoryMapHint": "Map your own categories to the codes this platform expects.",
+      "mappingTable": {
+        "ourCategory": "Our category",
+        "platformCategory": "Platform category",
+        "empty": "No mappings added yet.",
+        "addRow": "Add row"
+      }
     },
     "advanced": {
       "apiUrlLabel": "API URL",
@@ -3656,7 +3662,10 @@
       "webhookUrlLabel": "Webhook URL",
       "webhookSecretLabel": "Webhook secret",
       "debugModeLabel": "Debug mode",
-      "debugModeHint": "Extra logging when exporting to this platform"
+      "debugModeHint": "Extra logging when exporting to this platform",
+      "jsonEditorLabel": "Category mapping as JSON",
+      "jsonEditorHint": "Advanced: edit the same mapping directly as JSON.",
+      "jsonInvalid": "Invalid JSON — changes were not applied."
     },
     "statistics": {
       "comingSoonTitle": "Statistics coming in a future update",
@@ -3665,6 +3674,25 @@
     "audit": {
       "comingSoonTitle": "Audit overview coming in a future update",
       "comingSoonBody": "A timeline of all changes and syncs for this platform will appear here."
+    },
+    "testTools": {
+      "title": "Test & validate",
+      "testConnection": "Test connection",
+      "testing": "Testing...",
+      "validate": "Validate configuration",
+      "validating": "Validating...",
+      "previewFeed": "Preview XML/OpenMarine feed",
+      "previewingFeed": "Loading feed...",
+      "previewPayload": "Preview API payload",
+      "previewingPayload": "Loading payload...",
+      "downloadFeed": "Download test feed",
+      "noIssues": "No issues found.",
+      "issuesFound": "{count} issue(s) found.",
+      "connectionSuccess": "Connection succeeded.",
+      "connectionFailed": "Connection failed.",
+      "previewFailed": "Failed to load preview.",
+      "validateFailed": "Validation failed.",
+      "saveFirstHint": "Save the platform first to use these tools."
     }
   }
 }
