@@ -122,6 +122,19 @@ function DashboardShellInner({
     } catch {
       // Clear local session even if backend logout fails.
     }
+    // logout() above only revokes the Sanctum token on the Laravel backend
+    // (it goes through /api/proxy). It never touches the *httpOnly*
+    // schepenkring_auth_token/schepenkring_session cookies that
+    // middleware.ts actually checks to decide isAuthed — those can only be
+    // cleared by a Next.js route handler, not client-side JS. Without this
+    // call, clearClientSession() below clears the JS-readable copy but the
+    // httpOnly cookie survives, so middleware keeps you "logged in" and
+    // bounces you straight back out of /auth into the dashboard.
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Best-effort — still proceed to clear what we can client-side.
+    }
     clearClientSession();
     router.push(`/${locale}`);
     router.refresh();
