@@ -2524,6 +2524,8 @@
       "step3Title": "Notre courtier vous contacte",
       "step3Body": "Nous examinerons votre demande et vous contacterons dans un délai d'un jour ouvrable.",
       "registerBtn": "Créer un compte et continuer",
+      "continueBtn": "Continuer vers mon compte",
+      "registerBtnFallback": "Ça ne fonctionne pas ? Créer un compte manuellement",
       "loginBtn": "Déjà un compte ? Se connecter",
       "addDetailsBtn": "Ajouter",
       "addDocTitle": "Ajouter des photos et documents supplémentaires",
@@ -2541,7 +2543,12 @@
       "emailInvalid": "Adresse e-mail valide requise",
       "priceInvalid": "Veuillez entrer un prix demandé valide",
       "locationRequired": "Veuillez choisir une agence Schepenkring",
-      "globalError": "Une erreur est survenue. Veuillez réessayer."
+      "globalError": "Une erreur est survenue. Veuillez réessayer.",
+      "photoUploadFailed": "Le téléchargement des photos a échoué. Vérifiez le format et la taille du fichier (max. 20 Mo par photo) et réessayez.",
+      "photoDeleteFailed": "La suppression de la photo a échoué. Veuillez réessayer.",
+      "docUploadFailed": "Le téléchargement du document a échoué. Vérifiez le format et la taille du fichier et réessayez.",
+      "resendFailed": "L'e-mail de confirmation n'a pas pu être envoyé. Veuillez réessayer plus tard ou nous contacter.",
+      "autoLoginFailed": "La connexion automatique a échoué. Créez un compte ci-dessous pour continuer."
     },
     "footer": "Schepenkring — Le spécialiste de la vente de bateaux",
     "newBoatCta": "Inscrire un nouveau bateau",

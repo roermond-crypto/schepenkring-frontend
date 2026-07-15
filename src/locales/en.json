@@ -2612,6 +2612,8 @@
       "step3Title": "Our broker will contact you",
       "step3Body": "We will review your submission and contact you within one business day.",
       "registerBtn": "Create account & continue",
+      "continueBtn": "Continue to my account",
+      "registerBtnFallback": "Having trouble? Create an account manually",
       "loginBtn": "Already have an account? Log in",
       "addDetailsBtn": "Add",
       "addDocTitle": "Add more photos & documents",
@@ -2629,7 +2631,12 @@
       "emailInvalid": "Valid email address required",
       "priceInvalid": "Please enter a valid asking price",
       "locationRequired": "Please choose a Schepenkring branch",
-      "globalError": "An error occurred. Please try again."
+      "globalError": "An error occurred. Please try again.",
+      "photoUploadFailed": "Uploading photos failed. Check the file format and size (max. 20MB per photo) and try again.",
+      "photoDeleteFailed": "Deleting the photo failed. Please try again.",
+      "docUploadFailed": "Uploading the document failed. Check the file format and size and try again.",
+      "resendFailed": "The confirmation email could not be sent. Please try again later or contact us.",
+      "autoLoginFailed": "Automatic sign-in failed. Create an account below to continue."
     },
     "footer": "Schepenkring — The specialist in boat sales",
     "newBoatCta": "Register new boat",

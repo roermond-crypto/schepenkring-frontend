@@ -2610,6 +2610,8 @@
       "step3Title": "Unser Makler nimmt Kontakt auf",
       "step3Body": "Wir prüfen Ihre Anmeldung und melden uns innerhalb eines Werktages bei Ihnen.",
       "registerBtn": "Konto erstellen & fortfahren",
+      "continueBtn": "Weiter zu meinem Konto",
+      "registerBtnFallback": "Funktioniert das nicht? Konto manuell erstellen",
       "loginBtn": "Bereits ein Konto? Einloggen",
       "addDetailsBtn": "Hinzufügen",
       "addDocTitle": "Weitere Fotos & Dokumente hinzufügen",
@@ -2627,7 +2629,12 @@
       "emailInvalid": "Gültige E-Mail-Adresse erforderlich",
       "priceInvalid": "Bitte geben Sie einen gültigen Kaufpreis ein",
       "locationRequired": "Bitte wählen Sie einen Schepenkring-Standort",
-      "globalError": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+      "globalError": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+      "photoUploadFailed": "Das Hochladen der Fotos ist fehlgeschlagen. Überprüfen Sie Dateiformat und -größe (max. 20MB pro Foto) und versuchen Sie es erneut.",
+      "photoDeleteFailed": "Das Löschen des Fotos ist fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "docUploadFailed": "Das Hochladen des Dokuments ist fehlgeschlagen. Überprüfen Sie Dateiformat und -größe und versuchen Sie es erneut.",
+      "resendFailed": "Die Bestätigungs-E-Mail konnte nicht gesendet werden. Bitte versuchen Sie es später erneut oder kontaktieren Sie uns.",
+      "autoLoginFailed": "Automatische Anmeldung fehlgeschlagen. Erstellen Sie unten ein Konto, um fortzufahren."
     },
     "footer": "Schepenkring — Der Spezialist für Bootsverkauf",
     "newBoatCta": "Neues Boot anmelden",

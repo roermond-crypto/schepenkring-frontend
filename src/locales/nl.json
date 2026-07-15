@@ -2612,6 +2612,8 @@
       "step3Title": "Onze makelaar neemt contact op",
       "step3Body": "Wij beoordelen uw aanmelding en nemen binnen één werkdag contact met u op.",
       "registerBtn": "Account aanmaken & doorgaan",
+      "continueBtn": "Ga verder naar mijn account",
+      "registerBtnFallback": "Lukt dit niet? Account handmatig aanmaken",
       "loginBtn": "Al een account? Inloggen",
       "addDetailsBtn": "Toevoegen",
       "addDocTitle": "Extra foto's & documenten toevoegen",
@@ -2629,7 +2631,12 @@
       "emailInvalid": "Geldig e-mailadres verplicht",
       "priceInvalid": "Voer een geldige vraagprijs in",
       "locationRequired": "Kies een Schepenkring vestiging",
-      "globalError": "Er is een fout opgetreden. Probeer opnieuw."
+      "globalError": "Er is een fout opgetreden. Probeer opnieuw.",
+      "photoUploadFailed": "Uploaden van foto's is mislukt. Controleer het bestandsformaat en de bestandsgrootte (max. 20MB per foto) en probeer het opnieuw.",
+      "photoDeleteFailed": "Verwijderen van de foto is mislukt. Probeer het opnieuw.",
+      "docUploadFailed": "Uploaden van het document is mislukt. Controleer het bestandsformaat en de bestandsgrootte en probeer het opnieuw.",
+      "resendFailed": "De bevestigingsmail kon niet worden verstuurd. Probeer het later opnieuw of neem contact op.",
+      "autoLoginFailed": "Automatisch inloggen is mislukt. Maak hieronder een account aan om verder te gaan."
     },
     "footer": "Schepenkring — De specialist in scheepsverkoop",
     "newBoatCta": "Nieuwe boot aanmelden",
