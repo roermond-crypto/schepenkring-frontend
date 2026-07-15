@@ -324,7 +324,6 @@ export function HeroSection({ locale, initialMode, copy }: HeroSectionProps) {
           register: copy.register || "Registreren",
           bootAanmelden: copy.intakeCtaLabel || "Boot aanmelden",
         }}
-        showBootAanmelden={false}
       />
 
       {/* ── Auth card ── */}
