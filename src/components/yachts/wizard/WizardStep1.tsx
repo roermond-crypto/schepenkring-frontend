@@ -363,7 +363,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
             </Label>
             <CatalogAutocomplete
               fieldKey="manufacturer"
-              name="brand"
+              name="manufacturer"
               placeholder="e.g. Beneteau"
               defaultValue={step1Brand}
               onSelect={(id, name) => {

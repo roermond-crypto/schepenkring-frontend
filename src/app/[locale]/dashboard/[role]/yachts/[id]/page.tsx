@@ -103,7 +103,6 @@ const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
 import { toast as hotToast, Toaster } from "react-hot-toast";
 import { useYachtDraft } from "@/hooks/useYachtDraft";
 import { convertBatchToWebP } from "@/lib/convertToWebP";
-import { CatalogAutocomplete } from "@/components/ui/CatalogAutocomplete";
 import { BoatCreationAssistant } from "@/components/yachts/BoatCreationAssistant";
 import { signhostApi } from "@/lib/api/signhost";
 import {
