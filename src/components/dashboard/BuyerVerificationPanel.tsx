@@ -23,9 +23,10 @@ import {
   type BuyerKycQuestion,
   type BuyerVerificationStatus,
 } from "@/lib/api/buyer-verification";
-import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 import {
   saveProfileAddress,
+  searchProfileAddresses,
+  type AddressPrediction,
 } from "@/lib/api/profile-setup";
 import {
   getOnboardingQuestions,
@@ -126,6 +127,7 @@ export function BuyerVerificationPanel({
   const [selectedStepKey, setSelectedStepKey] = useState<string | null>(null);
   const [addressQuery, setAddressQuery] = useState("");
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [predictions, setPredictions] = useState<AddressPrediction[]>([]);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [dynamicQuestions, setDynamicQuestions] = useState<OnboardingQuestion[]>([]);
   const [dynamicAnswers, setDynamicAnswers] = useState<Record<number, string>>({});
@@ -246,11 +248,36 @@ export function BuyerVerificationPanel({
     void loadDynamicQuestions();
   }, [visibleStepKey]);
 
-  const applySavedAddress = useCallback(async (placeId: string, formattedAddress: string) => {
-    setSelectedPlaceId(placeId);
-    setAddressQuery(formattedAddress);
+  // Backend-proxied address search (same endpoint SellerOnboardingPanel
+  // already uses successfully) instead of the browser-side Google Places
+  // JS SDK — that client-side path (LocationAutocomplete) depends on
+  // window.google.maps.places actually finishing initialization in this
+  // specific panel and was reported not returning suggestions here even
+  // though the seller flow worked fine. Routing through the backend
+  // sidesteps client-side script-loading/API-key issues entirely.
+  useEffect(() => {
+    if (visibleStepKey !== "profile") return;
+    if (addressQuery.trim().length < 3 || selectedPlaceId) {
+      if (addressQuery.trim().length < 3) setPredictions([]);
+      return;
+    }
+    const handle = window.setTimeout(async () => {
+      try {
+        const result = await searchProfileAddresses(addressQuery.trim());
+        setPredictions(result.items);
+      } catch {
+        setPredictions([]);
+      }
+    }, 250);
+    return () => window.clearTimeout(handle);
+  }, [addressQuery, selectedPlaceId, visibleStepKey]);
+
+  const handlePredictionSelect = useCallback(async (prediction: AddressPrediction) => {
+    setSelectedPlaceId(prediction.place_id);
+    setAddressQuery(prediction.description || prediction.main_text || "");
+    setPredictions([]);
     try {
-      const profileStatus = await saveProfileAddress(placeId);
+      const profileStatus = await saveProfileAddress(prediction.place_id);
       if (profileStatus.address) {
         setProfile((curr) => ({
           ...curr,
@@ -490,18 +517,29 @@ export function BuyerVerificationPanel({
                     <Search size={16} />
                     {t.sections.profile.addressLabel}
                   </h3>
-                  <LocationAutocomplete
-                    value={addressQuery}
-                    placeholder={t.sections.profile.addressPlaceholder}
-                    className="h-14 rounded-2xl border-slate-200 text-sm font-bold shadow-sm focus:border-[#003566] focus:ring-4 focus:ring-blue-500/10"
-                    onChange={(nextValue) => {
-                      setAddressQuery(nextValue);
-                      setSelectedPlaceId(null);
-                    }}
-                    onSelectPlace={(place) => {
-                      void applySavedAddress(place.placeId, place.formattedAddress);
-                    }}
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-6 pr-4 text-sm font-bold text-slate-700 outline-none transition shadow-sm focus:border-[#003566] focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-400"
+                      value={addressQuery}
+                      onChange={(e) => { setAddressQuery(e.target.value); setSelectedPlaceId(null); setPredictions([]); }}
+                      placeholder={t.sections.profile.addressPlaceholder}
+                    />
+                    {!!predictions.length && !selectedPlaceId && (
+                      <div className="absolute mt-2 w-full z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                        {predictions.map((p) => (
+                          <button
+                            key={p.place_id}
+                            type="button"
+                            onClick={() => void handlePredictionSelect(p)}
+                            className="block w-full border-b border-slate-50 px-5 py-4 text-left text-sm font-semibold text-slate-600 hover:bg-blue-50 hover:text-[#003566] transition-colors"
+                          >
+                            {p.description}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
                 {renderInput(t.fields.fullName, "full_name")}
