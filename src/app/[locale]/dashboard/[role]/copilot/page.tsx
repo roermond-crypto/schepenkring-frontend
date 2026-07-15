@@ -16,7 +16,7 @@ import {
   ToggleLeft,
   ToggleRight,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import {
   AdminCopilotAction,
@@ -149,6 +149,7 @@ export default function CopilotAdminPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      <Toaster position="top-right" />
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#0B1F3A] dark:text-slate-100">
           Copilot

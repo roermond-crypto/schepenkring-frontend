@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getStorageUrl } from "@/lib/storage-url";
 import { api } from "@/lib/api";
-import { toast } from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast";
 import { Loader2, Sparkles, RefreshCw, Trash2, Play, Pause, GripVertical, MoreVertical } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -407,6 +407,7 @@ export default function VideoSettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900">
+      <Toaster position="top-right" />
 
       {/* ── Top Bar ── */}
       <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
