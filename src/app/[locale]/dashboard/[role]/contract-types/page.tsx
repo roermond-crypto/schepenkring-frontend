@@ -17,7 +17,7 @@ import {
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
 interface ContractType {
@@ -135,6 +135,7 @@ export default function ContractTypesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <Toaster position="top-right" />
       {/* Header */}
       <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-6 py-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
