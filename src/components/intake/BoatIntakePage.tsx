@@ -26,6 +26,7 @@ import {
 import { toast, Toaster } from "react-hot-toast";
 import { getMe } from "@/lib/api/account";
 import { api } from "@/lib/api";
+import { setClientSession } from "@/lib/auth/client-session";
 import { PublicHeader } from "@/components/common/PublicHeader";
 import { PublicFooter } from "@/components/common/PublicFooter";
 import { Button } from "@/components/ui/button";
@@ -484,6 +485,19 @@ export function BoatIntakePage({
         return;
       }
       const json = await res.json();
+      if (!json.token || !json.user) {
+        setErrors({ _global: s(t, "errors.autoLoginFailed", "Automatisch inloggen is mislukt. Maak hieronder een account aan om verder te gaan.") });
+        return;
+      }
+      // The route handler already set the httpOnly cookies the middleware
+      // reads (that's what lets the redirect below past the auth gate) —
+      // but every dashboard page fetches data through the browser-side
+      // api client, which reads its token from a *separate*,
+      // JS-readable cookie/localStorage pair populated only by
+      // setClientSession(). Skipping this call is what silently broke
+      // every dashboard API request (401s) and left the page reading a
+      // stale cached name, exactly like the real login form calls it.
+      setClientSession(json.token, json.user);
       router.push(`/${locale}/dashboard/${json.user?.role ?? "seller"}`);
     } catch {
       setErrors({ _global: s(t, "errors.autoLoginFailed", "Automatisch inloggen is mislukt. Maak hieronder een account aan om verder te gaan.") });
