@@ -47,7 +47,7 @@ import {
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -847,7 +847,10 @@ function PreviewPane({
     if (!testEmail) return;
     setSendingTest(true);
     try {
-      await api.post(`/admin/email-templates/${templateId}/test-send`, { email: testEmail, lang });
+      // Send the current on-screen (possibly unsaved) blocks/subject, not
+      // whatever was last saved — otherwise the test email silently
+      // diverges from the live preview right next to it.
+      await api.post(`/admin/email-templates/${templateId}/test-send`, { email: testEmail, lang, blocks, subject });
       toast.success(t("preview.testSentSuccess", { email: testEmail }));
     } catch {
       toast.error(t("preview.testSentFailed"));
@@ -1314,6 +1317,7 @@ export default function EmailTemplateEditorPage() {
 
   return (
     <div className="flex h-screen flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden">
+      <Toaster position="top-right" />
       {/* Top bar */}
       <div className="flex items-center gap-3 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3 flex-shrink-0">
         <button
