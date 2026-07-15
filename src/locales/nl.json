@@ -2120,7 +2120,10 @@
       "refresh": "Status vernieuwen"
     },
     "blocks": {
-      "verificationWarning": "Voltooi je identificatie- en KYC-gegevens om volledige toegang tot het Schepenkring-ecosysteem te krijgen."
+      "verificationWarning": "Voltooi je identificatie- en KYC-gegevens om volledige toegang tot het Schepenkring-ecosysteem te krijgen.",
+      "manualReviewBody": "Je aanmelding wordt momenteel handmatig beoordeeld door ons team. Je ontvangt een e-mail zodra dit is afgerond — meestal binnen één werkdag.",
+      "rejectedBody": "Je koperverificatie kon helaas niet worden goedgekeurd. Neem contact met ons op als je denkt dat dit niet klopt.",
+      "allDoneBody": "Je verificatie is voltooid. Je wordt automatisch doorgestuurd."
     },
     "sections": {
       "profile": {

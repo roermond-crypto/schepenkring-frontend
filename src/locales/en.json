@@ -2120,7 +2120,10 @@
       "refresh": "Refresh status"
     },
     "blocks": {
-      "verificationWarning": "Please complete your identification and kyc details to unlock full access to the Schepenkring ecosystem."
+      "verificationWarning": "Please complete your identification and kyc details to unlock full access to the Schepenkring ecosystem.",
+      "manualReviewBody": "Your submission is currently being reviewed manually by our team. You'll receive an email as soon as this is finished — usually within one business day.",
+      "rejectedBody": "Unfortunately your buyer verification could not be approved. Please contact us if you believe this is incorrect.",
+      "allDoneBody": "Your verification is complete. You'll be redirected automatically."
     },
     "sections": {
       "profile": {

@@ -2032,7 +2032,10 @@
       "refresh": "Actualiser le statut"
     },
     "blocks": {
-      "verificationWarning": "Veuillez compléter vos informations d'identification et de KYC pour débloquer l'accès complet à l'écosystème Schepenkring."
+      "verificationWarning": "Veuillez compléter vos informations d'identification et de KYC pour débloquer l'accès complet à l'écosystème Schepenkring.",
+      "manualReviewBody": "Votre demande est actuellement examinée manuellement par notre équipe. Vous recevrez un e-mail dès que ce sera terminé — généralement sous un jour ouvrable.",
+      "rejectedBody": "Malheureusement, votre vérification acheteur n'a pas pu être approuvée. Veuillez nous contacter si vous pensez qu'il s'agit d'une erreur.",
+      "allDoneBody": "Votre vérification est terminée. Vous allez être redirigé automatiquement."
     },
     "sections": {
       "profile": {

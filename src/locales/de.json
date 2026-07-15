@@ -2118,7 +2118,10 @@
       "refresh": "Status aktualisieren"
     },
     "blocks": {
-      "verificationWarning": "Bitte vervollständigen Sie Ihre Identifikations- und KYC-Daten, um vollen Zugriff auf das Schepenkring-Ökosystem freizuschalten."
+      "verificationWarning": "Bitte vervollständigen Sie Ihre Identifikations- und KYC-Daten, um vollen Zugriff auf das Schepenkring-Ökosystem freizuschalten.",
+      "manualReviewBody": "Ihre Anmeldung wird derzeit manuell von unserem Team geprüft. Sie erhalten eine E-Mail, sobald dies abgeschlossen ist — in der Regel innerhalb eines Werktages.",
+      "rejectedBody": "Ihre Käuferverifizierung konnte leider nicht genehmigt werden. Bitte kontaktieren Sie uns, wenn Sie glauben, dass dies nicht korrekt ist.",
+      "allDoneBody": "Ihre Verifizierung ist abgeschlossen. Sie werden automatisch weitergeleitet."
     },
     "sections": {
       "profile": {

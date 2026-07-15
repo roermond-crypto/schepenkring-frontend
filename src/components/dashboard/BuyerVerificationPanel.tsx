@@ -18,6 +18,7 @@ import {
   saveBuyerVerificationAnswers,
   saveBuyerVerificationProfile,
   startBuyerVerification,
+  startBuyerVerificationSignhost,
   submitBuyerVerification,
   type BuyerKycQuestion,
   type BuyerVerificationStatus,
@@ -128,14 +129,20 @@ export function BuyerVerificationPanel({
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [dynamicQuestions, setDynamicQuestions] = useState<OnboardingQuestion[]>([]);
   const [dynamicAnswers, setDynamicAnswers] = useState<Record<number, string>>({});
+  const [startingSignhost, setStartingSignhost] = useState(false);
 
   const currentStep = status?.next_step ?? (status?.is_currently_valid ? "complete" : "profile");
-  const normalizedCurrentStepKey =
-    currentStep === "verification" || currentStep === "reverification" ? "kyc" : currentStep;
+  // "reverification" reuses the same UI as "verification" (a previous pass
+  // expired) — every other value (profile/verification/kyc/manual_review/
+  // rejected/complete) maps to its own render branch below. Previously only
+  // "profile" and "kyc" had a branch at all, so manual_review/rejected/
+  // verification/complete all silently rendered nothing.
+  const normalizedCurrentStepKey = currentStep === "reverification" ? "verification" : currentStep;
 
   const stepConfig = useMemo(
     () => [
       { key: "profile", label: t.steps.profile, icon: UserRound },
+      { key: "verification", label: t.steps.verification, icon: ShieldCheck },
       { key: "kyc", label: t.steps.kyc, icon: CircleHelp },
     ],
     [t.steps],
@@ -156,6 +163,8 @@ export function BuyerVerificationPanel({
         complete:
             step.key === "profile"
               ? Boolean(status?.profile?.full_name)
+              : step.key === "verification"
+              ? status?.idin_status === "completed" && status?.ideal_status === "completed"
               : status?.kyc_status === "completed",
         clickable: index <= currentStepIndex,
       })),
@@ -308,6 +317,23 @@ export function BuyerVerificationPanel({
     }
   }
 
+  async function handleStartSignhost() {
+    setStartingSignhost(true);
+    try {
+      const { redirectUrl, status: nextStatus } = await startBuyerVerificationSignhost();
+      if (nextStatus) setStatus(nextStatus);
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        toast.error(t.toasts.noSignhostRedirect);
+      }
+    } catch {
+      toast.error(t.toasts.signhostError);
+    } finally {
+      setStartingSignhost(false);
+    }
+  }
+
   function renderInput(label: string, name: keyof ProfileForm, type = "text") {
     const errorList = errors[name];
     const hasError = !!errorList && errorList.length > 0;
@@ -439,6 +465,23 @@ export function BuyerVerificationPanel({
       </div>
 
       <div className="p-8 sm:p-10">
+        {visibleStepKey === "verification" && (
+          <div className="rounded-2xl border border-slate-200 p-6 bg-white">
+            <h3 className="font-bold text-[#12325b] text-lg mb-2">{t.sections.verification.title}</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              {currentStep === "reverification" ? t.sections.verification.reverification : t.sections.verification.description}
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleStartSignhost()}
+              disabled={startingSignhost}
+              className="rounded-2xl bg-[#003566] px-8 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {startingSignhost ? t.actions.opening : t.sections.verification.action}
+            </button>
+          </div>
+        )}
+
         {visibleStepKey === "profile" && (
           <form onSubmit={handleProfileSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2 mb-4">
@@ -498,6 +541,30 @@ export function BuyerVerificationPanel({
              </button>
            </form>
         )}
+
+        {visibleStepKey === "manual_review" && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
+            <p className="font-bold text-amber-800">{t.statusValues.manualReview}</p>
+            <p className="mt-2 text-sm text-amber-700">{t.blocks.manualReviewBody}</p>
+          </div>
+        )}
+
+        {visibleStepKey === "rejected" && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
+            <p className="font-bold text-red-800">{t.statusValues.rejected}</p>
+            <p className="mt-2 text-sm text-red-700">{t.blocks.rejectedBody}</p>
+          </div>
+        )}
+
+        {visibleStepKey !== "profile" &&
+          visibleStepKey !== "verification" &&
+          visibleStepKey !== "kyc" &&
+          visibleStepKey !== "manual_review" &&
+          visibleStepKey !== "rejected" && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">
+              <p className="font-bold text-emerald-800">{t.blocks.allDoneBody}</p>
+            </div>
+          )}
       </div>
     </section>
   );
