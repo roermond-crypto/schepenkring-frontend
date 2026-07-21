@@ -29,6 +29,7 @@ import { api } from "@/lib/api";
 import { setClientSession } from "@/lib/auth/client-session";
 import { PublicHeader } from "@/components/common/PublicHeader";
 import { PublicFooter } from "@/components/common/PublicFooter";
+import { convertToWebP } from "@/lib/convertToWebP";
 import { Button } from "@/components/ui/button";
 import type { AppLocale } from "@/lib/i18n";
 
@@ -168,6 +169,7 @@ export function BoatIntakePage({
   const [documents, setDocuments] = useState<{ name: string; type: string }[]>([]);
   const [resumeToken, setResumeToken] = useState<string | null>(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [isDraggingPhotos, setIsDraggingPhotos] = useState(false);
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [emailSent, setEmailSent] = useState<boolean | null>(null);
   const [resendingEmail, setResendingEmail] = useState(false);
@@ -377,13 +379,28 @@ export function BoatIntakePage({
     if (step < 3) setStep((n) => n + 1);
   }
 
-  async function handlePhotoFiles(files: FileList | null) {
+  async function handlePhotoFiles(files: FileList | File[] | null) {
     if (!files || !resumeToken) return;
     const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
     setUploadingPhotos(true);
     setErrors((prev) => ({ ...prev, _global: "" }));
     const fd = new FormData();
-    list.forEach((f) => fd.append("photos[]", f));
+    // Downscale + convert client-side before upload. Modern phone photos are
+    // frequently 5–15 MB, which exceeds typical PHP `post_max_size` /
+    // `upload_max_filesize` on the server and causes the upload to fail
+    // silently ("can't upload large photos"). Converting to a bounded WebP
+    // keeps every file comfortably under the limit. If a file can't be
+    // decoded (e.g. an exotic format), fall back to the original so we never
+    // drop a photo the user picked.
+    for (const f of list) {
+      try {
+        const converted = await convertToWebP(f);
+        fd.append("photos[]", converted);
+      } catch {
+        fd.append("photos[]", f);
+      }
+    }
     try {
       const res = await fetch(`${API}/boat-intake/${resumeToken}/photos`, { method: "POST", body: fd });
       if (!res.ok) {
@@ -401,6 +418,30 @@ export function BoatIntakePage({
     } catch {
       setErrors({ _global: s(t, "errors.photoUploadFailed", "Uploaden van foto's is mislukt. Controleer je internetverbinding en probeer het opnieuw.") });
     } finally { setUploadingPhotos(false); }
+  }
+
+  // Drag-and-drop for the photo zone. Without these handlers the browser
+  // falls back to its default behaviour and *navigates away* to the dropped
+  // image file (it "becomes oversized and you have to start over"). We must
+  // preventDefault on dragover as well as drop for the drop event to fire.
+  function handlePhotoDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDraggingPhotos) setIsDraggingPhotos(true);
+  }
+
+  function handlePhotoDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingPhotos(false);
+  }
+
+  function handlePhotoDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingPhotos(false);
+    const dropped = e.dataTransfer?.files;
+    if (dropped && dropped.length > 0) void handlePhotoFiles(dropped);
   }
 
   async function handleDeletePhoto(photoId: number) {
@@ -863,29 +904,37 @@ export function BoatIntakePage({
                       onChange={(e) => handlePhotoFiles(e.target.files)} />
                   </div>
 
-                  {photos.length > 0 ? (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {photos.map((photo) => (
-                        <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 group">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={photo.url} alt="" className="w-full h-full object-cover" />
-                          <button
-                            onClick={() => handleDeletePhoto(photo.id)}
-                            className="absolute top-1 right-1 flex items-center justify-center w-6 h-6 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                            aria-label="Verwijder foto"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <button onClick={() => photoInputRef.current?.click()}
-                      className="w-full border-2 border-dashed border-slate-200 rounded-2xl p-8 sm:p-10 text-center hover:border-[#003566] transition-colors">
-                      <Camera className="w-9 h-9 sm:w-10 sm:h-10 text-slate-300 mx-auto mb-2" />
-                      <p className="text-slate-400 text-sm">{s(t, "media.dropZone")}</p>
-                    </button>
-                  )}
+                  <div
+                    onDragOver={handlePhotoDragOver}
+                    onDragEnter={handlePhotoDragOver}
+                    onDragLeave={handlePhotoDragLeave}
+                    onDrop={handlePhotoDrop}
+                    className={isDraggingPhotos ? "rounded-2xl ring-2 ring-[#003566] ring-offset-2" : ""}
+                  >
+                    {photos.length > 0 ? (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {photos.map((photo) => (
+                          <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 group">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                            <button
+                              onClick={() => handleDeletePhoto(photo.id)}
+                              className="absolute top-1 right-1 flex items-center justify-center w-6 h-6 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                              aria-label="Verwijder foto"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <button onClick={() => photoInputRef.current?.click()}
+                        className="w-full border-2 border-dashed border-slate-200 rounded-2xl p-8 sm:p-10 text-center hover:border-[#003566] transition-colors">
+                        <Camera className="w-9 h-9 sm:w-10 sm:h-10 text-slate-300 mx-auto mb-2" />
+                        <p className="text-slate-400 text-sm">{s(t, "media.dropZone")}</p>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Documents */}
