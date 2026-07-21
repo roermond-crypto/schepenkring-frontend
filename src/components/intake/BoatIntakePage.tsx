@@ -155,6 +155,10 @@ export function BoatIntakePage({
   cmsPageId?: number;
 }) {
   const [step, setStep] = useState(0);
+  // True when a logged-in seller with a complete profile skipped the
+  // personal-details step (step 0). Used to keep them from being sent back
+  // to re-enter details we already have.
+  const [personalStepSkipped, setPersonalStepSkipped] = useState(false);
   const [canManageContent, setCanManageContent] = useState(false);
   const [editModeOn, setEditModeOn] = useState(false);
   const [heroEditorOpen, setHeroEditorOpen] = useState(false);
@@ -269,18 +273,35 @@ export function BoatIntakePage({
   // Pre-fill Step 0 from logged-in user profile (if already authenticated)
   useEffect(() => {
     getMe().then(({ data: user }) => {
+      const firstName = user.first_name || "";
+      const lastName = user.last_name || "";
+      const email = user.email || "";
+      const phone = user.phone || "";
+      const locationId = user.client_location_id || user.location_id || "";
+
       setForm((prev) => ({
         ...prev,
-        seller_first_name: prev.seller_first_name || user.first_name || "",
-        seller_last_name: prev.seller_last_name || user.last_name || "",
-        seller_email: prev.seller_email || user.email || "",
-        seller_phone: prev.seller_phone || user.phone || "",
+        seller_first_name: prev.seller_first_name || firstName,
+        seller_last_name: prev.seller_last_name || lastName,
+        seller_email: prev.seller_email || email,
+        seller_phone: prev.seller_phone || phone,
         seller_address: prev.seller_address || user.address_line1 || "",
         seller_postal_code: prev.seller_postal_code || user.postal_code || "",
         seller_city: prev.seller_city || user.city || "",
         seller_country: prev.seller_country || user.country || "NL",
-        location_id: prev.location_id || user.client_location_id || user.location_id || "",
+        location_id: prev.location_id || locationId,
       }));
+
+      // Logged-in seller with a complete profile: skip the personal-details
+      // step. Their account details are pre-filled and still submitted behind
+      // the scenes, so adding another boat starts straight at the boat-details
+      // step instead of forcing them through information we already have.
+      const hasToken = new URLSearchParams(window.location.search).has("token");
+      const profileComplete = Boolean(firstName && lastName && email && phone && locationId);
+      if (!hasToken && profileComplete) {
+        setPersonalStepSkipped(true);
+        setStep((current) => (current === 0 ? 1 : current));
+      }
     }).catch(() => { /* not logged in — ignore */ });
   }, []);
 
@@ -1178,8 +1199,8 @@ export function BoatIntakePage({
             {/* ── Nav buttons ── */}
             {step < 3 && (
               <div className="mt-7 sm:mt-8 flex items-center justify-between border-t border-slate-100 pt-5 sm:pt-6">
-                <button onClick={() => setStep((n) => Math.max(0, n - 1))}
-                  disabled={step === 0 || !!resumeToken}
+                <button onClick={() => setStep((n) => Math.max(personalStepSkipped ? 1 : 0, n - 1))}
+                  disabled={step === 0 || !!resumeToken || (step === 1 && personalStepSkipped)}
                   className="text-sm text-slate-500 hover:text-slate-800 disabled:opacity-30 transition-colors">
                   {s(t, "nav_buttons.prev")}
                 </button>
